@@ -36,21 +36,21 @@ export function CustomerFilters() {
   }, [customers]);
 
   const industries = useMemo(() =>
-    [...new Set(customers.map((c) => c.industry).filter(Boolean) as string[])].sort(),
+    Array.from(new Set(customers.map((c) => c.industry).filter(Boolean) as string[])).sort(),
     [customers]);
 
   const segments = useMemo(() =>
-    [...new Set(customers.map((c) => c.segment).filter(Boolean) as string[])].sort(),
+    Array.from(new Set(customers.map((c) => c.segment).filter(Boolean) as string[])).sort(),
     [customers]);
 
   const countries = useMemo(() =>
-    [...new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])].sort(),
+    Array.from(new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])).sort(),
     [customers]);
 
   const contactMatchCount = useMemo(() => {
     if (!searchQuery.trim()) return 0;
     const q = searchQuery.toLowerCase();
-    return new Set(
+    return Array.from(new Set(
       allContacts
         .filter((c) =>
           `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
@@ -58,7 +58,7 @@ export function CustomerFilters() {
           c.jobTitle?.toLowerCase().includes(q)
         )
         .map((c) => c.customerId)
-    ).size;
+    )).length;
   }, [searchQuery, allContacts]);
 
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
