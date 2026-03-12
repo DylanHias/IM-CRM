@@ -1,0 +1,199 @@
+'use client';
+
+import { useState } from 'react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { upsertContact } from '@/lib/db/queries/contacts';
+import type { Contact } from '@/types/entities';
+
+interface ContactFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  customerId: string;
+  onContactAdded: (contact: Contact) => void;
+}
+
+export function ContactForm({ open, onOpenChange, customerId, onContactAdded }: ContactFormProps) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const resetForm = () => {
+    setFirstName('');
+    setLastName('');
+    setJobTitle('');
+    setEmail('');
+    setPhone('');
+    setMobile('');
+    setNotes('');
+    setSuccess(false);
+  };
+
+  const handleOpenChange = (value: boolean) => {
+    if (!value) resetForm();
+    onOpenChange(value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) return;
+
+    setIsSubmitting(true);
+    const now = new Date().toISOString();
+
+    const contact: Contact = {
+      id: crypto.randomUUID(),
+      customerId,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      jobTitle: jobTitle.trim() || null,
+      email: email.trim() || null,
+      phone: phone.trim() || null,
+      mobile: mobile.trim() || null,
+      notes: notes.trim() || null,
+      syncedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    try {
+      if (isTauriApp()) {
+        await upsertContact(contact);
+      }
+      setSuccess(true);
+      onContactAdded(contact);
+      setTimeout(() => handleOpenChange(false), 900);
+    } catch (err) {
+      console.error('[ContactForm] Failed to create contact:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Contact</DialogTitle>
+          <DialogDescription>Add a new contact for this customer.</DialogDescription>
+        </DialogHeader>
+
+        {success ? (
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <CheckCircle2 size={40} className="text-green-500" />
+            <p className="text-slate-700 font-medium">Contact added!</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="cf-firstName">First Name *</Label>
+                <Input
+                  id="cf-firstName"
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cf-lastName">Last Name *</Label>
+                <Input
+                  id="cf-lastName"
+                  placeholder="Last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cf-jobTitle">Job Title</Label>
+              <Input
+                id="cf-jobTitle"
+                placeholder="e.g. IT Director"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cf-email">Email</Label>
+              <Input
+                id="cf-email"
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="cf-phone">Phone</Label>
+                <Input
+                  id="cf-phone"
+                  type="tel"
+                  placeholder="+32 ..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cf-mobile">Mobile</Label>
+                <Input
+                  id="cf-mobile"
+                  type="tel"
+                  placeholder="+32 ..."
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cf-notes">Notes</Label>
+              <Textarea
+                id="cf-notes"
+                placeholder="Any notes about this contact..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !firstName.trim() || !lastName.trim()} className="flex-1">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Add Contact'
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

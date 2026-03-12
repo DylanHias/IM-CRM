@@ -1,0 +1,58 @@
+import type { FollowUp } from '@/types/entities';
+
+const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+const future = (days: number) => new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
+const past = (days: number) => new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
+const now = new Date().toISOString();
+
+const USER_ID = 'mock-user-001';
+const USER_NAME = 'Jan De Vries';
+
+export const mockFollowUps: FollowUp[] = [
+  // cust-001 Open
+  { id: 'fu-001', customerId: 'cust-001', activityId: 'act-001', title: 'Send updated pricing proposal', description: 'Send revised Q2 pricing for storage infrastructure.', dueDate: future(3), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(3), updatedAt: ago(3) },
+  { id: 'fu-002', customerId: 'cust-001', activityId: 'act-002', title: 'Arrange NetApp demo', description: 'Schedule full-day NetApp demo at Technocom site.', dueDate: future(7), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-002', createdAt: ago(10), updatedAt: ago(10) },
+  // cust-001 Completed
+  { id: 'fu-003', customerId: 'cust-001', activityId: 'act-003', title: 'Send NetApp datasheet', description: null, dueDate: past(20), completed: true, completedAt: ago(22), createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-003', createdAt: ago(25), updatedAt: ago(22) },
+
+  // cust-002 Open
+  { id: 'fu-004', customerId: 'cust-002', activityId: 'act-005', title: 'Send Azure migration cost estimate', description: 'Detailed TCO analysis for 3-year migration plan.', dueDate: future(5), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(7), updatedAt: ago(7) },
+
+  // cust-003 Open
+  { id: 'fu-005', customerId: 'cust-003', activityId: 'act-007', title: 'Share XDR solution brief', description: 'Send CrowdStrike Falcon Insight XDR documentation.', dueDate: future(2), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(14), updatedAt: ago(14) },
+  { id: 'fu-006', customerId: 'cust-003', activityId: 'act-008', title: 'Send SIEM technical specs', description: 'Splunk SIEM technical architecture document requested by Jeroen.', dueDate: past(5), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(20), updatedAt: ago(20) },
+  // cust-003 Completed
+  { id: 'fu-007', customerId: 'cust-003', activityId: 'act-009', title: 'PoC report delivery', description: null, dueDate: past(30), completed: true, completedAt: ago(32), createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-007', createdAt: ago(45), updatedAt: ago(32) },
+
+  // cust-004 Open
+  { id: 'fu-008', customerId: 'cust-004', activityId: 'act-010', title: 'Prepare GDPR compliance summary', description: 'One-pager on how our healthcare storage solutions meet GDPR requirements.', dueDate: future(4), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(2), updatedAt: ago(2) },
+
+  // cust-006 Open
+  { id: 'fu-009', customerId: 'cust-006', activityId: 'act-012', title: 'Send fleet software proposal', description: 'Formal proposal for fleet management solution with 3-year license pricing.', dueDate: future(10), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-009', createdAt: ago(21), updatedAt: ago(21) },
+  // Overdue
+  { id: 'fu-010', customerId: 'cust-006', activityId: 'act-013', title: 'Check renewal contract status', description: 'Confirm renewal terms with legal team.', dueDate: past(10), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(35), updatedAt: ago(35) },
+
+  // cust-007 Open
+  { id: 'fu-011', customerId: 'cust-007', activityId: 'act-014', title: 'Prepare security solutions overview', description: 'Tailored overview of Palo Alto + CrowdStrike for energy sector.', dueDate: future(6), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(5), updatedAt: ago(5) },
+
+  // cust-008 Open
+  { id: 'fu-012', customerId: 'cust-008', activityId: 'act-015', title: 'Send ERP integration overview', description: null, dueDate: future(2), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(10), updatedAt: ago(10) },
+  { id: 'fu-013', customerId: 'cust-008', activityId: 'act-016', title: 'Follow up on automation assessment', description: 'Share assessment results and three proposed scenarios.', dueDate: past(3), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(25), updatedAt: ago(25) },
+
+  // cust-012 Open
+  { id: 'fu-014', customerId: 'cust-012', activityId: 'act-017', title: 'Prepare data analytics proposal', description: 'Proposal for Databricks + Power BI add-on.', dueDate: future(8), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(1), updatedAt: ago(1) },
+
+  // cust-013 Completed
+  { id: 'fu-015', customerId: 'cust-013', activityId: 'act-018', title: 'Escalate to channel team', description: null, dueDate: past(5), completed: true, completedAt: ago(7), createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-015', createdAt: ago(8), updatedAt: ago(7) },
+
+  // cust-018 Open
+  { id: 'fu-016', customerId: 'cust-018', activityId: 'act-021', title: 'Send Databricks licensing quote', description: 'Team license for 10 data engineers.', dueDate: future(4), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(6), updatedAt: ago(6) },
+
+  // cust-022 Open
+  { id: 'fu-017', customerId: 'cust-022', activityId: 'act-023', title: 'HPC quote for lab infrastructure', description: '4x compute nodes + shared storage for research lab.', dueDate: future(12), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(4), updatedAt: ago(4) },
+
+  // cust-025 Completed
+  { id: 'fu-018', customerId: 'cust-025', activityId: 'act-024', title: 'Send SAP integration compatibility matrix', description: null, dueDate: past(5), completed: true, completedAt: ago(6), createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-018', createdAt: ago(9), updatedAt: ago(6) },
+  // cust-025 Overdue
+  { id: 'fu-019', customerId: 'cust-025', activityId: 'act-025', title: 'Reach out to referred prospects', description: 'Valerie referred Logistics Plus and HR Innovations — follow up.', dueDate: past(8), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(20), updatedAt: ago(20) },
+];

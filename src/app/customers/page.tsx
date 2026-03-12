@@ -1,0 +1,40 @@
+'use client';
+
+import { AppShell } from '@/components/layout/AppShell';
+import { AuthGuard } from '@/components/layout/AuthGuard';
+import { CustomerFilters } from '@/components/customers/CustomerFilters';
+import { CustomerList } from '@/components/customers/CustomerList';
+import { Button } from '@/components/ui/button';
+import { useCustomers } from '@/hooks/useCustomers';
+import { RefreshCw } from 'lucide-react';
+
+export default function CustomersPage() {
+  const { customers, isLoading } = useCustomers();
+
+  return (
+    <AuthGuard>
+      <AppShell title="Customers">
+        <div className="max-w-5xl mx-auto space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Customer Overview</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isLoading ? 'Loading...' : `${customers.length} customer${customers.length !== 1 ? 's' : ''}`}
+              </p>
+            </div>
+          </div>
+
+          <CustomerFilters />
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <RefreshCw size={24} className="text-muted-foreground animate-spin" />
+            </div>
+          ) : (
+            <CustomerList customers={customers} />
+          )}
+        </div>
+      </AppShell>
+    </AuthGuard>
+  );
+}

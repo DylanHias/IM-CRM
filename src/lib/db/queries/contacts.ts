@@ -1,0 +1,55 @@
+import { getDb } from '@/lib/db/client';
+import type { Contact } from '@/types/entities';
+import type { ContactRow } from '@/types/db';
+
+function rowToContact(row: ContactRow): Contact {
+  return {
+    id: row.id,
+    customerId: row.customer_id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    jobTitle: row.job_title,
+    email: row.email,
+    phone: row.phone,
+    mobile: row.mobile,
+    notes: row.notes,
+    syncedAt: row.synced_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function queryContactsByCustomer(customerId: string): Promise<Contact[]> {
+  const db = await getDb();
+  const rows = await db.select<ContactRow[]>(
+    `SELECT * FROM contacts WHERE customer_id = $1 ORDER BY last_name, first_name`,
+    [customerId]
+  );
+  return rows.map(rowToContact);
+}
+
+export async function upsertContact(contact: Contact): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `INSERT INTO contacts (
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    ON CONFLICT(id) DO UPDATE SET
+      first_name=excluded.first_name, last_name=excluded.last_name,
+      job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
+      mobile=excluded.mobile, synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+    [
+      contact.id, contact.customerId, contact.firstName, contact.lastName,
+      contact.jobTitle, contact.email, contact.phone, contact.mobile,
+      contact.notes, contact.syncedAt, contact.createdAt, contact.updatedAt,
+    ]
+  );
+}
+
+export async function updateContactNotes(contactId: string, notes: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE contacts SET notes = $1, updated_at = $2 WHERE id = $3`,
+    [notes, new Date().toISOString(), contactId]
+  );
+}

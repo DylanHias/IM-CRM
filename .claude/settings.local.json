@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe -Command \"[Environment]::GetEnvironmentVariable\\(''PATH'',''User''\\)\")",
+      "Bash(powershell.exe -Command \"[Environment]::GetEnvironmentVariable\\(''PATH'',''Machine''\\)\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Program Files\\\\nodejs''; Test-Path ''C:\\\\Users\\\\behiad00\\\\.cargo\\\\bin\\\\rustc.exe''; Test-Path ''C:\\\\Users\\\\behiad00\\\\AppData\\\\Roaming\\\\nvm''; Get-ChildItem ''C:\\\\Users\\\\behiad00'' -Directory -ErrorAction SilentlyContinue | Select-Object Name\")"
+    ]
+  }
+}
