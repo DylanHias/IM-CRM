@@ -26,7 +26,7 @@ export async function insertSyncRecord(
     `INSERT INTO sync_records (sync_type, status, started_at, created_at) VALUES ($1,$2,$3,$3)`,
     [syncType, status, startedAt]
   );
-  return result.lastInsertId;
+  return result.lastInsertId ?? 0;
 }
 
 export async function updateSyncRecord(
