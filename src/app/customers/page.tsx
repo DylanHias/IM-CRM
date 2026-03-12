@@ -9,7 +9,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { RefreshCw } from 'lucide-react';
 
 export default function CustomersPage() {
-  const { customers, isLoading } = useCustomers();
+  const { customers, allCustomers, isLoading } = useCustomers();
 
   return (
     <AuthGuard>
@@ -19,7 +19,11 @@ export default function CustomersPage() {
             <div>
               <h2 className="text-xl font-semibold text-slate-900">Customer Overview</h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {isLoading ? 'Loading...' : `${customers.length} customer${customers.length !== 1 ? 's' : ''}`}
+                {isLoading
+                  ? 'Loading...'
+                  : customers.length === allCustomers.length
+                    ? `${customers.length} customer${customers.length !== 1 ? 's' : ''}`
+                    : `${customers.length} of ${allCustomers.length} customers`}
               </p>
             </div>
           </div>

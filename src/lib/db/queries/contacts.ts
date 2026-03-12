@@ -19,6 +19,12 @@ function rowToContact(row: ContactRow): Contact {
   };
 }
 
+export async function queryAllContacts(): Promise<Contact[]> {
+  const db = await getDb();
+  const rows = await db.select<ContactRow[]>(`SELECT * FROM contacts ORDER BY last_name, first_name`);
+  return rows.map(rowToContact);
+}
+
 export async function queryContactsByCustomer(customerId: string): Promise<Contact[]> {
   const db = await getDb();
   const rows = await db.select<ContactRow[]>(
