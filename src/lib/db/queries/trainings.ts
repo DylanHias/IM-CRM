@@ -25,6 +25,11 @@ export async function queryTrainingsByCustomer(customerId: string): Promise<Trai
   return rows.map(rowToTraining);
 }
 
+export async function deleteTraining(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM trainings WHERE id=$1`, [id]);
+}
+
 export async function upsertTraining(training: Training): Promise<void> {
   const db = await getDb();
   await db.execute(

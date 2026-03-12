@@ -46,6 +46,11 @@ export async function upsertContact(contact: Contact): Promise<void> {
   );
 }
 
+export async function deleteContact(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM contacts WHERE id=$1`, [id]);
+}
+
 export async function updateContactNotes(contactId: string, notes: string): Promise<void> {
   const db = await getDb();
   await db.execute(

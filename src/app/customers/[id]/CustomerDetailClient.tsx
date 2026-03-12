@@ -171,7 +171,13 @@ export default function CustomerDetailClient() {
             </TabsContent>
 
             <TabsContent value="contacts" className="mt-4">
-              <ContactList contacts={contacts} customerId={customerId} onContactAdded={(c) => setContacts((prev) => [...prev, c])} />
+              <ContactList
+                contacts={contacts}
+                customerId={customerId}
+                onContactAdded={(c) => setContacts((prev) => [...prev, c])}
+                onContactUpdated={(c) => setContacts((prev) => prev.map((x) => (x.id === c.id ? c : x)))}
+                onContactDeleted={(id) => setContacts((prev) => prev.filter((x) => x.id !== id))}
+              />
             </TabsContent>
 
             <TabsContent value="trainings" className="mt-4">
@@ -179,6 +185,8 @@ export default function CustomerDetailClient() {
                 trainings={trainings}
                 customerId={customerId}
                 onTrainingAdded={(t) => setTrainings((prev) => [t, ...prev])}
+                onTrainingUpdated={(t) => setTrainings((prev) => prev.map((x) => (x.id === t.id ? t : x)))}
+                onTrainingDeleted={(id) => setTrainings((prev) => prev.filter((x) => x.id !== id))}
               />
             </TabsContent>
 

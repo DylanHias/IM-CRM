@@ -64,6 +64,19 @@ export async function insertFollowUp(followUp: FollowUp): Promise<void> {
   );
 }
 
+export async function updateFollowUp(followUp: FollowUp): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE follow_ups SET title=$1, description=$2, due_date=$3, sync_status='pending', updated_at=$4 WHERE id=$5`,
+    [followUp.title, followUp.description, followUp.dueDate, new Date().toISOString(), followUp.id]
+  );
+}
+
+export async function deleteFollowUp(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM follow_ups WHERE id=$1`, [id]);
+}
+
 export async function completeFollowUp(id: string): Promise<void> {
   const now = new Date().toISOString();
   const db = await getDb();

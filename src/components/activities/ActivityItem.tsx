@@ -1,8 +1,9 @@
 'use client';
 
-import { Phone, Users, MapPin, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Phone, Users, MapPin, FileText, Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatRelative } from '@/lib/utils/dateUtils';
+import { Button } from '@/components/ui/button';
+import { formatDate } from '@/lib/utils/dateUtils';
 import type { Activity } from '@/types/entities';
 
 const ACTIVITY_ICONS = {
@@ -15,14 +16,16 @@ const ACTIVITY_ICONS = {
 interface ActivityItemProps {
   activity: Activity;
   contactName?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function ActivityItem({ activity, contactName }: ActivityItemProps) {
+export function ActivityItem({ activity, contactName, onEdit, onDelete }: ActivityItemProps) {
   const config = ACTIVITY_ICONS[activity.type];
   const Icon = config.icon;
 
   return (
-    <div className="flex gap-3 py-3 border-b last:border-b-0">
+    <div className="flex gap-3 py-3 border-b last:border-b-0 group">
       <div
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
         style={{ backgroundColor: config.bg }}
@@ -59,6 +62,19 @@ export function ActivityItem({ activity, contactName }: ActivityItemProps) {
               {contactName && <span>· {contactName}</span>}
               <span>· {activity.createdByName}</span>
             </div>
+          </div>
+
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            {onEdit && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit} title="Edit">
+                <Pencil size={13} />
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={onDelete} title="Delete">
+                <Trash2 size={13} />
+              </Button>
+            )}
           </div>
         </div>
       </div>

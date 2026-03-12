@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useActivityStore } from '@/store/activityStore';
-import { queryActivitiesByCustomer, insertActivity, countPendingActivities } from '@/lib/db/queries/activities';
+import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, deleteActivity as dbDeleteActivity, countPendingActivities } from '@/lib/db/queries/activities';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { mockActivities } from '@/lib/mock/activities';
@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
 
 export function useActivities(customerId: string) {
-  const { activities, currentCustomerId, isLoading, setActivities, addActivity, setLoading, setPendingCount } =
+  const { activities, currentCustomerId, isLoading, setActivities, addActivity, updateActivity, removeActivity, setLoading, setPendingCount } =
     useActivityStore();
   const { account } = useAuthStore();
 
@@ -63,9 +63,31 @@ export function useActivities(customerId: string) {
     [account, customerId, addActivity]
   );
 
+  const editActivity = useCallback(
+    async (activity: Activity) => {
+      if (isTauriApp()) {
+        await dbUpdateActivity(activity);
+      }
+      updateActivity(activity);
+    },
+    [updateActivity]
+  );
+
+  const removeAct = useCallback(
+    async (id: string) => {
+      if (isTauriApp()) {
+        await dbDeleteActivity(id);
+      }
+      removeActivity(id);
+    },
+    [removeActivity]
+  );
+
   return {
     activities: activities.filter((a) => a.customerId === customerId),
     isLoading,
     createActivity,
+    editActivity,
+    deleteActivity: removeAct,
   };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckSquare, Square, Calendar, AlertCircle } from 'lucide-react';
+import { CheckSquare, Square, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDueDate } from '@/lib/utils/dateUtils';
@@ -9,13 +9,15 @@ import type { FollowUp } from '@/types/entities';
 interface FollowUpItemProps {
   followUp: FollowUp;
   onComplete?: (id: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function FollowUpItem({ followUp, onComplete }: FollowUpItemProps) {
+export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowUpItemProps) {
   const { label: dueDateLabel, isOverdue } = formatDueDate(followUp.dueDate);
 
   return (
-    <div className={`flex items-start gap-3 py-3 border-b last:border-b-0 ${followUp.completed ? 'opacity-50' : ''}`}>
+    <div className={`flex items-start gap-3 py-3 border-b last:border-b-0 group ${followUp.completed ? 'opacity-50' : ''}`}>
       <button
         className="mt-0.5 flex-shrink-0 text-blue-500 hover:text-blue-600 disabled:cursor-not-allowed"
         onClick={() => !followUp.completed && onComplete?.(followUp.id)}
@@ -47,6 +49,21 @@ export function FollowUpItem({ followUp, onComplete }: FollowUpItemProps) {
           )}
         </div>
       </div>
+
+      {!followUp.completed && (
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          {onEdit && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit} title="Edit">
+              <Pencil size={13} />
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={onDelete} title="Delete">
+              <Trash2 size={13} />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

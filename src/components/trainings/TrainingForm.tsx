@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { Loader2, CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,10 +16,12 @@ interface TrainingFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerId: string;
-  onTrainingAdded: (training: Training) => void;
+  onTrainingSaved: (training: Training) => void;
+  initialData?: Training;
 }
 
-export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }: TrainingFormProps) {
+export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, initialData }: TrainingFormProps) {
+  const isEdit = !!initialData;
   const [title, setTitle] = useState('');
   const [trainingDate, setTrainingDate] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
@@ -30,18 +32,20 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
   const [success, setSuccess] = useState(false);
   const participantInputRef = useRef<HTMLInputElement>(null);
 
-  const resetForm = () => {
-    setTitle('');
-    setTrainingDate('');
-    setParticipants([]);
-    setParticipantInput('');
-    setInstructor('');
-    setStatus('registered');
-    setSuccess(false);
-  };
+  useEffect(() => {
+    if (open) {
+      setTitle(initialData?.title ?? '');
+      setTrainingDate(initialData?.trainingDate ?? '');
+      setParticipants(initialData?.participant ? initialData.participant.split(', ').filter(Boolean) : []);
+      setParticipantInput('');
+      setInstructor(initialData?.provider ?? '');
+      setStatus(initialData?.status ?? 'registered');
+      setSuccess(false);
+    }
+  }, [open, initialData]);
 
   const handleOpenChange = (value: boolean) => {
-    if (!value) resetForm();
+    if (!value) setSuccess(false);
     onOpenChange(value);
   };
 
@@ -70,7 +74,6 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
     e.preventDefault();
     if (!title.trim() || !trainingDate) return;
 
-    // Commit any uncommitted participant input
     const finalParticipants = [...participants];
     if (participantInput.trim() && !finalParticipants.includes(participantInput.trim())) {
       finalParticipants.push(participantInput.trim());
@@ -80,7 +83,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
     const now = new Date().toISOString();
 
     const training: Training = {
-      id: crypto.randomUUID(),
+      id: initialData?.id ?? crypto.randomUUID(),
       customerId,
       title: title.trim(),
       trainingDate,
@@ -88,7 +91,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
       provider: instructor.trim() || null,
       status,
       syncedAt: now,
-      createdAt: now,
+      createdAt: initialData?.createdAt ?? now,
     };
 
     try {
@@ -96,10 +99,10 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
         await upsertTraining(training);
       }
       setSuccess(true);
-      onTrainingAdded(training);
+      onTrainingSaved(training);
       setTimeout(() => handleOpenChange(false), 900);
     } catch (err) {
-      console.error('[TrainingForm] Failed to create training:', err);
+      console.error('[TrainingForm] Failed:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -109,63 +112,43 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Training</DialogTitle>
-          <DialogDescription>Log a training session for this customer.</DialogDescription>
+          <DialogTitle>{isEdit ? 'Edit Training' : 'Add Training'}</DialogTitle>
+          <DialogDescription>{isEdit ? 'Update training details.' : 'Log a training session for this customer.'}</DialogDescription>
         </DialogHeader>
 
         {success ? (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
             <CheckCircle2 size={40} className="text-green-500" />
-            <p className="text-slate-700 font-medium">Training added!</p>
+            <p className="text-slate-700 font-medium">{isEdit ? 'Training updated!' : 'Training added!'}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="tf-title">Training Title *</Label>
-              <Input
-                id="tf-title"
-                placeholder="e.g. Azure Fundamentals"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
+              <Input id="tf-title" placeholder="e.g. Azure Fundamentals" value={title} onChange={(e) => setTitle(e.target.value)} required />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="tf-date">Training Date *</Label>
-              <Input
-                id="tf-date"
-                type="date"
-                value={trainingDate}
-                onChange={(e) => setTrainingDate(e.target.value)}
-                required
-              />
+              <Input id="tf-date" type="date" value={trainingDate} onChange={(e) => setTrainingDate(e.target.value)} required />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="tf-participants">Participants</Label>
+              <Label>Participants</Label>
               <div
                 className="flex flex-wrap gap-1.5 min-h-[38px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-text"
                 onClick={() => participantInputRef.current?.focus()}
               >
                 {participants.map((name) => (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 rounded px-2 py-0.5 text-xs font-medium"
-                  >
+                  <span key={name} className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 rounded px-2 py-0.5 text-xs font-medium">
                     {name}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); removeParticipant(name); }}
-                      className="text-slate-400 hover:text-slate-700"
-                    >
+                    <button type="button" onClick={(e) => { e.stopPropagation(); removeParticipant(name); }} className="text-slate-400 hover:text-slate-700">
                       <X size={11} />
                     </button>
                   </span>
                 ))}
                 <input
                   ref={participantInputRef}
-                  id="tf-participants"
                   className="flex-1 min-w-[120px] outline-none bg-transparent placeholder:text-muted-foreground text-sm"
                   placeholder={participants.length === 0 ? 'Type a name, press Enter' : 'Add another...'}
                   value={participantInput}
@@ -177,12 +160,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
 
             <div className="space-y-1">
               <Label htmlFor="tf-instructor">Instructor</Label>
-              <Input
-                id="tf-instructor"
-                placeholder="e.g. Jane Doe, Microsoft trainer"
-                value={instructor}
-                onChange={(e) => setInstructor(e.target.value)}
-              />
+              <Input id="tf-instructor" placeholder="e.g. Jane Doe, Microsoft trainer" value={instructor} onChange={(e) => setInstructor(e.target.value)} />
             </div>
 
             <div className="space-y-1">
@@ -200,18 +178,9 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingAdded }
             </div>
 
             <div className="flex gap-3 pt-1">
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1">
-                Cancel
-              </Button>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1">Cancel</Button>
               <Button type="submit" disabled={isSubmitting || !title.trim() || !trainingDate} className="flex-1">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  'Add Training'
-                )}
+                {isSubmitting ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : isEdit ? 'Save Changes' : 'Add Training'}
               </Button>
             </div>
           </form>

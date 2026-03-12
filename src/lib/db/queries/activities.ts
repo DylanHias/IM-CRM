@@ -53,6 +53,19 @@ export async function insertActivity(activity: Activity): Promise<void> {
   );
 }
 
+export async function updateActivity(activity: Activity): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE activities SET type=$1, subject=$2, description=$3, occurred_at=$4, contact_id=$5, sync_status='pending', updated_at=$6 WHERE id=$7`,
+    [activity.type, activity.subject, activity.description, activity.occurredAt, activity.contactId, new Date().toISOString(), activity.id]
+  );
+}
+
+export async function deleteActivity(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM activities WHERE id=$1`, [id]);
+}
+
 export async function markActivitySynced(id: string, remoteId: string): Promise<void> {
   const db = await getDb();
   await db.execute(

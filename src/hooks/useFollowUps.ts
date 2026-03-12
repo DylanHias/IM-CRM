@@ -6,6 +6,8 @@ import {
   queryFollowUpsByCustomer,
   insertFollowUp,
   completeFollowUp,
+  updateFollowUp as dbUpdateFollowUp,
+  deleteFollowUp as dbDeleteFollowUp,
   queryOverdueFollowUpCount,
 } from '@/lib/db/queries/followups';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -15,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
 
 export function useFollowUps(customerId: string) {
-  const { followUps, currentCustomerId, isLoading, setFollowUps, addFollowUp, markComplete, setLoading, setOverdueCount } =
+  const { followUps, currentCustomerId, isLoading, setFollowUps, addFollowUp, updateFollowUp, removeFollowUp, markComplete, setLoading, setOverdueCount } =
     useFollowUpStore();
   const { account } = useAuthStore();
 
@@ -78,10 +80,32 @@ export function useFollowUps(customerId: string) {
     [markComplete]
   );
 
+  const editFollowUp = useCallback(
+    async (followUp: FollowUp) => {
+      if (isTauriApp()) {
+        await dbUpdateFollowUp(followUp);
+      }
+      updateFollowUp(followUp);
+    },
+    [updateFollowUp]
+  );
+
+  const removeFU = useCallback(
+    async (id: string) => {
+      if (isTauriApp()) {
+        await dbDeleteFollowUp(id);
+      }
+      removeFollowUp(id);
+    },
+    [removeFollowUp]
+  );
+
   return {
     followUps: followUps.filter((f) => f.customerId === customerId),
     isLoading,
     createFollowUp,
     completeFollowUp: complete,
+    editFollowUp,
+    deleteFollowUp: removeFU,
   };
 }

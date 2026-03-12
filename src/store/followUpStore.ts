@@ -9,6 +9,8 @@ interface FollowUpState {
 
   setFollowUps: (followUps: FollowUp[], customerId: string) => void;
   addFollowUp: (followUp: FollowUp) => void;
+  updateFollowUp: (followUp: FollowUp) => void;
+  removeFollowUp: (id: string) => void;
   markComplete: (id: string) => void;
   setOverdueCount: (count: number) => void;
   setLoading: (loading: boolean) => void;
@@ -25,6 +27,16 @@ export const useFollowUpStore = create<FollowUpState>((set) => ({
 
   addFollowUp: (followUp) =>
     set((s) => ({ followUps: [...s.followUps, followUp] })),
+
+  updateFollowUp: (followUp) =>
+    set((s) => ({
+      followUps: s.followUps.map((f) => (f.id === followUp.id ? followUp : f)),
+    })),
+
+  removeFollowUp: (id) =>
+    set((s) => ({
+      followUps: s.followUps.filter((f) => f.id !== id),
+    })),
 
   markComplete: (id) =>
     set((s) => ({
