@@ -34,6 +34,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate app icons
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $size = 1024
+          $bmp = New-Object System.Drawing.Bitmap($size, $size)
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.Clear([System.Drawing.Color]::FromArgb(0, 102, 179))
+          $font = New-Object System.Drawing.Font("Arial", 400, [System.Drawing.FontStyle]::Bold)
+          $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+          $sf = New-Object System.Drawing.StringFormat
+          $sf.Alignment = [System.Drawing.StringAlignment]::Center
+          $sf.LineAlignment = [System.Drawing.StringAlignment]::Center
+          $g.DrawString("I", $font, $brush, [System.Drawing.RectangleF]::FromLTRB(0, 0, $size, $size), $sf)
+          New-Item -ItemType Directory -Force -Path "app-icon-src" | Out-Null
+          $bmp.Save("app-icon-src\icon.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          $g.Dispose(); $bmp.Dispose()
+          npx tauri icon app-icon-src\icon.png
+
       - name: Build app
         run: npm run tauri build
         env:
