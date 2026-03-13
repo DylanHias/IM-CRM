@@ -27,6 +27,8 @@ export interface D365Contact {
   telephone1: string | null;
   mobilephone: string | null;
   modifiedon: string;
+  // Custom field — update schema name to match your D365 org (e.g. new_contacttype)
+  new_contacttype_formattedvalue: string | null;
 }
 
 export interface D365ODataResponse<T> {
@@ -52,4 +54,72 @@ export interface TrainingApiResponse {
     pageSize: number;
     total: number;
   };
+}
+
+// SharePoint list item shapes (used by PowerAutomateAdapter)
+export interface SpCustomerItem {
+  fields: {
+    AccountId: string;
+    Title: string; // Name
+    AccountNumber: string | null;
+    Industry: string | null;
+    OwnerId: string | null;
+    OwnerName: string | null;
+    Phone: string | null;
+    Email: string | null;
+    Street: string | null;
+    City: string | null;
+    Country: string | null;
+    Website: string | null;
+    StateCode: number;
+    ModifiedOn: string;
+  };
+}
+
+export interface SpContactItem {
+  fields: {
+    ContactId: string;
+    CustomerId: string;
+    FirstName: string;
+    LastName: string;
+    JobTitle: string | null;
+    Email: string | null;
+    Phone: string | null;
+    Mobile: string | null;
+    ContactType: string | null;
+    ModifiedOn: string;
+  };
+}
+
+export interface SpListResponse<T> {
+  value: T[];
+  '@odata.nextLink'?: string;
+}
+
+// D365 push entity shapes
+export interface D365PhoneCall {
+  subject: string;
+  description: string;
+  scheduledend: string;
+  'regardingobjectid_account@odata.bind': string;
+}
+
+export interface D365Appointment {
+  subject: string;
+  description: string;
+  scheduledend: string;
+  'regardingobjectid_account@odata.bind': string;
+}
+
+export interface D365Annotation {
+  subject: string;
+  notetext: string;
+  'objectid_account@odata.bind': string;
+}
+
+export interface D365Task {
+  subject: string;
+  description: string;
+  scheduledend: string;
+  'regardingobjectid_account@odata.bind': string;
 }

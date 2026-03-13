@@ -3,20 +3,20 @@
 import { useRouter } from 'next/navigation';
 import { Building2, ChevronRight, MapPin, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { formatRelative } from '@/lib/utils/dateUtils';
 import type { Customer } from '@/types/entities';
+import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
 const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
   overflow: hidden;
-  background: white;
+  background: hsl(var(--card));
 `;
 
 const Row = styled.div`
@@ -24,15 +24,15 @@ const Row = styled.div`
   align-items: center;
   padding: 14px 18px;
   cursor: pointer;
-  border-bottom: 1px solid #f1f5f9;
-  transition: background-color 0.1s ease;
+  border-bottom: 1px solid hsl(var(--border));
+  transition: background-color 0.12s ease;
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background-color: #f8fafc;
+    background-color: hsl(var(--muted));
   }
 `;
 
@@ -40,11 +40,11 @@ const Icon = styled.div`
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background-color: #eff6ff;
+  background-color: hsl(var(--primary) / 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3b82f6;
+  color: hsl(var(--primary));
   margin-right: 14px;
   flex-shrink: 0;
 `;
@@ -57,7 +57,7 @@ const Info = styled.div`
 const Name = styled.div`
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: hsl(var(--foreground));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -69,7 +69,7 @@ const Meta = styled.div`
   gap: 10px;
   margin-top: 3px;
   font-size: 12px;
-  color: #64748b;
+  color: hsl(var(--muted-foreground));
 `;
 
 const Right = styled.div`
@@ -82,8 +82,18 @@ const Right = styled.div`
 
 const LastActivity = styled.div`
   font-size: 11px;
-  color: #94a3b8;
+  color: hsl(var(--muted-foreground));
 `;
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' as const } },
+};
 
 function getActivityVariant(lastActivityAt: string | null): string {
   if (!lastActivityAt) return 'warning';
@@ -117,52 +127,60 @@ export function CustomerList({ customers }: CustomerListProps) {
 
   return (
     <List>
-      {customers.map((customer) => (
-        <Row key={customer.id} onClick={() => handleClick(customer)}>
-          <Icon>
-            <Building2 size={16} />
-          </Icon>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {customers.map((customer) => (
+          <motion.div key={customer.id} variants={itemVariants}>
+            <Row onClick={() => handleClick(customer)}>
+              <Icon>
+                <Building2 size={16} />
+              </Icon>
 
-          <Info>
-            <Name>{customer.name}</Name>
-            <Meta>
-              {customer.industry && <span>{customer.industry}</span>}
-              {customer.industry && customer.addressCity && <span>·</span>}
-              {customer.addressCity && (
-                <span className="flex items-center gap-1">
-                  <MapPin size={10} />
-                  {customer.addressCity}
-                </span>
-              )}
-              {customer.ownerName && (
-                <>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <User size={10} />
-                    {customer.ownerName}
-                  </span>
-                </>
-              )}
-            </Meta>
-          </Info>
+              <Info>
+                <Name>{customer.name}</Name>
+                <Meta>
+                  {customer.industry && <span>{customer.industry}</span>}
+                  {customer.industry && customer.addressCity && <span>·</span>}
+                  {customer.addressCity && (
+                    <span className="flex items-center gap-1">
+                      <MapPin size={10} />
+                      {customer.addressCity}
+                    </span>
+                  )}
+                  {customer.ownerName && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <User size={10} />
+                        {customer.ownerName}
+                      </span>
+                    </>
+                  )}
+                </Meta>
+              </Info>
 
-          <Right>
-            <Badge
-              variant={customer.status === 'active' ? 'success' : 'secondary'}
-              className="text-xs"
-            >
-              {customer.status}
-            </Badge>
-            <LastActivity>
-              {customer.lastActivityAt
-                ? formatRelative(customer.lastActivityAt)
-                : 'No activity'}
-            </LastActivity>
-          </Right>
+              <Right>
+                <Badge
+                  variant={customer.status === 'active' ? 'success' : 'secondary'}
+                  className="text-xs"
+                >
+                  {customer.status}
+                </Badge>
+                <LastActivity>
+                  {customer.lastActivityAt
+                    ? formatRelative(customer.lastActivityAt)
+                    : 'No activity'}
+                </LastActivity>
+              </Right>
 
-          <ChevronRight size={14} className="text-muted-foreground ml-2" />
-        </Row>
-      ))}
+              <ChevronRight size={14} className="text-muted-foreground ml-2" />
+            </Row>
+          </motion.div>
+        ))}
+      </motion.div>
     </List>
   );
 }

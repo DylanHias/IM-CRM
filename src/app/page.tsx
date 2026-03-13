@@ -18,8 +18,8 @@ export default function RootPage() {
   }, [accounts, inProgress, router]);
 
   return (
-    <div className="flex h-screen items-center justify-center bg-slate-50">
-      <div className="h-8 w-8 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
     </div>
   );
 }

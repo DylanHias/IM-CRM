@@ -1,10 +1,9 @@
 'use client';
 
-import { RefreshCw, Wifi, WifiOff, LogOut, ChevronDown } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
-import { useSyncStore } from '@/store/syncStore';
 import { useSync } from '@/hooks/useSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { signOut } from '@/lib/auth/authHelpers';
@@ -12,23 +11,25 @@ import { formatRelative } from '@/lib/utils/dateUtils';
 import styled from 'styled-components';
 
 const Bar = styled.header`
-  height: 56px;
-  background-color: white;
-  border-bottom: 1px solid #e2e8f0;
+  height: 60px;
+  background-color: hsl(var(--topbar-bg));
+  border-bottom: 1px solid hsl(var(--topbar-border));
   display: flex;
   align-items: center;
   padding: 0 20px;
-  gap: 12px;
+  gap: 10px;
   position: sticky;
   top: 0;
   z-index: 10;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 `;
 
 const Title = styled.h1`
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: hsl(var(--foreground));
   flex: 1;
+  letter-spacing: -0.2px;
 `;
 
 const StatusPill = styled.div<{ $online: boolean }>`
@@ -37,21 +38,25 @@ const StatusPill = styled.div<{ $online: boolean }>`
   gap: 5px;
   font-size: 12px;
   font-weight: 500;
-  color: ${(p) => (p.$online ? '#16a34a' : '#dc2626')};
+  color: ${(p) =>
+    p.$online ? 'hsl(var(--success))' : 'hsl(var(--destructive))'};
   padding: 4px 10px;
   border-radius: 20px;
-  background-color: ${(p) => (p.$online ? '#f0fdf4' : '#fef2f2')};
+  background-color: ${(p) =>
+    p.$online
+      ? 'hsl(var(--success) / 0.1)'
+      : 'hsl(var(--destructive) / 0.1)'};
 `;
 
 const SyncInfo = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: hsl(var(--muted-foreground));
 `;
 
 const UserName = styled.span`
   font-size: 13px;
   font-weight: 500;
-  color: #1e293b;
+  color: hsl(var(--foreground));
 `;
 
 function getInitials(name: string): string {
@@ -102,12 +107,18 @@ export function TopBar({ title = 'Ingram Micro CRM' }: TopBarProps) {
 
       <div className="flex items-center gap-2">
         <Avatar className="h-8 w-8">
-          <AvatarFallback className="text-xs bg-blue-100 text-blue-700">
+          <AvatarFallback className="text-xs bg-primary/15 text-primary">
             {account?.name ? getInitials(account.name) : 'U'}
           </AvatarFallback>
         </Avatar>
         <UserName>{account?.name ?? 'User'}</UserName>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSignOut} title="Sign out">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={handleSignOut}
+          title="Sign out"
+        >
           <LogOut size={14} />
         </Button>
       </div>

@@ -13,6 +13,7 @@ function rowToContact(row: ContactRow): Contact {
     phone: row.phone,
     mobile: row.mobile,
     notes: row.notes,
+    contactType: null,
     syncedAt: row.synced_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -54,7 +54,7 @@ export default function FollowUpsPage() {
       <AppShell title="Follow-Ups">
         <div className="max-w-3xl mx-auto space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">All Follow-Ups</h2>
+            <h2 className="text-xl font-semibold text-foreground">All Follow-Ups</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               Track open tasks and next actions across all customers.
             </p>
@@ -63,10 +63,10 @@ export default function FollowUpsPage() {
           {overdue.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-semibold text-red-700">Overdue</h3>
+                <h3 className="text-sm font-semibold text-destructive">Overdue</h3>
                 <Badge variant="destructive">{overdue.length}</Badge>
               </div>
-              <div className="bg-white border border-red-100 rounded-lg px-4 divide-y">
+              <div className="bg-card border border-destructive/20 rounded-lg px-4 divide-y divide-border">
                 {overdue.map((f) => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
@@ -81,8 +81,8 @@ export default function FollowUpsPage() {
 
           {upcoming.length > 0 && (
             <section>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Upcoming ({upcoming.length})</h3>
-              <div className="bg-white border rounded-lg px-4 divide-y">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Upcoming ({upcoming.length})</h3>
+              <div className="bg-card border border-border rounded-lg px-4 divide-y divide-border">
                 {upcoming.map((f) => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
@@ -98,7 +98,7 @@ export default function FollowUpsPage() {
           {done.length > 0 && (
             <section>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Recently Completed</h3>
-              <div className="bg-white border rounded-lg px-4 divide-y">
+              <div className="bg-card border border-border rounded-lg px-4 divide-y divide-border">
                 {done.map((f) => (
                   <FollowUpItem key={f.id} followUp={f} />
                 ))}

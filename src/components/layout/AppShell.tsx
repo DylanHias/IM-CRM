@@ -2,13 +2,15 @@
 
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { PageMotion } from './PageMotion';
 import styled from 'styled-components';
 
 const Shell = styled.div`
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: #f8fafc;
+  background-color: hsl(var(--background));
+  transition: background-color 0.2s ease;
 `;
 
 const Main = styled.main`
@@ -16,12 +18,13 @@ const Main = styled.main`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: hsl(var(--background));
 `;
 
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 28px;
 `;
 
 interface AppShellProps {
@@ -35,7 +38,9 @@ export function AppShell({ children, title }: AppShellProps) {
       <Sidebar />
       <Main>
         <TopBar title={title} />
-        <Content>{children}</Content>
+        <Content>
+          <PageMotion>{children}</PageMotion>
+        </Content>
       </Main>
     </Shell>
   );

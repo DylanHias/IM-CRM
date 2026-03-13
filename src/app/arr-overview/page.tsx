@@ -1,0 +1,414 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
+import {
+  Search, Download, Building2, User, X,
+  SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
+} from 'lucide-react';
+import { AppShell } from '@/components/layout/AppShell';
+import { AuthGuard } from '@/components/layout/AuthGuard';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useCustomerStore } from '@/store/customerStore';
+import { cn } from '@/lib/utils';
+import type { Customer } from '@/types/entities';
+import type { Contact } from '@/types/entities';
+
+type SortField = 'arr' | 'name' | 'language';
+
+function formatArr(value: number | null): string {
+  if (value === null) return '—';
+  return `€ ${value.toLocaleString('nl-BE')}`;
+}
+
+function getMostRecentContact(customerId: string, contacts: Contact[]): Contact | undefined {
+  return contacts
+    .filter((c) => c.customerId === customerId)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+}
+
+type ContactField = { value: string; isFallback: boolean; contactName: string | null };
+
+function getPhone(customer: Customer, contacts: Contact[]): ContactField {
+  const contact = getMostRecentContact(customer.id, contacts);
+  const fromContact = contact?.phone ?? contact?.mobile ?? null;
+  if (fromContact) return { value: fromContact, isFallback: false, contactName: `${contact!.firstName} ${contact!.lastName}` };
+  return { value: customer.phone ?? '—', isFallback: true, contactName: null };
+}
+
+function getEmail(customer: Customer, contacts: Contact[]): ContactField {
+  const contact = getMostRecentContact(customer.id, contacts);
+  if (contact?.email) return { value: contact.email, isFallback: false, contactName: `${contact.firstName} ${contact.lastName}` };
+  return { value: customer.email ?? '—', isFallback: true, contactName: null };
+}
+
+function ContactCell({ field }: { field: ContactField }) {
+  if (field.value === '—') return <span>—</span>;
+  return (
+    <span className="flex items-center gap-2">
+      {field.value}
+      {field.isFallback ? (
+        <span
+          title="No contact record found — showing company details"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200 shrink-0"
+        >
+          <Building2 size={9} />
+          Company
+        </span>
+      ) : (
+        <span
+          title={`From contact: ${field.contactName}`}
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-200 shrink-0"
+        >
+          <User size={9} />
+          {field.contactName}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export default function ArrOverviewPage() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<SortField>('arr');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
+  const [filterLanguage, setFilterLanguage] = useState('all');
+  const [arrMin, setArrMin] = useState('');
+  const [arrMax, setArrMax] = useState('');
+
+  useCustomers();
+  const { customers: allCustomers, allContacts } = useCustomerStore();
+
+  const languageOptions = useMemo(() => {
+    const langs = new Set(allCustomers.map((c) => c.language).filter(Boolean) as string[]);
+    return Array.from(langs).sort();
+  }, [allCustomers]);
+
+  const activeFilterCount =
+    (filterCloud !== 'all' ? 1 : 0) +
+    (filterLanguage !== 'all' ? 1 : 0) +
+    (arrMin !== '' ? 1 : 0) +
+    (arrMax !== '' ? 1 : 0);
+
+  function clearFilters() {
+    setFilterCloud('all');
+    setFilterLanguage('all');
+    setArrMin('');
+    setArrMax('');
+  }
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const min = arrMin !== '' ? Number(arrMin) : null;
+    const max = arrMax !== '' ? Number(arrMax) : null;
+    const rows = allCustomers.filter((c) => {
+      if (q && !(
+        c.name.toLowerCase().includes(q) ||
+        (c.bcn ?? '').toLowerCase().includes(q) ||
+        (c.language ?? '').toLowerCase().includes(q)
+      )) return false;
+      if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
+      if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
+      if (filterLanguage !== 'all' && c.language !== filterLanguage) return false;
+      if (min !== null && (c.arr === null || c.arr < min)) return false;
+      if (max !== null && (c.arr === null || c.arr > max)) return false;
+      return true;
+    });
+    return [...rows].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === 'arr') {
+        if (a.arr === null && b.arr === null) cmp = 0;
+        else if (a.arr === null) cmp = 1;
+        else if (b.arr === null) cmp = -1;
+        else cmp = a.arr - b.arr;
+      } else if (sortBy === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortBy === 'language') {
+        cmp = (a.language ?? '').localeCompare(b.language ?? '');
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
+
+  function handleExport() {
+    const rows = filtered.map((c) => ({
+      'Customer Name': c.name,
+      BCN: c.bcn ?? '',
+      Phone: getPhone(c, allContacts).value,
+      Email: getEmail(c, allContacts).value,
+      'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
+      Language: c.language ?? '',
+      'ARR (€)': c.arr ?? '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ARR Overview');
+
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `arr-overview-${date}.xlsx`);
+  }
+
+  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : 'language';
+  const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
+
+  return (
+    <AuthGuard>
+      <AppShell title="ARR Overview">
+        <div className="space-y-3">
+          {/* Title */}
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">ARR Overview</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {filtered.length} customer{filtered.length !== 1 ? 's' : ''} · sorted by {sortLabel} ({dirLabel})
+            </p>
+          </div>
+
+          {/* Row 1: Search + Sort + Filters + Export */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+              <Input
+                placeholder="Search name, BCN or language…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 pr-8"
+              />
+              {searchQuery && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortField)}>
+                <SelectTrigger className="h-9 w-[140px] gap-1">
+                  <ArrowUpDown size={13} className="text-muted-foreground flex-shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="arr">ARR</SelectItem>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="language">Language</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+                onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+              </Button>
+            </div>
+
+            <Button
+              variant={showFilters || activeFilterCount > 0 ? 'default' : 'outline'}
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => setShowFilters((v) => !v)}
+            >
+              <SlidersHorizontal size={13} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-0.5 bg-white text-blue-700 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" className="h-9 text-muted-foreground" onClick={clearFilters}>
+                <X size={13} className="mr-1" />
+                Clear all
+              </Button>
+            )}
+
+            <button
+              onClick={handleExport}
+              className={cn(
+                'ml-auto flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',
+                'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors'
+              )}
+            >
+              <Download size={14} />
+              Export to Excel
+            </button>
+          </div>
+
+          {/* Row 2: Collapsible filter panel */}
+          {showFilters && (
+            <div className="bg-slate-50 border rounded-lg p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Cloud Customer</label>
+                <Select value={filterCloud} onValueChange={(v) => setFilterCloud(v as 'all' | 'yes' | 'no')}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">Language</label>
+                <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All languages</SelectItem>
+                    {languageOptions.map((lang) => (
+                      <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">ARR min (€)</label>
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={arrMin}
+                  onChange={(e) => setArrMin(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500">ARR max (€)</label>
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={arrMax}
+                  onChange={(e) => setArrMax(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {filterCloud !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  onClick={() => setFilterCloud('all')}
+                >
+                  Cloud: {filterCloud} <X size={10} />
+                </Badge>
+              )}
+              {filterLanguage !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  onClick={() => setFilterLanguage('all')}
+                >
+                  {filterLanguage} <X size={10} />
+                </Badge>
+              )}
+              {arrMin !== '' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  onClick={() => setArrMin('')}
+                >
+                  ARR ≥ €{Number(arrMin).toLocaleString('nl-BE')} <X size={10} />
+                </Badge>
+              )}
+              {arrMax !== '' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  onClick={() => setArrMax('')}
+                >
+                  ARR ≤ €{Number(arrMax).toLocaleString('nl-BE')} <X size={10} />
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Table */}
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Customer Name</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">BCN</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Phone</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Email</th>
+                    <th className="text-center px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Cloud Customer</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Language</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">ARR</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                        No customers match your search.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((customer, index) => (
+                      <tr
+                        key={customer.id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{index + 1}</td>
+                        <td className="px-4 py-3 font-medium">
+                          <button
+                            onClick={() => router.push(`/customers/${customer.id}`)}
+                            className="text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
+                          >
+                            {customer.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                          {customer.bcn ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <ContactCell field={getPhone(customer, allContacts)} />
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <ContactCell field={getEmail(customer, allContacts)} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {customer.cloudCustomer === true ? (
+                            <Badge variant="default" className="text-xs">Yes</Badge>
+                          ) : customer.cloudCustomer === false ? (
+                            <Badge variant="secondary" className="text-xs">No</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{customer.language ?? '—'}</td>
+                        <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                          {formatArr(customer.arr)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    </AuthGuard>
+  );
+}

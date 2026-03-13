@@ -2,6 +2,7 @@ export interface Customer {
   id: string;
   name: string;
   accountNumber: string | null;
+  bcn: string | null;
   industry: string | null;
   segment: string | null;
   ownerId: string | null;
@@ -12,6 +13,9 @@ export interface Customer {
   addressCity: string | null;
   addressCountry: string | null;
   website: string | null;
+  cloudCustomer: boolean | null;
+  language: string | null;
+  arr: number | null;
   status: 'active' | 'inactive';
   lastActivityAt: string | null;
   syncedAt: string;
@@ -29,6 +33,7 @@ export interface Contact {
   phone: string | null;
   mobile: string | null;
   notes: string | null;
+  contactType: string | null;
   syncedAt: string;
   createdAt: string;
   updatedAt: string;

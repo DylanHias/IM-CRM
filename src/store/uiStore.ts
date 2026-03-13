@@ -1,12 +1,5 @@
 import { create } from 'zustand';
 
-interface Toast {
-  id: string;
-  title: string;
-  description?: string;
-  variant?: 'default' | 'destructive';
-}
-
 interface UIState {
   sidebarOpen: boolean;
   activeCustomerTab: string;
