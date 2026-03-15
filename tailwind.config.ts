@@ -12,7 +12,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
-          '"Helvetica Neue"', 'Helvetica', '-apple-system',
+          'var(--font-sans)', '"DM Sans"', '-apple-system',
           'BlinkMacSystemFont', '"Segoe UI"', 'Arial', 'sans-serif',
         ],
         serif: [

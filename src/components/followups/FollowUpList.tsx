@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Plus, CheckSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,47 +66,70 @@ export function FollowUpList({ followUps, customerId, onComplete }: FollowUpList
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-700">
-          Follow-Ups ({open.length} open)
-        </h3>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 gap-1.5 text-xs"
-          onClick={() => router.push(`/followups/new?customerId=${customerId}`)}
-        >
-          <Plus size={13} />
-          Add Follow-Up
-        </Button>
-      </div>
-
       {followUps.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <CheckSquare size={28} className="text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">No follow-ups yet</p>
+        <div>
+          <div className="flex justify-end mb-3">
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => router.push(`/followups/new?customerId=${customerId}`)}
+            >
+              <Plus size={13} />
+              Add Follow-Up
+            </Button>
+          </div>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <CheckSquare size={28} className="text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">No follow-ups yet</p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
           {open.length > 0 && (
-            <div className="bg-white border rounded-lg px-4 divide-y">
-              {open.map((f) => (
-                <FollowUpItem
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-muted-foreground">Scheduled ({open.length})</p>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => router.push(`/followups/new?customerId=${customerId}`)}
+                >
+                  <Plus size={13} />
+                  Add Follow-Up
+                </Button>
+              </div>
+              <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
+              {open.map((f, i) => (
+                <motion.div
                   key={f.id}
-                  followUp={f}
-                  onComplete={onComplete}
-                  onEdit={() => openEdit(f)}
-                  onDelete={() => handleDelete(f)}
-                />
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+                >
+                  <FollowUpItem
+                    followUp={f}
+                    onComplete={onComplete}
+                    onEdit={() => openEdit(f)}
+                    onDelete={() => handleDelete(f)}
+                  />
+                </motion.div>
               ))}
+              </div>
             </div>
           )}
           {done.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-2">Completed ({done.length})</p>
-              <div className="bg-white border rounded-lg px-4 divide-y">
-                {done.map((f) => (
-                  <FollowUpItem key={f.id} followUp={f} />
+              <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
+                {done.map((f, i) => (
+                  <motion.div
+                    key={f.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+                  >
+                    <FollowUpItem followUp={f} />
+                  </motion.div>
                 ))}
               </div>
             </div>

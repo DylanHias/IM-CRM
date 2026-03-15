@@ -1,18 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2 } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
-const SidebarContainer = styled.aside`
-  width: 220px;
-  min-width: 220px;
+const SIDEBAR_COLLAPSED_WIDTH = 60;
+const SIDEBAR_EXPANDED_WIDTH = 200;
+
+const SidebarContainer = styled(motion.aside)`
   background-color: hsl(var(--sidebar-bg));
-  border-right: 1px solid hsl(var(--sidebar-border));
+  box-shadow: 1px 0 0 hsl(var(--sidebar-border));
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -21,123 +23,161 @@ const SidebarContainer = styled.aside`
 `;
 
 const Logo = styled.div`
-  padding: 18px 16px;
-  border-bottom: 1px solid hsl(var(--sidebar-border));
+  padding: 14px 12px;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
+  width: 100%;
+  border-bottom: 1px solid hsl(var(--sidebar-border));
+  overflow: hidden;
 `;
 
 const LogoBadge = styled.div`
-  width: 36px;
-  height: 36px;
-  background: #1570ef;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #1570ef 0%, #0ea5e9 100%);
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: white;
   letter-spacing: -0.5px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(21, 112, 239, 0.35);
 `;
 
 const LogoText = styled.span`
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: hsl(var(--sidebar-fg));
-  letter-spacing: -0.3px;
-`;
-
-const LogoSub = styled.span`
-  font-size: 11px;
-  color: hsl(var(--muted-foreground));
-  font-weight: 500;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  overflow: hidden;
 `;
 
 const NavSection = styled.nav`
   flex: 1;
-  padding: 10px 8px;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   overflow-y: auto;
+  width: 100%;
 `;
 
-const NavLabel = styled.div`
-  padding: 6px 8px 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: hsl(var(--muted-foreground));
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 2px;
-`;
-
-const NavLink = styled(Link) <{ $active: boolean }>`
+const NavItem = styled(Link)<{ $active: boolean }>`
+  position: relative;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px 12px 9px 14px;
-  border-radius: 6px;
-  font-size: 13.5px;
-  font-weight: ${(p) => (p.$active ? '600' : '500')};
+  gap: 10px;
+  padding: 0 12px;
+  width: 100%;
+  overflow: hidden;
   color: ${(p) =>
     p.$active ? 'hsl(var(--sidebar-active-fg))' : 'hsl(var(--sidebar-fg))'};
   background-color: ${(p) =>
     p.$active ? 'hsl(var(--sidebar-active-bg))' : 'transparent'};
-  border-left: 2px solid ${(p) =>
-    p.$active ? 'hsl(var(--primary))' : 'transparent'};
   text-decoration: none;
-  margin-bottom: 2px;
-  transition: all 0.15s ease;
-  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
 
   &:hover {
     background-color: ${(p) =>
-    p.$active ? 'hsl(var(--sidebar-active-bg))' : 'hsl(var(--sidebar-hover-bg))'};
+      p.$active ? 'hsl(var(--sidebar-active-bg))' : 'hsl(var(--sidebar-hover-bg))'};
     color: ${(p) =>
-    p.$active ? 'hsl(var(--sidebar-active-fg))' : 'hsl(var(--foreground))'};
-    border-left-color: ${(p) =>
-    p.$active ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.4)'};
+      p.$active ? 'hsl(var(--sidebar-active-fg))' : 'hsl(var(--foreground))'};
   }
 `;
 
-const BadgePill = styled.span<{ $variant: 'destructive' | 'warning' }>`
-  margin-left: auto;
+const NavLabel = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+`;
+
+const IconWrapper = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 17px;
+`;
+
+const BadgeDot = styled.span<{ $variant: 'destructive' | 'warning' }>`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background-color: ${(p) =>
     p.$variant === 'destructive'
       ? 'hsl(var(--destructive))'
       : 'hsl(var(--warning))'};
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
-  line-height: 1.4;
+  border: 1.5px solid hsl(var(--sidebar-bg));
 `;
 
 const Footer = styled.div`
-  padding: 12px 16px;
+  padding: 10px 10px;
   border-top: 1px solid hsl(var(--sidebar-border));
-  font-size: 11px;
+  width: 100%;
+`;
+
+const VersionLabel = styled.div`
+  height: 32px;
+  border-radius: 8px;
+  background-color: hsl(var(--muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
   color: hsl(var(--muted-foreground));
-  line-height: 1.6;
+  letter-spacing: -0.3px;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+`;
+
+const ToggleButton = styled.button`
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  width: 100%;
+  overflow: hidden;
+  color: hsl(var(--sidebar-fg));
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: hsl(var(--sidebar-hover-bg));
+    color: hsl(var(--foreground));
+  }
 `;
 
 const containerVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.03, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.04, delayChildren: 0.05 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -8 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+  hidden: { opacity: 0, scale: 0.85 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.18, ease: 'easeOut' as const } },
 };
 
 export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount } = useFollowUpStore();
@@ -164,18 +204,19 @@ export function Sidebar() {
   ];
 
   return (
-    <SidebarContainer>
+    <SidebarContainer
+      animate={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
+      transition={{ duration: 0.2, ease: 'easeInOut' }}
+      style={{ minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
+    >
       <Logo>
-        <LogoBadge>IM</LogoBadge>
-        <div className="flex flex-col">
-          <LogoText>Ingram CRM</LogoText>
-          <LogoSub>Field Sales</LogoSub>
-        </div>
+        <LogoBadge title="Ingram Micro CRM">IM</LogoBadge>
+        <LogoText>Ingram Micro</LogoText>
       </Logo>
 
       <NavSection>
-        <NavLabel>Navigation</NavLabel>
         <motion.div
+          style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -183,28 +224,34 @@ export function Sidebar() {
           {navItems.map(({ href, label, icon: Icon, badge, badgeVariant }) => {
             const isActive = pathname.startsWith(href);
             return (
-              <motion.div key={href} variants={itemVariants}>
-                <NavLink href={href} $active={isActive}>
-                  <Icon size={15} />
-                  {label}
+              <motion.div key={href} variants={itemVariants} style={{ width: '100%' }}>
+                <NavItem href={href} $active={isActive} title={label}>
+                  <IconWrapper><Icon size={17} /></IconWrapper>
+                  <NavLabel>{label}</NavLabel>
                   {badge && (
-                    <BadgePill
-                      $variant={badgeVariant}
-                      className={badge > 0 ? 'animate-pulse' : ''}
-                    >
-                      {badge}
-                    </BadgePill>
+                    <BadgeDot $variant={badgeVariant} />
                   )}
-                </NavLink>
+                </NavItem>
               </motion.div>
             );
           })}
         </motion.div>
+
+        <div style={{ padding: '0 10px' }}>
+          <ToggleButton
+            onClick={() => setCollapsed((prev) => !prev)}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <IconWrapper>
+              {collapsed ? <ChevronsRight size={17} /> : <ChevronsLeft size={17} />}
+            </IconWrapper>
+            <NavLabel>Collapse</NavLabel>
+          </ToggleButton>
+        </div>
       </NavSection>
 
       <Footer>
-        <div>Ingram Micro CRM</div>
-        <div>v0.3.5</div>
+        <VersionLabel title="v0.3.5">v0.3.5</VersionLabel>
       </Footer>
     </SidebarContainer>
   );

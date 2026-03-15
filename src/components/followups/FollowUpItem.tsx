@@ -2,7 +2,6 @@
 
 import { CheckSquare, Square, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { formatDueDate } from '@/lib/utils/dateUtils';
 import type { FollowUp } from '@/types/entities';
 
@@ -17,7 +16,7 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
   const { label: dueDateLabel, isOverdue } = formatDueDate(followUp.dueDate);
 
   return (
-    <div className={`flex items-start gap-3 py-3 border-b last:border-b-0 group ${followUp.completed ? 'opacity-50' : ''}`}>
+    <div className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''}`}>
       <button
         className="mt-0.5 flex-shrink-0 text-blue-500 hover:text-blue-600 disabled:cursor-not-allowed"
         onClick={() => !followUp.completed && onComplete?.(followUp.id)}
@@ -32,35 +31,48 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${followUp.completed ? 'line-through text-muted-foreground' : 'text-slate-900'}`}>
-          {followUp.title}
-        </p>
-        {followUp.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{followUp.description}</p>
-        )}
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
-            {isOverdue && !followUp.completed && <AlertCircle size={11} />}
-            <Calendar size={10} />
-            {dueDateLabel}
-          </span>
-          {followUp.syncStatus === 'pending' && !followUp.completed && (
-            <Badge variant="warning" className="text-xs">Pending sync</Badge>
-          )}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className={`text-sm font-medium ${followUp.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+              {followUp.title}
+            </p>
+            {followUp.description && (
+              <p className="text-[13px] text-muted-foreground mt-0.5">{followUp.description}</p>
+            )}
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                {isOverdue && !followUp.completed && <AlertCircle size={11} />}
+                <Calendar size={10} />
+                {dueDateLabel}
+              </span>
+              {followUp.syncStatus === 'pending' && !followUp.completed && (
+                <Badge variant="warning" className="text-[10px]">Pending sync</Badge>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
       {!followUp.completed && (
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {onEdit && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit} title="Edit">
-              <Pencil size={13} />
-            </Button>
+            <button
+              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
+              onClick={onEdit}
+              title="Edit"
+            >
+              <Pencil size={11} />
+            </button>
           )}
           {onDelete && (
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={onDelete} title="Delete">
-              <Trash2 size={13} />
-            </Button>
+            <button
+              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+              onClick={onDelete}
+              title="Delete"
+            >
+              <Trash2 size={11} />
+            </button>
           )}
         </div>
       )}

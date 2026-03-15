@@ -68,12 +68,12 @@ export function CustomerFilters() {
       {/* Row 1: Search + Sort + Filter toggle */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
           <Input
             placeholder="Search customers or contacts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 pr-8"
+            className="pl-9 h-9 pr-8 bg-card shadow-sm border-border/70 rounded-lg"
           />
           {searchQuery && (
             <button
@@ -135,9 +135,9 @@ export function CustomerFilters() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-slate-50 border rounded-lg p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 shadow-sm">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-500">Status</label>
+            <label className="text-xs font-medium text-muted-foreground">Status</label>
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as 'all' | 'active' | 'inactive')}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -150,7 +150,7 @@ export function CustomerFilters() {
 
           {owners.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">Owner</label>
+              <label className="text-xs font-medium text-muted-foreground">Owner</label>
               <Select value={filterOwnerId ?? 'all'} onValueChange={(v) => setFilterOwnerId(v === 'all' ? null : v)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All owners" /></SelectTrigger>
                 <SelectContent>
@@ -163,7 +163,7 @@ export function CustomerFilters() {
 
           {industries.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">Industry</label>
+              <label className="text-xs font-medium text-muted-foreground">Industry</label>
               <Select value={filterIndustry ?? 'all'} onValueChange={(v) => setFilterIndustry(v === 'all' ? null : v)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All industries" /></SelectTrigger>
                 <SelectContent>
@@ -176,7 +176,7 @@ export function CustomerFilters() {
 
           {segments.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">Segment</label>
+              <label className="text-xs font-medium text-muted-foreground">Segment</label>
               <Select value={filterSegment ?? 'all'} onValueChange={(v) => setFilterSegment(v === 'all' ? null : v)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All segments" /></SelectTrigger>
                 <SelectContent>
@@ -189,7 +189,7 @@ export function CustomerFilters() {
 
           {countries.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">Country</label>
+              <label className="text-xs font-medium text-muted-foreground">Country</label>
               <Select value={filterCountry ?? 'all'} onValueChange={(v) => setFilterCountry(v === 'all' ? null : v)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All countries" /></SelectTrigger>
                 <SelectContent>
@@ -201,7 +201,7 @@ export function CustomerFilters() {
           )}
 
           <div className="space-y-1 flex flex-col">
-            <label className="text-xs font-medium text-slate-500">Activity</label>
+            <label className="text-xs font-medium text-muted-foreground">Activity</label>
             <Button
               variant={filterNoRecentActivity ? 'default' : 'outline'}
               size="sm"
@@ -218,32 +218,32 @@ export function CustomerFilters() {
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {filterStatus !== 'all' && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={() => setFilterStatus('all')}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterStatus('all')}>
               {filterStatus} <X size={10} />
             </Badge>
           )}
           {filterOwnerId && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={() => setFilterOwnerId(null)}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterOwnerId(null)}>
               {owners.find((o) => o.id === filterOwnerId)?.name ?? 'Owner'} <X size={10} />
             </Badge>
           )}
           {filterIndustry && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={() => setFilterIndustry(null)}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterIndustry(null)}>
               {filterIndustry} <X size={10} />
             </Badge>
           )}
           {filterSegment && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={() => setFilterSegment(null)}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterSegment(null)}>
               {filterSegment} <X size={10} />
             </Badge>
           )}
           {filterCountry && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={() => setFilterCountry(null)}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCountry(null)}>
               {filterCountry} <X size={10} />
             </Badge>
           )}
           {filterNoRecentActivity && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-slate-200" onClick={toggleNoRecentActivityFilter}>
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={toggleNoRecentActivityFilter}>
               No recent activity <X size={10} />
             </Badge>
           )}

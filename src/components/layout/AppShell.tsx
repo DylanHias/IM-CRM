@@ -24,20 +24,26 @@ const Main = styled.main`
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 28px;
+  padding: 24px 28px;
 `;
+
+interface Breadcrumb {
+  label: string;
+  href?: string;
+}
 
 interface AppShellProps {
   children: React.ReactNode;
   title?: string;
+  breadcrumbs?: Breadcrumb[];
 }
 
-export function AppShell({ children, title }: AppShellProps) {
+export function AppShell({ children, title, breadcrumbs }: AppShellProps) {
   return (
     <Shell>
       <Sidebar />
       <Main>
-        <TopBar title={title} />
+        <TopBar title={title} breadcrumbs={breadcrumbs} />
         <Content>
           <PageMotion>{children}</PageMotion>
         </Content>

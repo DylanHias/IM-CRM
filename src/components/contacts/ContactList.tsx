@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Mail, Phone, Smartphone, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactForm } from '@/components/contacts/ContactForm';
@@ -69,8 +70,14 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
         </div>
       ) : (
         <div className="grid gap-3">
-          {contacts.map((contact) => (
-            <div key={contact.id} className="bg-white border rounded-lg p-4 group">
+          {contacts.map((contact, i) => (
+            <motion.div
+              key={contact.id}
+              className="bg-white border rounded-lg p-4 group"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(i * 0.06, 0.36), ease: 'easeOut' }}
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
@@ -86,13 +93,21 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
                   </div>
                 </div>
 
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(contact)} title="Edit">
-                    <Pencil size={13} />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(contact)} title="Delete">
-                    <Trash2 size={13} />
-                  </Button>
+                <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  <button
+                    className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
+                    onClick={() => openEdit(contact)}
+                    title="Edit"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                  <button
+                    className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                    onClick={() => handleDelete(contact)}
+                    title="Delete"
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 </div>
               </div>
 
@@ -118,9 +133,9 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
               </div>
 
               {contact.notes && (
-                <p className="mt-2 text-xs text-slate-500 italic border-t pt-2">{contact.notes}</p>
+                <p className="mt-2 text-xs text-muted-foreground italic border-t pt-2">{contact.notes}</p>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

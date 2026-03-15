@@ -66,7 +66,7 @@ export default function FollowUpsPage() {
                 <h3 className="text-sm font-semibold text-destructive">Overdue</h3>
                 <Badge variant="destructive">{overdue.length}</Badge>
               </div>
-              <div className="bg-card border border-destructive/20 rounded-lg px-4 divide-y divide-border">
+              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60">
                 {overdue.map((f) => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
@@ -82,7 +82,7 @@ export default function FollowUpsPage() {
           {upcoming.length > 0 && (
             <section>
               <h3 className="text-sm font-semibold text-foreground mb-3">Upcoming ({upcoming.length})</h3>
-              <div className="bg-card border border-border rounded-lg px-4 divide-y divide-border">
+              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
                 {upcoming.map((f) => (
                   <div key={f.id}>
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
@@ -98,7 +98,7 @@ export default function FollowUpsPage() {
           {done.length > 0 && (
             <section>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Recently Completed</h3>
-              <div className="bg-card border border-border rounded-lg px-4 divide-y divide-border">
+              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
                 {done.map((f) => (
                   <FollowUpItem key={f.id} followUp={f} />
                 ))}

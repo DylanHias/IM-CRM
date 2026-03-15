@@ -180,7 +180,7 @@ export default function ArrOverviewPage() {
                 placeholder="Search name, BCN or language…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 pr-8"
+                className="pl-9 h-9 pr-8 bg-card shadow-sm border-border/70 rounded-lg"
               />
               {searchQuery && (
                 <button
@@ -251,9 +251,9 @@ export default function ArrOverviewPage() {
 
           {/* Row 2: Collapsible filter panel */}
           {showFilters && (
-            <div className="bg-slate-50 border rounded-lg p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 shadow-sm">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Cloud Customer</label>
+                <label className="text-xs font-medium text-muted-foreground">Cloud Customer</label>
                 <Select value={filterCloud} onValueChange={(v) => setFilterCloud(v as 'all' | 'yes' | 'no')}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -264,7 +264,7 @@ export default function ArrOverviewPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">Language</label>
+                <label className="text-xs font-medium text-muted-foreground">Language</label>
                 <Select value={filterLanguage} onValueChange={setFilterLanguage}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -276,7 +276,7 @@ export default function ArrOverviewPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">ARR min (€)</label>
+                <label className="text-xs font-medium text-muted-foreground">ARR min (€)</label>
                 <Input
                   type="number"
                   placeholder="Min"
@@ -286,7 +286,7 @@ export default function ArrOverviewPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500">ARR max (€)</label>
+                <label className="text-xs font-medium text-muted-foreground">ARR max (€)</label>
                 <Input
                   type="number"
                   placeholder="Max"
@@ -304,7 +304,7 @@ export default function ArrOverviewPage() {
               {filterCloud !== 'all' && (
                 <Badge
                   variant="secondary"
-                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
                   onClick={() => setFilterCloud('all')}
                 >
                   Cloud: {filterCloud} <X size={10} />
@@ -313,7 +313,7 @@ export default function ArrOverviewPage() {
               {filterLanguage !== 'all' && (
                 <Badge
                   variant="secondary"
-                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
                   onClick={() => setFilterLanguage('all')}
                 >
                   {filterLanguage} <X size={10} />
@@ -322,7 +322,7 @@ export default function ArrOverviewPage() {
               {arrMin !== '' && (
                 <Badge
                   variant="secondary"
-                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
                   onClick={() => setArrMin('')}
                 >
                   ARR ≥ €{Number(arrMin).toLocaleString('nl-BE')} <X size={10} />
@@ -331,7 +331,7 @@ export default function ArrOverviewPage() {
               {arrMax !== '' && (
                 <Badge
                   variant="secondary"
-                  className="gap-1 cursor-pointer hover:bg-slate-200"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
                   onClick={() => setArrMax('')}
                 >
                   ARR ≤ €{Number(arrMax).toLocaleString('nl-BE')} <X size={10} />
@@ -341,11 +341,11 @@ export default function ArrOverviewPage() {
           )}
 
           {/* Table */}
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/40">
+                  <tr className="border-b border-border/70 bg-muted/30">
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Customer Name</th>
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">BCN</th>
@@ -356,7 +356,7 @@ export default function ArrOverviewPage() {
                     <th className="text-right px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">ARR</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-border/60">
                   {filtered.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">

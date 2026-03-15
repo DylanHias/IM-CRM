@@ -6,7 +6,14 @@
       "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Program Files\\\\nodejs''; Test-Path ''C:\\\\Users\\\\behiad00\\\\.cargo\\\\bin\\\\rustc.exe''; Test-Path ''C:\\\\Users\\\\behiad00\\\\AppData\\\\Roaming\\\\nvm''; Get-ChildItem ''C:\\\\Users\\\\behiad00'' -Directory -ErrorAction SilentlyContinue | Select-Object Name\")",
       "Bash(pnpm add:*)",
       "Bash(pnpm lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "Bash(cd:*)",
+      "Bash(sleep:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

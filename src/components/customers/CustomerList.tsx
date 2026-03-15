@@ -13,34 +13,34 @@ const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid hsl(var(--border));
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: hsl(var(--card));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
 `;
 
 const Row = styled.div`
   display: flex;
   align-items: center;
-  padding: 14px 18px;
+  padding: 13px 18px;
   cursor: pointer;
-  border-bottom: 1px solid hsl(var(--border));
-  transition: background-color 0.12s ease;
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+  transition: background-color 0.1s ease;
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background-color: hsl(var(--muted));
+    background-color: hsl(var(--muted) / 0.6);
   }
 `;
 
 const Icon = styled.div`
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background-color: hsl(var(--primary) / 0.1);
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background-color: hsl(var(--primary) / 0.09);
   display: flex;
   align-items: center;
   justify-content: center;

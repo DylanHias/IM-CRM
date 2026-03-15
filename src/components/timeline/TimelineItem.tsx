@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Users, MapPin, FileText, GraduationCap, CheckSquare, Calendar } from 'lucide-react';
+import { Phone, Users, MapPin, FileText, GraduationCap, CheckSquare, Calendar, MessageCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils/dateUtils';
 import type { TimelineEvent } from '@/types/entities';
@@ -14,32 +14,68 @@ const ACTIVITY_CONFIG = {
 
 interface TimelineItemProps {
   event: TimelineEvent;
-  isLast: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function TimelineItem({ event, isLast }: TimelineItemProps) {
+export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
   if (event.kind === 'activity') {
     const config = ACTIVITY_CONFIG[event.type];
     const Icon = config.icon;
     return (
-      <div className="flex gap-4 pb-4 ml-0">
-        <div className="relative z-10 flex-shrink-0">
+      <div className="flex gap-3.5 px-4 py-3.5 group">
+        <div className="relative z-10 flex-shrink-0 mt-0.5">
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-card"
+            className="w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card"
             style={{ backgroundColor: config.bg }}
           >
-            <Icon size={14} style={{ color: config.color }} />
+            <Icon size={15} style={{ color: config.color }} />
           </div>
         </div>
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">{event.subject}</span>
-            <Badge variant="outline" className="text-xs capitalize">{config.label}</Badge>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm text-foreground">
+                <span className="font-medium">{event.subject}</span>
+              </p>
+              {event.description && (
+                <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{event.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1">
+                  <MessageCircle size={11} />
+                  {event.createdByName}
+                </span>
+              </p>
+            </div>
+            <div className="flex items-start gap-1.5 flex-shrink-0">
+              <span className="text-xs text-muted-foreground whitespace-nowrap pt-0.5 transition-transform duration-150 translate-x-8 group-hover:translate-x-0">
+                {formatDate(event.occurredAt)}
+              </span>
+              {(onEdit || onDelete) && (
+                <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  {onEdit && (
+                    <button
+                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
+                      onClick={onEdit}
+                      title="Edit"
+                    >
+                      <Pencil size={11} />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                      onClick={onDelete}
+                      title="Delete"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          {event.description && (
-            <p className="text-sm text-foreground/75 mt-1 line-clamp-2">{event.description}</p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">{formatDate(event.occurredAt)} · {event.createdByName}</p>
         </div>
       </div>
     );
@@ -49,22 +85,29 @@ export function TimelineItem({ event, isLast }: TimelineItemProps) {
     const statusLabel = event.status === 'completed' ? 'Completed' : event.status === 'registered' ? 'Upcoming' : 'Cancelled';
     const statusVariant = event.status === 'completed' ? 'success' : event.status === 'registered' ? 'info' : 'secondary';
     return (
-      <div className="flex gap-4 pb-4">
-        <div className="relative z-10 flex-shrink-0">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-card bg-indigo-50">
-            <GraduationCap size={14} className="text-indigo-500" />
+      <div className="flex gap-3.5 px-4 py-3.5 group">
+        <div className="relative z-10 flex-shrink-0 mt-0.5">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center bg-indigo-50 ring-[3px] ring-card">
+            <GraduationCap size={15} className="text-indigo-500" />
           </div>
         </div>
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">{event.title}</span>
-            <Badge variant={statusVariant} className="text-xs">{statusLabel}</Badge>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm text-foreground">
+                <span className="font-medium">{event.title}</span>
+                {' '}
+                <Badge variant={statusVariant} className="text-[10px] ml-1 align-middle">{statusLabel}</Badge>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {event.provider}
+                {event.participant && ` \u00b7 ${event.participant}`}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
+              {formatDate(event.trainingDate)}
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {formatDate(event.trainingDate)}
-            {event.provider && ` · ${event.provider}`}
-            {event.participant && ` · ${event.participant}`}
-          </p>
         </div>
       </div>
     );
@@ -72,28 +115,38 @@ export function TimelineItem({ event, isLast }: TimelineItemProps) {
 
   // followup
   return (
-    <div className="flex gap-4 pb-4">
-      <div className="relative z-10 flex-shrink-0">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 border-card ${event.completed ? 'bg-green-50' : 'bg-amber-50'}`}>
+    <div className="flex gap-3.5 px-4 py-3.5 group">
+      <div className="relative z-10 flex-shrink-0 mt-0.5">
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-green-50' : 'bg-amber-50'}`}>
           {event.completed
-            ? <CheckSquare size={14} className="text-green-500" />
-            : <Calendar size={14} className="text-amber-500" />
+            ? <CheckSquare size={15} className="text-green-500" />
+            : <Calendar size={15} className="text-amber-500" />
           }
         </div>
       </div>
-      <div className="flex-1 min-w-0 pt-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-semibold ${event.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-            {event.title}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-foreground">
+              <span className={`font-medium ${event.completed ? 'line-through text-muted-foreground' : ''}`}>
+                {event.title}
+              </span>
+              {' '}
+              <Badge variant={event.completed ? 'success' : 'warning'} className="text-[10px] ml-1 align-middle">
+                {event.completed ? 'Done' : 'Open'}
+              </Badge>
+            </p>
+            {event.description && (
+              <p className="text-[13px] text-muted-foreground mt-0.5">{event.description}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${event.createdByName}`}
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
+            {formatDate(event.dueDate)}
           </span>
-          <Badge variant={event.completed ? 'success' : 'warning'} className="text-xs">
-            {event.completed ? 'Done' : 'Open'}
-          </Badge>
         </div>
-        {event.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
-        )}
-        <p className="text-xs text-muted-foreground mt-1">Due {formatDate(event.dueDate)}</p>
       </div>
     </div>
   );
