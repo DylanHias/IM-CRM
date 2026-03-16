@@ -8,6 +8,7 @@ function rowToCustomer(row: CustomerRow): Customer {
     name: row.name,
     accountNumber: row.account_number,
     bcn: null,
+    resellerId: null,
     industry: row.industry,
     segment: row.segment,
     ownerId: row.owner_id,

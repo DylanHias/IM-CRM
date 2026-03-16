@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { motion } from 'framer-motion';
@@ -200,6 +200,7 @@ export function Sidebar() {
       badge: overdueCount > 0 ? overdueCount : undefined,
       badgeVariant: 'destructive' as const,
     },
+    { href: '/invoices', label: 'Invoices', icon: FileText },
     { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
   ];
 

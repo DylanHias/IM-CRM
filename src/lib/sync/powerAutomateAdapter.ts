@@ -21,6 +21,7 @@ function mapSpCustomerToCustomer(item: SpCustomerItem, now: string): Customer {
     name: f.Title,
     accountNumber: f.AccountNumber,
     bcn: null,
+    resellerId: null,
     industry: f.Industry,
     segment: null,
     ownerId: f.OwnerId,

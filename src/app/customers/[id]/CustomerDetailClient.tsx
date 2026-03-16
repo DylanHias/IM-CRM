@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Info, Loader2,
-  Mail, Phone, Globe,
+  Mail, Phone, Globe, FileText,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthGuard } from '@/components/layout/AuthGuard';
@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ContactList } from '@/components/contacts/ContactList';
 
 import { TrainingList } from '@/components/trainings/TrainingList';
+import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
@@ -31,9 +32,10 @@ import { queryTrainingsByCustomer } from '@/lib/db/queries/trainings';
 import { mockContacts } from '@/lib/mock/contacts';
 import { mockTrainings } from '@/lib/mock/trainings';
 import { todayISO } from '@/lib/utils/dateUtils';
+import { getCountryCode } from '@/lib/utils/countryUtils';
 import type { Activity, Contact, Training } from '@/types/entities';
 
-type ProfileTab = 'overview' | 'activities' | 'contacts' | 'trainings' | 'followups';
+type ProfileTab = 'overview' | 'activities' | 'contacts' | 'trainings' | 'followups' | 'invoices';
 
 export default function CustomerDetailClient() {
   const params = useParams();
@@ -117,6 +119,7 @@ export default function CustomerDetailClient() {
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'trainings', label: 'Trainings', icon: Info, count: trainings.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
+    { key: 'invoices', label: 'Invoices', icon: FileText },
   ], [activities.length, contacts.length, trainings.length, followUps.length]);
 
 
@@ -437,6 +440,19 @@ export default function CustomerDetailClient() {
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
                     <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} />
+                  </motion.div>
+                )}
+
+                {/* Invoices Tab */}
+                {activeTab === 'invoices' && (
+                  <motion.div
+                    key="invoices"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
+                    <InvoiceList resellerId={customer.resellerId} countryCode={getCountryCode(customer.addressCountry)} />
                   </motion.div>
                 )}
               </AnimatePresence>

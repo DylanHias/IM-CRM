@@ -3,6 +3,7 @@ export interface Customer {
   name: string;
   accountNumber: string | null;
   bcn: string | null;
+  resellerId: string | null;
   industry: string | null;
   segment: string | null;
   ownerId: string | null;

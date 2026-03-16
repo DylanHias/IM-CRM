@@ -60,6 +60,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     name: d365.name,
     accountNumber: d365.accountnumber,
     bcn: null,
+    resellerId: null,
     industry: d365.industrycode != null
       ? (d365.industrycode_formattedvalue ?? INDUSTRY_CODE_MAP[d365.industrycode] ?? String(d365.industrycode))
       : null,
