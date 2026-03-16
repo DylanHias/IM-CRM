@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
+import { useUIStore } from '@/store/uiStore';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
@@ -177,7 +177,8 @@ const itemVariants = {
 };
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(true);
+  const { sidebarOpen, toggleSidebar } = useUIStore();
+  const collapsed = !sidebarOpen;
   const pathname = usePathname();
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount } = useFollowUpStore();
@@ -240,7 +241,7 @@ export function Sidebar() {
 
         <div style={{ padding: '0 10px' }}>
           <ToggleButton
-            onClick={() => setCollapsed((prev) => !prev)}
+            onClick={toggleSidebar}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <IconWrapper>

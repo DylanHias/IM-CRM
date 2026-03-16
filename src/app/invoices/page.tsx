@@ -56,14 +56,14 @@ export default function InvoicesPage() {
                 if (!e.target.value.trim()) setSelectedCustomer(null);
               }}
               onFocus={() => setDropdownOpen(true)}
-              className="pl-9 h-10 text-[13px]"
+              className="pl-9 h-9 bg-card shadow-sm border-border/70 rounded-lg"
             />
             {dropdownOpen && filtered.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border/70 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
                 {filtered.map((c) => (
                   <button
                     key={c.id}
-                    className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-muted transition-colors flex items-center justify-between"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between"
                     onClick={() => handleSelect(c)}
                   >
                     <span className="font-medium text-foreground">{c.name}</span>

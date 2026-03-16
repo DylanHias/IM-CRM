@@ -76,11 +76,11 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
             value={filterNumber}
             onChange={(e) => setFilterNumber(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="pl-9 h-9 text-[13px]"
+            className="pl-9 h-9 bg-card shadow-sm border-border/70 rounded-lg"
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-9 text-[13px]">
+          <SelectTrigger className="w-[148px] h-9">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

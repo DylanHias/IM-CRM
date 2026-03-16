@@ -10,7 +10,7 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen: true,
+  sidebarOpen: false,
   activeCustomerTab: 'timeline',
 
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
