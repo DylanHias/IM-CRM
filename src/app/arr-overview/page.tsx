@@ -16,8 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { cn } from '@/lib/utils';
-import type { Customer } from '@/types/entities';
-import type { Contact } from '@/types/entities';
+import type { Customer, Contact } from '@/types/entities';
 
 type SortField = 'arr' | 'name' | 'language';
 
@@ -37,7 +36,7 @@ type ContactField = { value: string; isFallback: boolean; contactName: string | 
 function getPhone(customer: Customer, contacts: Contact[]): ContactField {
   const contact = getMostRecentContact(customer.id, contacts);
   const fromContact = contact?.phone ?? contact?.mobile ?? null;
-  if (fromContact) return { value: fromContact, isFallback: false, contactName: `${contact!.firstName} ${contact!.lastName}` };
+  if (fromContact && contact) return { value: fromContact, isFallback: false, contactName: `${contact.firstName} ${contact.lastName}` };
   return { value: customer.phone ?? '—', isFallback: true, contactName: null };
 }
 

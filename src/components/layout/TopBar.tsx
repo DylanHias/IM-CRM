@@ -157,9 +157,7 @@ export function TopBar({ title = 'Ingram Micro CRM', breadcrumbs }: TopBarProps)
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const handleSignOut = () => signOut();
 
   return (
     <Bar>
