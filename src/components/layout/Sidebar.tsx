@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
@@ -35,16 +36,9 @@ const Logo = styled.div`
 const LogoBadge = styled.div`
   width: 34px;
   height: 34px;
-  background: linear-gradient(135deg, #1570ef 0%, #0ea5e9 100%);
   border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -0.5px;
   flex-shrink: 0;
+  overflow: hidden;
   box-shadow: 0 2px 8px rgba(21, 112, 239, 0.35);
 `;
 
@@ -202,7 +196,9 @@ export function Sidebar() {
       style={{ minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
     >
       <Logo>
-        <LogoBadge title="Ingram Micro CRM">IM</LogoBadge>
+        <LogoBadge title="Ingram Micro CRM">
+          <Image src="/images/icon.png" alt="IM CRM" width={34} height={34} priority />
+        </LogoBadge>
         <LogoText>Ingram Micro</LogoText>
       </Logo>
 

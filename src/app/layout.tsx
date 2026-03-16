@@ -18,6 +18,13 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'Ingram Micro CRM',
   description: 'Field Sales CRM for Ingram Micro BDMs',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
