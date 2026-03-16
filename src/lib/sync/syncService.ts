@@ -9,7 +9,6 @@ import { insertSyncRecord, updateSyncRecord, setAppSetting, queryRecentSyncRecor
 import { useSyncStore } from '@/store/syncStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
-import type { SyncError } from '@/types/sync';
 
 export async function runFullSync(token: string): Promise<void> {
   if (!isTauriApp()) {
@@ -150,8 +149,4 @@ async function pushPendingFollowUps(token: string): Promise<void> {
 
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, null);
   store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
-}
-
-export async function useSync() {
-  // Not a real hook — exported for convenience in useSync.ts
 }
