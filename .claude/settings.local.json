@@ -13,7 +13,10 @@
       "mcp__playwright__browser_click",
       "Bash(cd:*)",
       "Bash(sleep:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(netstat -ano)",
+      "Bash(xargs -I{} taskkill //PID {} //F)"
     ]
   }
 }
