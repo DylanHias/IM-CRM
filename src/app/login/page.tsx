@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
+import type { AccountInfo } from '@azure/msal-browser';
 
 const PageWrapper = styled.div`
   min-height: 100vh;
@@ -140,7 +141,7 @@ export default function LoginPage() {
         idTokenClaims: {},
         nativeAccountId: undefined,
         authorityType: 'MSSTS',
-      } as any,
+      } as unknown as AccountInfo,
       'mock-dev-token'
     );
     router.replace('/customers');

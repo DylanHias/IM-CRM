@@ -12,15 +12,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
 
   useEffect(() => {
-    // Initialize MSAL
-    initializeMsal().then((instance) => {
+    const init = async () => {
+      const instance = await initializeMsal();
       setMsalInstance(instance);
-    });
 
-    // Initialize SQLite DB
-    initDb().catch((err) => {
-      console.error('[DB] Initialization failed:', err);
-    });
+      try {
+        await initDb();
+      } catch (err) {
+        console.error('[DB] Initialization failed:', err);
+      }
+    };
+    init();
   }, []);
 
   if (!msalInstance) {

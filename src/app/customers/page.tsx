@@ -4,7 +4,6 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 import { CustomerFilters } from '@/components/customers/CustomerFilters';
 import { CustomerList } from '@/components/customers/CustomerList';
-import { Button } from '@/components/ui/button';
 import { useCustomers } from '@/hooks/useCustomers';
 import { RefreshCw } from 'lucide-react';
 

@@ -13,7 +13,11 @@ export default function SyncPage() {
 
   useEffect(() => {
     if (!isTauriApp()) return;
-    queryRecentSyncRecords(30).then(setRecentRecords);
+    const load = async () => {
+      const records = await queryRecentSyncRecords(30);
+      setRecentRecords(records);
+    };
+    load();
   }, [setRecentRecords]);
 
   return (
