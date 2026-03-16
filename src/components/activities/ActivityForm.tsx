@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useActivities } from '@/hooks/useActivities';
 import { todayISO } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2 } from 'lucide-react';

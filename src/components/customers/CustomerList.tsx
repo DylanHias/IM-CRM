@@ -12,7 +12,6 @@ import styled from 'styled-components';
 const List = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0;
   border-radius: 12px;
   overflow: hidden;
   background: hsl(var(--card));
@@ -94,13 +93,6 @@ const itemVariants = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' as const } },
 };
-
-function getActivityVariant(lastActivityAt: string | null): string {
-  if (!lastActivityAt) return 'warning';
-  const days = (Date.now() - new Date(lastActivityAt).getTime()) / 86400000;
-  if (days > 90) return 'warning';
-  return 'success';
-}
 
 interface CustomerListProps {
   customers: Customer[];

@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSync } from '@/hooks/useSync';
