@@ -19,11 +19,3 @@ export interface SyncError {
   message: string;
   occurredAt: string;
 }
-
-export interface SyncResult {
-  syncType: SyncType;
-  status: SyncStatus;
-  recordsPulled: number;
-  recordsPushed: number;
-  errorMessage?: string;
-}

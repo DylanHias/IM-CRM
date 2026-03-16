@@ -96,30 +96,3 @@ export interface SpListResponse<T> {
   '@odata.nextLink'?: string;
 }
 
-// D365 push entity shapes
-export interface D365PhoneCall {
-  subject: string;
-  description: string;
-  scheduledend: string;
-  'regardingobjectid_account@odata.bind': string;
-}
-
-export interface D365Appointment {
-  subject: string;
-  description: string;
-  scheduledend: string;
-  'regardingobjectid_account@odata.bind': string;
-}
-
-export interface D365Annotation {
-  subject: string;
-  notetext: string;
-  'objectid_account@odata.bind': string;
-}
-
-export interface D365Task {
-  subject: string;
-  description: string;
-  scheduledend: string;
-  'regardingobjectid_account@odata.bind': string;
-}

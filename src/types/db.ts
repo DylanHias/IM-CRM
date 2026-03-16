@@ -91,9 +91,3 @@ export interface SyncRecordRow {
   error_message: string | null;
   created_at: string;
 }
-
-export interface AppSettingRow {
-  key: string;
-  value: string;
-  updated_at: string;
-}
