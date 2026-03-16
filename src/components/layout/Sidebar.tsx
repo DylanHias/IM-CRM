@@ -164,17 +164,6 @@ const ToggleButton = styled.button`
   }
 `;
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.04, delayChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, scale: 0.85 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.18, ease: 'easeOut' as const } },
-};
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore();
@@ -207,6 +196,7 @@ export function Sidebar() {
 
   return (
     <SidebarContainer
+      initial={false}
       animate={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       style={{ minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
@@ -217,16 +207,11 @@ export function Sidebar() {
       </Logo>
 
       <NavSection>
-        <motion.div
-          style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}>
           {navItems.map(({ href, label, icon: Icon, badge, badgeVariant }) => {
             const isActive = pathname.startsWith(href);
             return (
-              <motion.div key={href} variants={itemVariants} style={{ width: '100%' }}>
+              <div key={href} style={{ width: '100%' }}>
                 <NavItem href={href} $active={isActive} title={label}>
                   <IconWrapper><Icon size={17} /></IconWrapper>
                   <NavLabel>{label}</NavLabel>
@@ -234,10 +219,10 @@ export function Sidebar() {
                     <BadgeDot $variant={badgeVariant} />
                   )}
                 </NavItem>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
         <div style={{ padding: '0 10px' }}>
           <ToggleButton
