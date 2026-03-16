@@ -58,6 +58,19 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 - Kill any existing dev server processes before starting a new one to avoid port conflicts
 - **After every code change session**: kill stale node processes on ports 3000–3004 before starting a fresh dev server. Use: `netstat -ano | grep LISTENING | grep -E ":300[0-4] " | awk '{print $5}' | sort -u | xargs -I{} taskkill //PID {} //F`
 
+## Frontend Validation (Playwright MCP)
+
+- After any frontend change, validate visually using the Playwright MCP:
+  1. Navigate to the affected page with `browser_navigate`
+  2. Take a screenshot with `browser_take_screenshot` to confirm the change
+  3. **Always** call `browser_close` after validation to terminate the browser instance
+- Playwright runs in headless mode — no visible Chrome window
+
+## Git Workflow
+
+- **Commit after every completed change** — each logical unit of work gets its own commit
+- **Push to remote** after committing — always run `git push` after a successful commit
+
 ## Tauri / Async
 
 - Guard all Tauri API calls with `isTauriApp()` (`src/lib/utils/offlineUtils.ts`)
