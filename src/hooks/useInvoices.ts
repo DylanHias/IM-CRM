@@ -61,11 +61,9 @@ export function useInvoices(resellerId: string | null, countryCode: string) {
   }, [setFilters, loadInvoices]);
 
   useEffect(() => {
+    reset();
     if (resellerId) {
-      reset();
       loadInvoices(1);
-    } else {
-      reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resellerId]);

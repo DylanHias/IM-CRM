@@ -14,14 +14,15 @@ export function useAuth() {
 
     if (accounts.length > 0) {
       const activeAccount = accounts[0];
-      instance
-        .acquireTokenSilent({ ...loginRequest, account: activeAccount })
-        .then((result) => {
+      const acquireToken = async () => {
+        try {
+          const result = await instance.acquireTokenSilent({ ...loginRequest, account: activeAccount });
           setAccount(activeAccount, result.accessToken);
-        })
-        .catch(() => {
+        } catch {
           clearAuth();
-        });
+        }
+      };
+      acquireToken();
     } else if (!isAuthenticated) {
       // Only clear if not already authenticated (e.g. via dev bypass)
       clearAuth();
