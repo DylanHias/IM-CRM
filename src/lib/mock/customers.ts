@@ -49,7 +49,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Automotive', segment: 'Mid-Market', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+32 11 345 67 89', email: 'fleet@autodrive.be', addressStreet: 'Hasseltweg 30',
     addressCity: 'Hasselt', addressCountry: 'Belgium', website: 'https://autodrive.be',
-    cloudCustomer: false, language: 'Dutch', arr: 310000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 310000, resellerId: 'RSL-10006',
     status: 'active', lastActivityAt: ago(21), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -57,7 +57,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Energy', segment: 'Enterprise', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+31 10 789 01 23', email: 'info@greenenergy.benelux', addressStreet: 'Weena 400',
     addressCity: 'Rotterdam', addressCountry: 'Netherlands', website: null,
-    cloudCustomer: true, language: 'Dutch', arr: 1620000, resellerId: null,
+    cloudCustomer: true, language: 'Dutch', arr: 1620000, resellerId: 'RSL-10007',
     status: 'active', lastActivityAt: ago(5), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -65,7 +65,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Logistics', segment: 'Mid-Market', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 3 456 78 90', email: 'ops@logiflow.be', addressStreet: 'Katwilgweg 10',
     addressCity: 'Antwerp', addressCountry: 'Belgium', website: 'https://logiflow.be',
-    cloudCustomer: false, language: 'Dutch', arr: 275000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 275000, resellerId: 'RSL-10008',
     status: 'active', lastActivityAt: ago(10), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -73,7 +73,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Technology', segment: 'SMB', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+32 2 567 89 01', email: 'sales@cybershield.be', addressStreet: 'Avenue Louise 65',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://cybershield.be',
-    cloudCustomer: true, language: 'French', arr: 145000, resellerId: null,
+    cloudCustomer: true, language: 'French', arr: 145000, resellerId: 'RSL-10009',
     status: 'active', lastActivityAt: ago(45), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -81,7 +81,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Retail', segment: 'Enterprise', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+352 2 678 90 12', email: 'contact@retailpro.lu', addressStreet: 'Rue Aldringen 25',
     addressCity: 'Luxembourg', addressCountry: 'Luxembourg', website: 'https://retailpro.lu',
-    cloudCustomer: false, language: 'French', arr: 720000, resellerId: null,
+    cloudCustomer: false, language: 'French', arr: 720000, resellerId: 'RSL-10010',
     status: 'active', lastActivityAt: ago(60), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -89,7 +89,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Agriculture', segment: 'SMB', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 51 789 01 23', email: 'info@agrotech.be', addressStreet: 'Tieltsesteenweg 2',
     addressCity: 'Roeselare', addressCountry: 'Belgium', website: null,
-    cloudCustomer: false, language: 'Dutch', arr: 65000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 65000, resellerId: 'RSL-10011',
     status: 'active', lastActivityAt: ago(90), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -97,7 +97,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Financial Services', segment: 'Mid-Market', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+31 70 890 12 34', email: 'bdm@insuretech.nl', addressStreet: 'Maliesingel 40',
     addressCity: 'Utrecht', addressCountry: 'Netherlands', website: 'https://insuretech.nl',
-    cloudCustomer: true, language: 'Dutch', arr: 540000, resellerId: null,
+    cloudCustomer: true, language: 'Dutch', arr: 540000, resellerId: 'RSL-10012',
     status: 'active', lastActivityAt: ago(1), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -105,7 +105,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Technology', segment: 'Enterprise', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+32 2 901 23 45', email: 'sales@cloudbase.be', addressStreet: 'Bd du Régent 58',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://cloudbase.be',
-    cloudCustomer: true, language: 'French', arr: 2100000, resellerId: null,
+    cloudCustomer: true, language: 'French', arr: 2100000, resellerId: 'RSL-10013',
     status: 'active', lastActivityAt: ago(8), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -113,7 +113,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Healthcare', segment: 'Enterprise', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 14 012 34 56', email: 'info@pharmacare.be', addressStreet: 'Turnhoutsebaan 80',
     addressCity: 'Herentals', addressCountry: 'Belgium', website: 'https://pharmacare.be',
-    cloudCustomer: true, language: 'Dutch', arr: 1350000, resellerId: null,
+    cloudCustomer: true, language: 'Dutch', arr: 1350000, resellerId: 'RSL-10014',
     status: 'active', lastActivityAt: ago(30), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -121,7 +121,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Media & Entertainment', segment: 'SMB', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+32 2 123 78 90', email: 'biz@mediahub.be', addressStreet: 'Rue Royale 200',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://mediahub.be',
-    cloudCustomer: false, language: 'French', arr: 88000, resellerId: null,
+    cloudCustomer: false, language: 'French', arr: 88000, resellerId: 'RSL-10015',
     status: 'active', lastActivityAt: ago(15), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -129,7 +129,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Construction', segment: 'Mid-Market', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+32 56 234 56 78', email: 'info@smartbuild.be', addressStreet: 'Doorniksestraat 15',
     addressCity: 'Kortrijk', addressCountry: 'Belgium', website: 'https://smartbuild.be',
-    cloudCustomer: false, language: 'Dutch', arr: 195000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 195000, resellerId: 'RSL-10016',
     status: 'active', lastActivityAt: ago(180), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -137,7 +137,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Travel & Tourism', segment: 'SMB', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 2 345 67 89', email: 'info@travelease.be', addressStreet: 'Rue Neuve 10',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://travelease.be',
-    cloudCustomer: false, language: 'French', arr: 52000, resellerId: null,
+    cloudCustomer: false, language: 'French', arr: 52000, resellerId: 'RSL-10017',
     status: 'inactive', lastActivityAt: ago(200), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -145,7 +145,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Technology', segment: 'Mid-Market', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+31 20 456 78 90', email: 'hello@datavault.nl', addressStreet: 'Keizersgracht 50',
     addressCity: 'Amsterdam', addressCountry: 'Netherlands', website: 'https://datavault.nl',
-    cloudCustomer: true, language: 'English', arr: 870000, resellerId: null,
+    cloudCustomer: true, language: 'English', arr: 870000, resellerId: 'RSL-10018',
     status: 'active', lastActivityAt: ago(6), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -153,7 +153,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Food & Beverage', segment: 'Enterprise', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+32 11 567 89 01', email: 'supply@foodchain.be', addressStreet: 'Industrielaan 20',
     addressCity: 'Genk', addressCountry: 'Belgium', website: 'https://foodchain.be',
-    cloudCustomer: false, language: 'Dutch', arr: 460000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 460000, resellerId: 'RSL-10019',
     status: 'active', lastActivityAt: ago(18), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -161,7 +161,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Government', segment: 'Enterprise', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 2 678 90 12', email: 'ict@publicsector.be', addressStreet: 'Rue Belliard 40',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: null,
-    cloudCustomer: false, language: 'French', arr: 1100000, resellerId: null,
+    cloudCustomer: false, language: 'French', arr: 1100000, resellerId: 'RSL-10020',
     status: 'active', lastActivityAt: ago(25), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -169,7 +169,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Telecommunications', segment: 'Mid-Market', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+32 2 789 01 23', email: 'sales@securenet.be', addressStreet: 'Chaussée de Wavre 1',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://securenet.be',
-    cloudCustomer: true, language: 'French', arr: 390000, resellerId: null,
+    cloudCustomer: true, language: 'French', arr: 390000, resellerId: 'RSL-10021',
     status: 'active', lastActivityAt: ago(12), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -177,7 +177,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Life Sciences', segment: 'Enterprise', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+32 16 890 12 34', email: 'it@biopharma.be', addressStreet: 'Gaston Geenslaan 11',
     addressCity: 'Leuven', addressCountry: 'Belgium', website: 'https://biopharma.be',
-    cloudCustomer: true, language: 'English', arr: 1750000, resellerId: null,
+    cloudCustomer: true, language: 'English', arr: 1750000, resellerId: 'RSL-10022',
     status: 'active', lastActivityAt: ago(4), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -185,7 +185,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Transportation', segment: 'SMB', ownerId: 'owner-2', ownerName: 'Sophie Martens',
     phone: '+32 2 901 23 45', email: 'info@urbanmobility.be', addressStreet: 'Avenue de Tervuren 30',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://urbanmobility.be',
-    cloudCustomer: false, language: 'French', arr: 115000, resellerId: null,
+    cloudCustomer: false, language: 'French', arr: 115000, resellerId: 'RSL-10023',
     status: 'active', lastActivityAt: ago(35), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -193,7 +193,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Environmental Services', segment: 'SMB', ownerId: 'owner-1', ownerName: 'Jan De Vries',
     phone: '+32 9 012 34 56', email: 'info@ecowaste.be', addressStreet: 'Industrieweg 8',
     addressCity: 'Ghent', addressCountry: 'Belgium', website: 'https://ecowaste.be',
-    cloudCustomer: false, language: 'Dutch', arr: 78000, resellerId: null,
+    cloudCustomer: false, language: 'Dutch', arr: 78000, resellerId: 'RSL-10024',
     status: 'active', lastActivityAt: ago(150), syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
@@ -201,7 +201,7 @@ export const mockCustomers: Customer[] = [
     industry: 'Human Resources', segment: 'Mid-Market', ownerId: 'owner-3', ownerName: 'Pieter Claes',
     phone: '+32 2 123 45 00', email: 'contact@prohr.be', addressStreet: 'Square de Meeûs 35',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://prohr.be',
-    cloudCustomer: true, language: 'English', arr: 235000, resellerId: null,
+    cloudCustomer: true, language: 'English', arr: 235000, resellerId: 'RSL-10025',
     status: 'active', lastActivityAt: ago(9), syncedAt: now, createdAt: now, updatedAt: now,
   },
 ];

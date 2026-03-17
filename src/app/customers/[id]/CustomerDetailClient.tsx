@@ -232,6 +232,9 @@ export default function CustomerDetailClient() {
                   {customer.accountNumber && (
                     <DetailRow label="Account No." value={customer.accountNumber} />
                   )}
+                  {customer.resellerId && (
+                    <DetailRow label="Reseller ID" value={customer.resellerId} />
+                  )}
                 </div>
               </div>
 
