@@ -21,8 +21,7 @@ export function useInvoices(resellerId: string | null, countryCode: string) {
     setError(null);
     try {
       const params: InvoiceSearchParams = {
-        ...searchFilters,
-        ...filters,
+        ...(filters ?? searchFilters),
         pageSize,
         pageNumber: page ?? currentPage,
       };
