@@ -85,6 +85,26 @@ const RESELLER_INVOICE_MAP: Record<string, number[]> = {
   'RSL-10003': [5, 7, 12, 14],
   'RSL-10004': [8, 10, 13],
   'RSL-10005': [1, 5, 10],
+  'RSL-10006': [0, 3, 7],
+  'RSL-10007': [1, 8, 14],
+  'RSL-10008': [2, 4, 11],
+  'RSL-10009': [5, 9, 13],
+  'RSL-10010': [0, 6, 12],
+  'RSL-10011': [3, 10],
+  'RSL-10012': [1, 7, 14],
+  'RSL-10013': [2, 5, 8, 11],
+  'RSL-10014': [4, 9, 13],
+  'RSL-10015': [0, 6],
+  'RSL-10016': [3, 12],
+  'RSL-10017': [1, 10, 14],
+  'RSL-10018': [2, 7, 8],
+  'RSL-10019': [4, 5, 11],
+  'RSL-10020': [0, 9, 13],
+  'RSL-10021': [6, 12, 14],
+  'RSL-10022': [1, 3, 8],
+  'RSL-10023': [2, 10],
+  'RSL-10024': [5, 7],
+  'RSL-10025': [0, 4, 11],
 };
 
 const mockInvoiceDetails: Record<string, InvoiceDetail> = {
@@ -189,3 +209,5 @@ export async function mockGetInvoiceDetail(invoiceNumber: string): Promise<Invoi
   await delay(300);
   return mockInvoiceDetails[invoiceNumber] ?? null;
 }
+
+export { mockInvoiceItems as MOCK_INVOICE_ITEMS, RESELLER_INVOICE_MAP as MOCK_RESELLER_INVOICE_MAP, mockInvoiceDetails as MOCK_INVOICE_DETAILS };
