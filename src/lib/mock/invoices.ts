@@ -159,6 +159,17 @@ export async function mockSearchInvoices(
     items = items.filter((inv) => inv.invoiceStatus === params.invoiceStatus);
   }
 
+  if (params.orderby) {
+    const field = params.orderby as keyof InvoiceSearchItem;
+    const dir = params.direction === 'asc' ? 1 : -1;
+    items.sort((a, b) => {
+      const aVal = a[field] ?? '';
+      const bVal = b[field] ?? '';
+      if (typeof aVal === 'number' && typeof bVal === 'number') return (aVal - bVal) * dir;
+      return String(aVal).localeCompare(String(bVal)) * dir;
+    });
+  }
+
   const total = items.length;
   const pageSize = params.pageSize ?? 10;
   const pageNumber = params.pageNumber ?? 1;
