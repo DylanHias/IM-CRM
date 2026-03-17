@@ -11,8 +11,8 @@ export async function seedMockData(db: Database): Promise<void> {
 
   for (const c of mockCustomers) {
     await db.execute(
-      `INSERT OR IGNORE INTO customers (id,name,account_number,industry,segment,owner_id,owner_name,phone,email,address_street,address_city,address_country,website,reseller_id,status,last_activity_at,synced_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
-      [c.id,c.name,c.accountNumber,c.industry,c.segment,c.ownerId,c.ownerName,c.phone,c.email,c.addressStreet,c.addressCity,c.addressCountry,c.website,c.resellerId,c.status,c.lastActivityAt,c.syncedAt,c.createdAt,c.updatedAt]
+      `INSERT OR IGNORE INTO customers (id,name,account_number,industry,segment,owner_id,owner_name,phone,email,address_street,address_city,address_country,website,reseller_id,bcn,cloud_customer,language,arr,status,last_activity_at,synced_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
+      [c.id,c.name,c.accountNumber,c.industry,c.segment,c.ownerId,c.ownerName,c.phone,c.email,c.addressStreet,c.addressCity,c.addressCountry,c.website,c.resellerId,c.bcn,c.cloudCustomer?1:0,c.language,c.arr,c.status,c.lastActivityAt,c.syncedAt,c.createdAt,c.updatedAt]
     );
   }
 

@@ -71,6 +71,10 @@ async function runSchema(db: Database): Promise<void> {
       synced_at       TEXT NOT NULL,
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       reseller_id     TEXT,
+      bcn             TEXT,
+      cloud_customer  INTEGER,
+      language        TEXT,
+      arr             REAL,
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -205,7 +209,7 @@ async function runSchema(db: Database): Promise<void> {
   `);
 
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '2')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '3')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -218,22 +222,28 @@ async function runSchema(db: Database): Promise<void> {
 async function runMigrations(db: Database, currentVersion: number): Promise<void> {
   if (currentVersion < 2) {
     await db.execute(`ALTER TABLE customers ADD COLUMN reseller_id TEXT`);
+  }
 
-    // Backfill reseller IDs from mock data if applicable
+  if (currentVersion < 3) {
+    // Safe to re-run: ALTER TABLE ADD COLUMN is a no-op if column already exists in SQLite
+    // but we guard with a try-catch for the reseller_id column added in v2
+    for (const col of ['bcn TEXT', 'cloud_customer INTEGER', 'language TEXT', 'arr REAL']) {
+      try { await db.execute(`ALTER TABLE customers ADD COLUMN ${col}`); } catch { /* column may already exist */ }
+    }
+
+    // Backfill from mock data if applicable
     if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
       const { mockCustomers } = await import('@/lib/mock/customers');
       for (const c of mockCustomers) {
-        if (c.resellerId) {
-          await db.execute(
-            `UPDATE customers SET reseller_id = $1 WHERE id = $2`,
-            [c.resellerId, c.id]
-          );
-        }
+        await db.execute(
+          `UPDATE customers SET reseller_id = $1, bcn = $2, cloud_customer = $3, language = $4, arr = $5 WHERE id = $6`,
+          [c.resellerId, c.bcn, c.cloudCustomer ? 1 : 0, c.language, c.arr, c.id]
+        );
       }
     }
 
     await db.execute(
-      `UPDATE app_settings SET value = '2', updated_at = datetime('now') WHERE key = 'schema_version'`
+      `UPDATE app_settings SET value = '3', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

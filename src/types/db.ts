@@ -14,6 +14,10 @@ export interface CustomerRow {
   address_country: string | null;
   website: string | null;
   reseller_id: string | null;
+  bcn: string | null;
+  cloud_customer: number | null;
+  language: string | null;
+  arr: number | null;
   status: string;
   last_activity_at: string | null;
   synced_at: string;
