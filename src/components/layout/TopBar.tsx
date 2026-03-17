@@ -1,8 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RefreshCw, Wifi, WifiOff, LogOut, ArrowLeft, ArrowRight } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
@@ -34,33 +33,10 @@ const BreadcrumbArea = styled.div`
   min-width: 0;
 `;
 
-const NavArrow = styled.button`
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+const BackLink = styled(Link)`
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: hsl(var(--muted-foreground));
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background-color: hsl(var(--muted));
-    color: hsl(var(--foreground));
-  }
-`;
-
-const BreadcrumbSep = styled.span`
-  color: hsl(var(--muted-foreground));
-  font-size: 11px;
-  user-select: none;
-  margin: 0 2px;
-`;
-
-const BreadcrumbLink = styled(Link)`
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 500;
   color: hsl(var(--muted-foreground));
@@ -71,15 +47,6 @@ const BreadcrumbLink = styled(Link)`
   &:hover {
     color: hsl(var(--foreground));
   }
-`;
-
-const BreadcrumbCurrent = styled.span`
-  font-size: 13.5px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 `;
 
 const PageTitle = styled.h1`
@@ -141,18 +108,17 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-interface Breadcrumb {
+interface BackLinkConfig {
   label: string;
-  href?: string;
+  href: string;
 }
 
 interface TopBarProps {
   title?: string;
-  breadcrumbs?: Breadcrumb[];
+  backLink?: BackLinkConfig;
 }
 
-export function TopBar({ title = 'Ingram Micro CRM', breadcrumbs }: TopBarProps) {
-  const router = useRouter();
+export function TopBar({ title = 'Ingram Micro CRM', backLink }: TopBarProps) {
   const { account } = useAuthStore();
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();
@@ -162,26 +128,11 @@ export function TopBar({ title = 'Ingram Micro CRM', breadcrumbs }: TopBarProps)
   return (
     <Bar>
       <BreadcrumbArea>
-        {breadcrumbs ? (
-          <>
-            <NavArrow onClick={() => router.back()} title="Go back">
-              <ArrowLeft size={15} />
-            </NavArrow>
-            <NavArrow onClick={() => window.history.forward()} title="Go forward">
-              <ArrowRight size={15} />
-            </NavArrow>
-
-            {breadcrumbs.map((crumb, idx) => (
-              <span key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {idx > 0 && <BreadcrumbSep>|</BreadcrumbSep>}
-                {crumb.href ? (
-                  <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                ) : (
-                  <BreadcrumbCurrent>{crumb.label}</BreadcrumbCurrent>
-                )}
-              </span>
-            ))}
-          </>
+        {backLink ? (
+          <BackLink href={backLink.href}>
+            <ArrowLeft size={15} />
+            {backLink.label}
+          </BackLink>
         ) : (
           <PageTitle>{title}</PageTitle>
         )}

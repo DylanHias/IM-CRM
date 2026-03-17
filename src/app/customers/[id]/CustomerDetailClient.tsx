@@ -143,10 +143,7 @@ export default function CustomerDetailClient() {
     <AuthGuard>
       <AppShell
         title="Customer Profile"
-        breadcrumbs={[
-          { label: 'Customers', href: '/customers' },
-          { label: 'Customer profile' },
-        ]}
+        backLink={{ label: 'All customers', href: '/customers' }}
       >
         <div className="max-w-6xl mx-auto">
           {/* ── Company Header ── */}

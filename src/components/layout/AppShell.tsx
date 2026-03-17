@@ -27,23 +27,23 @@ const Content = styled.div`
   padding: 24px 28px;
 `;
 
-interface Breadcrumb {
+interface BackLinkConfig {
   label: string;
-  href?: string;
+  href: string;
 }
 
 interface AppShellProps {
   children: React.ReactNode;
   title?: string;
-  breadcrumbs?: Breadcrumb[];
+  backLink?: BackLinkConfig;
 }
 
-export function AppShell({ children, title, breadcrumbs }: AppShellProps) {
+export function AppShell({ children, title, backLink }: AppShellProps) {
   return (
     <Shell>
       <Sidebar />
       <Main>
-        <TopBar title={title} breadcrumbs={breadcrumbs} />
+        <TopBar title={title} backLink={backLink} />
         <Content>
           <PageMotion>{children}</PageMotion>
         </Content>
