@@ -34,16 +34,15 @@ interface BackLinkConfig {
 
 interface AppShellProps {
   children: React.ReactNode;
-  title?: string;
   backLink?: BackLinkConfig;
 }
 
-export function AppShell({ children, title, backLink }: AppShellProps) {
+export function AppShell({ children, backLink }: AppShellProps) {
   return (
     <Shell>
       <Sidebar />
       <Main>
-        <TopBar title={title} backLink={backLink} />
+        <TopBar backLink={backLink} />
         <Content>
           <PageMotion>{children}</PageMotion>
         </Content>

@@ -49,16 +49,6 @@ const BackLink = styled(Link)`
   }
 `;
 
-const PageTitle = styled.h1`
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  letter-spacing: -0.15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
 const StatusPill = styled.div<{ $online: boolean }>`
   display: flex;
   align-items: center;
@@ -114,11 +104,10 @@ interface BackLinkConfig {
 }
 
 interface TopBarProps {
-  title?: string;
   backLink?: BackLinkConfig;
 }
 
-export function TopBar({ title = 'Ingram Micro CRM', backLink }: TopBarProps) {
+export function TopBar({ backLink }: TopBarProps) {
   const { account } = useAuthStore();
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();
@@ -128,13 +117,11 @@ export function TopBar({ title = 'Ingram Micro CRM', backLink }: TopBarProps) {
   return (
     <Bar>
       <BreadcrumbArea>
-        {backLink ? (
+        {backLink && (
           <BackLink href={backLink.href}>
             <ArrowLeft size={15} />
             {backLink.label}
           </BackLink>
-        ) : (
-          <PageTitle>{title}</PageTitle>
         )}
       </BreadcrumbArea>
 

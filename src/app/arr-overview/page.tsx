@@ -183,7 +183,7 @@ export default function ArrOverviewPage() {
 
   return (
     <AuthGuard>
-      <AppShell title="ARR Overview">
+      <AppShell>
         <div className="space-y-3">
           {/* Title */}
           <div>

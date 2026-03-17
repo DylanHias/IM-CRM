@@ -51,7 +51,7 @@ export default function FollowUpsPage() {
 
   return (
     <AuthGuard>
-      <AppShell title="Follow-Ups">
+      <AppShell>
         <div className="max-w-3xl mx-auto space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-foreground">All Follow-Ups</h2>

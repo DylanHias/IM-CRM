@@ -35,7 +35,7 @@ export default function InvoicesPage() {
 
   return (
     <AuthGuard>
-      <AppShell title="Invoices">
+      <AppShell>
         <div className="space-y-5">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Invoices</h2>

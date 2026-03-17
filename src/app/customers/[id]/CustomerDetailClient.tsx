@@ -126,7 +126,7 @@ export default function CustomerDetailClient() {
   if (!customer) {
     return (
       <AuthGuard>
-        <AppShell title="Customer">
+        <AppShell>
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Building2 size={40} className="text-muted-foreground" />
             <p className="text-muted-foreground">Customer not found</p>
@@ -141,10 +141,7 @@ export default function CustomerDetailClient() {
 
   return (
     <AuthGuard>
-      <AppShell
-        title="Customer Profile"
-        backLink={{ label: 'All customers', href: '/customers' }}
-      >
+      <AppShell backLink={{ label: 'All customers', href: '/customers' }}>
         <div className="max-w-6xl mx-auto">
           {/* ── Company Header ── */}
           <motion.div

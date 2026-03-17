@@ -12,7 +12,7 @@ export default function CustomersPage() {
 
   return (
     <AuthGuard>
-      <AppShell title="Customers">
+      <AppShell>
         <div className="max-w-5xl mx-auto space-y-5">
           <div className="flex items-center justify-between">
             <div>

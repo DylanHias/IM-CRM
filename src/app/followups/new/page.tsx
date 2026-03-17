@@ -33,7 +33,7 @@ function NewFollowUpContent() {
 export default function NewFollowUpPage() {
   return (
     <AuthGuard>
-      <AppShell title="New Follow-Up">
+      <AppShell>
         <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
           <NewFollowUpContent />
         </Suspense>

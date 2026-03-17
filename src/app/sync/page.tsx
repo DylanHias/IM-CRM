@@ -22,7 +22,7 @@ export default function SyncPage() {
 
   return (
     <AuthGuard>
-      <AppShell title="Sync Status">
+      <AppShell>
         <div className="max-w-3xl mx-auto space-y-5">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Sync</h2>

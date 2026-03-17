@@ -50,7 +50,7 @@ function NewActivityContent() {
 export default function NewActivityPage() {
   return (
     <AuthGuard>
-      <AppShell title="Log Activity">
+      <AppShell>
         <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
           <NewActivityContent />
         </Suspense>
