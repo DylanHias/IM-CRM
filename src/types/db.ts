@@ -13,6 +13,7 @@ export interface CustomerRow {
   address_city: string | null;
   address_country: string | null;
   website: string | null;
+  reseller_id: string | null;
   status: string;
   last_activity_at: string | null;
   synced_at: string;

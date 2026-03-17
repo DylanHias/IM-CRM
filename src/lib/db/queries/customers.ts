@@ -8,7 +8,7 @@ function rowToCustomer(row: CustomerRow): Customer {
     name: row.name,
     accountNumber: row.account_number,
     bcn: null,
-    resellerId: null,
+    resellerId: row.reseller_id,
     industry: row.industry,
     segment: row.segment,
     ownerId: row.owner_id,
@@ -53,8 +53,8 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
     `INSERT INTO customers (
       id, name, account_number, industry, segment, owner_id, owner_name,
       phone, email, address_street, address_city, address_country, website,
-      status, last_activity_at, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      reseller_id, status, last_activity_at, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -62,13 +62,14 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       phone=excluded.phone, email=excluded.email,
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
+      reseller_id=excluded.reseller_id,
       status=excluded.status, synced_at=excluded.synced_at,
       updated_at=excluded.updated_at`,
     [
       customer.id, customer.name, customer.accountNumber, customer.industry,
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
       customer.email, customer.addressStreet, customer.addressCity,
-      customer.addressCountry, customer.website, customer.status,
+      customer.addressCountry, customer.website, customer.resellerId, customer.status,
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );
