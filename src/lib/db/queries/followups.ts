@@ -21,6 +21,14 @@ function rowToFollowUp(row: FollowUpRow): FollowUp {
   };
 }
 
+export async function queryAllFollowUps(): Promise<FollowUp[]> {
+  const db = await getDb();
+  const rows = await db.select<FollowUpRow[]>(
+    `SELECT * FROM follow_ups ORDER BY completed ASC, due_date ASC`
+  );
+  return rows.map(rowToFollowUp);
+}
+
 export async function queryFollowUpsByCustomer(customerId: string): Promise<FollowUp[]> {
   const db = await getDb();
   const rows = await db.select<FollowUpRow[]>(

@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { mockFollowUps } from '@/lib/mock/followups';
 import { mockCustomers } from '@/lib/mock/customers';
-import { completeFollowUp } from '@/lib/db/queries/followups';
+import { queryAllFollowUps, completeFollowUp } from '@/lib/db/queries/followups';
+import { queryAllCustomers } from '@/lib/db/queries/customers';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
 
@@ -17,16 +18,23 @@ export default function FollowUpsPage() {
   const router = useRouter();
   const { markComplete } = useFollowUpStore();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    // Load all follow-ups across customers
-    if (isTauriApp()) {
-      // In production, query all follow-ups
-      // For now, load from mock
-      setFollowUps(mockFollowUps);
-    } else {
-      setFollowUps(mockFollowUps);
-    }
+    const load = async () => {
+      if (isTauriApp()) {
+        const [fups, customers] = await Promise.all([
+          queryAllFollowUps(),
+          queryAllCustomers(),
+        ]);
+        setFollowUps(fups);
+        setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
+      } else {
+        setFollowUps(mockFollowUps);
+        setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+      }
+    };
+    load();
   }, []);
 
   const handleComplete = async (id: string) => {
@@ -47,7 +55,7 @@ export default function FollowUpsPage() {
   const done = followUps.filter((f) => f.completed).slice(0, 10);
 
   const getCustomerName = (customerId: string) =>
-    mockCustomers.find((c) => c.id === customerId)?.name ?? customerId;
+    customerMap.get(customerId) ?? customerId;
 
   return (
     <AuthGuard>
