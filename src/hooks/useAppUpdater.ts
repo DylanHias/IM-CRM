@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { storeChangelog } from '@/components/layout/ChangelogDialog';
 
 interface AppUpdaterState {
   updateAvailable: boolean;
@@ -39,6 +40,9 @@ export function useAppUpdater(): AppUpdaterState {
     if (!update || downloading) return;
     try {
       setDownloading(true);
+      if (update.body) {
+        storeChangelog(update.body, update.version);
+      }
       await update.downloadAndInstall();
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();

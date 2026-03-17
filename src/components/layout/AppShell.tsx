@@ -3,6 +3,7 @@
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { PageMotion } from './PageMotion';
+import { ChangelogDialog } from './ChangelogDialog';
 import styled from 'styled-components';
 
 const Shell = styled.div`
@@ -47,6 +48,7 @@ export function AppShell({ children, backLink }: AppShellProps) {
           <PageMotion>{children}</PageMotion>
         </Content>
       </Main>
+      <ChangelogDialog />
     </Shell>
   );
 }
