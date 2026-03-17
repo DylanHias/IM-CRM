@@ -49,7 +49,7 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
               </p>
             </div>
             <div className="flex items-start gap-1.5 flex-shrink-0">
-              <span className="text-xs text-muted-foreground whitespace-nowrap pt-0.5 transition-transform duration-150 translate-x-8 group-hover:translate-x-0">
+              <span className={`text-xs text-muted-foreground whitespace-nowrap pt-0.5 ${onEdit || onDelete ? 'transition-transform duration-150 translate-x-8 group-hover:translate-x-0' : ''}`}>
                 {formatDate(event.occurredAt)}
               </span>
               {(onEdit || onDelete) && (
