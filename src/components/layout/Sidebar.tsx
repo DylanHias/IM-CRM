@@ -117,6 +117,29 @@ const BadgeDot = styled.span<{ $variant: 'destructive' | 'warning' }>`
   border: 1.5px solid hsl(var(--sidebar-bg));
 `;
 
+const BadgeCount = styled.span<{ $variant: 'destructive' | 'warning' }>`
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  background-color: ${(p) =>
+    p.$variant === 'destructive'
+      ? 'hsl(var(--destructive))'
+      : 'hsl(var(--warning))'};
+  color: ${(p) =>
+    p.$variant === 'destructive'
+      ? 'hsl(var(--destructive-foreground))'
+      : 'hsl(var(--warning-foreground, var(--foreground)))'};
+`;
+
 const Footer = styled.div`
   padding: 10px 10px;
   border-top: 1px solid hsl(var(--sidebar-border));
@@ -227,6 +250,7 @@ export function Sidebar() {
       icon: CheckSquare,
       badge: overdueCount > 0 ? overdueCount : undefined,
       badgeVariant: 'destructive' as const,
+      badgeStyle: 'count' as const,
     },
     { href: '/invoices', label: 'Invoices', icon: FileText },
     { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
@@ -248,16 +272,18 @@ export function Sidebar() {
 
       <NavSection>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}>
-          {navItems.map(({ href, label, icon: Icon, badge, badgeVariant }) => {
+          {navItems.map(({ href, label, icon: Icon, badge, badgeVariant, badgeStyle }) => {
             const isActive = pathname.startsWith(href);
             return (
               <div key={href} style={{ width: '100%' }}>
                 <NavItem href={href} $active={isActive} title={label}>
                   <IconWrapper><Icon size={17} /></IconWrapper>
                   <NavLabel>{label}</NavLabel>
-                  {badge && (
+                  {badge != null && badgeStyle === 'count' && !collapsed ? (
+                    <BadgeCount $variant={badgeVariant}>{badge > 99 ? '99+' : badge}</BadgeCount>
+                  ) : badge != null ? (
                     <BadgeDot $variant={badgeVariant} />
-                  )}
+                  ) : null}
                 </NavItem>
               </div>
             );
