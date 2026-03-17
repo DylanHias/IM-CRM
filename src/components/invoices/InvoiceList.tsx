@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Loader2, ChevronLeft, ChevronRight, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +86,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
     <div className="space-y-4">
       {/* Filter Bar */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 min-w-[220px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search invoice number..."
@@ -120,8 +119,8 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
         </div>
       )}
 
-      {/* Loading */}
-      {isLoading ? (
+      {/* Loading (initial only) */}
+      {isLoading && invoices.length === 0 ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="text-muted-foreground animate-spin" />
         </div>
@@ -133,7 +132,10 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
       ) : (
         <>
           {/* Invoice Table */}
-          <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm">
+          <div className={cn(
+            'bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm transition-opacity',
+            isLoading && 'opacity-60 pointer-events-none'
+          )}>
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead>
@@ -164,27 +166,22 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
-                  <AnimatePresence>
-                    {invoices.map((inv, i) => (
-                      <motion.tr
-                        key={inv.invoiceNumber}
-                        className="hover:bg-muted/20 transition-colors cursor-pointer"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
-                        onClick={() => loadInvoiceDetail(inv.invoiceNumber)}
-                      >
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-primary hover:underline">{inv.invoiceNumber}</span>
-                        </td>
-                        <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDate)}</td>
-                        <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDueDate)}</td>
-                        <td className="px-4 py-3"><InvoiceStatusBadge status={inv.invoiceStatus} /></td>
-                        <td className="px-4 py-3 text-right font-medium text-foreground">{formatCurrency(inv.invoiceAmountInclTax)}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{inv.customerOrderNumber ?? '—'}</td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                  {invoices.map((inv) => (
+                    <tr
+                      key={inv.invoiceNumber}
+                      className="hover:bg-muted/20 transition-colors cursor-pointer"
+                      onClick={() => loadInvoiceDetail(inv.invoiceNumber)}
+                    >
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-primary hover:underline">{inv.invoiceNumber}</span>
+                      </td>
+                      <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDate)}</td>
+                      <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDueDate)}</td>
+                      <td className="px-4 py-3"><InvoiceStatusBadge status={inv.invoiceStatus} /></td>
+                      <td className="px-4 py-3 text-right font-medium text-foreground">{formatCurrency(inv.invoiceAmountInclTax)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{inv.customerOrderNumber ?? '—'}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -199,7 +196,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage <= 1}
+                disabled={currentPage <= 1 || isLoading}
                 onClick={() => goToPage(currentPage - 1)}
               >
                 <ChevronLeft size={14} />
@@ -207,7 +204,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage >= totalPages}
+                disabled={currentPage >= totalPages || isLoading}
                 onClick={() => goToPage(currentPage + 1)}
               >
                 <ChevronRight size={14} />

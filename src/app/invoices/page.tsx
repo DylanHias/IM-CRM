@@ -36,7 +36,7 @@ export default function InvoicesPage() {
   return (
     <AuthGuard>
       <AppShell title="Invoices">
-        <div className="max-w-5xl mx-auto space-y-5">
+        <div className="space-y-5">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Invoices</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -45,7 +45,7 @@ export default function InvoicesPage() {
           </div>
 
           {/* Customer Search */}
-          <div className="relative max-w-md">
+          <div className="relative max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
             <Input
               placeholder="Search customer by name or account number..."
