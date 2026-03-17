@@ -24,7 +24,8 @@ const SidebarContainer = styled(motion.aside)`
 `;
 
 const Logo = styled.div`
-  padding: 14px 12px;
+  height: 52px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   gap: 10px;
