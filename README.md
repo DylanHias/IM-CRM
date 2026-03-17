@@ -1,6 +1,6 @@
 # Ingram CRM
 
-A local-first desktop CRM built for Technical Account Managers at Ingram Micro. Replaces the cluttered existing tooling with a streamlined interface for managing customers, logging activities, tracking follow-ups, and looking up invoices — all with offline support.
+A local-first desktop CRM built for Ingram Micro. Replaces the cluttered existing tooling with a streamlined interface for managing customers, logging activities, tracking follow-ups and looking up invoices — all with offline support.
 
 ## Tech Stack
 
