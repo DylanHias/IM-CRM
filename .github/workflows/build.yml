@@ -71,30 +71,15 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build signed Tauri app
-        run: pnpm tauri build
+      - name: Build, sign, and release
+        uses: tauri-apps/tauri-action@v0
         env:
-          NEXT_PUBLIC_USE_MOCK_DATA: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - name: List bundle output
-        shell: bash
-        run: find src-tauri/target/release/bundle -type f | head -50
-
-      - name: Collect release assets
-        shell: bash
-        run: |
-          mkdir -p release-assets
-          cp src-tauri/target/release/bundle/nsis/* release-assets/ 2>/dev/null || true
-          cp src-tauri/target/release/bundle/msi/* release-assets/ 2>/dev/null || true
-          ls -la release-assets/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+          NEXT_PUBLIC_USE_MOCK_DATA: true
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: Ingram CRM v${{ steps.version.outputs.version }}
-          generate_release_notes: true
-          make_latest: true
-          files: release-assets/*
+          tagName: v${{ steps.version.outputs.version }}
+          releaseName: Ingram CRM v${{ steps.version.outputs.version }}
+          generateReleaseNotes: true
+          updaterJsonPreferNsis: true
