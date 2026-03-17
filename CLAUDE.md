@@ -54,7 +54,7 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 ## Dev Server
 
-- After making changes, always run `rm -rf .next` before restarting the dev server to avoid stale cache 404 errors on static chunks
+- **Do not** clear the `.next` cache unless the dev server is actually broken (stale cache 404s, build errors). Clearing it slows down restarts.
 - Kill any existing dev server processes before starting a new one to avoid port conflicts
 - **After every code change session**: kill stale node processes on ports 3000–3004 before starting a fresh dev server. Use: `netstat -ano | grep LISTENING | grep -E ":300[0-4] " | awk '{print $5}' | sort -u | xargs -I{} taskkill //PID {} //F`
 
@@ -71,6 +71,15 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 - **Commit after every completed change** — each logical unit of work gets its own commit
 - **Push to remote** after committing — always run `git push` after a successful commit
+
+## Versioning
+
+- **Single source of truth**: `package.json` — CI syncs it to `tauri.conf.json` and `Cargo.toml` automatically
+- **After every change session**, evaluate what kind of semver bump is needed:
+  - **Patch** (0.x.Y): bug fixes, typos, minor tweaks
+  - **Minor** (0.X.0): new features, new UI sections, new capabilities
+  - **Major** (X.0.0): breaking changes, major redesigns
+- Bump the version in `package.json` as part of the final commit
 
 ## Tauri / Async
 
