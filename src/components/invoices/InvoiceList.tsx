@@ -96,7 +96,13 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
             className="pl-9 h-9 bg-card shadow-sm border-border/70 rounded-lg"
           />
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(value) => {
+          setFilterStatus(value);
+          const filters: InvoiceSearchParams = {};
+          if (filterNumber.trim()) filters.invoiceNumber = filterNumber.trim();
+          if (value !== 'all') filters.invoiceStatus = value;
+          applyFilters(filters);
+        }}>
           <SelectTrigger className="w-[148px] h-9">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -107,9 +113,6 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
             <SelectItem value="Past Due">Past Due</SelectItem>
           </SelectContent>
         </Select>
-        <Button size="sm" variant="outline" onClick={handleSearch}>
-          Search
-        </Button>
       </div>
 
       {/* Error */}
