@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Loader2, ChevronLeft, ChevronRight, Search, AlertTriangle } from 'lucide-react';
+import { FileText, Loader2, ChevronLeft, ChevronRight, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +10,10 @@ import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { InvoiceDetailPanel } from './InvoiceDetailPanel';
 import { useInvoices } from '@/hooks/useInvoices';
 import { formatDate } from '@/lib/utils/dateUtils';
+import { cn } from '@/lib/utils';
 import type { InvoiceSearchParams } from '@/types/invoice';
+
+type InvoiceSortField = 'invoiceNumber' | 'invoiceDate' | 'invoiceDueDate' | 'invoiceStatus' | 'invoiceAmountInclTax' | 'customerOrderNumber';
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
@@ -30,6 +33,21 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
 
   const [filterNumber, setFilterNumber] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [sortField, setSortField] = useState<InvoiceSortField | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  function toggleSort(field: InvoiceSortField) {
+    if (sortField === field) {
+      const newDir = sortDir === 'asc' ? 'desc' : 'asc';
+      setSortDir(newDir);
+      applyFilters({ orderby: field, direction: newDir });
+    } else {
+      const defaultDir = field === 'invoiceNumber' || field === 'customerOrderNumber' ? 'asc' : 'desc';
+      setSortField(field);
+      setSortDir(defaultDir);
+      applyFilters({ orderby: field, direction: defaultDir });
+    }
+  }
 
   if (!resellerId) {
     return (
@@ -120,12 +138,29 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-border/50 bg-muted/30">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Invoice #</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Date</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Due Date</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Amount</th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Order #</th>
+                    {([
+                      { field: 'invoiceNumber' as InvoiceSortField, label: 'Invoice #', align: 'text-left' },
+                      { field: 'invoiceDate' as InvoiceSortField, label: 'Date', align: 'text-left' },
+                      { field: 'invoiceDueDate' as InvoiceSortField, label: 'Due Date', align: 'text-left' },
+                      { field: 'invoiceStatus' as InvoiceSortField, label: 'Status', align: 'text-left' },
+                      { field: 'invoiceAmountInclTax' as InvoiceSortField, label: 'Amount', align: 'text-right' },
+                      { field: 'customerOrderNumber' as InvoiceSortField, label: 'Order #', align: 'text-left' },
+                    ] as const).map(({ field, label, align }) => (
+                      <th
+                        key={field}
+                        className={cn(
+                          align, 'px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors'
+                        )}
+                        onClick={() => toggleSort(field)}
+                      >
+                        <span className={cn('inline-flex items-center gap-1', align === 'text-right' && 'justify-end')}>
+                          {label}
+                          {sortField === field && (
+                            sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                          )}
+                        </span>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">

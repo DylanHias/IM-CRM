@@ -18,7 +18,7 @@ import { useCustomerStore } from '@/store/customerStore';
 import { cn } from '@/lib/utils';
 import type { Customer, Contact } from '@/types/entities';
 
-type SortField = 'arr' | 'name' | 'language';
+type SortField = 'name' | 'bcn' | 'cloudCustomer' | 'language' | 'arr';
 
 function formatArr(value: number | null): string {
   if (value === null) return '—';
@@ -123,15 +123,28 @@ export default function ArrOverviewPage() {
     });
     return [...rows].sort((a, b) => {
       let cmp = 0;
-      if (sortBy === 'arr') {
-        if (a.arr === null && b.arr === null) cmp = 0;
-        else if (a.arr === null) cmp = 1;
-        else if (b.arr === null) cmp = -1;
-        else cmp = a.arr - b.arr;
-      } else if (sortBy === 'name') {
-        cmp = a.name.localeCompare(b.name);
-      } else if (sortBy === 'language') {
-        cmp = (a.language ?? '').localeCompare(b.language ?? '');
+      switch (sortBy) {
+        case 'arr':
+          if (a.arr === null && b.arr === null) cmp = 0;
+          else if (a.arr === null) cmp = 1;
+          else if (b.arr === null) cmp = -1;
+          else cmp = a.arr - b.arr;
+          break;
+        case 'name':
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case 'bcn':
+          cmp = (a.bcn ?? '').localeCompare(b.bcn ?? '');
+          break;
+        case 'cloudCustomer': {
+          const aVal = a.cloudCustomer === true ? 1 : a.cloudCustomer === false ? 0 : -1;
+          const bVal = b.cloudCustomer === true ? 1 : b.cloudCustomer === false ? 0 : -1;
+          cmp = aVal - bVal;
+          break;
+        }
+        case 'language':
+          cmp = (a.language ?? '').localeCompare(b.language ?? '');
+          break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
@@ -156,7 +169,16 @@ export default function ArrOverviewPage() {
     XLSX.writeFile(wb, `arr-overview-${date}.xlsx`);
   }
 
-  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : 'language';
+  function toggleSort(field: SortField) {
+    if (sortBy === field) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(field === 'name' || field === 'bcn' || field === 'language' ? 'asc' : 'desc');
+    }
+  }
+
+  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : sortBy === 'bcn' ? 'BCN' : sortBy === 'cloudCustomer' ? 'cloud' : 'language';
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
@@ -200,6 +222,8 @@ export default function ArrOverviewPage() {
                 <SelectContent>
                   <SelectItem value="arr">ARR</SelectItem>
                   <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="bcn">BCN</SelectItem>
+                  <SelectItem value="cloudCustomer">Cloud</SelectItem>
                   <SelectItem value="language">Language</SelectItem>
                 </SelectContent>
               </Select>
@@ -346,13 +370,31 @@ export default function ArrOverviewPage() {
                 <thead>
                   <tr className="border-b border-border/70 bg-muted/30">
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Customer Name</th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">BCN</th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Phone</th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Email</th>
-                    <th className="text-center px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Cloud Customer</th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Language</th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">ARR</th>
+                    {([
+                      { field: 'name' as SortField, label: 'Customer Name', align: 'text-left' },
+                      { field: 'bcn' as SortField, label: 'BCN', align: 'text-left' },
+                      { field: null, label: 'Phone', align: 'text-left' },
+                      { field: null, label: 'Email', align: 'text-left' },
+                      { field: 'cloudCustomer' as SortField, label: 'Cloud Customer', align: 'text-center' },
+                      { field: 'language' as SortField, label: 'Language', align: 'text-left' },
+                      { field: 'arr' as SortField, label: 'ARR', align: 'text-right' },
+                    ] as const).map(({ field, label, align }) => (
+                      <th
+                        key={label}
+                        className={cn(
+                          align, 'px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap',
+                          field && 'cursor-pointer select-none hover:text-foreground transition-colors'
+                        )}
+                        onClick={field ? () => toggleSort(field) : undefined}
+                      >
+                        <span className={cn('inline-flex items-center gap-1', align === 'text-right' && 'justify-end')}>
+                          {label}
+                          {field && sortBy === field && (
+                            sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
+                          )}
+                        </span>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">

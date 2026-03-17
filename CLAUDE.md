@@ -60,7 +60,8 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 ## Frontend Validation (Playwright MCP)
 
-- After any frontend change, validate visually using the Playwright MCP:
+- **Ask the user before launching Playwright** — do not auto-validate without permission
+- When approved, validate visually using the Playwright MCP:
   1. Navigate to the affected page with `browser_navigate`
   2. Take a screenshot with `browser_take_screenshot` to confirm the change
   3. **Always** call `browser_close` after validation to terminate the browser instance
