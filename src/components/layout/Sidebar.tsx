@@ -234,7 +234,9 @@ export function Sidebar() {
       </NavSection>
 
       <Footer>
-        <VersionLabel title="v0.3.5">v0.3.5</VersionLabel>
+        <VersionLabel title={`v${process.env.NEXT_PUBLIC_APP_VERSION}`}>
+          v{process.env.NEXT_PUBLIC_APP_VERSION}
+        </VersionLabel>
       </Footer>
     </SidebarContainer>
   );
