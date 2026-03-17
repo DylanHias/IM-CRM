@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
@@ -138,6 +139,47 @@ const VersionLabel = styled.div`
   white-space: nowrap;
 `;
 
+const UpdateButton = styled.button`
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background-color: hsl(var(--primary));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  width: 100%;
+  overflow: hidden;
+  color: hsl(var(--primary-foreground));
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+`;
+
+const SpinningIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 17px;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
 const ToggleButton = styled.button`
   height: 40px;
   border-radius: 10px;
@@ -168,6 +210,7 @@ export function Sidebar() {
   const { overdueCount } = useFollowUpStore();
 
   const totalPending = pendingActivityCount + pendingFollowUpCount;
+  const { updateAvailable, downloading, install } = useAppUpdater();
 
   const navItems = [
     { href: '/customers', label: 'Customers', icon: Users },
@@ -221,7 +264,21 @@ export function Sidebar() {
           })}
         </div>
 
-        <div style={{ padding: '0 10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '0 10px' }}>
+          {updateAvailable && (
+            <UpdateButton
+              onClick={install}
+              disabled={downloading}
+              title={downloading ? 'Downloading update…' : 'Update available'}
+            >
+              {downloading ? (
+                <SpinningIcon><Loader2 size={17} /></SpinningIcon>
+              ) : (
+                <IconWrapper><Download size={17} /></IconWrapper>
+              )}
+              <NavLabel>{downloading ? 'Updating…' : 'Update'}</NavLabel>
+            </UpdateButton>
+          )}
           <ToggleButton
             onClick={toggleSidebar}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
