@@ -35,5 +35,8 @@ next-env.d.ts
 # claude
 .claude/
 
+# playwright mcp
+.playwright-mcp/
+
 # tauri
 /src-tauri/target
