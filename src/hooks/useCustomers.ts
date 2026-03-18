@@ -7,6 +7,8 @@ import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
+import { seedMockData } from '@/lib/db/seed';
+import { getDb } from '@/lib/db/client';
 
 export function useCustomers() {
   const {
@@ -21,7 +23,13 @@ export function useCustomers() {
     const load = async () => {
       try {
         if (isTauriApp()) {
-          const data = await queryAllCustomers();
+          let data = await queryAllCustomers();
+          if (data.length === 0) {
+            // DB is empty — seed mock data so FK references work for creates
+            const db = await getDb();
+            await seedMockData(db);
+            data = await queryAllCustomers();
+          }
           setCustomers(data.length > 0 ? data : mockCustomers);
         } else {
           setCustomers(mockCustomers);
@@ -36,7 +44,7 @@ export function useCustomers() {
     load();
   }, [customers.length, setCustomers, setLoading]);
 
-  // Load contacts for search — separate effect so it always runs even if customers are already cached
+  // Load contacts for search
   useEffect(() => {
     if (allContacts.length > 0) return;
     const load = async () => {

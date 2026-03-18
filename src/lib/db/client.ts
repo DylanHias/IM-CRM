@@ -15,7 +15,6 @@ export async function getDb(): Promise<Database> {
       const { default: SqlDatabase } = await import('@tauri-apps/plugin-sql');
       dbInstance = await SqlDatabase.load('sqlite:crm.db');
       await dbInstance.execute('PRAGMA journal_mode=WAL');
-      await dbInstance.execute('PRAGMA foreign_keys=ON');
       return dbInstance;
     } catch (err) {
       initPromise = null; // reset so next call can retry
