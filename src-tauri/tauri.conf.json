@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build"
+    "beforeDevCommand": "pnpm sync-version && pnpm dev",
+    "beforeBuildCommand": "pnpm sync-version && pnpm build"
   },
   "app": {
     "windows": [
@@ -45,7 +45,9 @@
   },
   "plugins": {
     "updater": {
-      "endpoints": ["https://github.com/DylanHias/IM-CRM/releases/latest/download/latest.json"],
+      "endpoints": [
+        "https://github.com/DylanHias/IM-CRM/releases/latest/download/latest.json"
+      ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU3MEEyRDIwMEQwRTc5QUQKUldTdGVRNE5JQzBLNTVTMy9PVGJYc2RReUN4dzB3c2x1a2prOExnRFFkV1QvRGtCa2ZqaTFxa1YK"
     }
   }

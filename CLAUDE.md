@@ -74,12 +74,14 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 ## Versioning
 
-- **Single source of truth**: `package.json` — CI syncs it to `tauri.conf.json` and `Cargo.toml` automatically
+- **Single source of truth**: `package.json` — only ever bump the version here
+- `pnpm sync-version` automatically propagates `package.json` version to `tauri.conf.json` and `Cargo.toml` (runs automatically via `beforeDevCommand`/`beforeBuildCommand`)
+- **Never manually edit** the version in `tauri.conf.json` or `Cargo.toml`
 - **After every change session**, evaluate what kind of semver bump is needed:
   - **Patch** (0.x.Y): bug fixes, typos, minor tweaks
   - **Minor** (0.X.0): new features, new UI sections, new capabilities
   - **Major** (X.0.0): breaking changes, major redesigns
-- Bump the version in `package.json` as part of the final commit
+- Bump the version in `package.json` as part of the final commit, then run `pnpm sync-version`
 
 ## Tauri / Async
 
