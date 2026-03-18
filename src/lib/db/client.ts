@@ -1,5 +1,7 @@
 import type Database from '@tauri-apps/plugin-sql';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { seedMockData } from '@/lib/db/seed';
+import { mockCustomers } from '@/lib/mock/customers';
 
 let dbInstance: Database | null = null;
 let initPromise: Promise<Database> | null = null;
@@ -233,7 +235,6 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 
     // Backfill from mock data if applicable
     if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-      const { mockCustomers } = await import('@/lib/mock/customers');
       for (const c of mockCustomers) {
         await db.execute(
           `UPDATE customers SET reseller_id = $1, bcn = $2, cloud_customer = $3, language = $4, arr = $5 WHERE id = $6`,
@@ -256,6 +257,5 @@ async function seedIfNeeded(db: Database): Promise<void> {
   );
   if (existing[0]?.count > 0) return;
 
-  const { seedMockData } = await import('@/lib/db/seed');
   await seedMockData(db);
 }
