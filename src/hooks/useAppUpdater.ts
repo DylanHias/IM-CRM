@@ -24,8 +24,8 @@ export function useAppUpdater(): AppUpdaterState {
         updateRef.current = update;
         setUpdateAvailable(true);
       }
-    } catch {
-      // Silently fail — no update server or offline
+    } catch (error) {
+      console.error('[updater] Failed to check for updates:', error);
     }
   }, []);
 
@@ -46,7 +46,8 @@ export function useAppUpdater(): AppUpdaterState {
       await update.downloadAndInstall();
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();
-    } catch {
+    } catch (error) {
+      console.error('[updater] Failed to install update:', error);
       setDownloading(false);
     }
   }, [downloading]);

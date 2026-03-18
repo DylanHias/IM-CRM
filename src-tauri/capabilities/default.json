@@ -9,6 +9,8 @@
     "sql:allow-select",
     "sql:allow-load",
     "sql:allow-close",
-    "http:default"
+    "http:default",
+    "updater:default",
+    "process:allow-restart"
   ]
 }
