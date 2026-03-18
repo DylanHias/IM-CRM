@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ingram CRM",
+  "productName": "Ingram Micro CRM",
   "version": "0.7.2",
   "identifier": "com.ingramcrm.app",
   "build": {
