@@ -10,27 +10,13 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 import type { AccountInfo } from '@azure/msal-browser';
+import { WindowFrame } from '@/components/layout/WindowFrame';
 
 const PageWrapper = styled.div`
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  flex-direction: column;
   overflow: hidden;
-  background-color: #f0f2f5;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/images/login_screen.jpg');
-    background-size: cover;
-    background-position: center;
-    filter: blur(24px) brightness(0.7);
-    transform: scale(1.1);
-    pointer-events: none;
-  }
 `;
 
 const SplitCard = styled.div`
@@ -106,6 +92,28 @@ const staggerContainer = {
   },
 };
 
+const ContentArea = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f2f5;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('/images/login_screen.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(24px) brightness(0.7);
+    transform: scale(1.1);
+    pointer-events: none;
+  }
+`;
+
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: {
@@ -169,6 +177,8 @@ export default function LoginPage() {
 
   return (
     <PageWrapper>
+      <WindowFrame />
+      <ContentArea>
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -317,6 +327,7 @@ export default function LoginPage() {
           </RightPanel>
         </SplitCard>
       </motion.div>
+      </ContentArea>
     </PageWrapper>
   );
 }

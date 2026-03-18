@@ -1,7 +1,7 @@
 'use client';
 
 import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
+import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
 import styled from 'styled-components';
@@ -42,7 +42,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   return (
     <Shell>
-      <TopBar />
+      <TitleBar />
       <Body>
         <Sidebar />
         <Main>
