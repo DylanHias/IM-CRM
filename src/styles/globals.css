@@ -38,8 +38,8 @@
     --sidebar-hover-bg: 218 22% 95%;
     --topbar-bg: 0 0% 100%;
     --topbar-border: 218 22% 91%;
-    --titlebar-bg: 222 39% 15%;
-    --titlebar-fg: 0 0% 95%;
+    --titlebar-bg: 0 0% 100%;
+    --titlebar-fg: 222 39% 25%;
   }
 
 }

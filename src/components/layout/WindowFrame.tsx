@@ -9,6 +9,7 @@ import styled from 'styled-components';
 const Bar = styled.div`
   height: 36px;
   background-color: hsl(var(--titlebar-bg));
+  border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
   flex-shrink: 0;
