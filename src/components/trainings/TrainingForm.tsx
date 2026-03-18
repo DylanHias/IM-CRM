@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Loader2, CheckCircle2, X } from 'lucide-react';
+import { Loader2, CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
   const [status, setStatus] = useState<Training['status']>('registered');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const participantInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
       setInstructor(initialData?.provider ?? '');
       setStatus(initialData?.status ?? 'registered');
       setSuccess(false);
+      setError(null);
     }
   }, [open, initialData]);
 
@@ -80,6 +82,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
     }
 
     setIsSubmitting(true);
+    setError(null);
     const now = new Date().toISOString();
 
     const training: Training = {
@@ -103,6 +106,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
       setTimeout(() => handleOpenChange(false), 900);
     } catch (err) {
       console.error('[TrainingForm] Failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save training. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,6 +127,12 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                {error}
+              </div>
+            )}
             <div className="space-y-1">
               <Label htmlFor="tf-title">Training Title *</Label>
               <Input id="tf-title" placeholder="e.g. Azure Fundamentals" value={title} onChange={(e) => setTitle(e.target.value)} required />

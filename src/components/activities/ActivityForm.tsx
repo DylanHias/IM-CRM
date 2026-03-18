@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useActivities } from '@/hooks/useActivities';
 import { todayISO } from '@/lib/utils/dateUtils';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { Contact } from '@/types/entities';
 
 interface ActivityFormProps {
@@ -36,12 +36,14 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [contactId, setContactId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
     try {
       await createActivity({
         customerId,
@@ -55,6 +57,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       setTimeout(() => router.back(), 1200);
     } catch (err) {
       console.error('[ActivityForm] Failed to create:', err);
+      setError(err instanceof Error ? err.message : 'Failed to log activity. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -72,6 +75,12 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          {error}
+        </div>
+      )}
       <div className="space-y-1">
         <Label>Customer</Label>
         <div className="h-10 px-3 flex items-center bg-muted rounded-md text-sm text-muted-foreground">

@@ -14,6 +14,8 @@ export async function getDb(): Promise<Database> {
     try {
       const { default: SqlDatabase } = await import('@tauri-apps/plugin-sql');
       dbInstance = await SqlDatabase.load('sqlite:crm.db');
+      await dbInstance.execute('PRAGMA journal_mode=WAL');
+      await dbInstance.execute('PRAGMA foreign_keys=ON');
       return dbInstance;
     } catch (err) {
       initPromise = null; // reset so next call can retry
@@ -55,9 +57,6 @@ async function runSchema(db: Database): Promise<void> {
   }
 
   // Run full schema
-  await db.execute(`PRAGMA journal_mode=WAL`);
-  await db.execute(`PRAGMA foreign_keys=ON`);
-
   await db.execute(`
     CREATE TABLE IF NOT EXISTS customers (
       id              TEXT PRIMARY KEY,

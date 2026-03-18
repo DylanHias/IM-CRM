@@ -44,7 +44,7 @@ export async function upsertContact(contact: Contact): Promise<void> {
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
-      mobile=excluded.mobile, synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+      mobile=excluded.mobile, notes=excluded.notes, synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,

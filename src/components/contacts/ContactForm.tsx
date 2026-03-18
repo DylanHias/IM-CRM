@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +32,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -43,6 +44,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setMobile(initialData?.mobile ?? '');
       setNotes(initialData?.notes ?? '');
       setSuccess(false);
+      setError(null);
     }
   }, [open, initialData]);
 
@@ -56,6 +58,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
     if (!firstName.trim() || !lastName.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
     const now = new Date().toISOString();
 
     const contact: Contact = {
@@ -83,6 +86,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setTimeout(() => handleOpenChange(false), 900);
     } catch (err) {
       console.error('[ContactForm] Failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save contact. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -103,6 +107,12 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="cf-firstName">First Name *</Label>
