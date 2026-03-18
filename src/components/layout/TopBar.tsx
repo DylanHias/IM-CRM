@@ -19,8 +19,7 @@ const Bar = styled.header`
   align-items: center;
   padding: 0 20px;
   gap: 8px;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 `;

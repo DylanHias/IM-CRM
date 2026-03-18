@@ -18,7 +18,7 @@ const SidebarContainer = styled(motion.aside)`
   box-shadow: 1px 0 0 hsl(var(--sidebar-border));
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   transition: background-color 0.2s ease;
 `;

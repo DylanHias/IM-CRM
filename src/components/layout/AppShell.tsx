@@ -8,10 +8,17 @@ import styled from 'styled-components';
 
 const Shell = styled.div`
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background-color: hsl(var(--background));
   transition: background-color 0.2s ease;
+`;
+
+const Body = styled.div`
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 `;
 
 const Main = styled.main`
@@ -41,13 +48,15 @@ interface AppShellProps {
 export function AppShell({ children, backLink }: AppShellProps) {
   return (
     <Shell>
-      <Sidebar />
-      <Main>
-        <TopBar backLink={backLink} />
-        <Content>
-          <PageMotion>{children}</PageMotion>
-        </Content>
-      </Main>
+      <TopBar backLink={backLink} />
+      <Body>
+        <Sidebar />
+        <Main>
+          <Content>
+            <PageMotion>{children}</PageMotion>
+          </Content>
+        </Main>
+      </Body>
       <ChangelogDialog />
     </Shell>
   );
