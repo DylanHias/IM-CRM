@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
 import { useSyncStore } from '@/store/syncStore';
@@ -24,33 +23,6 @@ const SidebarContainer = styled(motion.aside)`
   transition: background-color 0.2s ease;
 `;
 
-const Logo = styled.div`
-  height: 52px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  border-bottom: 1px solid hsl(var(--sidebar-border));
-  overflow: hidden;
-`;
-
-const LogoBadge = styled.div`
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  flex-shrink: 0;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(21, 112, 239, 0.35);
-`;
-
-const LogoText = styled.span`
-  font-size: 13px;
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  overflow: hidden;
-`;
 
 const NavSection = styled.nav`
   flex: 1;
@@ -263,13 +235,6 @@ export function Sidebar() {
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       style={{ minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
     >
-      <Logo>
-        <LogoBadge title="Ingram Micro CRM">
-          <Image src="/images/icon.png" alt="IM CRM" width={34} height={34} priority />
-        </LogoBadge>
-        <LogoText>Ingram Micro</LogoText>
-      </Logo>
-
       <NavSection>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}>
           {navItems.map(({ href, label, icon: Icon, badge, badgeVariant, badgeStyle }) => {
