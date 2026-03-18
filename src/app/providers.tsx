@@ -10,22 +10,25 @@ import type { PublicClientApplication } from '@azure/msal-browser';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
+  const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const instance = await initializeMsal();
-      setMsalInstance(instance);
 
       try {
         await initDb();
       } catch (err) {
         console.error('[DB] Initialization failed:', err);
       }
+      setDbReady(true);
+
+      setMsalInstance(instance);
     };
     init();
   }, []);
 
-  if (!msalInstance) {
+  if (!msalInstance || !dbReady) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
