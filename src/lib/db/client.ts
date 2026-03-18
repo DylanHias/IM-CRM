@@ -233,14 +233,12 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       try { await db.execute(`ALTER TABLE customers ADD COLUMN ${col}`); } catch { /* column may already exist */ }
     }
 
-    // Backfill from mock data if applicable
-    if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-      for (const c of mockCustomers) {
-        await db.execute(
-          `UPDATE customers SET reseller_id = $1, bcn = $2, cloud_customer = $3, language = $4, arr = $5 WHERE id = $6`,
-          [c.resellerId, c.bcn, c.cloudCustomer ? 1 : 0, c.language, c.arr, c.id]
-        );
-      }
+    // Backfill from mock data
+    for (const c of mockCustomers) {
+      await db.execute(
+        `UPDATE customers SET reseller_id = $1, bcn = $2, cloud_customer = $3, language = $4, arr = $5 WHERE id = $6`,
+        [c.resellerId, c.bcn, c.cloudCustomer ? 1 : 0, c.language, c.arr, c.id]
+      );
     }
 
     await db.execute(
@@ -250,12 +248,16 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 }
 
 async function seedIfNeeded(db: Database): Promise<void> {
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA !== 'true') return;
-
   const existing = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM customers`
   );
   if (existing[0]?.count > 0) return;
 
-  await seedMockData(db);
+  console.log('[DB] Empty database detected — seeding mock data');
+  try {
+    await seedMockData(db);
+    console.log('[DB] Mock data seeded successfully');
+  } catch (err) {
+    console.error('[DB] Seed failed:', err);
+  }
 }
