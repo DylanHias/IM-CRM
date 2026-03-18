@@ -9,6 +9,27 @@ import type { Customer } from '@/types/entities';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
+const ICON_COLORS = [
+  { bg: 'hsl(215 80% 95%)', fg: 'hsl(215 70% 45%)' },
+  { bg: 'hsl(150 60% 92%)', fg: 'hsl(150 55% 35%)' },
+  { bg: 'hsl(340 70% 94%)', fg: 'hsl(340 60% 45%)' },
+  { bg: 'hsl(30 80% 93%)',  fg: 'hsl(30 70% 40%)' },
+  { bg: 'hsl(270 60% 94%)', fg: 'hsl(270 50% 45%)' },
+  { bg: 'hsl(180 55% 92%)', fg: 'hsl(180 50% 35%)' },
+  { bg: 'hsl(0 65% 94%)',   fg: 'hsl(0 55% 45%)' },
+  { bg: 'hsl(50 70% 92%)',  fg: 'hsl(50 60% 35%)' },
+  { bg: 'hsl(200 65% 93%)', fg: 'hsl(200 55% 40%)' },
+  { bg: 'hsl(120 50% 92%)', fg: 'hsl(120 45% 35%)' },
+];
+
+function getIconColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return ICON_COLORS[Math.abs(hash) % ICON_COLORS.length];
+}
+
 const List = styled.div`
   display: flex;
   flex-direction: column;
@@ -35,15 +56,15 @@ const Row = styled.div`
   }
 `;
 
-const Icon = styled.div`
+const Icon = styled.div<{ $bg: string; $fg: string }>`
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background-color: hsl(var(--primary) / 0.09);
+  background-color: ${(p) => p.$bg};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: hsl(var(--primary));
+  color: ${(p) => p.$fg};
   margin-right: 14px;
   flex-shrink: 0;
 `;
@@ -127,7 +148,7 @@ export function CustomerList({ customers }: CustomerListProps) {
         {customers.map((customer) => (
           <motion.div key={customer.id} variants={itemVariants}>
             <Row onClick={() => handleClick(customer)}>
-              <Icon>
+              <Icon $bg={getIconColor(customer.name).bg} $fg={getIconColor(customer.name).fg}>
                 <Building2 size={16} />
               </Icon>
 

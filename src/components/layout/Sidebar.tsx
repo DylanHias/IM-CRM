@@ -241,9 +241,8 @@ export function Sidebar() {
   return (
     <SidebarContainer
       initial={false}
-      animate={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
+      animate={{ width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH, minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
-      style={{ minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
     >
       <NavSection>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}>
