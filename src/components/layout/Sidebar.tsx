@@ -149,7 +149,16 @@ const UpdateButton = styled.button`
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: opacity 0.15s ease;
+  animation: pulse-blue 2s ease-in-out infinite;
+
+  @keyframes pulse-blue {
+    0%, 100% {
+      background-color: hsl(var(--primary));
+    }
+    50% {
+      background-color: hsl(var(--primary) / 0.7);
+    }
+  }
 
   &:hover {
     opacity: 0.9;
@@ -158,6 +167,7 @@ const UpdateButton = styled.button`
   &:disabled {
     cursor: not-allowed;
     opacity: 0.7;
+    animation: none;
   }
 `;
 
