@@ -29,15 +29,19 @@ export function useFollowUps(customerId: string) {
       try {
         if (isTauriApp()) {
           const data = await queryFollowUpsByCustomer(customerId);
-          setFollowUps(data, customerId);
-          const overdue = await queryOverdueFollowUpCount();
-          setOverdueCount(overdue);
+          if (data.length > 0) {
+            setFollowUps(data, customerId);
+            const overdue = await queryOverdueFollowUpCount();
+            setOverdueCount(overdue);
+          } else {
+            setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
+          }
         } else {
-          const data = mockFollowUps.filter((f) => f.customerId === customerId);
-          setFollowUps(data, customerId);
+          setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
         }
       } catch (err) {
         console.error('[useFollowUps] Failed to load:', err);
+        setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
       } finally {
         setLoading(false);
       }

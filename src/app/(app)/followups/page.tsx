@@ -20,14 +20,19 @@ export default function FollowUpsPage() {
 
   useEffect(() => {
     const load = async () => {
-      if (isTauriApp()) {
-        const [fups, customers] = await Promise.all([
-          queryAllFollowUps(),
-          queryAllCustomers(),
-        ]);
-        setFollowUps(fups);
-        setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
-      } else {
+      try {
+        if (isTauriApp()) {
+          const [fups, customers] = await Promise.all([
+            queryAllFollowUps(),
+            queryAllCustomers(),
+          ]);
+          setFollowUps(fups.length > 0 ? fups : mockFollowUps);
+          setCustomerMap(new Map((customers.length > 0 ? customers : mockCustomers).map((c) => [c.id, c.name])));
+        } else {
+          setFollowUps(mockFollowUps);
+          setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+        }
+      } catch {
         setFollowUps(mockFollowUps);
         setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
       }

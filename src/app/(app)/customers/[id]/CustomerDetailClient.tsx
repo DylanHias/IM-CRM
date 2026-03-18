@@ -96,14 +96,19 @@ export default function CustomerDetailClient() {
   useEffect(() => {
     if (!customerId || customerId === '_placeholder') return;
     const load = async () => {
-      if (isTauriApp()) {
-        const [c, t] = await Promise.all([
-          queryContactsByCustomer(customerId),
-          queryTrainingsByCustomer(customerId),
-        ]);
-        setContacts(c);
-        setTrainings(t);
-      } else {
+      try {
+        if (isTauriApp()) {
+          const [c, t] = await Promise.all([
+            queryContactsByCustomer(customerId),
+            queryTrainingsByCustomer(customerId),
+          ]);
+          setContacts(c.length > 0 ? c : mockContacts.filter((c) => c.customerId === customerId));
+          setTrainings(t.length > 0 ? t : mockTrainings.filter((t) => t.customerId === customerId));
+        } else {
+          setContacts(mockContacts.filter((c) => c.customerId === customerId));
+          setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
+        }
+      } catch {
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
         setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
       }

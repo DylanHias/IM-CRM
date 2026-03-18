@@ -22,12 +22,13 @@ export function useCustomers() {
       try {
         if (isTauriApp()) {
           const data = await queryAllCustomers();
-          setCustomers(data);
+          setCustomers(data.length > 0 ? data : mockCustomers);
         } else {
           setCustomers(mockCustomers);
         }
       } catch (err) {
         console.error('[useCustomers] Failed to load customers:', err);
+        setCustomers(mockCustomers);
       } finally {
         setLoading(false);
       }
@@ -42,12 +43,13 @@ export function useCustomers() {
       try {
         if (isTauriApp()) {
           const contacts = await queryAllContacts();
-          setAllContacts(contacts);
+          setAllContacts(contacts.length > 0 ? contacts : mockContacts);
         } else {
           setAllContacts(mockContacts);
         }
       } catch (err) {
         console.error('[useCustomers] Failed to load contacts:', err);
+        setAllContacts(mockContacts);
       }
     };
     load();

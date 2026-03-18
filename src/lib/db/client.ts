@@ -11,9 +11,14 @@ export async function getDb(): Promise<Database> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    const { default: SqlDatabase } = await import('@tauri-apps/plugin-sql');
-    dbInstance = await SqlDatabase.load('sqlite:crm.db');
-    return dbInstance;
+    try {
+      const { default: SqlDatabase } = await import('@tauri-apps/plugin-sql');
+      dbInstance = await SqlDatabase.load('sqlite:crm.db');
+      return dbInstance;
+    } catch (err) {
+      initPromise = null; // reset so next call can retry
+      throw err;
+    }
   })();
 
   return initPromise;
@@ -180,7 +185,7 @@ async function runSchema(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS invoice_lines (
       id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_number     TEXT NOT NULL REFERENCES invoices(invoice_number) ON DELETE CASCADE,
+      invoice_number     TEXT NOT NULL,
       ingram_part_number TEXT,
       vendor_part_number TEXT,
       vendor_name        TEXT,

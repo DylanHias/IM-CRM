@@ -19,10 +19,14 @@ function NewActivityContent() {
   useEffect(() => {
     if (!customerId) return;
     const load = async () => {
-      if (isTauriApp()) {
-        const data = await queryContactsByCustomer(customerId);
-        setContacts(data);
-      } else {
+      try {
+        if (isTauriApp()) {
+          const data = await queryContactsByCustomer(customerId);
+          setContacts(data.length > 0 ? data : mockContacts.filter((c) => c.customerId === customerId));
+        } else {
+          setContacts(mockContacts.filter((c) => c.customerId === customerId));
+        }
+      } catch {
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
       }
     };

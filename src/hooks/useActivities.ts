@@ -23,15 +23,19 @@ export function useActivities(customerId: string) {
       try {
         if (isTauriApp()) {
           const data = await queryActivitiesByCustomer(customerId);
-          setActivities(data, customerId);
-          const pending = await countPendingActivities();
-          setPendingCount(pending);
+          if (data.length > 0) {
+            setActivities(data, customerId);
+            const pending = await countPendingActivities();
+            setPendingCount(pending);
+          } else {
+            setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
+          }
         } else {
-          const data = mockActivities.filter((a) => a.customerId === customerId);
-          setActivities(data, customerId);
+          setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
         }
       } catch (err) {
         console.error('[useActivities] Failed to load:', err);
+        setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
       } finally {
         setLoading(false);
       }
