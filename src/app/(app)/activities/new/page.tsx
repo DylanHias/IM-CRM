@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { ActivityForm } from '@/components/activities/ActivityForm';
 import { useCustomerStore } from '@/store/customerStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -49,12 +47,8 @@ function NewActivityContent() {
 
 export default function NewActivityPage() {
   return (
-    <AuthGuard>
-      <AppShell>
-        <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
-          <NewActivityContent />
-        </Suspense>
-      </AppShell>
-    </AuthGuard>
+    <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
+      <NewActivityContent />
+    </Suspense>
   );
 }

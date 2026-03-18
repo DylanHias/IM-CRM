@@ -8,8 +8,6 @@ import {
   Clock, User, Info, Loader2,
   Mail, Phone, Globe, FileText,
 } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -125,24 +123,18 @@ export default function CustomerDetailClient() {
 
   if (!customer) {
     return (
-      <AuthGuard>
-        <AppShell>
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Building2 size={40} className="text-muted-foreground" />
-            <p className="text-muted-foreground">Customer not found</p>
-            <Button variant="outline" onClick={() => router.push('/customers')}>
-              Back to Customers
-            </Button>
-          </div>
-        </AppShell>
-      </AuthGuard>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <Building2 size={40} className="text-muted-foreground" />
+        <p className="text-muted-foreground">Customer not found</p>
+        <Button variant="outline" onClick={() => router.push('/customers')}>
+          Back to Customers
+        </Button>
+      </div>
     );
   }
 
   return (
-    <AuthGuard>
-      <AppShell backLink={{ label: 'All customers', href: '/customers' }}>
-        <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
           {/* ── Company Header ── */}
           <motion.div
             className="mb-6"
@@ -510,9 +502,7 @@ export default function CustomerDetailClient() {
               </Dialog>
             </div>
           </div>
-        </div>
-      </AppShell>
-    </AuthGuard>
+    </div>
   );
 }
 

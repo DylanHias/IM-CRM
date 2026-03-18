@@ -7,8 +7,6 @@ import {
   Search, Download, Building2, User, X,
   SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -182,9 +180,7 @@ export default function ArrOverviewPage() {
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
-    <AuthGuard>
-      <AppShell>
-        <div className="space-y-3">
+    <div className="space-y-3">
           {/* Title */}
           <div>
             <h2 className="text-xl font-semibold text-foreground">ARR Overview</h2>
@@ -448,8 +444,6 @@ export default function ArrOverviewPage() {
               </table>
             </div>
           </div>
-        </div>
-      </AppShell>
-    </AuthGuard>
+    </div>
   );
 }

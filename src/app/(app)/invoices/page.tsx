@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import { FileText, Search } from 'lucide-react';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { Input } from '@/components/ui/input';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { useCustomerStore } from '@/store/customerStore';
@@ -34,9 +32,7 @@ export default function InvoicesPage() {
   const countryCode = selectedCustomer ? getCountryCode(selectedCustomer.addressCountry) : 'BE';
 
   return (
-    <AuthGuard>
-      <AppShell>
-        <div className="space-y-5">
+    <div className="space-y-5">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Invoices</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -86,8 +82,6 @@ export default function InvoicesPage() {
               countryCode={countryCode}
             />
           )}
-        </div>
-      </AppShell>
-    </AuthGuard>
+    </div>
   );
 }

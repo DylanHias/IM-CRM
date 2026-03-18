@@ -2,8 +2,6 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { FollowUpForm } from '@/components/followups/FollowUpForm';
 import { useCustomerStore } from '@/store/customerStore';
 
@@ -32,12 +30,8 @@ function NewFollowUpContent() {
 
 export default function NewFollowUpPage() {
   return (
-    <AuthGuard>
-      <AppShell>
-        <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
-          <NewFollowUpContent />
-        </Suspense>
-      </AppShell>
-    </AuthGuard>
+    <Suspense fallback={<div className="text-center py-12 text-muted-foreground">Loading...</div>}>
+      <NewFollowUpContent />
+    </Suspense>
   );
 }

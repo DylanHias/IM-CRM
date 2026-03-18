@@ -1,7 +1,5 @@
 'use client';
 
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { CustomerFilters } from '@/components/customers/CustomerFilters';
 import { CustomerList } from '@/components/customers/CustomerList';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -11,9 +9,7 @@ export default function CustomersPage() {
   const { customers, allCustomers, isLoading } = useCustomers();
 
   return (
-    <AuthGuard>
-      <AppShell>
-        <div className="max-w-5xl mx-auto space-y-5">
+    <div className="max-w-5xl mx-auto space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Customer Overview</h2>
@@ -36,8 +32,6 @@ export default function CustomersPage() {
           ) : (
             <CustomerList customers={customers} />
           )}
-        </div>
-      </AppShell>
-    </AuthGuard>
+    </div>
   );
 }

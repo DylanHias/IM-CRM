@@ -35,20 +35,14 @@ const Content = styled.div`
   padding: 24px 28px;
 `;
 
-interface BackLinkConfig {
-  label: string;
-  href: string;
-}
-
 interface AppShellProps {
   children: React.ReactNode;
-  backLink?: BackLinkConfig;
 }
 
-export function AppShell({ children, backLink }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   return (
     <Shell>
-      <TopBar backLink={backLink} />
+      <TopBar />
       <Body>
         <Sidebar />
         <Main>

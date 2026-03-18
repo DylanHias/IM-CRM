@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { RefreshCw, Wifi, WifiOff, LogOut, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -102,11 +103,15 @@ interface BackLinkConfig {
   href: string;
 }
 
-interface TopBarProps {
-  backLink?: BackLinkConfig;
+function useBackLink(): BackLinkConfig | undefined {
+  const pathname = usePathname();
+  const customerDetailMatch = /^\/customers\/[^/]+$/.test(pathname);
+  if (customerDetailMatch) return { label: 'All customers', href: '/customers' };
+  return undefined;
 }
 
-export function TopBar({ backLink }: TopBarProps) {
+export function TopBar() {
+  const backLink = useBackLink();
   const { account } = useAuthStore();
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();

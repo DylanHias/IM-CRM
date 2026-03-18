@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell } from '@/components/layout/AppShell';
-import { AuthGuard } from '@/components/layout/AuthGuard';
 import { FollowUpItem } from '@/components/followups/FollowUpItem';
 import { Badge } from '@/components/ui/badge';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -58,9 +56,7 @@ export default function FollowUpsPage() {
     customerMap.get(customerId) ?? customerId;
 
   return (
-    <AuthGuard>
-      <AppShell>
-        <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-foreground">All Follow-Ups</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -113,8 +109,6 @@ export default function FollowUpsPage() {
               </div>
             </section>
           )}
-        </div>
-      </AppShell>
-    </AuthGuard>
+    </div>
   );
 }
