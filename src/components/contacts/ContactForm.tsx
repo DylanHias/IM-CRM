@@ -86,7 +86,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setTimeout(() => handleOpenChange(false), 900);
     } catch (err) {
       console.error('[ContactForm] Failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save contact. Please try again.');
+      setError(err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err));
     } finally {
       setIsSubmitting(false);
     }

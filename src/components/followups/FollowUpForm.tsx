@@ -45,7 +45,7 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
       setTimeout(() => router.back(), 1200);
     } catch (err) {
       console.error('[FollowUpForm] Failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create follow-up. Please try again.');
+      setError(err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err));
     } finally {
       setIsSubmitting(false);
     }

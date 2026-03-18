@@ -57,7 +57,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       setTimeout(() => router.back(), 1200);
     } catch (err) {
       console.error('[ActivityForm] Failed to create:', err);
-      setError(err instanceof Error ? err.message : 'Failed to log activity. Please try again.');
+      setError(err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err));
     } finally {
       setIsSubmitting(false);
     }
