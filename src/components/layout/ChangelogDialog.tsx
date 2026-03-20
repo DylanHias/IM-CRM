@@ -33,7 +33,7 @@ export async function storeChangelog(body: string, version: string) {
   if (isTauriApp()) {
     try {
       const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-      await writeTextFile(CHANGELOG_FILE, JSON.stringify({ body, version }), { baseDir: BaseDirectory.AppData });
+      await writeTextFile(CHANGELOG_FILE, JSON.stringify({ body, version }), { baseDir: BaseDirectory.AppLocalData });
     } catch (err) {
       console.error('[changelog] Failed to write changelog file:', err);
     }
@@ -47,10 +47,10 @@ async function readAndClearChangelog(): Promise<ChangelogPayload | null> {
   if (isTauriApp()) {
     try {
       const { readTextFile, remove, exists, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-      const fileExists = await exists(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
+      const fileExists = await exists(CHANGELOG_FILE, { baseDir: BaseDirectory.AppLocalData });
       if (!fileExists) return null;
-      const raw = await readTextFile(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
-      await remove(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
+      const raw = await readTextFile(CHANGELOG_FILE, { baseDir: BaseDirectory.AppLocalData });
+      await remove(CHANGELOG_FILE, { baseDir: BaseDirectory.AppLocalData });
       return JSON.parse(raw) as ChangelogPayload;
     } catch (err) {
       console.error('[changelog] Failed to read changelog file:', err);
