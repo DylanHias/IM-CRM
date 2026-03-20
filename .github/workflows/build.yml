@@ -88,7 +88,6 @@ jobs:
             const lines = process.argv[1].split('\n').filter(Boolean);
             const friendly = lines.map(msg => {
               let m = msg
-                // Normalise verb tense
                 .replace(/^Fix\b/i, 'Fixed')
                 .replace(/^Add\b/i, 'Added')
                 .replace(/^Update\b/i, 'Updated')
@@ -97,42 +96,10 @@ jobs:
                 .replace(/^Improve\b/i, 'Improved')
                 .replace(/^Enable\b/i, 'Enabled')
                 .replace(/^Reduce\b/i, 'Reduced')
-                .replace(/^Brighten\b/i, 'Brightened')
-                .replace(/^Decouple\b/i, 'Decoupled')
-                .replace(/^Clean up\b/i, 'Cleaned up')
-                .replace(/^Soften\b/i, 'Softened')
-                .replace(/^Batch\b/i, 'Various')
-                .replace(/^Set\b/i, 'Set')
-                .replace(/^Show\b/i, 'Now showing')
                 .replace(/^Move\b/i, 'Moved')
                 .replace(/^Change[d]?\b/i, 'Changed')
-                .replace(/^Smooth\b/i, 'Smoother')
-                // Strip technical jargon
-                .replace(/\bregex\b/gi, 'matching')
-                .replace(/\bCSS variable-based\b/gi, '')
-                .replace(/\bFK constraint errors?\b/gi, 'database errors')
-                .replace(/\bNSIS\b/gi, 'installer')
-                .replace(/\benv var\b/gi, 'setting')
-                .replace(/\bDB\b/g, 'database')
-                .replace(/\bUI\b/g, 'visual')
-                .replace(/\bpopover\b/gi, 'popup')
-                .replace(/\bcomponents\b/gi, 'elements')
-                .replace(/\bcomponent\b/gi, 'element')
-                .replace(/\brace condition\b/gi, 'timing issue')
-                .replace(/\bmanual workflow.dispatch\b/gi, 'manual trigger')
-                .replace(/\bworkflow.dispatch\b/gi, 'manual trigger')
-                .replace(/\bTitleBar\b/g, 'title bar')
-                .replace(/\bTopBar\b/g, 'top bar')
-                .replace(/\bSidebar\b/g, 'sidebar')
-                .replace(/\btrailing.slash mismatch in back link\b/gi, 'back button navigation')
-                .replace(/\bmock data\b/gi, 'sample data')
-                .replace(/\bsilent form submission failures\b/gi, 'forms failing without warning')
-                .replace(/\bmin-width\b/gi, 'minimum width')
-                .replace(/\bfavicon\b/gi, 'browser tab icon')
-                .replace(/\bframeless window\b/gi, 'custom window')
-                // Clean up double spaces and em dashes with technical suffixes
-                .replace(/ — use .+$/i, '')
-                .replace(/  +/g, ' ')
+                .replace(/^Clean up\b/i, 'Cleaned up')
+                .replace(/^Batch\b/i, 'Various')
                 .trim();
               return '- ' + m;
             });
