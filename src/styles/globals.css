@@ -57,24 +57,24 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 14%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 14%;
-    --popover-foreground: 210 40% 98%;
+    --background: 220 10% 10%;
+    --foreground: 0 0% 95%;
+    --card: 220 10% 13%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 10% 13%;
+    --popover-foreground: 0 0% 95%;
     --primary: 217 87% 56%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 18%;
-    --secondary-foreground: 210 40% 90%;
-    --muted: 217 33% 18%;
-    --muted-foreground: 215 20% 55%;
+    --secondary: 220 8% 17%;
+    --secondary-foreground: 0 0% 85%;
+    --muted: 220 8% 17%;
+    --muted-foreground: 220 8% 55%;
     --accent: 263 70% 20%;
     --accent-foreground: 263 70% 75%;
     --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+    --border: 220 8% 19%;
+    --input: 220 8% 19%;
     --ring: 217 87% 56%;
     --success: 142 60% 45%;
     --success-foreground: 0 0% 100%;
@@ -82,26 +82,26 @@
     --warning-foreground: 0 0% 100%;
     --info: 199 80% 55%;
     --info-foreground: 0 0% 100%;
-    --sidebar-bg: 222 47% 13%;
-    --sidebar-fg: 215 20% 65%;
-    --sidebar-border: 217 33% 18%;
+    --sidebar-bg: 220 10% 12%;
+    --sidebar-fg: 220 8% 65%;
+    --sidebar-border: 220 8% 17%;
     --sidebar-active-bg: 217 87% 56%;
     --sidebar-active-fg: 0 0% 100%;
-    --sidebar-hover-bg: 217 33% 18%;
-    --topbar-bg: 222 47% 13%;
-    --topbar-border: 217 33% 18%;
-    --titlebar-bg: 222 47% 12%;
-    --titlebar-fg: 210 40% 90%;
+    --sidebar-hover-bg: 220 8% 17%;
+    --topbar-bg: 220 10% 12%;
+    --topbar-border: 220 8% 17%;
+    --titlebar-bg: 220 10% 11%;
+    --titlebar-fg: 0 0% 88%;
     --activity-meeting: 263 70% 60%;
-    --activity-meeting-bg: 263 50% 18%;
+    --activity-meeting-bg: 263 30% 16%;
     --activity-visit: 189 70% 50%;
-    --activity-visit-bg: 189 50% 18%;
+    --activity-visit-bg: 189 30% 16%;
     --activity-call: 142 60% 50%;
-    --activity-call-bg: 142 40% 18%;
+    --activity-call-bg: 142 25% 16%;
     --activity-note: 38 80% 55%;
-    --activity-note-bg: 38 50% 18%;
+    --activity-note-bg: 38 30% 16%;
     --training: 226 65% 65%;
-    --training-bg: 226 40% 18%;
+    --training-bg: 226 25% 16%;
   }
 
 }
