@@ -19,9 +19,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
 
       - name: Read version and sync to Tauri files
         id: version
@@ -66,52 +63,22 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate changelog from commits
+      - name: Read changelog
         id: changelog
         shell: bash
         run: |
-          # Find the most recent release tag that is NOT the current version
-          CURRENT="v${{ steps.version.outputs.version }}"
-          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -v "^${CURRENT}$" | head -1)
-          if [ -n "$PREV_TAG" ]; then
-            RANGE="${PREV_TAG}..HEAD"
+          VERSION="${{ steps.version.outputs.version }}"
+          FILE=".changelog/v${VERSION}.md"
+          if [ -f "$FILE" ]; then
+            {
+              echo "body<<CHANGELOG_EOF"
+              cat "$FILE"
+              echo "CHANGELOG_EOF"
+            } >> "$GITHUB_OUTPUT"
           else
-            RANGE="HEAD"
+            echo "::warning::No changelog found at $FILE"
+            echo "body=" >> "$GITHUB_OUTPUT"
           fi
-          # Collect commits, skip version bumps and merges
-          RAW=$(git log "$RANGE" --pretty=format:"%s" --no-merges \
-            | grep -vi "^v[0-9]" \
-            | grep -vi "^merge" \
-            | grep -vi "^bump version")
-          # Rewrite commit messages into user-friendly language
-          BODY=$(node -e "
-            const lines = process.argv[1].split('\n').filter(Boolean);
-            const friendly = lines.map(msg => {
-              let m = msg
-                .replace(/^Fix\b/i, 'Fixed')
-                .replace(/^Add\b/i, 'Added')
-                .replace(/^Update\b/i, 'Updated')
-                .replace(/^Remove\b/i, 'Removed')
-                .replace(/^Migrate\b/i, 'Migrated')
-                .replace(/^Improve\b/i, 'Improved')
-                .replace(/^Enable\b/i, 'Enabled')
-                .replace(/^Reduce\b/i, 'Reduced')
-                .replace(/^Move\b/i, 'Moved')
-                .replace(/^Change[d]?\b/i, 'Changed')
-                .replace(/^Clean up\b/i, 'Cleaned up')
-                .replace(/^Batch\b/i, 'Various')
-                .trim();
-              return '- ' + m;
-            });
-            console.log(friendly.join('\n'));
-          " "$RAW")
-          {
-            echo "body<<CHANGELOG_EOF"
-            echo "### What's new since ${PREV_TAG:-the beginning}"
-            echo ""
-            echo "$BODY"
-            echo "CHANGELOG_EOF"
-          } >> "$GITHUB_OUTPUT"
 
       - name: Build, sign, and release
         uses: tauri-apps/tauri-action@v0
