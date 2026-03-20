@@ -13,7 +13,7 @@ const Bar = styled.div`
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  z-index: 50;
+  z-index: 60;
   -webkit-app-region: drag;
   app-region: drag;
 `;
