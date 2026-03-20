@@ -19,6 +19,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Read version and sync to Tauri files
         id: version
@@ -67,14 +70,24 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # Find the most recent release tag that is NOT the current version
+          CURRENT="v${{ steps.version.outputs.version }}"
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -v "^${CURRENT}$" | head -1)
           if [ -n "$PREV_TAG" ]; then
-            BODY=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s" --no-merges | grep -v "^- v[0-9]" | grep -v "^- Merge")
+            RANGE="${PREV_TAG}..HEAD"
           else
-            BODY=$(git log --pretty=format:"- %s" --no-merges -20)
+            RANGE="HEAD"
           fi
+          # Collect commits, skip version bumps and merges
+          BODY=$(git log "$RANGE" --pretty=format:"%s" --no-merges \
+            | grep -vi "^v[0-9]" \
+            | grep -vi "^merge" \
+            | grep -vi "^bump version" \
+            | sed 's/^/- /')
           {
             echo "body<<CHANGELOG_EOF"
+            echo "### What's changed since ${PREV_TAG:-the beginning}"
+            echo ""
             echo "$BODY"
             echo "CHANGELOG_EOF"
           } >> "$GITHUB_OUTPUT"
