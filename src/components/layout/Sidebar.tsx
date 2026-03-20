@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
@@ -232,7 +233,22 @@ export function Sidebar() {
   const collapsed = !sidebarOpen;
   const pathname = usePathname();
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
-  const { overdueCount } = useFollowUpStore();
+  const { overdueCount, setOverdueCount } = useFollowUpStore();
+
+  useEffect(() => {
+    const load = async () => {
+      if (isTauriApp()) {
+        const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
+        const count = await queryOverdueFollowUpCount();
+        setOverdueCount(count);
+      } else {
+        const { mockFollowUps } = await import('@/lib/mock/followups');
+        const today = new Date().toISOString().split('T')[0];
+        setOverdueCount(mockFollowUps.filter((f) => !f.completed && f.dueDate < today).length);
+      }
+    };
+    load();
+  }, [setOverdueCount]);
 
   const totalPending = pendingActivityCount + pendingFollowUpCount;
   const { updateAvailable, downloading, install } = useAppUpdater();
