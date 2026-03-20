@@ -21,6 +21,8 @@ A local-first desktop CRM built for Ingram Micro. Replaces the cluttered existin
 | **Invoice Lookup** | Search customer invoices from Xvantage CLS |
 | **ARR Overview** | Sortable/filterable customer table with Excel export |
 | **Contact Management** | Linked contacts with priority contact resolution |
+| **Trainings** | Track and manage training records linked to customers |
+| **Timeline** | Unified chronological view of all activities per customer |
 | **Sync** | Pull customer and training data from D365 and third-party APIs |
 | **Offline-First** | Full functionality offline via local SQLite, syncs when connected |
 
@@ -65,7 +67,7 @@ pnpm lint
 
 ```
 src/
-├── app/                 Routes (customers, followups, invoices, arr-overview, sync)
+├── app/                 Routes (customers, followups, invoices, arr-overview, sync, login)
 ├── components/          React components organized by feature
 │   ├── ui/              Radix-based design system primitives
 │   ├── customers/       Customer list, detail, filters
@@ -73,18 +75,22 @@ src/
 │   ├── followups/       Follow-up cards, filters
 │   ├── invoices/        Invoice search and display
 │   ├── contacts/        Contact management
+│   ├── trainings/       Training forms and lists
+│   ├── timeline/        Unified activity timeline
+│   ├── sync/            Sync panel UI
 │   └── layout/          AppShell, AuthGuard, navigation
 ├── store/               Zustand stores (customer, activity, followUp, invoice, sync, auth, ui)
+├── hooks/               Custom React hooks (data fetching, auth, online status, app updater)
 ├── lib/
 │   ├── auth/            Azure MSAL configuration
 │   ├── db/              SQLite queries and migrations (Tauri)
 │   ├── api/             Invoice adapter, Xvantage auth
 │   ├── sync/            D365, training, and Power Automate adapters
+│   ├── mock/            Mock data for offline development
 │   └── utils/           Offline detection, date helpers, country utils
-├── hooks/               Custom React hooks
 └── types/               Shared TypeScript types
 ```
 
 ## Versioning
 
-Version is managed in `package.json` (single source of truth). CI syncs it to `tauri.conf.json` and `Cargo.toml`. Desktop updates are distributed via GitHub Releases.
+Version is managed in `package.json` (single source of truth). Run `pnpm sync-version` to propagate to `tauri.conf.json` and `Cargo.toml`. Desktop updates are distributed via GitHub Releases (manual `workflow_dispatch`).
