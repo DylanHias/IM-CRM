@@ -107,16 +107,18 @@ export function TitleBar() {
   const { theme, toggleTheme } = useUIStore();
 
   return (
-    <WindowFrame>
-      {backLink && (
-        <NoDrag>
-          <BackLink href={backLink.href}>
-            <ArrowLeft size={12} />
-            {backLink.label}
-          </BackLink>
-        </NoDrag>
-      )}
-
+    <WindowFrame
+      leftContent={
+        backLink ? (
+          <NoDrag>
+            <BackLink href={backLink.href}>
+              <ArrowLeft size={12} />
+              {backLink.label}
+            </BackLink>
+          </NoDrag>
+        ) : undefined
+      }
+    >
       <AppControls>
         <StatusPill $online={isOnline}>
           {isOnline ? <Wifi size={10} /> : <WifiOff size={10} />}

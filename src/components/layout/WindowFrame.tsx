@@ -134,10 +134,11 @@ function useWindowControls() {
 }
 
 interface WindowFrameProps {
+  leftContent?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function WindowFrame({ children }: WindowFrameProps) {
+export function WindowFrame({ leftContent, children }: WindowFrameProps) {
   const { isMaximized, minimize, toggleMaximize, close } = useWindowControls();
 
   return (
@@ -151,6 +152,7 @@ export function WindowFrame({ children }: WindowFrameProps) {
           className="rounded-sm"
         />
         <AppTitle>Ingram Micro CRM</AppTitle>
+        {leftContent}
       </LeftSection>
 
       <Spacer />
