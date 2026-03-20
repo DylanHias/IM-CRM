@@ -94,7 +94,7 @@ function getInitials(name: string): string {
 
 function useBackLink(): { label: string; href: string } | undefined {
   const pathname = usePathname();
-  if (/^\/customers\/[^/]+$/.test(pathname))
+  if (/^\/customers\/[^/]+\/?$/.test(pathname))
     return { label: 'All customers', href: '/customers' };
   return undefined;
 }
