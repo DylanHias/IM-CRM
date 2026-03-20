@@ -82,7 +82,7 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
   - **Minor** (0.X.0): new features, new UI sections, new capabilities
   - **Major** (X.0.0): breaking changes, major redesigns
 - Bump the version in `package.json` as part of the final commit, then run `pnpm sync-version`
-- **Write a changelog**: create `.changelog/v{version}.md` with a bullet list describing the changes in simple, non-technical language (written for end users, not developers)
+- **Write a changelog**: create `.changelog/v{version}.md` with a bullet list explaining what changed as if talking to someone with zero tech knowledge. Describe what the user will *see* or *experience*, not what was done in code. No technical terms — no "component", "regex", "CSS", "database", "API", "migration", "refactor", etc. Think "explain it like I'm five".
 - **Releases are manual**: the GitHub Actions workflow only runs via `workflow_dispatch`, not on every push. Push freely — releases are triggered manually when ready
 
 ## Tauri / Async
