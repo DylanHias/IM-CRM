@@ -70,6 +70,22 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate changelog from commits
+        id: changelog
+        shell: bash
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            BODY=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s" --no-merges | grep -v "^- v[0-9]" | grep -v "^- Merge")
+          else
+            BODY=$(git log --pretty=format:"- %s" --no-merges -20)
+          fi
+          {
+            echo "body<<CHANGELOG_EOF"
+            echo "$BODY"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build, sign, and release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -80,5 +96,5 @@ jobs:
         with:
           tagName: v${{ steps.version.outputs.version }}
           releaseName: Ingram CRM v${{ steps.version.outputs.version }}
-          generateReleaseNotes: true
+          releaseBody: ${{ steps.changelog.outputs.body }}
           updaterJsonPreferNsis: true
