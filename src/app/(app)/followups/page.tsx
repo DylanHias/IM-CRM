@@ -14,7 +14,7 @@ import { useFollowUpStore } from '@/store/followUpStore';
 
 export default function FollowUpsPage() {
   const router = useRouter();
-  const { markComplete } = useFollowUpStore();
+  const { markComplete, setOverdueCount } = useFollowUpStore();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
 
@@ -39,6 +39,12 @@ export default function FollowUpsPage() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const count = followUps.filter((f) => !f.completed && f.dueDate < today).length;
+    setOverdueCount(count);
+  }, [followUps, setOverdueCount]);
 
   const handleComplete = async (id: string) => {
     try {

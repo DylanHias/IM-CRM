@@ -44,7 +44,7 @@ const NavItem = styled(Link)<{ $active: boolean }>`
   align-items: center;
   gap: 10px;
   padding: 0 12px;
-  margin: 6px 0;
+  margin: 3px 0;
   width: 100%;
   overflow: hidden;
   color: ${(p) =>
