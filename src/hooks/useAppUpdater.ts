@@ -41,7 +41,7 @@ export function useAppUpdater(): AppUpdaterState {
     try {
       setDownloading(true);
       if (update.body) {
-        storeChangelog(update.body, update.version);
+        await storeChangelog(update.body, update.version);
       }
       await update.downloadAndInstall();
       const { relaunch } = await import('@tauri-apps/plugin-process');
