@@ -16,7 +16,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
     "core:window:allow-is-maximized",
-    "fs:allow-app-data-read-recursive",
-    "fs:allow-app-data-write-recursive"
+    "fs:allow-appdata-read-recursive",
+    "fs:allow-appdata-write-recursive"
   ]
 }
