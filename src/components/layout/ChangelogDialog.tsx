@@ -8,13 +8,18 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 
-const CHANGELOG_KEY = 'pending-changelog';
-const CHANGELOG_VERSION_KEY = 'pending-changelog-version';
+const CHANGELOG_FILE = 'pending-changelog.json';
 
 interface ChangelogEntry {
   version: string;
   items: string[];
+}
+
+interface ChangelogPayload {
+  body: string;
+  version: string;
 }
 
 function parseChangelog(body: string): string[] {
@@ -24,22 +29,56 @@ function parseChangelog(body: string): string[] {
     .filter((line) => line.length > 0 && !line.startsWith('#') && !line.startsWith('**Full Changelog'));
 }
 
-export function storeChangelog(body: string, version: string) {
-  localStorage.setItem(CHANGELOG_KEY, body);
-  localStorage.setItem(CHANGELOG_VERSION_KEY, version);
+export async function storeChangelog(body: string, version: string) {
+  if (isTauriApp()) {
+    try {
+      const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
+      await writeTextFile(CHANGELOG_FILE, JSON.stringify({ body, version }), { baseDir: BaseDirectory.AppData });
+    } catch (err) {
+      console.error('[changelog] Failed to write changelog file:', err);
+    }
+  } else {
+    localStorage.setItem('pending-changelog', body);
+    localStorage.setItem('pending-changelog-version', version);
+  }
+}
+
+async function readAndClearChangelog(): Promise<ChangelogPayload | null> {
+  if (isTauriApp()) {
+    try {
+      const { readTextFile, remove, exists, BaseDirectory } = await import('@tauri-apps/plugin-fs');
+      const fileExists = await exists(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
+      if (!fileExists) return null;
+      const raw = await readTextFile(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
+      await remove(CHANGELOG_FILE, { baseDir: BaseDirectory.AppData });
+      return JSON.parse(raw) as ChangelogPayload;
+    } catch (err) {
+      console.error('[changelog] Failed to read changelog file:', err);
+      return null;
+    }
+  } else {
+    const body = localStorage.getItem('pending-changelog');
+    const version = localStorage.getItem('pending-changelog-version');
+    if (body && version) {
+      localStorage.removeItem('pending-changelog');
+      localStorage.removeItem('pending-changelog-version');
+      return { body, version };
+    }
+    return null;
+  }
 }
 
 export function ChangelogDialog() {
   const [entry, setEntry] = useState<ChangelogEntry | null>(null);
 
   useEffect(() => {
-    const body = localStorage.getItem(CHANGELOG_KEY);
-    const version = localStorage.getItem(CHANGELOG_VERSION_KEY);
-    if (body && version) {
-      setEntry({ version, items: parseChangelog(body) });
-      localStorage.removeItem(CHANGELOG_KEY);
-      localStorage.removeItem(CHANGELOG_VERSION_KEY);
-    }
+    const load = async () => {
+      const payload = await readAndClearChangelog();
+      if (payload) {
+        setEntry({ version: payload.version, items: parseChangelog(payload.body) });
+      }
+    };
+    load();
   }, []);
 
   if (!entry || entry.items.length === 0) return null;

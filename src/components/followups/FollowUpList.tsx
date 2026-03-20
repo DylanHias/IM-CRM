@@ -12,16 +12,16 @@ import { FollowUpItem } from './FollowUpItem';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { todayISO } from '@/lib/utils/dateUtils';
 import type { FollowUp } from '@/types/entities';
-import { useRouter } from 'next/navigation';
+
 
 interface FollowUpListProps {
   followUps: FollowUp[];
   customerId: string;
   onComplete: (id: string) => void;
+  onAdd?: () => void;
 }
 
-export function FollowUpList({ followUps, customerId, onComplete }: FollowUpListProps) {
-  const router = useRouter();
+export function FollowUpList({ followUps, customerId, onComplete, onAdd }: FollowUpListProps) {
   const { editFollowUp, deleteFollowUp } = useFollowUps(customerId);
 
   const [editing, setEditing] = useState<FollowUp | null>(null);
@@ -72,7 +72,7 @@ export function FollowUpList({ followUps, customerId, onComplete }: FollowUpList
             <Button
               size="sm"
               className="gap-1.5"
-              onClick={() => router.push(`/followups/new?customerId=${customerId}`)}
+              onClick={onAdd}
             >
               <Plus size={13} />
               Add Follow-Up
@@ -92,7 +92,7 @@ export function FollowUpList({ followUps, customerId, onComplete }: FollowUpList
                 <Button
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => router.push(`/followups/new?customerId=${customerId}`)}
+                  onClick={onAdd}
                 >
                   <Plus size={13} />
                   Add Follow-Up

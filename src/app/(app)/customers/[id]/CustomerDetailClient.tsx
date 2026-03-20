@@ -43,8 +43,8 @@ export default function CustomerDetailClient() {
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
 
-  const { activities, editActivity, deleteActivity } = useActivities(customerId);
-  const { followUps, completeFollowUp } = useFollowUps(customerId);
+  const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
+  const { followUps, createFollowUp, completeFollowUp } = useFollowUps(customerId);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -57,6 +57,20 @@ export default function CustomerDetailClient() {
   const [editOccurredAt, setEditOccurredAt] = useState('');
   const [editContactId, setEditContactId] = useState('none');
   const [isSavingActivity, setIsSavingActivity] = useState(false);
+
+  const [addActivityOpen, setAddActivityOpen] = useState(false);
+  const [newActType, setNewActType] = useState<Activity['type']>('meeting');
+  const [newActSubject, setNewActSubject] = useState('');
+  const [newActDescription, setNewActDescription] = useState('');
+  const [newActDate, setNewActDate] = useState(todayISO());
+  const [newActContactId, setNewActContactId] = useState('none');
+  const [isCreatingActivity, setIsCreatingActivity] = useState(false);
+
+  const [addFollowUpOpen, setAddFollowUpOpen] = useState(false);
+  const [newFuTitle, setNewFuTitle] = useState('');
+  const [newFuDescription, setNewFuDescription] = useState('');
+  const [newFuDueDate, setNewFuDueDate] = useState('');
+  const [isCreatingFollowUp, setIsCreatingFollowUp] = useState(false);
 
   const openEditActivity = (activity: Activity) => {
     setEditingActivity(activity);
@@ -92,6 +106,50 @@ export default function CustomerDetailClient() {
     await deleteActivity(activity.id);
   };
 
+  const handleCreateActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newActSubject.trim()) return;
+    setIsCreatingActivity(true);
+    try {
+      await createActivity({
+        customerId,
+        contactId: newActContactId === 'none' ? null : newActContactId,
+        type: newActType,
+        subject: newActSubject.trim(),
+        description: newActDescription.trim() || null,
+        occurredAt: new Date(newActDate).toISOString(),
+      });
+      setAddActivityOpen(false);
+      setNewActType('meeting');
+      setNewActSubject('');
+      setNewActDescription('');
+      setNewActDate(todayISO());
+      setNewActContactId('none');
+    } finally {
+      setIsCreatingActivity(false);
+    }
+  };
+
+  const handleCreateFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFuTitle.trim() || !newFuDueDate) return;
+    setIsCreatingFollowUp(true);
+    try {
+      await createFollowUp({
+        customerId,
+        activityId: null,
+        title: newFuTitle.trim(),
+        description: newFuDescription.trim() || null,
+        dueDate: newFuDueDate,
+      });
+      setAddFollowUpOpen(false);
+      setNewFuTitle('');
+      setNewFuDescription('');
+      setNewFuDueDate('');
+    } finally {
+      setIsCreatingFollowUp(false);
+    }
+  };
 
   useEffect(() => {
     if (!customerId || customerId === '_placeholder') return;
@@ -370,7 +428,7 @@ export default function CustomerDetailClient() {
                       <Button
                         size="sm"
                         className="gap-1.5"
-                        onClick={() => router.push(`/activities/new?customerId=${customerId}`)}
+                        onClick={() => setAddActivityOpen(true)}
                       >
                         <Plus size={13} />
                         Add Activity
@@ -433,7 +491,7 @@ export default function CustomerDetailClient() {
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
-                    <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} />
+                    <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} onAdd={() => setAddFollowUpOpen(true)} />
                   </motion.div>
                 )}
 
@@ -500,6 +558,90 @@ export default function CustomerDetailClient() {
                       <Button type="button" variant="outline" onClick={() => setEditingActivity(null)} className="flex-1">Cancel</Button>
                       <Button type="submit" disabled={isSavingActivity || !editSubject.trim()} className="flex-1">
                         {isSavingActivity ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Add Activity Dialog */}
+              <Dialog open={addActivityOpen} onOpenChange={setAddActivityOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Activity</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateActivity} className="space-y-4">
+                    <div className="space-y-1">
+                      <Label>Type</Label>
+                      <Select value={newActType} onValueChange={(v) => setNewActType(v as Activity['type'])}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="meeting">Meeting</SelectItem>
+                          <SelectItem value="visit">Visit</SelectItem>
+                          <SelectItem value="call">Call</SelectItem>
+                          <SelectItem value="note">Note</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Subject *</Label>
+                      <Input value={newActSubject} onChange={(e) => setNewActSubject(e.target.value)} required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Description</Label>
+                      <Textarea value={newActDescription} onChange={(e) => setNewActDescription(e.target.value)} rows={3} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label>Date *</Label>
+                        <Input type="date" value={newActDate} onChange={(e) => setNewActDate(e.target.value)} max={todayISO()} required />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Contact</Label>
+                        <Select value={newActContactId} onValueChange={setNewActContactId}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No contact</SelectItem>
+                            {contacts.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <Button type="button" variant="outline" onClick={() => setAddActivityOpen(false)} className="flex-1">Cancel</Button>
+                      <Button type="submit" disabled={isCreatingActivity || !newActSubject.trim()} className="flex-1">
+                        {isCreatingActivity ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Add Activity'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Add Follow-Up Dialog */}
+              <Dialog open={addFollowUpOpen} onOpenChange={setAddFollowUpOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Follow-Up</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateFollowUp} className="space-y-4">
+                    <div className="space-y-1">
+                      <Label>Title *</Label>
+                      <Input value={newFuTitle} onChange={(e) => setNewFuTitle(e.target.value)} required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Description</Label>
+                      <Textarea value={newFuDescription} onChange={(e) => setNewFuDescription(e.target.value)} rows={3} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Due Date *</Label>
+                      <Input type="date" value={newFuDueDate} onChange={(e) => setNewFuDueDate(e.target.value)} required />
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <Button type="button" variant="outline" onClick={() => setAddFollowUpOpen(false)} className="flex-1">Cancel</Button>
+                      <Button type="submit" disabled={isCreatingFollowUp || !newFuTitle.trim() || !newFuDueDate} className="flex-1">
+                        {isCreatingFollowUp ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Add Follow-Up'}
                       </Button>
                     </div>
                   </form>

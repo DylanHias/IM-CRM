@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2 } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { useState } from 'react';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
@@ -186,6 +188,23 @@ const SpinningIcon = styled.span`
   }
 `;
 
+const ConfirmButton = styled.button`
+  margin-top: 10px;
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
 const ToggleButton = styled.button`
   height: 40px;
   border-radius: 10px;
@@ -217,6 +236,7 @@ export function Sidebar() {
 
   const totalPending = pendingActivityCount + pendingFollowUpCount;
   const { updateAvailable, downloading, install } = useAppUpdater();
+  const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
   const navItems = [
     { href: '/customers', label: 'Customers', icon: Users },
@@ -267,18 +287,35 @@ export function Sidebar() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '0 10px' }}>
           {updateAvailable && (
-            <UpdateButton
-              onClick={install}
-              disabled={downloading}
-              title={downloading ? 'Downloading update…' : 'Update available'}
-            >
-              {downloading ? (
-                <SpinningIcon><Loader2 size={17} /></SpinningIcon>
-              ) : (
-                <IconWrapper><Download size={17} /></IconWrapper>
-              )}
-              <NavLabel>{downloading ? 'Updating…' : 'Update'}</NavLabel>
-            </UpdateButton>
+            <Popover open={updatePopoverOpen} onOpenChange={setUpdatePopoverOpen}>
+              <PopoverTrigger asChild>
+                <UpdateButton
+                  disabled={downloading}
+                  title={downloading ? 'Downloading update…' : 'Update available'}
+                >
+                  {downloading ? (
+                    <SpinningIcon><Loader2 size={17} /></SpinningIcon>
+                  ) : (
+                    <IconWrapper><Download size={17} /></IconWrapper>
+                  )}
+                  <NavLabel>{downloading ? 'Updating…' : 'Update'}</NavLabel>
+                </UpdateButton>
+              </PopoverTrigger>
+              <PopoverContent side="right" align="end" className="w-64">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
+                  <p style={{ fontSize: '13px', lineHeight: '1.4' }}>The application will restart after updating.</p>
+                </div>
+                <ConfirmButton
+                  onClick={() => {
+                    setUpdatePopoverOpen(false);
+                    install();
+                  }}
+                >
+                  Update now
+                </ConfirmButton>
+              </PopoverContent>
+            </Popover>
           )}
           <ToggleButton
             onClick={toggleSidebar}

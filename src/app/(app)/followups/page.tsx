@@ -41,21 +41,28 @@ export default function FollowUpsPage() {
   }, []);
 
   const handleComplete = async (id: string) => {
-    if (isTauriApp()) {
-      await completeFollowUp(id);
+    try {
+      if (isTauriApp()) {
+        await completeFollowUp(id);
+      }
+      markComplete(id);
+      setFollowUps((prev) =>
+        prev.map((f) =>
+          f.id === id ? { ...f, completed: true, completedAt: new Date().toISOString() } : f
+        )
+      );
+    } catch (err) {
+      console.error('[followups] Failed to complete:', err);
     }
-    markComplete(id);
-    setFollowUps((prev) =>
-      prev.map((f) =>
-        f.id === id ? { ...f, completed: true, completedAt: new Date().toISOString() } : f
-      )
-    );
   };
 
   const today = new Date().toISOString().split('T')[0];
   const overdue = followUps.filter((f) => !f.completed && f.dueDate < today);
   const upcoming = followUps.filter((f) => !f.completed && f.dueDate >= today);
-  const done = followUps.filter((f) => f.completed).slice(0, 10);
+  const done = followUps
+    .filter((f) => f.completed)
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
+    .slice(0, 10);
 
   const getCustomerName = (customerId: string) =>
     customerMap.get(customerId) ?? customerId;
