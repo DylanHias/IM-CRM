@@ -5,12 +5,15 @@ import { MsalProvider } from '@azure/msal-react';
 import { ThemeProvider } from 'styled-components';
 import { initializeMsal } from '@/lib/auth/msalInstance';
 import { initDb } from '@/lib/db/client';
-import { lightTheme } from '@/styles/theme';
+import { lightTheme, darkTheme } from '@/styles/theme';
+import { useUIStore } from '@/store/uiStore';
+import { ThemeSync } from '@/components/layout/ThemeSync';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
   const [dbReady, setDbReady] = useState(false);
+  const theme = useUIStore((s) => s.theme);
 
   useEffect(() => {
     const init = async () => {
@@ -38,7 +41,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <MsalProvider instance={msalInstance}>
-      <ThemeProvider theme={lightTheme}>
+      <ThemeProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
+        <ThemeSync />
         {children}
       </ThemeProvider>
     </MsalProvider>

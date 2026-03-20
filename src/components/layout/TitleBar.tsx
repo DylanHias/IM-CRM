@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { RefreshCw, Wifi, WifiOff, LogOut, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, LogOut, ArrowLeft, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useSync } from '@/hooks/useSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useUIStore } from '@/store/uiStore';
 import { signOut } from '@/lib/auth/authHelpers';
 import { formatRelative } from '@/lib/utils/dateUtils';
 import { WindowFrame } from './WindowFrame';
@@ -103,6 +104,7 @@ export function TitleBar() {
   const { account } = useAuthStore();
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();
+  const { theme, toggleTheme } = useUIStore();
 
   return (
     <WindowFrame>
@@ -134,6 +136,16 @@ export function TitleBar() {
         >
           <RefreshCw size={10} className={isSyncing ? 'animate-spin' : ''} />
           {isSyncing ? 'Syncing\u2026' : 'Sync'}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-[hsl(var(--titlebar-fg)/0.7)] hover:text-[hsl(var(--titlebar-fg))] hover:bg-[hsl(var(--titlebar-fg)/0.08)]"
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light' ? <Moon size={12} /> : <Sun size={12} />}
         </Button>
 
         <Divider />

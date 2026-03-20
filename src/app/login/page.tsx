@@ -42,7 +42,7 @@ const SplitCard = styled.div`
 
 const LeftPanel = styled.div`
   flex: 0 0 45%;
-  background: white;
+  background: hsl(var(--card));
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -99,7 +99,7 @@ const ContentArea = styled.div`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background-color: #f0f2f5;
+  background-color: hsl(var(--background));
 
   &::before {
     content: '';
@@ -198,7 +198,7 @@ export default function LoginPage() {
                   fontFamily: "var(--font-sans), 'DM Sans', sans-serif",
                   fontSize: '36px',
                   fontWeight: 700,
-                  color: '#111827',
+                  color: 'hsl(var(--foreground))',
                   margin: '0 0 8px',
                   letterSpacing: '-0.02em',
                   textAlign: 'center',
@@ -211,7 +211,7 @@ export default function LoginPage() {
                 variants={fadeUp}
                 style={{
                   fontSize: '15px',
-                  color: '#6b7280',
+                  color: 'hsl(var(--muted-foreground))',
                   margin: '0 0 32px',
                   lineHeight: 1.5,
                   textAlign: 'center',
@@ -235,8 +235,8 @@ export default function LoginPage() {
                   <Button
                     className="w-full h-12 gap-3 text-base"
                     style={{
-                      backgroundColor: '#1570ef',
-                      color: 'white',
+                      backgroundColor: 'hsl(var(--primary))',
+                      color: 'hsl(var(--primary-foreground))',
                       borderRadius: '10px',
                       fontSize: '15px',
                       fontWeight: 500,
@@ -286,7 +286,7 @@ export default function LoginPage() {
                   marginTop: '24px',
                   textAlign: 'center',
                   fontSize: '12px',
-                  color: '#9ca3af',
+                  color: 'hsl(var(--muted-foreground))',
                   lineHeight: 1.5,
                 }}
               >

@@ -29,7 +29,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${playfair.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=JSON.parse(localStorage.getItem('crm-ui-store')||'{}');if(d.state&&d.state.theme==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

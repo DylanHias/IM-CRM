@@ -44,9 +44,17 @@ export const lightTheme = {
 
 export const darkTheme = {
   ...lightTheme,
+  colors: {
+    ...lightTheme.colors,
+    primary: '#3b82f6',
+    primaryDark: '#2563eb',
+  },
+  shadows: {
+    card: '0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.15)',
+    cardHover: '0 4px 12px 0 rgb(0 0 0 / 0.25), 0 2px 6px -2px rgb(0 0 0 / 0.15)',
+  },
 } as const;
 
-// Default export for backwards compat
 export const theme = lightTheme;
 
 export type Theme = typeof lightTheme;
