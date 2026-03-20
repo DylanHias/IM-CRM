@@ -39,13 +39,19 @@ export const useFollowUpStore = create<FollowUpState>((set) => ({
     })),
 
   markComplete: (id) =>
-    set((s) => ({
-      followUps: s.followUps.map((f) =>
-        f.id === id
-          ? { ...f, completed: true, completedAt: new Date().toISOString(), syncStatus: 'pending' as const }
-          : f
-      ),
-    })),
+    set((s) => {
+      const today = new Date().toISOString().split('T')[0];
+      const target = s.followUps.find((f) => f.id === id);
+      const wasOverdue = target && !target.completed && target.dueDate < today;
+      return {
+        followUps: s.followUps.map((f) =>
+          f.id === id
+            ? { ...f, completed: true, completedAt: new Date().toISOString(), syncStatus: 'pending' as const }
+            : f
+        ),
+        overdueCount: wasOverdue ? Math.max(0, s.overdueCount - 1) : s.overdueCount,
+      };
+    }),
 
   setOverdueCount: (overdueCount) => set({ overdueCount }),
   setLoading: (isLoading) => set({ isLoading }),

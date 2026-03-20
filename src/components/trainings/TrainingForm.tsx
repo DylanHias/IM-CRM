@@ -146,7 +146,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
             <div className="space-y-1">
               <Label>Participants</Label>
               <div
-                className="flex flex-wrap gap-1.5 min-h-[38px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-text"
+                className="flex flex-wrap gap-1.5 min-h-[38px] w-full rounded-md border border-input bg-white px-3 py-2 text-sm cursor-text"
                 onClick={() => participantInputRef.current?.focus()}
               >
                 {participants.map((name) => (
@@ -179,7 +179,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
                 id="tf-status"
                 value={status ?? 'registered'}
                 onChange={(e) => setStatus(e.target.value as Training['status'])}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="registered">Registered</option>
                 <option value="completed">Completed</option>

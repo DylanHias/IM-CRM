@@ -85,19 +85,19 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
         </div>
       ) : (
         <div className="space-y-3">
+          <div className="flex justify-end mb-2">
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={onAdd}
+            >
+              <Plus size={13} />
+              Add Follow-Up
+            </Button>
+          </div>
           {open.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-muted-foreground">Scheduled ({open.length})</p>
-                <Button
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={onAdd}
-                >
-                  <Plus size={13} />
-                  Add Follow-Up
-                </Button>
-              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Scheduled ({open.length})</p>
               <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
               {open.map((f, i) => (
                 <motion.div
