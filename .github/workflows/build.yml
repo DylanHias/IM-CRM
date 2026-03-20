@@ -1,13 +1,6 @@
 name: Build & Release
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "*.md"
-      - ".claude/**"
-      - ".vscode/**"
-      - "LICENSE"
   workflow_dispatch:
 
 concurrency:
