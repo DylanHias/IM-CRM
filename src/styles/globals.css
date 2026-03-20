@@ -40,6 +40,20 @@
     --topbar-border: 218 22% 91%;
     --titlebar-bg: 0 0% 100%;
     --titlebar-fg: 222 39% 25%;
+
+    /* Activity type colors */
+    --activity-meeting: 263 70% 50%;
+    --activity-meeting-bg: 263 100% 97%;
+    --activity-visit: 189 78% 41%;
+    --activity-visit-bg: 189 100% 97%;
+    --activity-call: 142 71% 45%;
+    --activity-call-bg: 142 100% 97%;
+    --activity-note: 38 92% 50%;
+    --activity-note-bg: 39 100% 96%;
+
+    /* Training */
+    --training: 226 71% 56%;
+    --training-bg: 226 100% 97%;
   }
 
 }

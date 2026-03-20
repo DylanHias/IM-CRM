@@ -21,7 +21,7 @@ export default function SyncPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-slate-900">Sync</h2>
+        <h2 className="text-xl font-semibold text-foreground">Sync</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Sync customer and training data from external systems, and push local changes.
         </p>

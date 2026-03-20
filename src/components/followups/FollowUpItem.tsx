@@ -18,13 +18,13 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
   return (
     <div className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''}`}>
       <button
-        className="mt-0.5 flex-shrink-0 text-blue-500 hover:text-blue-600 disabled:cursor-not-allowed"
+        className="mt-0.5 flex-shrink-0 text-primary hover:text-primary/80 disabled:cursor-not-allowed"
         onClick={() => !followUp.completed && onComplete?.(followUp.id)}
         disabled={followUp.completed}
         title={followUp.completed ? 'Completed' : 'Mark as complete'}
       >
         {followUp.completed ? (
-          <CheckSquare size={18} className="text-green-500" />
+          <CheckSquare size={18} className="text-success" />
         ) : (
           <Square size={18} />
         )}
@@ -40,7 +40,7 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
               <p className="text-[13px] text-muted-foreground mt-0.5">{followUp.description}</p>
             )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+              <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                 {isOverdue && !followUp.completed && <AlertCircle size={11} />}
                 <Calendar size={10} />
                 {dueDateLabel}

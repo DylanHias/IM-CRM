@@ -54,8 +54,8 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <CheckCircle2 size={40} className="text-green-500" />
-        <p className="text-slate-700 font-medium">Follow-up created!</p>
+        <CheckCircle2 size={40} className="text-success" />
+        <p className="text-foreground font-medium">Follow-up created!</p>
         <p className="text-sm text-muted-foreground">Redirecting back...</p>
       </div>
     );
@@ -64,7 +64,7 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {error}
         </div>

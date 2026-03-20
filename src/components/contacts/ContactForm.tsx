@@ -102,13 +102,13 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
 
         {success ? (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
-            <CheckCircle2 size={40} className="text-green-500" />
-            <p className="text-slate-700 font-medium">{isEdit ? 'Contact updated!' : 'Contact added!'}</p>
+            <CheckCircle2 size={40} className="text-success" />
+            <p className="text-foreground font-medium">{isEdit ? 'Contact updated!' : 'Contact added!'}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
                 {error}
               </div>

@@ -6,10 +6,10 @@ import { formatDate } from '@/lib/utils/dateUtils';
 import type { TimelineEvent } from '@/types/entities';
 
 const ACTIVITY_CONFIG = {
-  meeting: { icon: Users, color: '#7c3aed', bg: '#f5f3ff', label: 'Meeting' },
-  visit: { icon: MapPin, color: '#06b6d4', bg: '#ecfeff', label: 'Visit' },
-  call: { icon: Phone, color: '#22c55e', bg: '#f0fdf4', label: 'Call' },
-  note: { icon: FileText, color: '#f59e0b', bg: '#fffbeb', label: 'Note' },
+  meeting: { icon: Users, colorClass: 'text-activity-meeting', bgClass: 'bg-activity-meeting-bg', label: 'Meeting' },
+  visit: { icon: MapPin, colorClass: 'text-activity-visit', bgClass: 'bg-activity-visit-bg', label: 'Visit' },
+  call: { icon: Phone, colorClass: 'text-activity-call', bgClass: 'bg-activity-call-bg', label: 'Call' },
+  note: { icon: FileText, colorClass: 'text-activity-note', bgClass: 'bg-activity-note-bg', label: 'Note' },
 };
 
 interface TimelineItemProps {
@@ -26,10 +26,9 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
       <div className="flex gap-3.5 px-4 py-3.5 group">
         <div className="relative z-10 flex-shrink-0 mt-0.5">
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card"
-            style={{ backgroundColor: config.bg }}
+            className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${config.bgClass}`}
           >
-            <Icon size={15} style={{ color: config.color }} />
+            <Icon size={15} className={config.colorClass} />
           </div>
         </div>
         <div className="flex-1 min-w-0">
@@ -87,8 +86,8 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
     return (
       <div className="flex gap-3.5 px-4 py-3.5 group">
         <div className="relative z-10 flex-shrink-0 mt-0.5">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center bg-indigo-50 ring-[3px] ring-card">
-            <GraduationCap size={15} className="text-indigo-500" />
+          <div className="w-9 h-9 rounded-full flex items-center justify-center bg-training-bg ring-[3px] ring-card">
+            <GraduationCap size={15} className="text-training" />
           </div>
         </div>
         <div className="flex-1 min-w-0">
@@ -117,10 +116,10 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
   return (
     <div className="flex gap-3.5 px-4 py-3.5 group">
       <div className="relative z-10 flex-shrink-0 mt-0.5">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-green-50' : 'bg-amber-50'}`}>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-success/10' : 'bg-warning/10'}`}>
           {event.completed
-            ? <CheckSquare size={15} className="text-green-500" />
-            : <Calendar size={15} className="text-amber-500" />
+            ? <CheckSquare size={15} className="text-success" />
+            : <Calendar size={15} className="text-warning" />
           }
         </div>
       </div>

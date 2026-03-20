@@ -43,7 +43,7 @@ function NewActivityContent() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">Log Activity</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-6">Log Activity</h2>
       <ActivityForm customerId={customerId} customerName={customer.name} contacts={contacts} />
     </div>
   );

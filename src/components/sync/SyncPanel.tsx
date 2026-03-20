@@ -8,10 +8,10 @@ import { formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
 import type { SyncRecord } from '@/types/sync';
 
 const STATUS_CONFIG = {
-  running: { icon: RefreshCw, color: 'text-blue-500', variant: 'info' as const, label: 'Running' },
-  success: { icon: CheckCircle, color: 'text-green-500', variant: 'success' as const, label: 'Success' },
-  partial: { icon: AlertTriangle, color: 'text-yellow-500', variant: 'warning' as const, label: 'Partial' },
-  error: { icon: XCircle, color: 'text-red-500', variant: 'destructive' as const, label: 'Error' },
+  running: { icon: RefreshCw, color: 'text-info', variant: 'info' as const, label: 'Running' },
+  success: { icon: CheckCircle, color: 'text-success', variant: 'success' as const, label: 'Success' },
+  partial: { icon: AlertTriangle, color: 'text-warning', variant: 'warning' as const, label: 'Partial' },
+  error: { icon: XCircle, color: 'text-destructive', variant: 'destructive' as const, label: 'Error' },
 };
 
 const SYNC_TYPE_LABELS: Record<string, string> = {
@@ -35,25 +35,25 @@ export function SyncPanel({ records }: SyncPanelProps) {
     <div className="space-y-5">
       {/* Status overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">D365 Last Sync</p>
           <p className="text-sm font-medium mt-1">
             {lastD365SyncAt ? formatRelative(lastD365SyncAt) : 'Never'}
           </p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Training Last Sync</p>
           <p className="text-sm font-medium mt-1">
             {lastTrainingSyncAt ? formatRelative(lastTrainingSyncAt) : 'Never'}
           </p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Pending Activities</p>
-          <p className="text-xl font-bold mt-1 text-amber-600">{pendingActivityCount}</p>
+          <p className="text-xl font-bold mt-1 text-warning">{pendingActivityCount}</p>
         </div>
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Pending Follow-Ups</p>
-          <p className="text-xl font-bold mt-1 text-amber-600">{pendingFollowUpCount}</p>
+          <p className="text-xl font-bold mt-1 text-warning">{pendingFollowUpCount}</p>
         </div>
       </div>
 
@@ -77,8 +77,8 @@ export function SyncPanel({ records }: SyncPanelProps) {
       {/* Sync history */}
       {records.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Sync History</h3>
-          <div className="bg-white border rounded-lg divide-y">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Sync History</h3>
+          <div className="bg-card border rounded-lg divide-y">
             {records.map((record) => {
               const config = STATUS_CONFIG[record.status];
               const StatusIcon = config.icon;
@@ -96,7 +96,7 @@ export function SyncPanel({ records }: SyncPanelProps) {
                       {record.recordsPushed > 0 && ` · ${record.recordsPushed} pushed`}
                     </p>
                     {record.errorMessage && (
-                      <p className="text-xs text-red-600 mt-0.5">{record.errorMessage}</p>
+                      <p className="text-xs text-destructive mt-0.5">{record.errorMessage}</p>
                     )}
                   </div>
                 </div>

@@ -77,6 +77,20 @@ const config: Config = {
           DEFAULT: 'hsl(var(--topbar-bg))',
           border: 'hsl(var(--topbar-border))',
         },
+        activity: {
+          meeting: 'hsl(var(--activity-meeting))',
+          'meeting-bg': 'hsl(var(--activity-meeting-bg))',
+          visit: 'hsl(var(--activity-visit))',
+          'visit-bg': 'hsl(var(--activity-visit-bg))',
+          call: 'hsl(var(--activity-call))',
+          'call-bg': 'hsl(var(--activity-call-bg))',
+          note: 'hsl(var(--activity-note))',
+          'note-bg': 'hsl(var(--activity-note-bg))',
+        },
+        training: {
+          DEFAULT: 'hsl(var(--training))',
+          bg: 'hsl(var(--training-bg))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -52,7 +52,7 @@ function ContactCell({ field }: { field: ContactField }) {
       {field.isFallback ? (
         <span
           title="No contact record found — showing company details"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200 shrink-0"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-warning/20 text-warning border border-warning/30 shrink-0"
         >
           <Building2 size={9} />
           Company
@@ -60,7 +60,7 @@ function ContactCell({ field }: { field: ContactField }) {
       ) : (
         <span
           title={`From contact: ${field.contactName}`}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-200 shrink-0"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 shrink-0"
         >
           <User size={9} />
           {field.contactName}
@@ -243,7 +243,7 @@ export default function ArrOverviewPage() {
               <SlidersHorizontal size={13} />
               Filters
               {activeFilterCount > 0 && (
-                <span className="ml-0.5 bg-white text-blue-700 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                <span className="ml-0.5 bg-primary-foreground text-primary text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                   {activeFilterCount}
                 </span>
               )}

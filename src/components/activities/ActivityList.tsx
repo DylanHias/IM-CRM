@@ -83,7 +83,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-700">Activities ({activities.length})</h3>
+        <h3 className="text-sm font-semibold text-foreground">Activities ({activities.length})</h3>
         <Button
           size="sm"
           variant="outline"
@@ -102,7 +102,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
           <p className="text-xs text-muted-foreground mt-0.5">Log the first interaction with this customer</p>
         </div>
       ) : (
-        <div className="bg-white border rounded-lg px-4 divide-y">
+        <div className="bg-card border rounded-lg px-4 divide-y">
           {sorted.map((a) => (
             <ActivityItem
               key={a.id}

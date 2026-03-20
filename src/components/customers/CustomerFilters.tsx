@@ -111,7 +111,7 @@ export function CustomerFilters() {
           <SlidersHorizontal size={13} />
           Filters
           {activeFilterCount > 0 && (
-            <span className="ml-0.5 bg-white text-blue-700 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+            <span className="ml-0.5 bg-primary-foreground text-primary text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
               {activeFilterCount}
             </span>
           )}
@@ -127,7 +127,7 @@ export function CustomerFilters() {
 
       {/* Contact match hint */}
       {searchQuery && contactMatchCount > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-blue-600">
+        <div className="flex items-center gap-1.5 text-xs text-primary">
           <Users size={12} />
           {contactMatchCount} customer{contactMatchCount !== 1 ? 's' : ''} matched by contact name / email
         </div>

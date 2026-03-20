@@ -73,18 +73,18 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
           {contacts.map((contact, i) => (
             <motion.div
               key={contact.id}
-              className="bg-white border rounded-lg p-4 group"
+              className="bg-card border rounded-lg p-4 group"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: Math.min(i * 0.06, 0.36), ease: 'easeOut' }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
+                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
                     {contact.firstName[0]}{contact.lastName[0]}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-slate-900">
+                    <p className="font-semibold text-sm text-foreground">
                       {contact.firstName} {contact.lastName}
                     </p>
                     {contact.jobTitle && (
@@ -113,19 +113,19 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
 
               <div className="mt-3 flex flex-wrap gap-3">
                 {contact.email && (
-                  <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                  <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
                     <Mail size={12} />
                     {contact.email}
                   </a>
                 )}
                 {contact.phone && (
-                  <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Phone size={12} />
                     {contact.phone}
                   </a>
                 )}
                 {contact.mobile && (
-                  <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-slate-600">
+                  <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Smartphone size={12} />
                     {contact.mobile}
                   </a>

@@ -122,13 +122,13 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
 
         {success ? (
           <div className="flex flex-col items-center justify-center py-8 gap-3">
-            <CheckCircle2 size={40} className="text-green-500" />
-            <p className="text-slate-700 font-medium">{isEdit ? 'Training updated!' : 'Training added!'}</p>
+            <CheckCircle2 size={40} className="text-success" />
+            <p className="text-foreground font-medium">{isEdit ? 'Training updated!' : 'Training added!'}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
                 {error}
               </div>
@@ -146,13 +146,13 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
             <div className="space-y-1">
               <Label>Participants</Label>
               <div
-                className="flex flex-wrap gap-1.5 min-h-[38px] w-full rounded-md border border-input bg-white px-3 py-2 text-sm cursor-text"
+                className="flex flex-wrap gap-1.5 min-h-[38px] w-full rounded-md border border-input bg-card px-3 py-2 text-sm cursor-text"
                 onClick={() => participantInputRef.current?.focus()}
               >
                 {participants.map((name) => (
-                  <span key={name} className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 rounded px-2 py-0.5 text-xs font-medium">
+                  <span key={name} className="inline-flex items-center gap-1 bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium">
                     {name}
-                    <button type="button" onClick={(e) => { e.stopPropagation(); removeParticipant(name); }} className="text-slate-400 hover:text-slate-700">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); removeParticipant(name); }} className="text-muted-foreground hover:text-foreground">
                       <X size={11} />
                     </button>
                   </span>
@@ -179,7 +179,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
                 id="tf-status"
                 value={status ?? 'registered'}
                 onChange={(e) => setStatus(e.target.value as Training['status'])}
-                className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="registered">Registered</option>
                 <option value="completed">Completed</option>

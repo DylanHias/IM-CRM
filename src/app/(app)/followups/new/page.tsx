@@ -22,7 +22,7 @@ function NewFollowUpContent() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">Create Follow-Up</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-6">Create Follow-Up</h2>
       <FollowUpForm customerId={customerId} customerName={customer.name} activityId={activityId} />
     </div>
   );

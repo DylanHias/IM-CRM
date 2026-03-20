@@ -224,7 +224,7 @@ export default function CustomerDetailClient() {
                 {customer.email && (
                   <a
                     href={`mailto:${customer.email}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/30 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary hover:bg-primary/20 hover:border-primary/30 transition-colors"
                   >
                     <Mail size={13} />
                     {customer.email}

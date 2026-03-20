@@ -223,7 +223,7 @@ export default function LoginPage() {
               {error && (
                 <motion.div
                   variants={fadeUp}
-                  className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700"
+                  className="mb-4 flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive"
                 >
                   <AlertCircle size={16} className="mt-0.5 shrink-0" />
                   {error}
