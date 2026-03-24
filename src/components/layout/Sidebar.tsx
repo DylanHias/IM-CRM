@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, User } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
@@ -425,10 +425,6 @@ export function Sidebar() {
           </PopoverTrigger>
           <PopoverContent side="right" align="end" className="w-56 p-1.5">
             <div className="flex flex-col gap-0.5">
-              <PopoverMenuItem disabled style={{ opacity: 0.5, cursor: 'default' }}>
-                <User size={14} />
-                View profile
-              </PopoverMenuItem>
               <PopoverMenuItem
                 onClick={() => {
                   setAccountPopoverOpen(false);
