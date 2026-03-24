@@ -4,6 +4,8 @@ import { Sidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
+import { useSettingsStore } from '@/store/settingsStore';
+import { cn } from '@/lib/utils';
 import styled from 'styled-components';
 
 const Shell = styled.div`
@@ -33,6 +35,10 @@ const Content = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 24px 28px;
+
+  .compact & {
+    padding: 16px 20px;
+  }
 `;
 
 interface AppShellProps {
@@ -40,8 +46,10 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const compactMode = useSettingsStore((s) => s.compactMode);
+
   return (
-    <Shell>
+    <Shell className={cn(compactMode && 'compact')}>
       <TitleBar />
       <Body>
         <Sidebar />

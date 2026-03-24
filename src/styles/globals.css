@@ -127,6 +127,60 @@
     user-select: text;
   }
 
+  /* Accent color overrides */
+  .accent-purple {
+    --primary: 263 70% 50%;
+    --ring: 263 70% 50%;
+  }
+  .accent-purple.dark {
+    --primary: 263 70% 60%;
+    --ring: 263 70% 60%;
+  }
+
+  .accent-green {
+    --primary: 142 72% 37%;
+    --ring: 142 72% 37%;
+  }
+  .accent-green.dark {
+    --primary: 142 60% 45%;
+    --ring: 142 60% 45%;
+  }
+
+  .accent-orange {
+    --primary: 25 95% 53%;
+    --ring: 25 95% 53%;
+  }
+  .accent-orange.dark {
+    --primary: 25 90% 58%;
+    --ring: 25 90% 58%;
+  }
+
+  .accent-red {
+    --primary: 0 84% 60%;
+    --ring: 0 84% 60%;
+  }
+  .accent-red.dark {
+    --primary: 0 70% 58%;
+    --ring: 0 70% 58%;
+  }
+
+  .accent-pink {
+    --primary: 330 81% 60%;
+    --ring: 330 81% 60%;
+  }
+  .accent-pink.dark {
+    --primary: 330 75% 65%;
+    --ring: 330 75% 65%;
+  }
+
+  /* Compact mode */
+  .compact {
+    font-size: 13px;
+  }
+  .compact .compact\:p-4 {
+    padding: 16px;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;

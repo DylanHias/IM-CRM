@@ -1,15 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, User } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
+import { signOut } from '@/lib/auth/authHelpers';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
@@ -116,26 +119,72 @@ const BadgeCount = styled.span<{ $variant: 'destructive' | 'warning' }>`
       : 'hsl(var(--warning-foreground, var(--foreground)))'};
 `;
 
-const Footer = styled.div`
-  padding: 10px 10px;
+const AccountSection = styled.div`
+  padding: 10px;
   border-top: 1px solid hsl(var(--sidebar-border));
   width: 100%;
 `;
 
-const VersionLabel = styled.div`
-  height: 32px;
-  border-radius: 8px;
-  background-color: hsl(var(--muted));
+const AccountTrigger = styled.button`
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: hsl(var(--muted-foreground));
-  letter-spacing: -0.3px;
+  gap: 10px;
   width: 100%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
   overflow: hidden;
+
+  &:hover {
+    background-color: hsl(var(--sidebar-hover-bg));
+  }
+`;
+
+const AccountName = styled.span`
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--sidebar-fg));
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+`;
+
+const AccountEmail = styled.span`
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+`;
+
+const PopoverMenuItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: hsl(var(--foreground));
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background-color: hsl(var(--muted));
+  }
+`;
+
+const PopoverVersion = styled.span`
+  margin-left: auto;
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
 `;
 
 const UpdateButton = styled.button`
@@ -227,13 +276,24 @@ const ToggleButton = styled.button`
   }
 `;
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const collapsed = !sidebarOpen;
   const pathname = usePathname();
+  const router = useRouter();
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
+  const { account } = useAuthStore();
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -346,11 +406,57 @@ export function Sidebar() {
         </div>
       </NavSection>
 
-      <Footer>
-        <VersionLabel title={`v${process.env.NEXT_PUBLIC_APP_VERSION}`}>
-          v{process.env.NEXT_PUBLIC_APP_VERSION}
-        </VersionLabel>
-      </Footer>
+      <AccountSection>
+        <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+          <PopoverTrigger asChild>
+            <AccountTrigger title={account?.name ?? 'Account'}>
+              <Avatar className="h-7 w-7 flex-shrink-0">
+                <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
+                  {account?.name ? getInitials(account.name) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {!collapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <AccountName>{account?.name ?? 'User'}</AccountName>
+                  {account?.username && <AccountEmail>{account.username}</AccountEmail>}
+                </div>
+              )}
+            </AccountTrigger>
+          </PopoverTrigger>
+          <PopoverContent side="right" align="end" className="w-56 p-1.5">
+            <div className="flex flex-col gap-0.5">
+              <PopoverMenuItem disabled style={{ opacity: 0.5, cursor: 'default' }}>
+                <User size={14} />
+                View profile
+              </PopoverMenuItem>
+              <PopoverMenuItem
+                onClick={() => {
+                  setAccountPopoverOpen(false);
+                  router.push('/settings');
+                }}
+              >
+                <Settings size={14} />
+                Account settings
+              </PopoverMenuItem>
+              <PopoverMenuItem disabled style={{ opacity: 0.5, cursor: 'default' }}>
+                <Keyboard size={14} />
+                Keyboard shortcuts
+              </PopoverMenuItem>
+              <div className="h-px bg-border my-1" />
+              <PopoverMenuItem
+                onClick={() => {
+                  setAccountPopoverOpen(false);
+                  signOut();
+                }}
+              >
+                <LogOut size={14} />
+                Log out
+                <PopoverVersion>v{process.env.NEXT_PUBLIC_APP_VERSION}</PopoverVersion>
+              </PopoverMenuItem>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </AccountSection>
     </SidebarContainer>
   );
 }

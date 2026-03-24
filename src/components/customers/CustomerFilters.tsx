@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomerStore } from '@/store/customerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { SortBy } from '@/store/customerStore';
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
@@ -26,6 +27,7 @@ export function CustomerFilters() {
     toggleNoRecentActivityFilter, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
+  const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
   const [showFilters, setShowFilters] = useState(false);
   const activeFilterCount = getActiveFilterCount();
 
@@ -208,7 +210,7 @@ export function CustomerFilters() {
               className="h-8 text-xs justify-start"
               onClick={toggleNoRecentActivityFilter}
             >
-              No activity (90d+)
+              No activity ({noRecentActivityDays}d+)
             </Button>
           </div>
         </div>

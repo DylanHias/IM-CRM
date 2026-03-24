@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Customer, Contact } from '@/types/entities';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry';
 export type SortDir = 'asc' | 'desc';
@@ -38,8 +39,6 @@ interface CustomerState {
   getFilteredCustomers: () => Customer[];
   getSelectedCustomer: () => Customer | null;
 }
-
-const RECENT_ACTIVITY_THRESHOLD_DAYS = 90;
 
 export const useCustomerStore = create<CustomerState>()(
   persist(
@@ -133,7 +132,8 @@ export const useCustomerStore = create<CustomerState>()(
           result = result.filter((c) => c.addressCountry === filterCountry);
         }
         if (filterNoRecentActivity) {
-          const cutoff = new Date(Date.now() - RECENT_ACTIVITY_THRESHOLD_DAYS * 86400000).toISOString();
+          const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
+          const cutoff = new Date(Date.now() - thresholdDays * 86400000).toISOString();
           result = result.filter((c) => !c.lastActivityAt || c.lastActivityAt < cutoff);
         }
 
