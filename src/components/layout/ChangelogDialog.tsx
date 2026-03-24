@@ -112,7 +112,7 @@ export function ChangelogDialog() {
         <DialogPrimitive.Overlay className="fixed inset-0 top-[36px] z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200',
+            'fixed left-[50%] top-[50%] z-50 flex w-[40vw] max-h-[60vh] flex-col translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200',
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
             'data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
@@ -128,7 +128,7 @@ export function ChangelogDialog() {
               What&apos;s new in v{entry.version}
             </DialogPrimitive.Description>
           </div>
-          <div className="space-y-4 text-sm">
+          <div className="space-y-4 text-sm overflow-y-auto min-h-0">
             {entry.sections.map((section, si) => (
               <div key={si}>
                 {section.heading && (
