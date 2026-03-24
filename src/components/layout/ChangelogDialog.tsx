@@ -8,9 +8,14 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 const CHANGELOG_FILE = 'pending-changelog.json';
 
+interface ChangelogSection {
+  heading: string | null;
+  items: string[];
+}
+
 interface ChangelogEntry {
   version: string;
-  items: string[];
+  sections: ChangelogSection[];
 }
 
 interface ChangelogPayload {
@@ -18,11 +23,33 @@ interface ChangelogPayload {
   version: string;
 }
 
-function parseChangelog(body: string): string[] {
-  return body
-    .split('\n')
-    .map((line) => line.replace(/^[\s]*[-*]\s*/, '').trim())
-    .filter((line) => line.length > 0 && !line.startsWith('#') && !line.startsWith('**Full Changelog'));
+function parseChangelog(body: string): ChangelogSection[] {
+  const sections: ChangelogSection[] = [];
+  let current: ChangelogSection = { heading: null, items: [] };
+
+  for (const raw of body.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('**Full Changelog')) continue;
+
+    // Detect version headers: "## v0.10.0", "**v0.10.0**", etc.
+    const headingMatch = line.match(/^#{1,3}\s+(.+)/) ?? line.match(/^\*\*(v[\d.]+)\*\*$/);
+    if (headingMatch) {
+      if (current.heading !== null || current.items.length > 0) {
+        sections.push(current);
+      }
+      current = { heading: headingMatch[1].replace(/\*\*/g, ''), items: [] };
+      continue;
+    }
+
+    const item = line.replace(/^[-*]\s*/, '').trim();
+    if (item) current.items.push(item);
+  }
+
+  if (current.heading !== null || current.items.length > 0) {
+    sections.push(current);
+  }
+
+  return sections;
 }
 
 export async function storeChangelog(body: string, version: string) {
@@ -71,13 +98,13 @@ export function ChangelogDialog() {
     const load = async () => {
       const payload = await readAndClearChangelog();
       if (payload) {
-        setEntry({ version: payload.version, items: parseChangelog(payload.body) });
+        setEntry({ version: payload.version, sections: parseChangelog(payload.body) });
       }
     };
     load();
   }, []);
 
-  if (!entry || entry.items.length === 0) return null;
+  if (!entry || entry.sections.length === 0) return null;
 
   return (
     <DialogPrimitive.Root open onOpenChange={() => setEntry(null)}>
@@ -101,14 +128,23 @@ export function ChangelogDialog() {
               What&apos;s new in v{entry.version}
             </DialogPrimitive.Description>
           </div>
-          <ul className="space-y-2 text-sm">
-            {entry.items.map((item, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-primary mt-0.5 shrink-0">&#8226;</span>
-                <span>{item}</span>
-              </li>
+          <div className="space-y-4 text-sm">
+            {entry.sections.map((section, si) => (
+              <div key={si}>
+                {section.heading && (
+                  <h4 className="font-semibold text-foreground mb-1.5">{section.heading}</h4>
+                )}
+                <ul className="space-y-2">
+                  {section.items.map((item, ii) => (
+                    <li key={ii} className="flex gap-2">
+                      <span className="text-primary mt-0.5 shrink-0">&#8226;</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
           <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
