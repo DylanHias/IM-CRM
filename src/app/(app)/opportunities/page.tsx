@@ -181,6 +181,10 @@ export default function OpportunitiesPage() {
             Track sales opportunities across all customers.
           </p>
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
+          <Plus size={13} />
+          Add Opportunity
+        </Button>
       </div>
 
       {open.length > 0 && (
