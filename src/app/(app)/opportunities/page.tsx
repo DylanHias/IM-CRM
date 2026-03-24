@@ -85,7 +85,11 @@ export default function OpportunitiesPage() {
       updatedAt: now,
     };
     if (isTauriApp()) {
-      await insertOpportunity(opp);
+      try {
+        await insertOpportunity(opp);
+      } catch (err) {
+        console.error('[Opportunities] DB insert failed:', err);
+      }
     }
     addOpportunity(opp);
     setAddOpen(false);
@@ -100,7 +104,11 @@ export default function OpportunitiesPage() {
       updatedAt: new Date().toISOString(),
     };
     if (isTauriApp()) {
-      await dbUpdateOpportunity(updated);
+      try {
+        await dbUpdateOpportunity(updated);
+      } catch (err) {
+        console.error('[Opportunities] DB update failed:', err);
+      }
     }
     updateOpportunity(updated);
     setEditing(null);
@@ -110,7 +118,11 @@ export default function OpportunitiesPage() {
   const handleDelete = async (opp: Opportunity) => {
     if (!confirm(`Delete "${opp.subject}"?`)) return;
     if (isTauriApp()) {
-      await dbDeleteOpportunity(opp.id);
+      try {
+        await dbDeleteOpportunity(opp.id);
+      } catch (err) {
+        console.error('[Opportunities] DB delete failed:', err);
+      }
     }
     removeOpportunity(opp.id);
   };

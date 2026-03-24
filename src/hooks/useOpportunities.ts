@@ -70,7 +70,11 @@ export function useOpportunities(customerId: string) {
       };
 
       if (isTauriApp()) {
-        await insertOpportunity(opportunity);
+        try {
+          await insertOpportunity(opportunity);
+        } catch (err) {
+          console.error('[useOpportunities] DB insert failed, adding to store only:', err);
+        }
       }
       addOpportunity(opportunity);
       return opportunity;
@@ -81,7 +85,11 @@ export function useOpportunities(customerId: string) {
   const editOpportunity = useCallback(
     async (opportunity: Opportunity) => {
       if (isTauriApp()) {
-        await dbUpdateOpportunity(opportunity);
+        try {
+          await dbUpdateOpportunity(opportunity);
+        } catch (err) {
+          console.error('[useOpportunities] DB update failed:', err);
+        }
       }
       updateOpportunity(opportunity);
     },
@@ -91,7 +99,11 @@ export function useOpportunities(customerId: string) {
   const removeOpp = useCallback(
     async (id: string) => {
       if (isTauriApp()) {
-        await dbDeleteOpportunity(id);
+        try {
+          await dbDeleteOpportunity(id);
+        } catch (err) {
+          console.error('[useOpportunities] DB delete failed:', err);
+        }
       }
       removeOpportunity(id);
     },
