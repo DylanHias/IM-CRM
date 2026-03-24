@@ -85,6 +85,34 @@ export interface FollowUpRow {
   updated_at: string;
 }
 
+export interface OpportunityRow {
+  id: string;
+  customer_id: string;
+  contact_id: string | null;
+  status: string;
+  subject: string;
+  bcn: string | null;
+  multi_vendor_opportunity: number;
+  sell_type: string;
+  primary_vendor: string | null;
+  opportunity_type: string | null;
+  stage: string;
+  probability: number;
+  expiration_date: string | null;
+  estimated_revenue: number | null;
+  currency: string;
+  country: string;
+  source: string;
+  record_type: string;
+  customer_need: string | null;
+  sync_status: string;
+  remote_id: string | null;
+  created_by_id: string;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SyncRecordRow {
   id: number;
   sync_type: string;

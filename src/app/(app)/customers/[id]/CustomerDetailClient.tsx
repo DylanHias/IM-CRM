@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Info, Loader2,
-  Mail, Phone, Globe, FileText,
+  Mail, Phone, Globe, FileText, Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContactList } from '@/components/contacts/ContactList';
+import { OpportunityList } from '@/components/opportunities/OpportunityList';
 
 import { TrainingList } from '@/components/trainings/TrainingList';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
@@ -31,9 +32,10 @@ import { mockContacts } from '@/lib/mock/contacts';
 import { mockTrainings } from '@/lib/mock/trainings';
 import { todayISO } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
+import { useOpportunities } from '@/hooks/useOpportunities';
 import type { Activity, Contact, Training } from '@/types/entities';
 
-type ProfileTab = 'overview' | 'activities' | 'contacts' | 'trainings' | 'followups' | 'invoices';
+type ProfileTab = 'overview' | 'activities' | 'contacts' | 'trainings' | 'followups' | 'opportunities' | 'invoices';
 
 export default function CustomerDetailClient() {
   const params = useParams();
@@ -45,6 +47,7 @@ export default function CustomerDetailClient() {
 
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
   const { followUps, createFollowUp, completeFollowUp } = useFollowUps(customerId);
+  const { opportunities: customerOpportunities } = useOpportunities(customerId);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -180,8 +183,9 @@ export default function CustomerDetailClient() {
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'trainings', label: 'Trainings', icon: Info, count: trainings.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
+    { key: 'opportunities', label: 'Opportunities', icon: Target, count: customerOpportunities.length },
     { key: 'invoices', label: 'Invoices', icon: FileText },
-  ], [activities.length, contacts.length, trainings.length, followUps.length]);
+  ], [activities.length, contacts.length, trainings.length, followUps.length, customerOpportunities.length]);
 
 
   if (!customer) {
@@ -492,6 +496,19 @@ export default function CustomerDetailClient() {
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
                     <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} onAdd={() => setAddFollowUpOpen(true)} />
+                  </motion.div>
+                )}
+
+                {/* Opportunities Tab */}
+                {activeTab === 'opportunities' && (
+                  <motion.div
+                    key="opportunities"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
+                    <OpportunityList customerId={customerId} />
                   </motion.div>
                 )}
 

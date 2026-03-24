@@ -87,6 +87,40 @@ export interface FollowUp {
   updatedAt: string;
 }
 
+export type OpportunityStatus = 'Open' | 'Won' | 'Lost';
+export type OpportunityType = 'Services' | 'SPA' | 'SPA - Partner Agreement' | 'CMP' | 'Trad' | 'MPO2Connect' | 'Azure Private Offer' | 'Breath';
+export type OpportunityStage = 'Prospecting' | 'Validated' | 'Qualified' | 'Verbal Received' | 'Contract Received' | 'Billing Rejection' | 'Pending Vendor Confirmation' | 'Purchased';
+export type SellType = 'New' | 'Install';
+export type PrimaryVendor = 'AWS' | 'Azure' | 'Adobe';
+
+export interface Opportunity {
+  id: string;
+  customerId: string;
+  contactId: string | null;
+  status: OpportunityStatus;
+  subject: string;
+  bcn: string | null;
+  multiVendorOpportunity: boolean;
+  sellType: SellType;
+  primaryVendor: PrimaryVendor | null;
+  opportunityType: OpportunityType | null;
+  stage: OpportunityStage;
+  probability: number;
+  expirationDate: string | null;
+  estimatedRevenue: number | null;
+  currency: string;
+  country: string;
+  source: string;
+  recordType: string;
+  customerNeed: string | null;
+  syncStatus: 'pending' | 'synced' | 'error';
+  remoteId: string | null;
+  createdById: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type TimelineEvent =
   | ({ kind: 'activity' } & Activity)
   | ({ kind: 'training' } & Training)

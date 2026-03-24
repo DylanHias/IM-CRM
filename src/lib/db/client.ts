@@ -213,8 +213,40 @@ async function runSchema(db: Database): Promise<void> {
     )
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS opportunities (
+      id                       TEXT PRIMARY KEY,
+      customer_id              TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+      contact_id               TEXT REFERENCES contacts(id) ON DELETE SET NULL,
+      status                   TEXT NOT NULL DEFAULT 'Open' CHECK(status IN ('Open','Won','Lost')),
+      subject                  TEXT NOT NULL,
+      bcn                      TEXT,
+      multi_vendor_opportunity  INTEGER NOT NULL DEFAULT 0 CHECK(multi_vendor_opportunity IN (0,1)),
+      sell_type                TEXT NOT NULL DEFAULT 'New' CHECK(sell_type IN ('New','Install')),
+      primary_vendor           TEXT,
+      opportunity_type         TEXT,
+      stage                    TEXT NOT NULL DEFAULT 'Prospecting',
+      probability              INTEGER NOT NULL DEFAULT 5,
+      expiration_date          TEXT,
+      estimated_revenue        REAL,
+      currency                 TEXT NOT NULL DEFAULT 'EUR',
+      country                  TEXT NOT NULL DEFAULT 'Belgium',
+      source                   TEXT NOT NULL DEFAULT 'cloud',
+      record_type              TEXT NOT NULL DEFAULT 'Sales',
+      customer_need            TEXT,
+      sync_status              TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
+      remote_id                TEXT,
+      created_by_id            TEXT NOT NULL,
+      created_by_name          TEXT NOT NULL,
+      created_at               TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_customer ON opportunities(customer_id)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
+
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '3')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '4')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -246,6 +278,44 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 
     await db.execute(
       `UPDATE app_settings SET value = '3', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 4) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS opportunities (
+        id                       TEXT PRIMARY KEY,
+        customer_id              TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        contact_id               TEXT REFERENCES contacts(id) ON DELETE SET NULL,
+        status                   TEXT NOT NULL DEFAULT 'Open' CHECK(status IN ('Open','Won','Lost')),
+        subject                  TEXT NOT NULL,
+        bcn                      TEXT,
+        multi_vendor_opportunity  INTEGER NOT NULL DEFAULT 0 CHECK(multi_vendor_opportunity IN (0,1)),
+        sell_type                TEXT NOT NULL DEFAULT 'New' CHECK(sell_type IN ('New','Install')),
+        primary_vendor           TEXT,
+        opportunity_type         TEXT,
+        stage                    TEXT NOT NULL DEFAULT 'Prospecting',
+        probability              INTEGER NOT NULL DEFAULT 5,
+        expiration_date          TEXT,
+        estimated_revenue        REAL,
+        currency                 TEXT NOT NULL DEFAULT 'EUR',
+        country                  TEXT NOT NULL DEFAULT 'Belgium',
+        source                   TEXT NOT NULL DEFAULT 'cloud',
+        record_type              TEXT NOT NULL DEFAULT 'Sales',
+        customer_need            TEXT,
+        sync_status              TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
+        remote_id                TEXT,
+        created_by_id            TEXT NOT NULL,
+        created_by_name          TEXT NOT NULL,
+        created_at               TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_customer ON opportunities(customer_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
+
+    await db.execute(
+      `UPDATE app_settings SET value = '4', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

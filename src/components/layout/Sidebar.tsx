@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useState, useEffect } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -271,6 +271,7 @@ export function Sidebar() {
       badgeVariant: 'destructive' as const,
       badgeStyle: 'count' as const,
     },
+    { href: '/opportunities', label: 'Opportunities', icon: Target },
     { href: '/invoices', label: 'Invoices', icon: FileText },
     { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
   ];
