@@ -183,3 +183,10 @@ export const useCustomerStore = create<CustomerState>()(
     }
   )
 );
+
+// Sync sortBy in real-time when the default customer sort setting changes
+useSettingsStore.subscribe((state, prev) => {
+  if (state.defaultCustomerSort !== prev.defaultCustomerSort) {
+    useCustomerStore.setState({ sortBy: state.defaultCustomerSort, page: 1 });
+  }
+});

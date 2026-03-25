@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ActivityForm } from '@/components/activities/ActivityForm';
+import { useSettingsStore } from '@/store/settingsStore';
 import { mockRouter } from '@/__tests__/setup';
 import type { Contact } from '@/types/entities';
 
@@ -124,11 +125,31 @@ describe('ActivityForm', () => {
   });
 
   it('activity type defaults to meeting', () => {
+    useSettingsStore.getState().resetAll();
     render(<ActivityForm {...defaultProps} />);
-    // The SelectValue renders the current value text inside the trigger
     const triggers = screen.getAllByRole('combobox');
-    // First select is the activity type
     expect(triggers[0]).toHaveTextContent('Meeting');
+  });
+
+  it('activity type respects defaultActivityType setting', () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'call');
+    render(<ActivityForm {...defaultProps} />);
+    const triggers = screen.getAllByRole('combobox');
+    expect(triggers[0]).toHaveTextContent('Call');
+  });
+
+  it('submit uses the configured default activity type', async () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'note');
+    const user = userEvent.setup();
+    render(<ActivityForm {...defaultProps} />);
+    await user.type(screen.getByLabelText(/subject/i), 'Quick note');
+    await user.click(screen.getByRole('button', { name: /log activity/i }));
+
+    await waitFor(() => {
+      expect(mockCreateActivity).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'note' }),
+      );
+    });
   });
 
   it('date input defaults to today', () => {

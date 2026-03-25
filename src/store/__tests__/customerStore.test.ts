@@ -306,6 +306,29 @@ describe('customerStore', () => {
     });
   });
 
+  describe('real-time settings sync', () => {
+    it('changing defaultCustomerSort in settings updates sortBy in customerStore', () => {
+      // Initial: sortBy comes from settings default ('lastActivity')
+      useSettingsStore.getState().resetAll();
+      expect(store().sortBy).toBe('lastActivity');
+
+      // Change the setting
+      useSettingsStore.getState().updateSetting('defaultCustomerSort', 'name');
+
+      // customerStore should update in real-time via subscription
+      expect(store().sortBy).toBe('name');
+    });
+
+    it('changing defaultCustomerSort resets page to 1', () => {
+      useSettingsStore.getState().resetAll();
+      store().setPage(3);
+      expect(store().page).toBe(3);
+
+      useSettingsStore.getState().updateSetting('defaultCustomerSort', 'city');
+      expect(store().page).toBe(1);
+    });
+  });
+
   describe('getSelectedCustomer', () => {
     it('returns customer when found', () => {
       const c = createCustomer({ id: 'abc' });
