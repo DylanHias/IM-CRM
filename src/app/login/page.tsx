@@ -139,23 +139,25 @@ export default function LoginPage() {
   }, [accounts, router]);
 
   const handleDevBypass = async () => {
-    try {
-      setAccount(
-        {
-          homeAccountId: 'dev-mock-id',
-          environment: 'login.microsoftonline.com',
-          tenantId: 'dev-tenant',
-          username: 'dev@ingrammicro.com',
-          localAccountId: 'dev-local-id',
-          name: 'Dev User',
-          idTokenClaims: {},
-          nativeAccountId: undefined,
-          authorityType: 'MSSTS',
-        } as unknown as AccountInfo,
-        'mock-dev-token'
-      );
+    setAccount(
+      {
+        homeAccountId: 'dev-mock-id',
+        environment: 'login.microsoftonline.com',
+        tenantId: 'dev-tenant',
+        username: 'dev@ingrammicro.com',
+        localAccountId: 'dev-local-id',
+        name: 'Dev User',
+        idTokenClaims: {},
+        nativeAccountId: undefined,
+        authorityType: 'MSSTS',
+      } as unknown as AccountInfo,
+      'mock-dev-token'
+    );
+    useAuthStore.getState().setIsAdmin(true);
 
-      if (isTauriApp()) {
+    // DB sync is best-effort — don't block login if it fails
+    if (isTauriApp()) {
+      try {
         const { upsertUser, isUserAdmin, updateUserRole } = await import('@/lib/db/queries/users');
         const now = new Date().toISOString();
         await upsertUser({
@@ -170,16 +172,12 @@ export default function LoginPage() {
         });
         const admin = await isUserAdmin('dev-local-id');
         if (!admin) await updateUserRole('dev-local-id', 'admin');
-        useAuthStore.getState().setIsAdmin(true);
-      } else {
-        useAuthStore.getState().setIsAdmin(true);
+      } catch (err) {
+        console.error('[login] Dev bypass DB sync failed (non-fatal):', err);
       }
-
-      router.replace('/customers');
-    } catch (err) {
-      console.error('[login] Dev bypass failed:', err);
-      setError('Dev bypass failed. Check the console for details.');
     }
+
+    router.replace('/customers');
   };
 
   const handleLogin = async () => {
