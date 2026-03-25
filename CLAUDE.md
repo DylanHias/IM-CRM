@@ -101,6 +101,14 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 - **Write a changelog**: create `.changelog/v{version}.md` with a bullet list explaining what changed as if talking to someone with zero tech knowledge. Describe what the user will *see* or *experience*, not what was done in code. No technical terms — no "component", "regex", "CSS", "database", "API", "migration", "refactor", etc. Think "explain it like I'm five".
 - **Releases are manual**: the GitHub Actions workflow only runs via `workflow_dispatch`, not on every push. Push freely — releases are triggered manually when ready
 
+## Error Handling & Logging
+
+- **Never write silent `catch` blocks** — every `catch` must call `console.error` (or `console.warn` for non-fatal) so the error surfaces in the admin Console tab (`Admin → Console`)
+- **Tag format**: `console.error('[tag] Short description:', err)` — lowercase, bracketed
+- **Standard tags**: `[auth]`, `[db]`, `[seed]`, `[audit]`, `[sync]`, `[admin]`, `[msal]`, `[settings]`, `[login]`, `[activity]`, `[contact]`, `[followup]`, `[opportunity]`, `[training]`, `[invoice]`, `[customer]`, `[updater]`, `[changelog]`, `[data]`
+- **Only exception**: intentional silences with a comment explaining why (e.g., expected migration failures, malformed external JSON)
+- The log interceptor lives in `src/lib/logCapture.ts` — imported as a side-effect in `providers.tsx`
+
 ## Tauri / Async
 
 - Guard all Tauri API calls with `isTauriApp()` (`src/lib/utils/offlineUtils.ts`)
