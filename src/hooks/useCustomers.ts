@@ -78,6 +78,9 @@ export function useCustomers() {
     load();
   }, [allContacts.length, setAllContacts]);
 
+  // Subscribe to noRecentActivityDays so the list re-filters when the setting changes
+  const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
+
   return {
     customers: getFilteredCustomers(),
     allCustomers: customers,

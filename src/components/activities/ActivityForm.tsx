@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,13 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const defaultActivityType = useSettingsStore((s) => s.defaultActivityType);
 
   const [type, setType] = useState<'meeting' | 'visit' | 'call' | 'note'>(defaultActivityType);
+  const userChangedType = useRef(false);
+
+  // Sync with setting if zustand persist hydrates after initial render
+  useEffect(() => {
+    if (!userChangedType.current) setType(defaultActivityType);
+  }, [defaultActivityType]);
+
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [occurredAt, setOccurredAt] = useState(todayISO());
@@ -92,7 +99,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
 
       <div className="space-y-1">
         <Label htmlFor="type">Activity Type *</Label>
-        <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+        <Select value={type} onValueChange={(v) => { userChangedType.current = true; setType(v as typeof type); }}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
