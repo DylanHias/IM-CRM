@@ -70,8 +70,8 @@ export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> 
       map.set(date, { date, meeting: 0, call: 0, visit: 0, note: 0 });
     }
     const point = map.get(date)!;
-    if (type in point) {
-      (point as Record<string, number>)[type] = count;
+    if (type === 'meeting' || type === 'call' || type === 'visit' || type === 'note') {
+      point[type] = count;
     }
   }
   return Array.from(map.values());
