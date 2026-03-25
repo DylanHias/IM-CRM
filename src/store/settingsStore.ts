@@ -25,7 +25,10 @@ interface SettingsState {
   // Notifications & Reminders
   followUpReminderDays: number;
   overdueAlertsOnLaunch: boolean;
+  dueTodayAlertsOnLaunch: boolean;
   opportunityStaleReminderDays: number;
+  showConnectivityToasts: boolean;
+  showUpdateToasts: boolean;
 
   // Sync
   autoSyncOnLaunch: boolean;
@@ -63,7 +66,10 @@ const DATA_DEFAULTS = {
 const NOTIFICATION_DEFAULTS = {
   followUpReminderDays: 1,
   overdueAlertsOnLaunch: true,
+  dueTodayAlertsOnLaunch: true,
   showSyncToasts: true,
+  showConnectivityToasts: true,
+  showUpdateToasts: true,
   opportunityStaleReminderDays: 30,
 };
 

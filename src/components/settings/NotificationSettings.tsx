@@ -8,7 +8,8 @@ import { RotateCcw } from 'lucide-react';
 
 export function NotificationSettings() {
   const {
-    followUpReminderDays, overdueAlertsOnLaunch, opportunityStaleReminderDays, showSyncToasts,
+    followUpReminderDays, overdueAlertsOnLaunch, dueTodayAlertsOnLaunch,
+    opportunityStaleReminderDays, showSyncToasts, showConnectivityToasts, showUpdateToasts,
     updateSetting, resetSection,
   } = useSettingsStore();
 
@@ -47,10 +48,31 @@ export function NotificationSettings() {
           />
         </SettingRow>
 
-        <SettingRow label="Show sync toasts" description="Display notifications when sync completes">
+        <SettingRow label="Due today alerts on launch" description="Show follow-ups due today when you open the app">
+          <Switch
+            checked={dueTodayAlertsOnLaunch}
+            onCheckedChange={(v) => updateSetting('dueTodayAlertsOnLaunch', v)}
+          />
+        </SettingRow>
+
+        <SettingRow label="Show sync toasts" description="Display notifications when sync completes or fails">
           <Switch
             checked={showSyncToasts}
             onCheckedChange={(v) => updateSetting('showSyncToasts', v)}
+          />
+        </SettingRow>
+
+        <SettingRow label="Connectivity alerts" description="Notify when you go offline or come back online">
+          <Switch
+            checked={showConnectivityToasts}
+            onCheckedChange={(v) => updateSetting('showConnectivityToasts', v)}
+          />
+        </SettingRow>
+
+        <SettingRow label="Update available alerts" description="Notify when a new version of the app is available">
+          <Switch
+            checked={showUpdateToasts}
+            onCheckedChange={(v) => updateSetting('showUpdateToasts', v)}
           />
         </SettingRow>
 

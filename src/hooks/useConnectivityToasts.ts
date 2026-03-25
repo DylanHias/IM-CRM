@@ -2,12 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useSettingsStore } from '@/store/settingsStore';
 import { onOnlineStatusChange, isOnline } from '@/lib/utils/offlineUtils';
 
 export function useConnectivityToasts() {
   const wasOnline = useRef(isOnline());
+  const enabled = useSettingsStore((s) => s.showConnectivityToasts);
 
   useEffect(() => {
+    if (!enabled) return;
     return onOnlineStatusChange((online) => {
       if (online && !wasOnline.current) {
         toast.success('Back online', {
@@ -21,5 +24,5 @@ export function useConnectivityToasts() {
       }
       wasOnline.current = online;
     });
-  }, []);
+  }, [enabled]);
 }

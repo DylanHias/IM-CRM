@@ -13,6 +13,7 @@ export function useLaunchAlerts() {
 
   const followUpReminderDays = useSettingsStore((s) => s.followUpReminderDays);
   const overdueAlertsOnLaunch = useSettingsStore((s) => s.overdueAlertsOnLaunch);
+  const dueTodayAlertsOnLaunch = useSettingsStore((s) => s.dueTodayAlertsOnLaunch);
   const opportunityStaleReminderDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
   const mockDataEnabled = useSettingsStore((s) => s.mockDataEnabled);
 
@@ -59,7 +60,7 @@ export function useLaunchAlerts() {
       }
 
       // Follow-ups due today
-      if (dueTodayCount > 0) {
+      if (dueTodayAlertsOnLaunch && dueTodayCount > 0) {
         toast.info(
           `${dueTodayCount} follow-up${dueTodayCount > 1 ? 's' : ''} due today`,
           { description: 'Stay on top of your day' },
@@ -98,5 +99,5 @@ export function useLaunchAlerts() {
     // Delay alerts slightly so the UI settles first
     const timer = setTimeout(run, 2000);
     return () => clearTimeout(timer);
-  }, [followUpReminderDays, overdueAlertsOnLaunch, opportunityStaleReminderDays, mockDataEnabled]);
+  }, [followUpReminderDays, overdueAlertsOnLaunch, dueTodayAlertsOnLaunch, opportunityStaleReminderDays, mockDataEnabled]);
 }
