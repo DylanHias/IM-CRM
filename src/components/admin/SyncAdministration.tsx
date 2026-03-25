@@ -105,7 +105,7 @@ export function SyncAdministration() {
           type="number"
           value={purgeDays}
           onChange={(e) => setPurgeDays(Number(e.target.value))}
-          className="w-16 rounded border bg-background px-2 py-1 text-sm"
+          className="w-16 h-8 rounded-md border border-input bg-card px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           min={1}
         />
         <span className="text-sm">days</span>

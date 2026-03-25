@@ -31,7 +31,7 @@ export function UserManagement() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Users</h2>
         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
@@ -65,7 +65,7 @@ export function UserManagement() {
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={changingRole === user.id}
-                    className="rounded border bg-background px-2 py-1 text-xs"
+                    className="h-7 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>

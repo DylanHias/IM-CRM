@@ -53,7 +53,7 @@ export function AuditLog() {
   const currentPage = Math.floor(auditFilters.offset / auditFilters.limit) + 1;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Audit Log</h2>
         <Button variant="outline" size="sm" onClick={handleRefreshFromD365} disabled={refreshing}>
@@ -67,7 +67,7 @@ export function AuditLog() {
         <select
           value={auditFilters.entityType ?? ''}
           onChange={(e) => setAuditFilters({ entityType: (e.target.value || undefined) as AuditEntityType | undefined, offset: 0 })}
-          className="rounded border bg-background px-2 py-1.5 text-xs"
+          className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">All entity types</option>
           {ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -76,7 +76,7 @@ export function AuditLog() {
         <select
           value={auditFilters.action ?? ''}
           onChange={(e) => setAuditFilters({ action: (e.target.value || undefined) as AuditAction | undefined, offset: 0 })}
-          className="rounded border bg-background px-2 py-1.5 text-xs"
+          className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">All actions</option>
           {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -85,7 +85,7 @@ export function AuditLog() {
         <select
           value={auditFilters.changedById ?? ''}
           onChange={(e) => setAuditFilters({ changedById: e.target.value || undefined, offset: 0 })}
-          className="rounded border bg-background px-2 py-1.5 text-xs"
+          className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">All users</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -95,14 +95,14 @@ export function AuditLog() {
           type="date"
           value={auditFilters.dateFrom ?? ''}
           onChange={(e) => setAuditFilters({ dateFrom: e.target.value || undefined, offset: 0 })}
-          className="rounded border bg-background px-2 py-1.5 text-xs"
+          className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           placeholder="From"
         />
         <input
           type="date"
           value={auditFilters.dateTo ?? ''}
           onChange={(e) => setAuditFilters({ dateTo: e.target.value || undefined, offset: 0 })}
-          className="rounded border bg-background px-2 py-1.5 text-xs"
+          className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           placeholder="To"
         />
       </div>

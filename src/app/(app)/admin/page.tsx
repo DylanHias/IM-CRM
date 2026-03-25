@@ -23,7 +23,7 @@ type TabId = (typeof TABS)[number]['id'];
 const Container = styled.div`
   display: flex;
   gap: 32px;
-  max-width: 1100px;
+  max-width: 960px;
   min-height: 0;
 `;
 
@@ -31,7 +31,7 @@ const TabList = styled.nav`
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 180px;
+  min-width: 200px;
   flex-shrink: 0;
 `;
 
