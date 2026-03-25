@@ -8,12 +8,24 @@ type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 type ExportFormat = 'xlsx' | 'csv';
 
+export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/arr-overview';
+
+export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
+  '/customers',
+  '/sync',
+  '/followups',
+  '/opportunities',
+  '/invoices',
+  '/arr-overview',
+];
+
 interface SettingsState {
   // Appearance
   theme: Theme;
   accentColor: AccentColor;
   compactMode: boolean;
   sidebarDefaultExpanded: boolean;
+  sidebarOrder: SidebarTab[];
 
   // Data & Defaults
   defaultActivityType: ActivityType;
@@ -53,6 +65,7 @@ const APPEARANCE_DEFAULTS = {
   accentColor: 'blue' as AccentColor,
   compactMode: false,
   sidebarDefaultExpanded: false,
+  sidebarOrder: DEFAULT_SIDEBAR_ORDER as SidebarTab[],
 };
 
 const DATA_DEFAULTS = {

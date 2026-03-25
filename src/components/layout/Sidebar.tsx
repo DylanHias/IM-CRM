@@ -11,6 +11,7 @@ import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { signOut } from '@/lib/auth/authHelpers';
 import { motion } from 'framer-motion';
@@ -314,27 +315,31 @@ export function Sidebar() {
   const { updateAvailable, downloading, install } = useAppUpdater();
   const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
-  const navItems = [
-    { href: '/customers', label: 'Customers', icon: Users },
-    {
+  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+
+  const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count' }> = {
+    '/customers': { href: '/customers', label: 'Customers', icon: Users },
+    '/sync': {
       href: '/sync',
       label: 'Sync',
       icon: RefreshCw,
       badge: totalPending > 0 ? totalPending : undefined,
-      badgeVariant: 'warning' as const,
+      badgeVariant: 'warning',
     },
-    {
+    '/followups': {
       href: '/followups',
       label: 'Follow-Ups',
       icon: CheckSquare,
       badge: overdueCount > 0 ? overdueCount : undefined,
-      badgeVariant: 'destructive' as const,
-      badgeStyle: 'count' as const,
+      badgeVariant: 'destructive',
+      badgeStyle: 'count',
     },
-    { href: '/opportunities', label: 'Opportunities', icon: Target },
-    { href: '/invoices', label: 'Invoices', icon: FileText },
-    { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
-  ];
+    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
+    '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText },
+    '/arr-overview': { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
+  };
+
+  const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);
 
   return (
     <SidebarContainer
@@ -344,7 +349,7 @@ export function Sidebar() {
     >
       <NavSection>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', padding: '0 10px' }}>
-          {navItems.map(({ href, label, icon: Icon, badge, badgeVariant, badgeStyle }) => {
+          {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle }) => {
             const isActive = pathname.startsWith(href);
             return (
               <div key={href} style={{ width: '100%' }}>

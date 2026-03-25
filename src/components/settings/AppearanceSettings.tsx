@@ -1,11 +1,30 @@
 'use client';
 
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
@@ -19,9 +38,31 @@ const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string }[] = [
   { value: 'pink', label: 'Pink', swatch: 'bg-[hsl(330,81%,60%)]' },
 ];
 
+const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }> = {
+  '/customers': { label: 'Customers', icon: Users },
+  '/sync': { label: 'Sync', icon: RefreshCw },
+  '/followups': { label: 'Follow-Ups', icon: CheckSquare },
+  '/opportunities': { label: 'Opportunities', icon: Target },
+  '/invoices': { label: 'Invoices', icon: FileText },
+  '/arr-overview': { label: 'ARR Overview', icon: BarChart2 },
+};
+
 export function AppearanceSettings() {
-  const { theme, accentColor, compactMode, sidebarDefaultExpanded, updateSetting, resetSection } =
+  const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, updateSetting, resetSection } =
     useSettingsStore();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = sidebarOrder.indexOf(active.id as SidebarTab);
+    const newIndex = sidebarOrder.indexOf(over.id as SidebarTab);
+    updateSetting('sidebarOrder', arrayMove(sidebarOrder, oldIndex, newIndex));
+  };
 
   return (
     <div className="space-y-6">
@@ -80,6 +121,62 @@ export function AppearanceSettings() {
           />
         </SettingRow>
       </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-medium">Sidebar tab order</p>
+          <p className="text-xs text-muted-foreground">Drag to reorder the tabs in the sidebar</p>
+        </div>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        >
+          <SortableContext items={sidebarOrder} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1">
+              {sidebarOrder.map((tab) => (
+                <SortableTabItem key={tab} id={tab} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+    </div>
+  );
+}
+
+function SortableTabItem({ id }: { id: SidebarTab }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const meta = SIDEBAR_TAB_META[id];
+  const Icon = meta.icon;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm',
+        isDragging ? 'z-50 shadow-md border-primary/30 bg-card/95' : 'border-border',
+      )}
+    >
+      <button
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={14} />
+      </button>
+      <Icon size={14} className="text-muted-foreground flex-shrink-0" />
+      <span className="text-sm">{meta.label}</span>
     </div>
   );
 }

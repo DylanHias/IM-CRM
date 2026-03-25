@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "0.15.2",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,6 +18,10 @@
   "dependencies": {
     "@azure/msal-browser": "^3.0.0",
     "@azure/msal-react": "^2.0.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@radix-ui/react-avatar": "^1.0.0",
     "@radix-ui/react-dialog": "^1.0.0",
     "@radix-ui/react-dropdown-menu": "^2.0.0",
