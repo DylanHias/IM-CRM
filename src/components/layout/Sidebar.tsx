@@ -420,12 +420,10 @@ export function Sidebar() {
                   {account?.name ? getInitials(account.name) : 'U'}
                 </AvatarFallback>
               </Avatar>
-              {!collapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <AccountName>{account?.name ?? 'User'}</AccountName>
-                  {account?.username && <AccountEmail>{account.username}</AccountEmail>}
-                </div>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <AccountName>{account?.name ?? 'User'}</AccountName>
+                {account?.username && <AccountEmail>{account.username}</AccountEmail>}
+              </div>
             </AccountTrigger>
           </PopoverTrigger>
           <PopoverContent side="right" align="end" className="w-56 p-1.5">
