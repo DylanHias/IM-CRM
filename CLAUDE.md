@@ -67,6 +67,22 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
   3. **Always** call `browser_close` after validation to terminate the browser instance
 - Playwright runs in headless mode — no visible Chrome window
 
+## Testing (TDD)
+
+- **Test-driven development**: write tests FIRST, then implement the feature to make them pass
+- **Only run affected tests**: `pnpm vitest run <path-to-test-file(s)>` — never the full suite
+- **Test infrastructure**: Vitest + @testing-library/react + jsdom
+- **Test location**: `__tests__/` directories co-located with source (e.g. `src/store/__tests__/`)
+- **Test data**: use factories from `src/__tests__/mocks/factories.ts`
+- **Mocks**: Tauri, MSAL, next/navigation are globally mocked in `src/__tests__/setup.ts`
+- **What to test**:
+  - New utility functions → unit tests
+  - Store changes → store unit tests
+  - New/modified hooks → integration tests with `renderHook`
+  - New/modified components → functional tests with `@testing-library/react`
+  - Bug fixes → regression test reproducing the bug
+- **CI pipeline**: `test.yml` runs affected tests on PRs (`--changed origin/main`), full suite on push to main
+
 ## Git Workflow
 
 - **Commit after every completed change** — each logical unit of work gets its own commit
