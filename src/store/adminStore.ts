@@ -7,7 +7,7 @@ import type {
   AuditLogFilters,
   SyncHealthMetrics,
   DataQualityMetrics,
-  ActivityBreakdown,
+  ActivityTimelinePoint,
   PipelineStats,
   TableStats,
 } from '@/types/admin';
@@ -21,8 +21,7 @@ interface AdminState {
   syncHealth: SyncHealthMetrics | null;
   syncErrors: SyncRecord[];
   dataQuality: DataQualityMetrics | null;
-  activityByType: ActivityBreakdown[];
-  activityByMonth: { month: string; count: number }[];
+  activityTimeline: ActivityTimelinePoint[];
   activityByUser: { userName: string; count: number }[];
   pipelineByStage: PipelineStats[];
   winRate: { won: number; lost: number; open: number } | null;
@@ -35,8 +34,7 @@ interface AdminState {
   setSyncHealth: (health: SyncHealthMetrics) => void;
   setSyncErrors: (errors: SyncRecord[]) => void;
   setDataQuality: (quality: DataQualityMetrics) => void;
-  setActivityByType: (data: ActivityBreakdown[]) => void;
-  setActivityByMonth: (data: { month: string; count: number }[]) => void;
+  setActivityTimeline: (data: ActivityTimelinePoint[]) => void;
   setActivityByUser: (data: { userName: string; count: number }[]) => void;
   setPipelineByStage: (data: PipelineStats[]) => void;
   setWinRate: (data: { won: number; lost: number; open: number }) => void;
@@ -60,8 +58,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   syncHealth: null,
   syncErrors: [],
   dataQuality: null,
-  activityByType: [],
-  activityByMonth: [],
+  activityTimeline: [],
   activityByUser: [],
   pipelineByStage: [],
   winRate: null,
@@ -74,8 +71,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   setSyncHealth: (syncHealth) => set({ syncHealth }),
   setSyncErrors: (syncErrors) => set({ syncErrors }),
   setDataQuality: (dataQuality) => set({ dataQuality }),
-  setActivityByType: (activityByType) => set({ activityByType }),
-  setActivityByMonth: (activityByMonth) => set({ activityByMonth }),
+  setActivityTimeline: (activityTimeline) => set({ activityTimeline }),
   setActivityByUser: (activityByUser) => set({ activityByUser }),
   setPipelineByStage: (pipelineByStage) => set({ pipelineByStage }),
   setWinRate: (winRate) => set({ winRate }),
@@ -166,36 +162,34 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       if (!isTauriApp()) {
         const {
-          mockDataQuality, mockActivityByType, mockActivityByMonth,
+          mockDataQuality, mockActivityTimeline,
           mockActivityByUser, mockPipelineByStage, mockWinRate,
         } = await import('@/lib/mock/admin');
         set({
-          dataQuality: mockDataQuality, activityByType: mockActivityByType,
-          activityByMonth: mockActivityByMonth, activityByUser: mockActivityByUser,
+          dataQuality: mockDataQuality, activityTimeline: mockActivityTimeline,
+          activityByUser: mockActivityByUser,
           pipelineByStage: mockPipelineByStage, winRate: mockWinRate,
         });
         return;
       }
       const {
         queryDataQualityMetrics,
-        queryActivityBreakdownByType,
-        queryActivityBreakdownByMonth,
+        queryActivityTimeline,
         queryActivityBreakdownByUser,
         queryPipelineByStage,
         queryWinRate,
       } = await import('@/lib/db/queries/adminAnalytics');
 
-      const [dataQuality, activityByType, activityByMonth, activityByUser, pipelineByStage, winRate] =
+      const [dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate] =
         await Promise.all([
           queryDataQualityMetrics(),
-          queryActivityBreakdownByType(),
-          queryActivityBreakdownByMonth(),
+          queryActivityTimeline(),
           queryActivityBreakdownByUser(),
           queryPipelineByStage(),
           queryWinRate(),
         ]);
 
-      set({ dataQuality, activityByType, activityByMonth, activityByUser, pipelineByStage, winRate });
+      set({ dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate });
     } finally {
       set({ isLoading: false });
     }

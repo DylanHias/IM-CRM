@@ -55,6 +55,14 @@ export interface ActivityBreakdown {
   count: number;
 }
 
+export interface ActivityTimelinePoint {
+  month: string;
+  meeting: number;
+  call: number;
+  visit: number;
+  note: number;
+}
+
 export interface PipelineStats {
   stage: string;
   count: number;

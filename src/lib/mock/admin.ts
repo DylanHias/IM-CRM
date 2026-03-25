@@ -3,7 +3,7 @@ import type {
   AuditLogEntry,
   SyncHealthMetrics,
   DataQualityMetrics,
-  ActivityBreakdown,
+  ActivityTimelinePoint,
   PipelineStats,
   TableStats,
 } from '@/types/admin';
@@ -93,23 +93,26 @@ export const mockDataQuality: DataQualityMetrics = {
   totalActivities: 68,
 };
 
-export const mockActivityByType: ActivityBreakdown[] = [
-  { type: 'meeting', count: 22 },
-  { type: 'call', count: 19 },
-  { type: 'visit', count: 14 },
-  { type: 'note', count: 13 },
-];
-
-export const mockActivityByMonth: { month: string; count: number }[] = (() => {
-  const months: { month: string; count: number }[] = [];
+export const mockActivityTimeline: ActivityTimelinePoint[] = (() => {
+  const points: ActivityTimelinePoint[] = [];
   const now = new Date();
+  const meetingCounts = [2, 1, 3, 2, 1, 3, 2, 4, 2, 1, 3, 4];
+  const callCounts =    [1, 2, 1, 2, 3, 2, 1, 2, 2, 3, 2, 3];
+  const visitCounts =   [0, 1, 0, 2, 1, 1, 1, 2, 1, 1, 2, 1];
+  const noteCounts =    [0, 1, 0, 1, 1, 2, 1, 1, 2, 1, 1, 2];
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const label = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    const counts = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10];
-    months.push({ month: label, count: counts[11 - i] });
+    const idx = 11 - i;
+    points.push({
+      month: label,
+      meeting: meetingCounts[idx],
+      call: callCounts[idx],
+      visit: visitCounts[idx],
+      note: noteCounts[idx],
+    });
   }
-  return months;
+  return points;
 })();
 
 export const mockActivityByUser: { userName: string; count: number }[] = [

@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type {
   DataQualityMetrics,
-  ActivityBreakdown,
+  ActivityTimelinePoint,
   PipelineStats,
   TableStats,
   SyncHealthMetrics,
@@ -54,22 +54,27 @@ export async function queryDataQualityMetrics(staleActivityDays = 90): Promise<D
   };
 }
 
-export async function queryActivityBreakdownByType(): Promise<ActivityBreakdown[]> {
+export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> {
   const db = await getDb();
-  return db.select<ActivityBreakdown[]>(
-    `SELECT type, COUNT(*) as count FROM activities GROUP BY type ORDER BY count DESC`
-  );
-}
-
-export async function queryActivityBreakdownByMonth(): Promise<{ month: string; count: number }[]> {
-  const db = await getDb();
-  return db.select<{ month: string; count: number }[]>(
-    `SELECT strftime('%Y-%m', occurred_at) as month, COUNT(*) as count
+  const rows = await db.select<{ month: string; type: string; count: number }[]>(
+    `SELECT strftime('%Y-%m', occurred_at) as month, type, COUNT(*) as count
      FROM activities
      WHERE occurred_at >= datetime('now', '-12 months')
-     GROUP BY month
+     GROUP BY month, type
      ORDER BY month`
   );
+
+  const map = new Map<string, ActivityTimelinePoint>();
+  for (const { month, type, count } of rows) {
+    if (!map.has(month)) {
+      map.set(month, { month, meeting: 0, call: 0, visit: 0, note: 0 });
+    }
+    const point = map.get(month)!;
+    if (type in point) {
+      (point as Record<string, number>)[type] = count;
+    }
+  }
+  return Array.from(map.values());
 }
 
 export async function queryActivityBreakdownByUser(): Promise<{ userName: string; count: number }[]> {
