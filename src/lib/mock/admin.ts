@@ -96,17 +96,19 @@ export const mockDataQuality: DataQualityMetrics = {
 export const mockActivityTimeline: ActivityTimelinePoint[] = (() => {
   const points: ActivityTimelinePoint[] = [];
   const now = new Date();
-  // Smooth sine-based waves with slight phase offsets per type
+  // Gentle waves with a slow drift and a faster ripple for natural variation
   for (let i = 89; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
     const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const t = (89 - i) / 89;
+    const slow = Math.sin(t * Math.PI * 2.5);
+    const fast = Math.sin(t * Math.PI * 8);
     points.push({
       date: label,
-      meeting: Math.round(2.5 + 1.5 * Math.sin(t * Math.PI * 6)),
-      call:    Math.round(2 + 1.2 * Math.sin(t * Math.PI * 6 + 1.2)),
-      visit:   Math.round(1.2 + 0.8 * Math.sin(t * Math.PI * 4 + 0.8)),
-      note:    Math.round(1 + 0.7 * Math.sin(t * Math.PI * 5 + 2.5)),
+      meeting: Math.max(0, Math.round(2.5 + 1.2 * slow + 0.5 * fast)),
+      call:    Math.max(0, Math.round(2 + slow + 0.4 * Math.sin(t * Math.PI * 7 + 1))),
+      visit:   Math.max(0, Math.round(1.2 + 0.6 * slow + 0.3 * Math.sin(t * Math.PI * 6 + 2))),
+      note:    Math.max(0, Math.round(1 + 0.5 * Math.sin(t * Math.PI * 3 + 1.5) + 0.3 * fast)),
     });
   }
   return points;
