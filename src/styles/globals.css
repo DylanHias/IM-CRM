@@ -181,6 +181,24 @@
     padding: 16px;
   }
 
+  /* Toast theme overrides */
+  [data-sonner-toaster] [data-sonner-toast] {
+    --normal-bg: hsl(var(--card));
+    --normal-border: hsl(var(--border));
+    --normal-text: hsl(var(--card-foreground));
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+    color: hsl(var(--card-foreground));
+  }
+  [data-sonner-toaster] [data-sonner-toast] [data-description] {
+    color: hsl(var(--muted-foreground));
+  }
+  [data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+  }
+
   /* Toast icon colors */
   [data-sonner-toast][data-type="success"] [data-icon] {
     color: hsl(var(--success));
