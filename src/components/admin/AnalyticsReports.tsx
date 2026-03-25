@@ -135,7 +135,7 @@ export function AnalyticsReports() {
               <Area
                 key={type}
                 dataKey={type}
-                type="natural"
+                type="monotone"
                 fill={`url(#fill-${type})`}
                 stroke={`var(--color-${type})`}
                 strokeWidth={2}

@@ -96,23 +96,17 @@ export const mockDataQuality: DataQualityMetrics = {
 export const mockActivityTimeline: ActivityTimelinePoint[] = (() => {
   const points: ActivityTimelinePoint[] = [];
   const now = new Date();
-  // Seed-based pseudo-random for deterministic data
-  let seed = 42;
-  function rand(max: number) {
-    seed = (seed * 16807 + 0) % 2147483647;
-    return seed % (max + 1);
-  }
+  // Smooth sine-based waves with slight phase offsets per type
   for (let i = 89; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    const day = d.getDay();
-    const isWeekend = day === 0 || day === 6;
     const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const t = (89 - i) / 89;
     points.push({
       date: label,
-      meeting: isWeekend ? 0 : rand(3),
-      call: isWeekend ? rand(1) : rand(4),
-      visit: isWeekend ? 0 : rand(2),
-      note: rand(2),
+      meeting: Math.round(2.5 + 1.5 * Math.sin(t * Math.PI * 6)),
+      call:    Math.round(2 + 1.2 * Math.sin(t * Math.PI * 6 + 1.2)),
+      visit:   Math.round(1.2 + 0.8 * Math.sin(t * Math.PI * 4 + 0.8)),
+      note:    Math.round(1 + 0.7 * Math.sin(t * Math.PI * 5 + 2.5)),
     });
   }
   return points;
