@@ -34,10 +34,10 @@ const Main = styled.main`
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px 28px;
+  padding: 24px 28px 48px;
 
   .compact & {
-    padding: 16px 20px;
+    padding: 16px 20px 40px;
   }
 `;
 
