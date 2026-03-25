@@ -7,6 +7,7 @@ import { ChangelogDialog } from './ChangelogDialog';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
+import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
 import { cn } from '@/lib/utils';
 import styled from 'styled-components';
 
@@ -51,6 +52,7 @@ export function AppShell({ children }: AppShellProps) {
   const compactMode = useSettingsStore((s) => s.compactMode);
   useAutoSync();
   useLaunchAlerts();
+  useConnectivityToasts();
 
   return (
     <Shell className={cn(compactMode && 'compact')}>

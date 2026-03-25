@@ -26,23 +26,26 @@ export function useLaunchAlerts() {
 
       let overdueCount = 0;
       let upcomingCount = 0;
+      let dueTodayCount = 0;
 
       if (useMock) {
         const open = mockFollowUps.filter((f) => !f.completed);
         overdueCount = open.filter((f) => f.dueDate < today).length;
+        dueTodayCount = open.filter((f) => f.dueDate === today).length;
         if (followUpReminderDays > 0) {
           const futureDate = new Date(Date.now() + followUpReminderDays * 86400000)
             .toISOString()
             .split('T')[0];
           upcomingCount = open.filter(
-            (f) => f.dueDate >= today && f.dueDate <= futureDate,
+            (f) => f.dueDate > today && f.dueDate <= futureDate,
           ).length;
         }
       } else {
-        const { queryOverdueFollowUpCount, queryUpcomingFollowUpCount } = await import(
+        const { queryOverdueFollowUpCount, queryUpcomingFollowUpCount, queryDueTodayFollowUpCount } = await import(
           '@/lib/db/queries/followups'
         );
         overdueCount = await queryOverdueFollowUpCount();
+        dueTodayCount = await queryDueTodayFollowUpCount();
         if (followUpReminderDays > 0) {
           upcomingCount = await queryUpcomingFollowUpCount(followUpReminderDays);
         }
@@ -53,6 +56,14 @@ export function useLaunchAlerts() {
         toast.warning(`${overdueCount} overdue follow-up${overdueCount > 1 ? 's' : ''}`, {
           description: 'Check your follow-ups to stay on track',
         });
+      }
+
+      // Follow-ups due today
+      if (dueTodayCount > 0) {
+        toast.info(
+          `${dueTodayCount} follow-up${dueTodayCount > 1 ? 's' : ''} due today`,
+          { description: 'Stay on top of your day' },
+        );
       }
 
       // Upcoming follow-up reminders

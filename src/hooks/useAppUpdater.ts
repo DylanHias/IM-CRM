@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { storeChangelog } from '@/components/layout/ChangelogDialog';
 
@@ -23,6 +24,10 @@ export function useAppUpdater(): AppUpdaterState {
       if (update) {
         updateRef.current = update;
         setUpdateAvailable(true);
+        toast.info(`Update ${update.version} available`, {
+          description: 'Click the update button in the sidebar to install',
+          duration: 8000,
+        });
       }
     } catch (error) {
       console.error('[updater] Failed to check for updates:', error);

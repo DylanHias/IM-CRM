@@ -22,13 +22,17 @@ export function useAutoSync() {
     didAutoSync = true;
 
     const run = async () => {
-      await triggerSync();
-      const errors = useSyncStore.getState().syncErrors;
-      if (!showSyncToasts) return;
-      if (errors.length > 0) {
-        toast.error('Sync completed with errors', { description: `${errors.length} error(s) occurred` });
-      } else {
-        toast.success('Sync complete');
+      try {
+        await triggerSync();
+        const errors = useSyncStore.getState().syncErrors;
+        if (!showSyncToasts) return;
+        if (errors.length > 0) {
+          toast.error('Sync completed with errors', { description: `${errors.length} error(s) occurred` });
+        } else {
+          toast.success('Sync complete');
+        }
+      } catch {
+        toast.error('Sync failed', { description: 'Something went wrong — try again later' });
       }
     };
     run();
@@ -44,14 +48,18 @@ export function useAutoSync() {
     const ms = syncIntervalMinutes * 60_000;
     intervalRef.current = setInterval(async () => {
       if (useSyncStore.getState().isSyncing) return;
-      await triggerSync();
-      const showToasts = useSettingsStore.getState().showSyncToasts;
-      if (!showToasts) return;
-      const errors = useSyncStore.getState().syncErrors;
-      if (errors.length > 0) {
-        toast.error('Background sync had errors');
-      } else {
-        toast.success('Background sync complete');
+      try {
+        await triggerSync();
+        const showToasts = useSettingsStore.getState().showSyncToasts;
+        if (!showToasts) return;
+        const errors = useSyncStore.getState().syncErrors;
+        if (errors.length > 0) {
+          toast.error('Background sync had errors');
+        } else {
+          toast.success('Background sync complete');
+        }
+      } catch {
+        toast.error('Background sync failed', { description: 'Will retry at next interval' });
       }
     }, ms);
 
