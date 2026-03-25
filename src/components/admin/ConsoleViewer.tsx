@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useLogEntries, clearLogs, type LogLevel } from '@/lib/logCapture';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, Trash2, ArrowUpToLine } from 'lucide-react';
+import { Search, X, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LEVEL_STYLES: Record<LogLevel, { bg: string; text: string; label: string }> = {
@@ -24,9 +24,6 @@ export function ConsoleViewer() {
   const entries = useLogEntries();
   const [levelFilter, setLevelFilter] = useState<'all' | LogLevel>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [autoScroll, setAutoScroll] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const result = entries.filter((e) => {
@@ -36,19 +33,6 @@ export function ConsoleViewer() {
     });
     return result.reverse();
   }, [entries, levelFilter, searchQuery]);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const atTop = el.scrollTop <= 30;
-    setAutoScroll(atTop);
-  }, []);
-
-  useEffect(() => {
-    if (!autoScroll) return;
-    const el = scrollRef.current;
-    if (el) el.scrollTop = 0;
-  }, [filtered.length, autoScroll]);
 
   return (
     <div className="space-y-3">
@@ -96,24 +80,9 @@ export function ConsoleViewer() {
             <SelectItem value="error">Error</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant={autoScroll ? 'default' : 'outline'}
-          size="sm"
-          className="h-8 gap-1.5 text-xs"
-          onClick={() => {
-            setAutoScroll(true);
-            const el = scrollRef.current;
-            if (el) el.scrollTop = 0;
-          }}
-          title="Auto-scroll to latest"
-        >
-          <ArrowUpToLine size={12} />
-        </Button>
       </div>
 
       <div
-        ref={scrollRef}
-        onScroll={handleScroll}
         className="rounded-xl border border-border/60 bg-card overflow-y-auto shadow-sm"
         style={{ maxHeight: 'calc(100vh - 320px)', minHeight: '300px' }}
       >
