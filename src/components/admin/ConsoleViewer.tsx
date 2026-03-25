@@ -5,7 +5,7 @@ import { useLogEntries, clearLogs, type LogLevel } from '@/lib/logCapture';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, Trash2, ArrowDownToLine } from 'lucide-react';
+import { Search, X, Trash2, ArrowUpToLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LEVEL_STYLES: Record<LogLevel, { bg: string; text: string; label: string }> = {
@@ -29,24 +29,25 @@ export function ConsoleViewer() {
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return entries.filter((e) => {
+    const result = entries.filter((e) => {
       if (levelFilter !== 'all' && e.level !== levelFilter) return false;
       if (q && !e.message.toLowerCase().includes(q)) return false;
       return true;
     });
+    return result.reverse();
   }, [entries, levelFilter, searchQuery]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
-    setAutoScroll(atBottom);
+    const atTop = el.scrollTop <= 30;
+    setAutoScroll(atTop);
   }, []);
 
   useEffect(() => {
     if (!autoScroll) return;
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el) el.scrollTop = 0;
   }, [filtered.length, autoScroll]);
 
   return (
@@ -102,11 +103,11 @@ export function ConsoleViewer() {
           onClick={() => {
             setAutoScroll(true);
             const el = scrollRef.current;
-            if (el) el.scrollTop = el.scrollHeight;
+            if (el) el.scrollTop = 0;
           }}
           title="Auto-scroll to latest"
         >
-          <ArrowDownToLine size={12} />
+          <ArrowUpToLine size={12} />
         </Button>
       </div>
 
