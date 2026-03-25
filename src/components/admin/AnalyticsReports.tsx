@@ -5,7 +5,7 @@ import { useAdminStore } from '@/store/adminStore';
 import {
   AreaChart, Area,
   BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip,
+  XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -166,14 +166,18 @@ export function AnalyticsReports() {
 
       {/* Activities by User */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
-        <ChartContainer config={{}} className="aspect-auto h-[200px] w-full">
-          <BarChart data={activityByUser} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis type="number" tick={{ fontSize: 11 }} />
-            <YAxis dataKey="userName" type="category" tick={{ fontSize: 11 }} width={120} />
-            <Tooltip />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+        <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
+        <p className="mb-3 text-xs text-muted-foreground">{activityByUser.length} user{activityByUser.length !== 1 ? 's' : ''}</p>
+        <ChartContainer
+          config={{ count: { label: 'Activities', color: 'hsl(var(--primary))' } }}
+          className="w-full"
+          style={{ height: Math.max(120, activityByUser.length * 36) }}
+        >
+          <BarChart data={activityByUser} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
+            <XAxis type="number" hide />
+            <YAxis dataKey="userName" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={140} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} barSize={20} />
           </BarChart>
         </ChartContainer>
       </div>
