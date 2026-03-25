@@ -23,6 +23,7 @@ import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useActivities } from '@/hooks/useActivities';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -61,8 +62,10 @@ export default function CustomerDetailClient() {
   const [editContactId, setEditContactId] = useState('none');
   const [isSavingActivity, setIsSavingActivity] = useState(false);
 
+  const defaultActivityType = useSettingsStore((s) => s.defaultActivityType);
+
   const [addActivityOpen, setAddActivityOpen] = useState(false);
-  const [newActType, setNewActType] = useState<Activity['type']>('meeting');
+  const [newActType, setNewActType] = useState<Activity['type'] | null>(null);
   const [newActSubject, setNewActSubject] = useState('');
   const [newActDescription, setNewActDescription] = useState('');
   const [newActDate, setNewActDate] = useState(todayISO());
@@ -117,13 +120,13 @@ export default function CustomerDetailClient() {
       await createActivity({
         customerId,
         contactId: newActContactId === 'none' ? null : newActContactId,
-        type: newActType,
+        type: newActType ?? defaultActivityType,
         subject: newActSubject.trim(),
         description: newActDescription.trim() || null,
         occurredAt: new Date(newActDate).toISOString(),
       });
       setAddActivityOpen(false);
-      setNewActType('meeting');
+      setNewActType(null);
       setNewActSubject('');
       setNewActDescription('');
       setNewActDate(todayISO());
@@ -590,7 +593,7 @@ export default function CustomerDetailClient() {
                   <form onSubmit={handleCreateActivity} className="space-y-4">
                     <div className="space-y-1">
                       <Label>Type</Label>
-                      <Select value={newActType} onValueChange={(v) => setNewActType(v as Activity['type'])}>
+                      <Select value={newActType ?? defaultActivityType} onValueChange={(v) => setNewActType(v as Activity['type'])}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="meeting">Meeting</SelectItem>
