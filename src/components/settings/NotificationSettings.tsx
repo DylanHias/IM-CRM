@@ -8,7 +8,7 @@ import { RotateCcw } from 'lucide-react';
 
 export function NotificationSettings() {
   const {
-    followUpReminderDays, overdueAlertsOnLaunch, opportunityStaleReminderDays,
+    followUpReminderDays, overdueAlertsOnLaunch, opportunityStaleReminderDays, showSyncToasts,
     updateSetting, resetSection,
   } = useSettingsStore();
 
@@ -44,6 +44,13 @@ export function NotificationSettings() {
           <Switch
             checked={overdueAlertsOnLaunch}
             onCheckedChange={(v) => updateSetting('overdueAlertsOnLaunch', v)}
+          />
+        </SettingRow>
+
+        <SettingRow label="Show sync toasts" description="Display notifications when sync completes">
+          <Switch
+            checked={showSyncToasts}
+            onCheckedChange={(v) => updateSetting('showSyncToasts', v)}
           />
         </SettingRow>
 

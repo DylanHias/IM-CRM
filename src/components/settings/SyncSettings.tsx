@@ -8,7 +8,7 @@ import { RotateCcw } from 'lucide-react';
 
 export function SyncSettings() {
   const {
-    autoSyncOnLaunch, syncIntervalMinutes, showSyncToasts,
+    autoSyncOnLaunch, syncIntervalMinutes,
     updateSetting, resetSection,
   } = useSettingsStore();
 
@@ -48,12 +48,6 @@ export function SyncSettings() {
           </div>
         </SettingRow>
 
-        <SettingRow label="Show sync toasts" description="Display notifications when sync completes">
-          <Switch
-            checked={showSyncToasts}
-            onCheckedChange={(v) => updateSetting('showSyncToasts', v)}
-          />
-        </SettingRow>
       </div>
     </div>
   );

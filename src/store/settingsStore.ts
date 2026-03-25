@@ -63,13 +63,13 @@ const DATA_DEFAULTS = {
 const NOTIFICATION_DEFAULTS = {
   followUpReminderDays: 1,
   overdueAlertsOnLaunch: true,
+  showSyncToasts: true,
   opportunityStaleReminderDays: 30,
 };
 
 const SYNC_DEFAULTS = {
   autoSyncOnLaunch: true,
   syncIntervalMinutes: 15,
-  showSyncToasts: true,
 };
 
 const DATA_MANAGEMENT_DEFAULTS = {
