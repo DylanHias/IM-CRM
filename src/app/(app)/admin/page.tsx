@@ -65,7 +65,7 @@ export default function AdminPage() {
 
   return (
     <AdminGuard>
-      <div>
+      <div className="pb-6">
         <h1 className="text-lg font-semibold mb-6">Admin Panel</h1>
         <Container>
           <TabList>
