@@ -66,7 +66,7 @@ export function DataManagement() {
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Table Statistics</h3>
         <div className="grid grid-cols-4 gap-2">
           {tableStats.map(({ tableName, rowCount }) => (
-            <div key={tableName} className="flex items-center gap-2 rounded-lg border p-2.5">
+            <div key={tableName} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
               <Database size={14} className="text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">{tableName}</p>

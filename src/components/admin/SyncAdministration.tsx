@@ -60,7 +60,7 @@ export function SyncAdministration() {
       {/* Metric Cards */}
       <div className="grid grid-cols-4 gap-3">
         {metrics.map(({ label, value }) => (
-          <div key={label} className="rounded-lg border p-3">
+          <div key={label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">{label}</p>
             <p className="text-lg font-semibold">{value}</p>
           </div>
@@ -70,30 +70,32 @@ export function SyncAdministration() {
       {/* Error List */}
       <div>
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recent Errors</h3>
-        <div className="rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-2 text-left font-medium">Type</th>
-                <th className="px-3 py-2 text-left font-medium">Error</th>
-                <th className="px-3 py-2 text-left font-medium">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {syncErrors.map((err) => (
-                <tr key={err.id} className="border-b last:border-0">
-                  <td className="px-3 py-2">{err.syncType}</td>
-                  <td className="px-3 py-2 text-destructive">{err.errorMessage}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{new Date(err.createdAt).toLocaleString()}</td>
+        <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/70 bg-muted/30">
+                  <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Type</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Error</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Date</th>
                 </tr>
-              ))}
-              {syncErrors.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">No errors</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {syncErrors.map((err) => (
+                  <tr key={err.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">{err.syncType}</td>
+                    <td className="px-4 py-3 text-destructive">{err.errorMessage}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(err.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+                {syncErrors.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-10 text-center text-sm text-muted-foreground">No errors</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -40,48 +40,50 @@ export function UserManagement() {
         </Button>
       </div>
 
-      <div className="rounded-lg border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="px-3 py-2 text-left font-medium">Name</th>
-              <th className="px-3 py-2 text-left font-medium">Email</th>
-              <th className="px-3 py-2 text-left font-medium">Business Unit</th>
-              <th className="px-3 py-2 text-left font-medium">Last Active</th>
-              <th className="px-3 py-2 text-left font-medium">Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b last:border-0">
-                <td className="px-3 py-2">{user.name}</td>
-                <td className="px-3 py-2 text-muted-foreground">{user.email || '—'}</td>
-                <td className="px-3 py-2 text-muted-foreground">{user.businessUnit || '—'}</td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleDateString() : '—'}
-                </td>
-                <td className="px-3 py-2">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                    disabled={changingRole === user.id}
-                    className="h-7 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
+      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/70 bg-muted/30">
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Name</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Email</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Business Unit</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Last Active</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Role</th>
               </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                  {isLoading ? 'Loading...' : 'No users found'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3 font-medium">{user.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{user.businessUnit || '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                      disabled={changingRole === user.id}
+                      className="h-7 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    {isLoading ? 'Loading...' : 'No users found'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -96,89 +96,91 @@ export function AuditLog() {
           value={auditFilters.dateFrom ?? ''}
           onChange={(e) => setAuditFilters({ dateFrom: e.target.value || undefined, offset: 0 })}
           className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          placeholder="From"
         />
         <input
           type="date"
           value={auditFilters.dateTo ?? ''}
           onChange={(e) => setAuditFilters({ dateTo: e.target.value || undefined, offset: 0 })}
           className="h-8 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          placeholder="To"
         />
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="px-3 py-2 text-left font-medium">Timestamp</th>
-              <th className="px-3 py-2 text-left font-medium">User</th>
-              <th className="px-3 py-2 text-left font-medium">Action</th>
-              <th className="px-3 py-2 text-left font-medium">Entity</th>
-              <th className="px-3 py-2 text-left font-medium">Entity ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {auditEntries.map((entry) => (
-              <>
-                <tr
-                  key={entry.id}
-                  className="border-b last:border-0 cursor-pointer hover:bg-muted/30"
-                  onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                >
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {new Date(entry.changedAt).toLocaleString()}
-                  </td>
-                  <td className="px-3 py-2">{entry.changedByName}</td>
-                  <td className="px-3 py-2">
-                    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ACTION_COLORS[entry.action]}`}>
-                      {entry.action}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">{entry.entityType}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                    {entry.entityId.slice(0, 8)}...
-                  </td>
-                </tr>
-                {expandedId === entry.id && (entry.oldValues || entry.newValues) && (
-                  <tr key={`${entry.id}-detail`}>
-                    <td colSpan={5} className="bg-muted/20 px-3 py-2">
-                      <div className="grid grid-cols-2 gap-4 text-xs">
-                        {entry.oldValues && (
-                          <div>
-                            <p className="mb-1 font-medium text-muted-foreground">Old Values</p>
-                            <pre className="whitespace-pre-wrap rounded bg-muted p-2">{JSON.stringify(entry.oldValues, null, 2)}</pre>
-                          </div>
-                        )}
-                        {entry.newValues && (
-                          <div>
-                            <p className="mb-1 font-medium text-muted-foreground">New Values</p>
-                            <pre className="whitespace-pre-wrap rounded bg-muted p-2">{JSON.stringify(entry.newValues, null, 2)}</pre>
-                          </div>
-                        )}
-                      </div>
+      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/70 bg-muted/30">
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Timestamp</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">User</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Action</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Entity</th>
+                <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Entity ID</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {auditEntries.map((entry) => (
+                <>
+                  <tr
+                    key={entry.id}
+                    className="hover:bg-muted/20 transition-colors cursor-pointer"
+                    onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
+                  >
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(entry.changedAt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 font-medium">{entry.changedByName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${ACTION_COLORS[entry.action]}`}>
+                        {entry.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{entry.entityType}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {entry.entityId.slice(0, 8)}...
                     </td>
                   </tr>
-                )}
-              </>
-            ))}
-            {auditEntries.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                  {isLoading ? 'Loading...' : 'No audit entries found'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  {expandedId === entry.id && (entry.oldValues || entry.newValues) && (
+                    <tr key={`${entry.id}-detail`}>
+                      <td colSpan={5} className="bg-muted/10 px-4 py-3">
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          {entry.oldValues && (
+                            <div>
+                              <p className="mb-1 font-medium text-muted-foreground">Old Values</p>
+                              <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3">{JSON.stringify(entry.oldValues, null, 2)}</pre>
+                            </div>
+                          )}
+                          {entry.newValues && (
+                            <div>
+                              <p className="mb-1 font-medium text-muted-foreground">New Values</p>
+                              <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3">{JSON.stringify(entry.newValues, null, 2)}</pre>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+              {auditEntries.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    {isLoading ? 'Loading...' : 'No audit entries found'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Page {currentPage} of {totalPages} ({auditTotalCount} entries)</span>
-          <div className="flex gap-1">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {auditTotalCount} entr{auditTotalCount !== 1 ? 'ies' : 'y'} · Page {currentPage} of {totalPages}
+          </p>
+          <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="sm"

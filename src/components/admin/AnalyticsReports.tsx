@@ -54,7 +54,7 @@ export function AnalyticsReports() {
       {/* Data Quality */}
       <div className="grid grid-cols-3 gap-3">
         {qualityCards.map(({ label, value, total }) => (
-          <div key={label} className="rounded-lg border p-3">
+          <div key={label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">{label}</p>
             <p className="text-lg font-semibold">
               {value}
@@ -69,7 +69,7 @@ export function AnalyticsReports() {
       {/* Charts Grid */}
       <div className="grid grid-cols-2 gap-4">
         {/* Activities by Type */}
-        <div className="rounded-lg border p-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by Type</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={activityByType}>
@@ -83,7 +83,7 @@ export function AnalyticsReports() {
         </div>
 
         {/* Activities by Month */}
-        <div className="rounded-lg border p-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by Month</p>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={activityByMonth}>
@@ -97,7 +97,7 @@ export function AnalyticsReports() {
         </div>
 
         {/* Pipeline by Stage */}
-        <div className="rounded-lg border p-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pipeline by Stage</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={pipelineByStage}>
@@ -114,7 +114,7 @@ export function AnalyticsReports() {
         </div>
 
         {/* Win Rate */}
-        <div className="rounded-lg border p-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
