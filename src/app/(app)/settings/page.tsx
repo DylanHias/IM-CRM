@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Palette, Database, Bell, RefreshCw, HardDrive } from 'lucide-react';
+import { Palette, Database, Bell, RefreshCw } from 'lucide-react';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { DataDefaultsSettings } from '@/components/settings/DataDefaultsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { SyncSettings } from '@/components/settings/SyncSettings';
-import { DataManagementSettings } from '@/components/settings/DataManagementSettings';
 import styled from 'styled-components';
 
 const TABS = [
@@ -14,7 +13,6 @@ const TABS = [
   { id: 'data-defaults', label: 'Data & Defaults', icon: Database },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
-  { id: 'data-management', label: 'Data Management', icon: HardDrive },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -84,7 +82,6 @@ export default function SettingsPage() {
           {activeTab === 'data-defaults' && <DataDefaultsSettings />}
           {activeTab === 'notifications' && <NotificationSettings />}
           {activeTab === 'sync' && <SyncSettings />}
-          {activeTab === 'data-management' && <DataManagementSettings />}
         </Panel>
       </Container>
     </div>
