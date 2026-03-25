@@ -161,7 +161,8 @@ export default function CustomerDetailClient() {
     if (!customerId || customerId === '_placeholder') return;
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const [c, t] = await Promise.all([
             queryContactsByCustomer(customerId),
             queryTrainingsByCustomer(customerId),

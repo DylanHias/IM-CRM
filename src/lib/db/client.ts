@@ -448,16 +448,44 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 }
 
 async function seedIfNeeded(db: Database): Promise<void> {
-  const existing = await db.select<{ count: number }[]>(
-    `SELECT COUNT(*) as count FROM customers`
-  );
-  if (existing[0]?.count > 0) return;
+  const counts = await db.select<{ table_name: string; count: number }[]>(`
+    SELECT 'customers' as table_name, COUNT(*) as count FROM customers
+    UNION ALL SELECT 'contacts', COUNT(*) FROM contacts
+    UNION ALL SELECT 'activities', COUNT(*) FROM activities
+    UNION ALL SELECT 'trainings', COUNT(*) FROM trainings
+    UNION ALL SELECT 'follow_ups', COUNT(*) FROM follow_ups
+    UNION ALL SELECT 'opportunities', COUNT(*) FROM opportunities
+    UNION ALL SELECT 'invoices', COUNT(*) FROM invoices
+    UNION ALL SELECT 'users', COUNT(*) FROM users
+    UNION ALL SELECT 'audit_log', COUNT(*) FROM audit_log
+    UNION ALL SELECT 'sync_records', COUNT(*) FROM sync_records
+  `);
 
-  console.log('[db] Empty database detected — seeding mock data');
+  const countMap = new Map(counts.map((r) => [r.table_name, r.count]));
+  const hasCustomers = (countMap.get('customers') ?? 0) > 0;
+  const allPopulated = counts.every((r) => r.count > 0);
+
+  if (allPopulated) return;
+
+  if (!hasCustomers) {
+    console.log('[db] Empty database detected — seeding all mock data');
+    try {
+      await seedMockData(db);
+      console.log('[db] Mock data seeded successfully');
+    } catch (err) {
+      console.error('[db] Seed failed:', err);
+    }
+    return;
+  }
+
+  // Customers exist but some tables are empty — seed only the missing ones
+  const emptyTables = counts.filter((r) => r.count === 0).map((r) => r.table_name);
+  console.log('[db] Partial data detected — seeding missing tables:', emptyTables.join(', '));
   try {
-    await seedMockData(db);
-    console.log('[db] Mock data seeded successfully');
+    const { seedMissingTables } = await import('@/lib/db/seed');
+    await seedMissingTables(db, emptyTables);
+    console.log('[db] Missing tables seeded successfully');
   } catch (err) {
-    console.error('[db] Seed failed:', err);
+    console.error('[db] Partial seed failed:', err);
   }
 }

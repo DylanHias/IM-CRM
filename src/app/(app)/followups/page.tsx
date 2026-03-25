@@ -11,6 +11,7 @@ import { queryAllFollowUps, completeFollowUp } from '@/lib/db/queries/followups'
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function FollowUpsPage() {
   const router = useRouter();
@@ -21,7 +22,8 @@ export default function FollowUpsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const [fups, customers] = await Promise.all([
             queryAllFollowUps(),
             queryAllCustomers(),

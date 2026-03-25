@@ -18,6 +18,7 @@ import { mockOpportunities } from '@/lib/mock/opportunities';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity, Contact } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,7 +35,8 @@ export default function OpportunitiesPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const [opps, customers] = await Promise.all([
             queryAllOpportunities(),
             queryAllCustomers(),
@@ -57,7 +59,8 @@ export default function OpportunitiesPage() {
     if (!selectedCustomerId) return;
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const c = await queryContactsByCustomer(selectedCustomerId);
           setContacts(c.length > 0 ? c : mockContacts.filter((c) => c.customerId === selectedCustomerId));
         } else {
