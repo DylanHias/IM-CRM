@@ -34,10 +34,10 @@ const Main = styled.main`
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px 28px 48px;
+  padding: 24px 28px;
 
   .compact & {
-    padding: 16px 20px 40px;
+    padding: 16px 20px;
   }
 `;
 
@@ -55,7 +55,10 @@ export function AppShell({ children }: AppShellProps) {
         <Sidebar />
         <Main>
           <Content>
-            <PageMotion>{children}</PageMotion>
+            <PageMotion>
+              {children}
+              <div className="h-12" />
+            </PageMotion>
           </Content>
         </Main>
       </Body>
