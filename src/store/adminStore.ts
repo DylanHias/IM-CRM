@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type {
   CrmUser,
   UserRole,
@@ -82,6 +83,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   setLoading: (isLoading) => set({ isLoading }),
 
   loadUsers: async () => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const { queryAllUsers } = await import('@/lib/db/queries/users');
@@ -93,6 +95,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   refreshUsersFromD365: async (token: string) => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const { fetchD365Users } = await import('@/lib/sync/d365UserAdapter');
@@ -107,6 +110,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadAuditLog: async () => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const { queryAuditLog, queryAuditLogCount } = await import('@/lib/db/queries/auditLog');
@@ -122,6 +126,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadSyncAdmin: async () => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const { querySyncHealthMetrics, querySyncErrors } = await import('@/lib/db/queries/adminAnalytics');
@@ -136,6 +141,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadAnalytics: async () => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const {
@@ -164,6 +170,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadDataManagement: async () => {
+    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
       const { queryTableStats } = await import('@/lib/db/queries/adminAnalytics');
@@ -175,6 +182,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   updateUserRole: async (id: string, role: UserRole) => {
+    if (!isTauriApp()) return;
     const { updateUserRole } = await import('@/lib/db/queries/users');
     await updateUserRole(id, role);
     set((s) => ({
