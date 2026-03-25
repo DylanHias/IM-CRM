@@ -58,7 +58,7 @@ export function SyncAdministration() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(({ label, value }) => (
           <div key={label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">{label}</p>

@@ -52,7 +52,7 @@ export function AnalyticsReports() {
       <h2 className="text-sm font-semibold">Analytics & Reports</h2>
 
       {/* Data Quality */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {qualityCards.map(({ label, value, total }) => (
           <div key={label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
             <p className="text-[11px] text-muted-foreground">{label}</p>
@@ -67,7 +67,7 @@ export function AnalyticsReports() {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Activities by Type */}
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by Type</p>
