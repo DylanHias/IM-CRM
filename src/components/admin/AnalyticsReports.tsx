@@ -240,6 +240,14 @@ export function AnalyticsReports() {
               </Pie>
             </PieChart>
           </ChartContainer>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            {Object.entries(winRateChartConfig).map(([key, { label, color }]) => (
+              <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                {label}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
