@@ -31,7 +31,8 @@ export function useAutoSync() {
         } else {
           toast.success('Sync complete');
         }
-      } catch {
+      } catch (err) {
+        console.error('[sync] Auto-sync failed:', err);
         toast.error('Sync failed', { description: 'Something went wrong — try again later' });
       }
     };

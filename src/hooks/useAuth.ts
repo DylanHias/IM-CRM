@@ -36,7 +36,8 @@ export function useAuth() {
             const admin = await isUserAdmin(activeAccount.localAccountId);
             setIsAdmin(admin);
           }
-        } catch {
+        } catch (err) {
+          console.error('[auth] Silent token acquisition failed:', err);
           clearAuth();
         }
       };

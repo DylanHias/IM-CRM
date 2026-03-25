@@ -88,7 +88,7 @@ export default function OpportunitiesPage() {
       try {
         await insertOpportunity(opp);
       } catch (err) {
-        console.error('[Opportunities] DB insert failed:', err);
+        console.error('[opportunity] DB insert failed:', err);
       }
     }
     addOpportunity(opp);
@@ -107,7 +107,7 @@ export default function OpportunitiesPage() {
       try {
         await dbUpdateOpportunity(updated);
       } catch (err) {
-        console.error('[Opportunities] DB update failed:', err);
+        console.error('[opportunity] DB update failed:', err);
       }
     }
     updateOpportunity(updated);
@@ -121,7 +121,7 @@ export default function OpportunitiesPage() {
       try {
         await dbDeleteOpportunity(opp.id);
       } catch (err) {
-        console.error('[Opportunities] DB delete failed:', err);
+        console.error('[opportunity] DB delete failed:', err);
       }
     }
     removeOpportunity(opp.id);

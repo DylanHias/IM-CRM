@@ -511,12 +511,13 @@ dependencies = [
 
 [[package]]
 name = "crm-mvp"
-version = "0.6.12"
+version = "0.16.3"
 dependencies = [
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
+ "tauri-plugin-fs",
  "tauri-plugin-http",
  "tauri-plugin-process",
  "tauri-plugin-sql",

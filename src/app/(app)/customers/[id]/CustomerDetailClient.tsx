@@ -172,7 +172,8 @@ export default function CustomerDetailClient() {
           setContacts(mockContacts.filter((c) => c.customerId === customerId));
           setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
         }
-      } catch {
+      } catch (err) {
+        console.error('[customer] Failed to load detail data, using fallback:', err);
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
         setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
       }

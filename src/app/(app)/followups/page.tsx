@@ -58,7 +58,7 @@ export default function FollowUpsPage() {
         )
       );
     } catch (err) {
-      console.error('[followups] Failed to complete:', err);
+      console.error('[followup] Failed to complete:', err);
     }
   };
 

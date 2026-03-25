@@ -117,7 +117,8 @@ export async function queryTableStats(): Promise<TableStats[]> {
     try {
       const rows = await db.select<{ count: number }[]>(`SELECT COUNT(*) as count FROM ${tableName}`);
       stats.push({ tableName, rowCount: rows[0]?.count ?? 0 });
-    } catch {
+    } catch (err) {
+      console.error(`[admin] Table stats query failed for ${tableName}:`, err);
       stats.push({ tableName, rowCount: 0 });
     }
   }

@@ -29,7 +29,7 @@ export async function getDb(): Promise<Database> {
 
 export async function initDb(): Promise<void> {
   if (!isTauriApp()) {
-    console.warn('Not running in Tauri — SQLite unavailable');
+    console.warn('[db] Not running in Tauri — SQLite unavailable');
     return;
   }
   const db = await getDb();
@@ -453,11 +453,11 @@ async function seedIfNeeded(db: Database): Promise<void> {
   );
   if (existing[0]?.count > 0) return;
 
-  console.log('[DB] Empty database detected — seeding mock data');
+  console.log('[db] Empty database detected — seeding mock data');
   try {
     await seedMockData(db);
-    console.log('[DB] Mock data seeded successfully');
+    console.log('[db] Mock data seeded successfully');
   } catch (err) {
-    console.error('[DB] Seed failed:', err);
+    console.error('[db] Seed failed:', err);
   }
 }

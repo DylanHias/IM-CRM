@@ -43,7 +43,7 @@ export function DataManagement() {
         writeFile(wb, `im-crm-export-${datestamp}.xlsx`);
       }
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error('[data] Export failed:', err);
       alert('Export failed. Check console for details.');
     }
   };

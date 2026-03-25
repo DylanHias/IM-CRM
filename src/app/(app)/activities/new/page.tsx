@@ -26,7 +26,8 @@ function NewActivityContent() {
         } else {
           setContacts(mockContacts.filter((c) => c.customerId === customerId));
         }
-      } catch {
+      } catch (err) {
+        console.error('[activity] Failed to load contacts, using fallback:', err);
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
       }
     };

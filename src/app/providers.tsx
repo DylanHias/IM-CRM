@@ -1,5 +1,6 @@
 'use client';
 
+import '@/lib/logCapture';
 import { useEffect, useState } from 'react';
 import { MsalProvider } from '@azure/msal-react';
 import { ThemeProvider } from 'styled-components';
@@ -35,13 +36,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
           useAuthStore.getState().setAccount(response.account, response.accessToken);
         }
       } catch (err) {
-        console.error('[MSAL] Redirect handling failed:', err);
+        console.error('[msal] Redirect handling failed:', err);
       }
 
       try {
         await initDb();
       } catch (err) {
-        console.error('[DB] Initialization failed:', err);
+        console.error('[db] Initialization failed:', err);
       }
       setDbReady(true);
 

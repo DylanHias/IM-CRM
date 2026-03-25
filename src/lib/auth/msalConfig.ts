@@ -24,7 +24,7 @@ export const msalConfig: Configuration = {
       logLevel: LogLevel.Warning,
       loggerCallback: (level, message, containsPii) => {
         if (containsPii) return;
-        if (level === LogLevel.Error) console.error('[MSAL]', message);
+        if (level === LogLevel.Error) console.error('[msal]', message);
       },
     },
   },

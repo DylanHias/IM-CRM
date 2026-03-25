@@ -105,7 +105,7 @@ export function TrainingForm({ open, onOpenChange, customerId, onTrainingSaved, 
       onTrainingSaved(training);
       setTimeout(() => handleOpenChange(false), 900);
     } catch (err) {
-      console.error('[TrainingForm] Failed:', err);
+      console.error('[training] Failed:', err);
       setError(err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err));
     } finally {
       setIsSubmitting(false);

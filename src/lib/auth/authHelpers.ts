@@ -19,7 +19,8 @@ export async function getAccessToken(scopes: string[]): Promise<string | null> {
       try {
         const result = await instance.acquireTokenPopup({ scopes });
         return result.accessToken;
-      } catch {
+      } catch (popupErr) {
+        console.error('[auth] Popup token acquisition failed:', popupErr);
         return null;
       }
     }

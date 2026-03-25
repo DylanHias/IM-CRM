@@ -43,7 +43,8 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
         } else {
           setContacts(mockContacts.filter((c) => c.customerId === customerId));
         }
-      } catch {
+      } catch (err) {
+        console.error('[opportunity] Failed to load contacts, using fallback:', err);
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
       }
     };

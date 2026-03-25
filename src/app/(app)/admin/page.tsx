@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, ScrollText, RefreshCw, BarChart3, HardDrive } from 'lucide-react';
+import { Users, ScrollText, RefreshCw, BarChart3, HardDrive, Terminal } from 'lucide-react';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AuditLog } from '@/components/admin/AuditLog';
 import { SyncAdministration } from '@/components/admin/SyncAdministration';
 import { AnalyticsReports } from '@/components/admin/AnalyticsReports';
 import { DataManagement } from '@/components/admin/DataManagement';
+import { ConsoleViewer } from '@/components/admin/ConsoleViewer';
 import styled from 'styled-components';
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'data', label: 'Data', icon: HardDrive },
+  { id: 'console', label: 'Console', icon: Terminal },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -86,6 +88,7 @@ export default function AdminPage() {
             {activeTab === 'sync' && <SyncAdministration />}
             {activeTab === 'analytics' && <AnalyticsReports />}
             {activeTab === 'data' && <DataManagement />}
+            {activeTab === 'console' && <ConsoleViewer />}
           </Panel>
         </Container>
       </div>

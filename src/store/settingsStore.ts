@@ -165,7 +165,7 @@ export const useSettingsStore = create<SettingsState>()(
             set(patch as Partial<SettingsState>);
           }
         } catch (err) {
-          console.error('[Settings] Failed to hydrate from DB:', err);
+          console.error('[settings] Failed to hydrate from DB:', err);
         }
       },
     }),
