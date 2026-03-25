@@ -89,6 +89,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const { queryAllUsers } = await import('@/lib/db/queries/users');
       const users = await queryAllUsers();
       set({ users });
+    } catch (e) {
+      console.error('[admin] loadUsers failed:', e);
     } finally {
       set({ isLoading: false });
     }
@@ -133,6 +135,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         queryAuditLogCount(filters),
       ]);
       set({ auditEntries: entries, auditTotalCount: totalCount });
+    } catch (e) {
+      console.error('[admin] loadAuditLog failed:', e);
     } finally {
       set({ isLoading: false });
     }
@@ -148,10 +152,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }
       const { querySyncHealthMetrics, querySyncErrors } = await import('@/lib/db/queries/adminAnalytics');
       const [health, errors] = await Promise.all([
-        querySyncHealthMetrics(),
-        querySyncErrors(),
+        querySyncHealthMetrics().catch((e) => { console.error('[admin] syncHealth query failed:', e); return null; }),
+        querySyncErrors().catch((e) => { console.error('[admin] syncErrors query failed:', e); return []; }),
       ]);
       set({ syncHealth: health, syncErrors: errors });
+    } catch (e) {
+      console.error('[admin] loadSyncAdmin failed:', e);
     } finally {
       set({ isLoading: false });
     }
@@ -182,14 +188,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
       const [dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate] =
         await Promise.all([
-          queryDataQualityMetrics(),
-          queryActivityTimeline(),
-          queryActivityBreakdownByUser(),
-          queryPipelineByStage(),
-          queryWinRate(),
+          queryDataQualityMetrics().catch((e) => { console.error('[admin] dataQuality query failed:', e); return null; }),
+          queryActivityTimeline().catch((e) => { console.error('[admin] activityTimeline query failed:', e); return []; }),
+          queryActivityBreakdownByUser().catch((e) => { console.error('[admin] activityByUser query failed:', e); return []; }),
+          queryPipelineByStage().catch((e) => { console.error('[admin] pipelineByStage query failed:', e); return []; }),
+          queryWinRate().catch((e) => { console.error('[admin] winRate query failed:', e); return null; }),
         ]);
 
       set({ dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate });
+    } catch (e) {
+      console.error('[admin] loadAnalytics failed:', e);
     } finally {
       set({ isLoading: false });
     }
@@ -206,6 +214,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const { queryTableStats } = await import('@/lib/db/queries/adminAnalytics');
       const tableStats = await queryTableStats();
       set({ tableStats });
+    } catch (e) {
+      console.error('[admin] loadDataManagement failed:', e);
     } finally {
       set({ isLoading: false });
     }
