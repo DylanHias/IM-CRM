@@ -1,7 +1,6 @@
 'use client';
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { RotateCcw } from 'lucide-react';
 
 export function DataDefaultsSettings() {
   const {
-    defaultActivityType, defaultCustomerSort, defaultCustomerFilterOwner,
+    defaultActivityType, defaultCustomerSort,
     itemsPerPage, noRecentActivityDays, updateSetting, resetSection,
   } = useSettingsStore();
 
@@ -50,13 +49,6 @@ export function DataDefaultsSettings() {
               <SelectItem value="industry">Industry</SelectItem>
             </SelectContent>
           </Select>
-        </SettingRow>
-
-        <SettingRow label="Show my customers first" description="Auto-apply 'my customers' filter on launch">
-          <Switch
-            checked={defaultCustomerFilterOwner}
-            onCheckedChange={(v) => updateSetting('defaultCustomerFilterOwner', v)}
-          />
         </SettingRow>
 
         <SettingRow label="Items per page" description="Number of items shown in list views">
