@@ -245,8 +245,39 @@ async function runSchema(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_customer ON opportunities(customer_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('admin','user')),
+      business_unit TEXT,
+      last_active_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      action TEXT NOT NULL CHECK(action IN ('create','update','delete')),
+      changed_by_id TEXT NOT NULL,
+      changed_by_name TEXT NOT NULL,
+      old_values TEXT,
+      new_values TEXT,
+      changed_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_at ON audit_log(changed_at DESC)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_by ON audit_log(changed_by_id)`);
+
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '4')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '5')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -316,6 +347,64 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 
     await db.execute(
       `UPDATE app_settings SET value = '4', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 5) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('admin','user')),
+        business_unit TEXT,
+        last_active_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        action TEXT NOT NULL CHECK(action IN ('create','update','delete')),
+        changed_by_id TEXT NOT NULL,
+        changed_by_name TEXT NOT NULL,
+        old_values TEXT,
+        new_values TEXT,
+        changed_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_at ON audit_log(changed_at DESC)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_by ON audit_log(changed_by_id)`);
+
+    // Backfill users from existing data — first user becomes admin
+    const ownerRows = await db.select<{ id: string; name: string }[]>(`
+      SELECT DISTINCT owner_id AS id, owner_name AS name FROM customers WHERE owner_id IS NOT NULL
+      UNION
+      SELECT DISTINCT created_by_id AS id, created_by_name AS name FROM activities
+      UNION
+      SELECT DISTINCT created_by_id AS id, created_by_name AS name FROM follow_ups
+      UNION
+      SELECT DISTINCT created_by_id AS id, created_by_name AS name FROM opportunities
+    `);
+
+    let isFirst = true;
+    for (const row of ownerRows) {
+      if (!row.id) continue;
+      await db.execute(
+        `INSERT OR IGNORE INTO users (id, email, name, role) VALUES ($1, $2, $3, $4)`,
+        [row.id, '', row.name ?? 'Unknown', isFirst ? 'admin' : 'user']
+      );
+      isFirst = false;
+    }
+
+    await db.execute(
+      `UPDATE app_settings SET value = '5', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

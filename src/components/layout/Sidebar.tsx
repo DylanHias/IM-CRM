@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, Shield } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
@@ -292,7 +292,7 @@ export function Sidebar() {
   const router = useRouter();
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
-  const { account } = useAuthStore();
+  const { account, isAdmin } = useAuthStore();
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   useEffect(() => {
@@ -334,6 +334,7 @@ export function Sidebar() {
     { href: '/opportunities', label: 'Opportunities', icon: Target },
     { href: '/invoices', label: 'Invoices', icon: FileText },
     { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
   return (

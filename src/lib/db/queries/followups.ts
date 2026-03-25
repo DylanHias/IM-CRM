@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { FollowUp } from '@/types/entities';
 import type { FollowUpRow } from '@/types/db';
+import { logAudit } from '@/lib/db/auditHelper';
 
 function rowToFollowUp(row: FollowUpRow): FollowUp {
   return {
@@ -70,6 +71,7 @@ export async function insertFollowUp(followUp: FollowUp): Promise<void> {
       followUp.syncStatus, followUp.remoteId, followUp.createdAt, followUp.updatedAt,
     ]
   );
+  logAudit('follow_up', followUp.id, 'create', followUp.createdById, followUp.createdByName, null, { title: followUp.title, dueDate: followUp.dueDate });
 }
 
 export async function updateFollowUp(followUp: FollowUp): Promise<void> {
@@ -78,20 +80,29 @@ export async function updateFollowUp(followUp: FollowUp): Promise<void> {
     `UPDATE follow_ups SET title=$1, description=$2, due_date=$3, sync_status='pending', updated_at=$4 WHERE id=$5`,
     [followUp.title, followUp.description, followUp.dueDate, new Date().toISOString(), followUp.id]
   );
+  logAudit('follow_up', followUp.id, 'update', followUp.createdById, followUp.createdByName, null, { title: followUp.title, dueDate: followUp.dueDate });
 }
 
 export async function deleteFollowUp(id: string): Promise<void> {
   const db = await getDb();
+  const rows = await db.select<FollowUpRow[]>(`SELECT * FROM follow_ups WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM follow_ups WHERE id=$1`, [id]);
+  if (rows[0]) {
+    logAudit('follow_up', id, 'delete', rows[0].created_by_id, rows[0].created_by_name, { title: rows[0].title }, null);
+  }
 }
 
 export async function completeFollowUp(id: string): Promise<void> {
   const now = new Date().toISOString();
   const db = await getDb();
+  const rows = await db.select<FollowUpRow[]>(`SELECT * FROM follow_ups WHERE id=$1`, [id]);
   await db.execute(
     `UPDATE follow_ups SET completed = 1, completed_at = $1, updated_at = $2, sync_status = 'pending' WHERE id = $3`,
     [now, now, id]
   );
+  if (rows[0]) {
+    logAudit('follow_up', id, 'update', rows[0].created_by_id, rows[0].created_by_name, { completed: false }, { completed: true });
+  }
 }
 
 export async function markFollowUpSynced(id: string, remoteId: string): Promise<void> {

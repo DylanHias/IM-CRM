@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "0.11.4",
+  "version": "0.12.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -38,6 +38,7 @@
     "next": "^14.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "2.15.4",
     "styled-components": "^6.1.13",
     "tailwind-merge": "^2.5.5",
     "uuid": "^9.0.1",

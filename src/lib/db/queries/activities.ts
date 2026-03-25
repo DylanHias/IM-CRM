@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Activity } from '@/types/entities';
 import type { ActivityRow } from '@/types/db';
+import { logAudit } from '@/lib/db/auditHelper';
 
 function rowToActivity(row: ActivityRow): Activity {
   return {
@@ -51,6 +52,7 @@ export async function insertActivity(activity: Activity): Promise<void> {
       activity.remoteId, activity.createdAt, activity.updatedAt,
     ]
   );
+  logAudit('activity', activity.id, 'create', activity.createdById, activity.createdByName, null, { type: activity.type, subject: activity.subject });
 }
 
 export async function updateActivity(activity: Activity): Promise<void> {
@@ -59,11 +61,16 @@ export async function updateActivity(activity: Activity): Promise<void> {
     `UPDATE activities SET type=$1, subject=$2, description=$3, occurred_at=$4, contact_id=$5, sync_status='pending', updated_at=$6 WHERE id=$7`,
     [activity.type, activity.subject, activity.description, activity.occurredAt, activity.contactId, new Date().toISOString(), activity.id]
   );
+  logAudit('activity', activity.id, 'update', activity.createdById, activity.createdByName, null, { type: activity.type, subject: activity.subject });
 }
 
 export async function deleteActivity(id: string): Promise<void> {
   const db = await getDb();
+  const rows = await db.select<ActivityRow[]>(`SELECT * FROM activities WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM activities WHERE id=$1`, [id]);
+  if (rows[0]) {
+    logAudit('activity', id, 'delete', rows[0].created_by_id, rows[0].created_by_name, { subject: rows[0].subject }, null);
+  }
 }
 
 export async function markActivitySynced(id: string, remoteId: string): Promise<void> {

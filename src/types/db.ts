@@ -124,3 +124,26 @@ export interface SyncRecordRow {
   error_message: string | null;
   created_at: string;
 }
+
+export interface UserRow {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  business_unit: string | null;
+  last_active_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditLogRow {
+  id: number;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  changed_by_id: string;
+  changed_by_name: string;
+  old_values: string | null;
+  new_values: string | null;
+  changed_at: string;
+}

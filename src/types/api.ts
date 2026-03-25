@@ -96,3 +96,24 @@ export interface SpListResponse<T> {
   '@odata.nextLink'?: string;
 }
 
+export interface D365SystemUser {
+  systemuserid: string;
+  fullname: string;
+  internalemailaddress: string | null;
+  isdisabled: boolean;
+  '_businessunitid_value': string | null;
+  'businessunitid@OData.Community.Display.V1.FormattedValue': string | null;
+  modifiedon: string;
+}
+
+export interface D365AuditRecord {
+  auditid: string;
+  createdon: string;
+  '_userid_value': string;
+  'userid@OData.Community.Display.V1.FormattedValue': string | null;
+  '_objectid_value': string;
+  objecttypecode: string;
+  operation: number; // 1=Create, 2=Update, 3=Delete
+  changedata: string | null;
+}
+
