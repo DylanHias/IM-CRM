@@ -74,7 +74,7 @@ export function DataDefaultsSettings() {
           />
         </SettingRow>
 
-        <SettingRow label="No recent activity threshold" description="Days of inactivity before a customer is flagged">
+        <SettingRow label="No recent activity threshold" description="Customers with no activity in this many days appear when you use the 'No activity' filter">
           <div className="flex items-center gap-1.5">
             <Input
               type="number"
