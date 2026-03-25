@@ -121,7 +121,14 @@ export function AnalyticsReports() {
               ))}
             </defs>
             <CartesianGrid vertical={false} className="stroke-border" />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tick={{ fontSize: 11 }}
+              interval={timeRange === '7d' ? 0 : timeRange === '30d' ? 1 : 4}
+            />
             <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
             {ACTIVITY_TYPES.map((type) => (
