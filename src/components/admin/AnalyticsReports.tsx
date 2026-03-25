@@ -169,8 +169,8 @@ export function AnalyticsReports() {
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="count" stackId="a" fill="var(--color-count)" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="revenueK" stackId="a" fill="var(--color-revenueK)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenueK" fill="var(--color-revenueK)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </div>
