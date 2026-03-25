@@ -16,7 +16,7 @@ import { useCustomerStore } from '@/store/customerStore';
 import { cn } from '@/lib/utils';
 import type { Customer, Contact } from '@/types/entities';
 
-type SortField = 'name' | 'bcn' | 'cloudCustomer' | 'language' | 'arr';
+type SortField = 'name' | 'cloudCustomer' | 'language' | 'arr';
 
 function formatArr(value: number | null): string {
   if (value === null) return '—';
@@ -91,11 +91,7 @@ export default function ArrOverviewPage() {
     const min = arrMin !== '' ? Number(arrMin) : null;
     const max = arrMax !== '' ? Number(arrMax) : null;
     const rows = allCustomers.filter((c) => {
-      if (q && !(
-        c.name.toLowerCase().includes(q) ||
-        (c.bcn ?? '').toLowerCase().includes(q) ||
-        (c.language ?? '').toLowerCase().includes(q)
-      )) return false;
+      if (q && !c.name.toLowerCase().includes(q)) return false;
       if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
       if (filterLanguage !== 'all' && c.language !== filterLanguage) return false;
@@ -115,9 +111,6 @@ export default function ArrOverviewPage() {
         case 'name':
           cmp = a.name.localeCompare(b.name);
           break;
-        case 'bcn':
-          cmp = (a.bcn ?? '').localeCompare(b.bcn ?? '');
-          break;
         case 'cloudCustomer': {
           const aVal = a.cloudCustomer === true ? 1 : a.cloudCustomer === false ? 0 : -1;
           const bVal = b.cloudCustomer === true ? 1 : b.cloudCustomer === false ? 0 : -1;
@@ -135,7 +128,6 @@ export default function ArrOverviewPage() {
   function handleExport() {
     const rows = filtered.map((c) => ({
       'Customer Name': c.name,
-      BCN: c.bcn ?? '',
       Contact: getContactLabel(c, allContacts).name,
       Phone: getPhone(c, allContacts).value,
       Email: getEmail(c, allContacts).value,
@@ -157,11 +149,11 @@ export default function ArrOverviewPage() {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
-      setSortDir(field === 'name' || field === 'bcn' || field === 'language' ? 'asc' : 'desc');
+      setSortDir(field === 'name' || field === 'language' ? 'asc' : 'desc');
     }
   }
 
-  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : sortBy === 'bcn' ? 'BCN' : sortBy === 'cloudCustomer' ? 'cloud' : 'language';
+  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : sortBy === 'cloudCustomer' ? 'cloud' : 'language';
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
@@ -179,7 +171,7 @@ export default function ArrOverviewPage() {
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
               <Input
-                placeholder="Search name, BCN or language…"
+                placeholder="Search by name…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 pr-8 bg-card shadow-sm border-border/70 rounded-lg"
@@ -203,7 +195,6 @@ export default function ArrOverviewPage() {
                 <SelectContent>
                   <SelectItem value="arr">ARR</SelectItem>
                   <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="bcn">BCN</SelectItem>
                   <SelectItem value="cloudCustomer">Cloud</SelectItem>
                   <SelectItem value="language">Language</SelectItem>
                 </SelectContent>
@@ -353,7 +344,6 @@ export default function ArrOverviewPage() {
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
                     {([
                       { field: 'name' as SortField, label: 'Customer Name', align: 'text-left' },
-                      { field: 'bcn' as SortField, label: 'BCN', align: 'text-left' },
                       { field: null, label: 'Contact', align: 'text-left' },
                       { field: null, label: 'Phone', align: 'text-left' },
                       { field: null, label: 'Email', align: 'text-left' },
@@ -382,7 +372,7 @@ export default function ArrOverviewPage() {
                 <tbody className="divide-y divide-border/60">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
                         No customers match your search.
                       </td>
                     </tr>
@@ -400,9 +390,6 @@ export default function ArrOverviewPage() {
                           >
                             {customer.name}
                           </button>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
-                          {customer.bcn ?? '—'}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {(() => {
