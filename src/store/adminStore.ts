@@ -83,9 +83,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   setLoading: (isLoading) => set({ isLoading }),
 
   loadUsers: async () => {
-    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
+      if (!isTauriApp()) {
+        const { mockUsers } = await import('@/lib/mock/admin');
+        set({ users: mockUsers });
+        return;
+      }
       const { queryAllUsers } = await import('@/lib/db/queries/users');
       const users = await queryAllUsers();
       set({ users });
@@ -110,9 +114,22 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadAuditLog: async () => {
-    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
+      if (!isTauriApp()) {
+        const { mockAuditEntries } = await import('@/lib/mock/admin');
+        const filters = get().auditFilters;
+        let filtered = mockAuditEntries;
+        if (filters.entityType) filtered = filtered.filter((e) => e.entityType === filters.entityType);
+        if (filters.action) filtered = filtered.filter((e) => e.action === filters.action);
+        if (filters.changedById) filtered = filtered.filter((e) => e.changedById === filters.changedById);
+        if (filters.dateFrom) filtered = filtered.filter((e) => e.changedAt >= filters.dateFrom!);
+        if (filters.dateTo) filtered = filtered.filter((e) => e.changedAt <= filters.dateTo!);
+        const totalCount = filtered.length;
+        const entries = filtered.slice(filters.offset, filters.offset + filters.limit);
+        set({ auditEntries: entries, auditTotalCount: totalCount });
+        return;
+      }
       const { queryAuditLog, queryAuditLogCount } = await import('@/lib/db/queries/auditLog');
       const filters = get().auditFilters;
       const [entries, totalCount] = await Promise.all([
@@ -126,9 +143,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadSyncAdmin: async () => {
-    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
+      if (!isTauriApp()) {
+        const { mockSyncHealth, mockSyncErrors } = await import('@/lib/mock/admin');
+        set({ syncHealth: mockSyncHealth, syncErrors: mockSyncErrors });
+        return;
+      }
       const { querySyncHealthMetrics, querySyncErrors } = await import('@/lib/db/queries/adminAnalytics');
       const [health, errors] = await Promise.all([
         querySyncHealthMetrics(),
@@ -141,9 +162,20 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadAnalytics: async () => {
-    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
+      if (!isTauriApp()) {
+        const {
+          mockDataQuality, mockActivityByType, mockActivityByMonth,
+          mockActivityByUser, mockPipelineByStage, mockWinRate,
+        } = await import('@/lib/mock/admin');
+        set({
+          dataQuality: mockDataQuality, activityByType: mockActivityByType,
+          activityByMonth: mockActivityByMonth, activityByUser: mockActivityByUser,
+          pipelineByStage: mockPipelineByStage, winRate: mockWinRate,
+        });
+        return;
+      }
       const {
         queryDataQualityMetrics,
         queryActivityBreakdownByType,
@@ -170,9 +202,13 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   loadDataManagement: async () => {
-    if (!isTauriApp()) return;
     set({ isLoading: true });
     try {
+      if (!isTauriApp()) {
+        const { mockTableStats } = await import('@/lib/mock/admin');
+        set({ tableStats: mockTableStats });
+        return;
+      }
       const { queryTableStats } = await import('@/lib/db/queries/adminAnalytics');
       const tableStats = await queryTableStats();
       set({ tableStats });
@@ -182,9 +218,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   },
 
   updateUserRole: async (id: string, role: UserRole) => {
-    if (!isTauriApp()) return;
-    const { updateUserRole } = await import('@/lib/db/queries/users');
-    await updateUserRole(id, role);
+    if (isTauriApp()) {
+      const { updateUserRole } = await import('@/lib/db/queries/users');
+      await updateUserRole(id, role);
+    }
     set((s) => ({
       users: s.users.map((u) => (u.id === id ? { ...u, role } : u)),
     }));
