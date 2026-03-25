@@ -41,14 +41,14 @@ export function NotificationSettings() {
           </div>
         </SettingRow>
 
-        <SettingRow label="Overdue alerts on launch" description="Show overdue follow-ups when you open the app">
+        <SettingRow label="Overdue alerts on launch" description="Alert when follow-ups are past their due date">
           <Switch
             checked={overdueAlertsOnLaunch}
             onCheckedChange={(v) => updateSetting('overdueAlertsOnLaunch', v)}
           />
         </SettingRow>
 
-        <SettingRow label="Due today alerts on launch" description="Show follow-ups due today when you open the app">
+        <SettingRow label="Due today alerts on launch" description="Alert when follow-ups are due today">
           <Switch
             checked={dueTodayAlertsOnLaunch}
             onCheckedChange={(v) => updateSetting('dueTodayAlertsOnLaunch', v)}
