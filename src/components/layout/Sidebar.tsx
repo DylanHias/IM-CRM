@@ -426,6 +426,17 @@ export function Sidebar() {
           </PopoverTrigger>
           <PopoverContent side="right" align="end" className="w-56 p-1.5">
             <div className="flex flex-col gap-0.5">
+              {isAdmin && (
+                <PopoverMenuItem
+                  onClick={() => {
+                    setAccountPopoverOpen(false);
+                    router.push('/admin');
+                  }}
+                >
+                  <Shield size={14} />
+                  Admin panel
+                </PopoverMenuItem>
+              )}
               <PopoverMenuItem
                 onClick={() => {
                   setAccountPopoverOpen(false);

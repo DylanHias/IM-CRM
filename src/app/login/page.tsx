@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMsal } from '@azure/msal-react';
 import { signIn } from '@/lib/auth/authHelpers';
 import { useAuthStore } from '@/store/authStore';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -137,7 +138,7 @@ export default function LoginPage() {
     }
   }, [accounts, router]);
 
-  const handleDevBypass = () => {
+  const handleDevBypass = async () => {
     setAccount(
       {
         homeAccountId: 'dev-mock-id',
@@ -152,6 +153,27 @@ export default function LoginPage() {
       } as unknown as AccountInfo,
       'mock-dev-token'
     );
+
+    if (isTauriApp()) {
+      const { upsertUser, isUserAdmin, updateUserRole } = await import('@/lib/db/queries/users');
+      const now = new Date().toISOString();
+      await upsertUser({
+        id: 'dev-local-id',
+        email: 'dev@ingrammicro.com',
+        name: 'Dev User',
+        role: 'admin',
+        businessUnit: null,
+        lastActiveAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const admin = await isUserAdmin('dev-local-id');
+      if (!admin) await updateUserRole('dev-local-id', 'admin');
+      useAuthStore.getState().setIsAdmin(true);
+    } else {
+      useAuthStore.getState().setIsAdmin(true);
+    }
+
     router.replace('/customers');
   };
 
