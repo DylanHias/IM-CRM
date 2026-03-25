@@ -23,6 +23,12 @@ const COLORS = [
 
 const ACTIVITY_TYPES = ['meeting', 'call', 'visit', 'note'] as const;
 
+const winRateChartConfig = {
+  won: { label: 'Won', color: 'hsl(var(--chart-2, 220 70% 50%))' },
+  lost: { label: 'Lost', color: 'hsl(var(--primary))' },
+  open: { label: 'Open', color: 'hsl(var(--chart-3, 150 60% 40%))' },
+};
+
 const pipelineChartConfig = {
   count: { label: 'Deals', color: 'hsl(var(--primary))' },
 };
@@ -189,15 +195,24 @@ export function AnalyticsReports() {
 
         {/* Win Rate */}
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-          <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
-          <ChartContainer config={{}} className="aspect-auto h-[200px] w-full">
+          <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
+          <p className="mb-3 text-xs text-muted-foreground">Won · Lost · Open</p>
+          <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
             <PieChart>
-              <Pie data={winRateData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                {winRateData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+              <Pie
+                data={winRateData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                dataKey="value"
+                label={({ value }) => value}
+                labelLine
+              >
+                {winRateData.map((entry) => (
+                  <Cell key={entry.name} fill={winRateChartConfig[entry.name.toLowerCase() as keyof typeof winRateChartConfig]?.color ?? COLORS[0]} />
                 ))}
               </Pie>
-              <Tooltip />
             </PieChart>
           </ChartContainer>
         </div>
