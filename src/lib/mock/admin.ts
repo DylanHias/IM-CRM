@@ -74,12 +74,12 @@ export const mockSyncHealth: SyncHealthMetrics = {
 };
 
 export const mockSyncErrors: SyncRecord[] = [
-  { id: 1, syncType: 'full', status: 'error', startedAt: ago(1, 4), finishedAt: ago(1, 4), recordsPulled: 12, recordsPushed: 0, errorMessage: 'D365 API timeout after 30s — retry scheduled', createdAt: ago(1, 4) },
-  { id: 2, syncType: 'incremental', status: 'error', startedAt: ago(5, 8), finishedAt: ago(5, 8), recordsPulled: 0, recordsPushed: 3, errorMessage: 'Conflict on opportunity opp-012: remote version newer', createdAt: ago(5, 8) },
-  { id: 3, syncType: 'full', status: 'error', startedAt: ago(12, 2), finishedAt: ago(12, 2), recordsPulled: 45, recordsPushed: 0, errorMessage: 'Authentication token expired mid-sync', createdAt: ago(12, 2) },
-  { id: 4, syncType: 'incremental', status: 'error', startedAt: ago(18, 6), finishedAt: ago(18, 6), recordsPulled: 0, recordsPushed: 1, errorMessage: 'Network unreachable — offline mode activated', createdAt: ago(18, 6) },
-  { id: 5, syncType: 'full', status: 'error', startedAt: ago(23, 3), finishedAt: ago(23, 3), recordsPulled: 8, recordsPushed: 0, errorMessage: 'D365 rate limit exceeded (429) — backing off', createdAt: ago(23, 3) },
-  { id: 6, syncType: 'incremental', status: 'error', startedAt: ago(28, 1), finishedAt: ago(28, 1), recordsPulled: 0, recordsPushed: 2, errorMessage: 'Schema mismatch on contact entity — field removed upstream', createdAt: ago(28, 1) },
+  { id: 1, syncType: 'd365', status: 'error', startedAt: ago(1, 4), finishedAt: ago(1, 4), recordsPulled: 12, recordsPushed: 0, errorMessage: 'D365 API timeout after 30s — retry scheduled', createdAt: ago(1, 4) },
+  { id: 2, syncType: 'training', status: 'error', startedAt: ago(5, 8), finishedAt: ago(5, 8), recordsPulled: 0, recordsPushed: 3, errorMessage: 'Conflict on opportunity opp-012: remote version newer', createdAt: ago(5, 8) },
+  { id: 3, syncType: 'd365', status: 'error', startedAt: ago(12, 2), finishedAt: ago(12, 2), recordsPulled: 45, recordsPushed: 0, errorMessage: 'Authentication token expired mid-sync', createdAt: ago(12, 2) },
+  { id: 4, syncType: 'training', status: 'error', startedAt: ago(18, 6), finishedAt: ago(18, 6), recordsPulled: 0, recordsPushed: 1, errorMessage: 'Network unreachable — offline mode activated', createdAt: ago(18, 6) },
+  { id: 5, syncType: 'd365', status: 'error', startedAt: ago(23, 3), finishedAt: ago(23, 3), recordsPulled: 8, recordsPushed: 0, errorMessage: 'D365 rate limit exceeded (429) — backing off', createdAt: ago(23, 3) },
+  { id: 6, syncType: 'training', status: 'error', startedAt: ago(28, 1), finishedAt: ago(28, 1), recordsPulled: 0, recordsPushed: 2, errorMessage: 'Schema mismatch on contact entity — field removed upstream', createdAt: ago(28, 1) },
 ];
 
 // ── Analytics ──────────────────────────────────────────────────────────
