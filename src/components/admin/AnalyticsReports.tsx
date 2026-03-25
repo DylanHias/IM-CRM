@@ -151,7 +151,13 @@ export function AnalyticsReports() {
         </ChartContainer>
       </div>
 
-      {/* Charts Grid */}
+      {/* Opportunity Statistics divider */}
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border/60" />
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Opportunity Statistics</span>
+        <div className="h-px flex-1 bg-border/60" />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pipeline by Stage */}
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
