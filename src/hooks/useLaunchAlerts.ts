@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { mockFollowUps } from '@/lib/mock/followups';
 import { mockOpportunities } from '@/lib/mock/opportunities';
 import { toast } from 'sonner';
 
+let didRun = false;
+
 export function useLaunchAlerts() {
-  const didRun = useRef(false);
 
   const followUpReminderDays = useSettingsStore((s) => s.followUpReminderDays);
   const overdueAlertsOnLaunch = useSettingsStore((s) => s.overdueAlertsOnLaunch);
@@ -16,8 +17,8 @@ export function useLaunchAlerts() {
   const mockDataEnabled = useSettingsStore((s) => s.mockDataEnabled);
 
   useEffect(() => {
-    if (didRun.current) return;
-    didRun.current = true;
+    if (didRun) return;
+    didRun = true;
 
     const run = async () => {
       const today = new Date().toISOString().split('T')[0];

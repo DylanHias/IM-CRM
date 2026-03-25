@@ -6,9 +6,10 @@ import { useSync } from './useSync';
 import { toast } from 'sonner';
 import { useSyncStore } from '@/store/syncStore';
 
+let didAutoSync = false;
+
 export function useAutoSync() {
   const { triggerSync, isSyncing, isOnline } = useSync();
-  const didAutoSync = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const autoSyncOnLaunch = useSettingsStore((s) => s.autoSyncOnLaunch);
@@ -17,8 +18,8 @@ export function useAutoSync() {
 
   // Auto-sync on launch (once)
   useEffect(() => {
-    if (didAutoSync.current || !autoSyncOnLaunch || !isOnline) return;
-    didAutoSync.current = true;
+    if (didAutoSync || !autoSyncOnLaunch || !isOnline) return;
+    didAutoSync = true;
 
     const run = async () => {
       await triggerSync();
