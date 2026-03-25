@@ -334,7 +334,6 @@ export function Sidebar() {
     { href: '/opportunities', label: 'Opportunities', icon: Target },
     { href: '/invoices', label: 'Invoices', icon: FileText },
     { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
-    ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
   return (
