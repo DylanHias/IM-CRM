@@ -55,7 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <MsalProvider instance={msalInstance}>
       <ThemeProvider theme={resolved === 'dark' ? darkTheme : lightTheme}>
         <ThemeSync />
-        <Toaster position="bottom-right" richColors closeButton />
+        <Toaster position="bottom-right" richColors closeButton theme={resolved} />
         {children}
       </ThemeProvider>
     </MsalProvider>
