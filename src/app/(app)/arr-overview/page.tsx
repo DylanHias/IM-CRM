@@ -45,29 +45,13 @@ function getEmail(customer: Customer, contacts: Contact[]): ContactField {
 }
 
 function ContactCell({ field }: { field: ContactField }) {
-  if (field.value === '—') return <span>—</span>;
-  return (
-    <span className="flex items-center gap-2">
-      {field.value}
-      {field.isFallback ? (
-        <span
-          title="No contact record found — showing company details"
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-warning/20 text-warning border border-warning/30 shrink-0"
-        >
-          <Building2 size={9} />
-          Company
-        </span>
-      ) : (
-        <span
-          title={`From contact: ${field.contactName}`}
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 shrink-0"
-        >
-          <User size={9} />
-          {field.contactName}
-        </span>
-      )}
-    </span>
-  );
+  return <span>{field.value}</span>;
+}
+
+function getContactLabel(customer: Customer, contacts: Contact[]): { name: string; isCompany: boolean } {
+  const contact = getMostRecentContact(customer.id, contacts);
+  if (contact) return { name: `${contact.firstName} ${contact.lastName}`, isCompany: false };
+  return { name: customer.name, isCompany: true };
 }
 
 export default function ArrOverviewPage() {
@@ -152,6 +136,7 @@ export default function ArrOverviewPage() {
     const rows = filtered.map((c) => ({
       'Customer Name': c.name,
       BCN: c.bcn ?? '',
+      Contact: getContactLabel(c, allContacts).name,
       Phone: getPhone(c, allContacts).value,
       Email: getEmail(c, allContacts).value,
       'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
@@ -369,6 +354,7 @@ export default function ArrOverviewPage() {
                     {([
                       { field: 'name' as SortField, label: 'Customer Name', align: 'text-left' },
                       { field: 'bcn' as SortField, label: 'BCN', align: 'text-left' },
+                      { field: null, label: 'Contact', align: 'text-left' },
                       { field: null, label: 'Phone', align: 'text-left' },
                       { field: null, label: 'Email', align: 'text-left' },
                       { field: 'cloudCustomer' as SortField, label: 'Cloud Customer', align: 'text-center' },
@@ -396,7 +382,7 @@ export default function ArrOverviewPage() {
                 <tbody className="divide-y divide-border/60">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
                         No customers match your search.
                       </td>
                     </tr>
@@ -417,6 +403,21 @@ export default function ArrOverviewPage() {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                           {customer.bcn ?? '—'}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {(() => {
+                            const label = getContactLabel(customer, allContacts);
+                            return (
+                              <span className="flex items-center gap-1.5">
+                                {label.isCompany ? (
+                                  <Building2 size={12} className="text-warning shrink-0" />
+                                ) : (
+                                  <User size={12} className="text-primary shrink-0" />
+                                )}
+                                {label.name}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           <ContactCell field={getPhone(customer, allContacts)} />
