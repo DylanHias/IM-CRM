@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { Download, Trash2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 export function DataManagement() {
   const { tableStats, isLoading, loadDataManagement } = useAdminStore();
@@ -15,6 +16,7 @@ export function DataManagement() {
   }, [loadDataManagement]);
 
   const handleExportAll = async () => {
+    if (!isTauriApp()) return;
     try {
       const { getDb } = await import('@/lib/db/client');
       const db = await getDb();
@@ -40,6 +42,7 @@ export function DataManagement() {
   };
 
   const handlePurgeAudit = async () => {
+    if (!isTauriApp()) return;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - auditPurgeDays);
     const { purgeAuditLogBefore } = await import('@/lib/db/queries/auditLog');
@@ -49,6 +52,7 @@ export function DataManagement() {
   };
 
   const handlePurgeSync = async () => {
+    if (!isTauriApp()) return;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - syncPurgeDays);
     const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');

@@ -87,6 +87,7 @@ export function SyncAdministration() {
   };
 
   const handlePurge = async () => {
+    if (!isTauriApp()) return;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - purgeDays);
     const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');

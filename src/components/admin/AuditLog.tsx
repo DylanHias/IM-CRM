@@ -12,8 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { insertAuditLog } from '@/lib/db/queries/auditLog';
-import { fetchD365AuditLog } from '@/lib/sync/d365AuditAdapter';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { AuditEntityType, AuditAction, AuditLogEntry } from '@/types/admin';
 
 const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity'];
@@ -46,9 +45,11 @@ export function AuditLog() {
   }, [loadAuditLog, auditFilters]);
 
   const handleRefreshFromD365 = async () => {
-    if (!accessToken) return;
+    if (!accessToken || !isTauriApp()) return;
     setRefreshing(true);
     try {
+      const { fetchD365AuditLog } = await import('@/lib/sync/d365AuditAdapter');
+      const { insertAuditLog } = await import('@/lib/db/queries/auditLog');
       const entries = await fetchD365AuditLog(accessToken, {
         dateFrom: auditFilters.dateFrom,
         dateTo: auditFilters.dateTo,
