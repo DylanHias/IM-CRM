@@ -163,15 +163,20 @@ export function AnalyticsReports() {
               <XAxis dataKey="stage" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 10 }} />
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
               <ChartTooltip
-                content={<ChartTooltipContent />}
-                formatter={(value, name) =>
-                  name === 'count'
-                    ? [`${value} deals`, 'Deals']
-                    : [`€${Number(value).toLocaleString('nl-BE')}`, 'Revenue']
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, _name, item) => (
+                      <div className="space-y-0.5 text-xs">
+                        <p className="font-medium">{value} deals</p>
+                        <p className="text-muted-foreground">
+                          Revenue: €{Number(item.payload.totalRevenue).toLocaleString('nl-BE')}
+                        </p>
+                      </div>
+                    )}
+                  />
                 }
               />
               <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="totalRevenue" fill="transparent" legendType="none" />
             </BarChart>
           </ChartContainer>
         </div>
