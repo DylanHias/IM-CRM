@@ -57,6 +57,17 @@ export async function queryOverdueFollowUpCount(): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
+export async function queryUpcomingFollowUpCount(withinDays: number): Promise<number> {
+  const db = await getDb();
+  const today = new Date().toISOString().split('T')[0];
+  const future = new Date(Date.now() + withinDays * 86400000).toISOString().split('T')[0];
+  const rows = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date >= $1 AND due_date <= $2`,
+    [today, future]
+  );
+  return rows[0]?.count ?? 0;
+}
+
 export async function insertFollowUp(followUp: FollowUp): Promise<void> {
   const db = await getDb();
   await db.execute(

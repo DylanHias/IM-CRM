@@ -5,6 +5,8 @@ import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAutoSync } from '@/hooks/useAutoSync';
+import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { cn } from '@/lib/utils';
 import styled from 'styled-components';
 
@@ -47,6 +49,8 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const compactMode = useSettingsStore((s) => s.compactMode);
+  useAutoSync();
+  useLaunchAlerts();
 
   return (
     <Shell className={cn(compactMode && 'compact')}>

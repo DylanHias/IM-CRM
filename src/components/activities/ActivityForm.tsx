@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useActivities } from '@/hooks/useActivities';
+import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { Contact } from '@/types/entities';
@@ -28,8 +29,9 @@ const ACTIVITY_TYPES = [
 export function ActivityForm({ customerId, customerName, contacts }: ActivityFormProps) {
   const router = useRouter();
   const { createActivity } = useActivities(customerId);
+  const defaultActivityType = useSettingsStore((s) => s.defaultActivityType);
 
-  const [type, setType] = useState<'meeting' | 'visit' | 'call' | 'note'>('meeting');
+  const [type, setType] = useState<'meeting' | 'visit' | 'call' | 'note'>(defaultActivityType);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [occurredAt, setOccurredAt] = useState(todayISO());

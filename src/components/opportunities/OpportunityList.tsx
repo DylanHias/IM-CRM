@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Target, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Target, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,6 +13,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { mockContacts } from '@/lib/mock/contacts';
 import { useCustomerStore } from '@/store/customerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity, Contact } from '@/types/entities';
 
 interface OpportunityListProps {
@@ -24,9 +25,14 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
 
+  const staleDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
+
+  const isStale = (opp: Opportunity) =>
+    opp.status === 'Open' &&
+    (Date.now() - new Date(opp.updatedAt).getTime()) > staleDays * 86400000;
 
   useEffect(() => {
     const load = async () => {
@@ -100,6 +106,12 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[13px] font-medium text-foreground truncate">{opp.subject}</span>
                   <Badge variant={statusVariant(opp.status)} className="text-[10px] shrink-0">{opp.status}</Badge>
+                  {isStale(opp) && (
+                    <span className="flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 shrink-0" title={`No updates in ${staleDays}+ days`}>
+                      <AlertTriangle size={11} />
+                      Stale
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                   <span>{opp.stage} ({opp.probability}%)</span>

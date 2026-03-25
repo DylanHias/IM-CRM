@@ -11,6 +11,7 @@ import {
   queryOverdueFollowUpCount,
 } from '@/lib/db/queries/followups';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { useSettingsStore } from '@/store/settingsStore';
 import { mockFollowUps } from '@/lib/mock/followups';
 import type { FollowUp } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,7 +28,8 @@ export function useFollowUps(customerId: string) {
     setLoading(true);
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const data = await queryFollowUpsByCustomer(customerId);
           if (data.length > 0) {
             setFollowUps(data, customerId);

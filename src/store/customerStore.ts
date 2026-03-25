@@ -19,6 +19,7 @@ interface CustomerState {
   filterSegment: string | null;
   filterCountry: string | null;
   filterNoRecentActivity: boolean;
+  page: number;
   isLoading: boolean;
 
   setCustomers: (customers: Customer[]) => void;
@@ -33,6 +34,7 @@ interface CustomerState {
   setFilterSegment: (s: string | null) => void;
   setFilterCountry: (c: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
+  setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
   getActiveFilterCount: () => number;
@@ -47,7 +49,7 @@ export const useCustomerStore = create<CustomerState>()(
       allContacts: [],
       selectedCustomerId: null,
       searchQuery: '',
-      sortBy: 'lastActivity',
+      sortBy: useSettingsStore.getState().defaultCustomerSort,
       sortDir: 'desc',
       filterOwnerId: null,
       filterStatus: 'all',
@@ -55,30 +57,34 @@ export const useCustomerStore = create<CustomerState>()(
       filterSegment: null,
       filterCountry: null,
       filterNoRecentActivity: false,
+      page: 1,
       isLoading: false,
 
       setCustomers: (customers) => set({ customers }),
       setAllContacts: (allContacts) => set({ allContacts }),
       setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
-      setSearchQuery: (searchQuery) => set({ searchQuery }),
-      setSortBy: (sortBy) => set({ sortBy }),
-      setSortDir: (sortDir) => set({ sortDir }),
-      setFilterOwnerId: (filterOwnerId) => set({ filterOwnerId }),
-      setFilterStatus: (filterStatus) => set({ filterStatus }),
-      setFilterIndustry: (filterIndustry) => set({ filterIndustry }),
-      setFilterSegment: (filterSegment) => set({ filterSegment }),
-      setFilterCountry: (filterCountry) => set({ filterCountry }),
+      setSearchQuery: (searchQuery) => set({ searchQuery, page: 1 }),
+      setSortBy: (sortBy) => set({ sortBy, page: 1 }),
+      setSortDir: (sortDir) => set({ sortDir, page: 1 }),
+      setFilterOwnerId: (filterOwnerId) => set({ filterOwnerId, page: 1 }),
+      setFilterStatus: (filterStatus) => set({ filterStatus, page: 1 }),
+      setFilterIndustry: (filterIndustry) => set({ filterIndustry, page: 1 }),
+      setFilterSegment: (filterSegment) => set({ filterSegment, page: 1 }),
+      setFilterCountry: (filterCountry) => set({ filterCountry, page: 1 }),
       toggleNoRecentActivityFilter: () =>
         set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity })),
+      setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
       clearFilters: () => set({
+        sortBy: useSettingsStore.getState().defaultCustomerSort,
         filterOwnerId: null,
         filterStatus: 'all',
         filterIndustry: null,
         filterSegment: null,
         filterCountry: null,
         filterNoRecentActivity: false,
+        page: 1,
       }),
 
       getActiveFilterCount: () => {

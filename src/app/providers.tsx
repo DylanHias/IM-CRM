@@ -8,6 +8,7 @@ import { initDb } from '@/lib/db/client';
 import { lightTheme, darkTheme } from '@/styles/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
+import { Toaster } from 'sonner';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
 function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -54,6 +55,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <MsalProvider instance={msalInstance}>
       <ThemeProvider theme={resolved === 'dark' ? darkTheme : lightTheme}>
         <ThemeSync />
+        <Toaster position="bottom-right" richColors closeButton />
         {children}
       </ThemeProvider>
     </MsalProvider>

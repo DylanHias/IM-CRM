@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface UIState {
   sidebarOpen: boolean;
@@ -13,7 +14,7 @@ interface UIState {
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      sidebarOpen: false,
+      sidebarOpen: useSettingsStore.getState().sidebarDefaultExpanded,
       activeCustomerTab: 'timeline',
 
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),

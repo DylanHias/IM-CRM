@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCustomerStore } from '@/store/customerStore';
+import { useAuthStore } from '@/store/authStore';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { useSettingsStore } from '@/store/settingsStore';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
 import { seedMockData } from '@/lib/db/seed';
@@ -13,8 +15,20 @@ import { getDb } from '@/lib/db/client';
 export function useCustomers() {
   const {
     customers, allContacts, isLoading,
-    setCustomers, setAllContacts, setLoading, getFilteredCustomers,
+    setCustomers, setAllContacts, setLoading, getFilteredCustomers, setFilterOwnerId,
   } = useCustomerStore();
+  const { account } = useAuthStore();
+  const appliedOwnerFilter = useRef(false);
+
+  // Apply "show my customers first" default filter once on mount
+  useEffect(() => {
+    if (appliedOwnerFilter.current) return;
+    const { defaultCustomerFilterOwner } = useSettingsStore.getState();
+    if (defaultCustomerFilterOwner && account?.localAccountId) {
+      setFilterOwnerId(account.localAccountId);
+      appliedOwnerFilter.current = true;
+    }
+  }, [account, setFilterOwnerId]);
 
   // Load customers
   useEffect(() => {
@@ -22,10 +36,10 @@ export function useCustomers() {
     setLoading(true);
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           let data = await queryAllCustomers();
           if (data.length === 0) {
-            // DB is empty — seed mock data so FK references work for creates
             const db = await getDb();
             await seedMockData(db);
             data = await queryAllCustomers();
@@ -49,7 +63,8 @@ export function useCustomers() {
     if (allContacts.length > 0) return;
     const load = async () => {
       try {
-        if (isTauriApp()) {
+        const useMock = useSettingsStore.getState().mockDataEnabled;
+        if (!useMock && isTauriApp()) {
           const contacts = await queryAllContacts();
           setAllContacts(contacts.length > 0 ? contacts : mockContacts);
         } else {

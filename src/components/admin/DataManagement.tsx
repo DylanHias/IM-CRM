@@ -5,9 +5,11 @@ import { useAdminStore } from '@/store/adminStore';
 import { Download, Trash2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export function DataManagement() {
   const { tableStats, isLoading, loadDataManagement } = useAdminStore();
+  const exportFormat = useSettingsStore((s) => s.defaultExportFormat);
   const [auditPurgeDays, setAuditPurgeDays] = useState(180);
   const [syncPurgeDays, setSyncPurgeDays] = useState(90);
 
@@ -34,7 +36,12 @@ export function DataManagement() {
         }
       }
 
-      writeFile(wb, `im-crm-export-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const datestamp = new Date().toISOString().split('T')[0];
+      if (exportFormat === 'csv') {
+        writeFile(wb, `im-crm-export-${datestamp}.csv`, { bookType: 'csv' });
+      } else {
+        writeFile(wb, `im-crm-export-${datestamp}.xlsx`);
+      }
     } catch (err) {
       console.error('Export failed:', err);
       alert('Export failed. Check console for details.');
@@ -92,7 +99,7 @@ export function DataManagement() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExportAll}>
             <Download size={14} />
-            <span className="ml-1.5">Export All Data (xlsx)</span>
+            <span className="ml-1.5">Export All Data ({exportFormat})</span>
           </Button>
         </div>
       </div>
