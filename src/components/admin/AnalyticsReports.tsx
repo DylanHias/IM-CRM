@@ -24,9 +24,9 @@ const COLORS = [
 const ACTIVITY_TYPES = ['meeting', 'call', 'visit', 'note'] as const;
 
 const winRateChartConfig = {
-  won: { label: 'Won', color: 'hsl(var(--chart-2, 220 70% 50%))' },
-  lost: { label: 'Lost', color: 'hsl(var(--primary))' },
-  open: { label: 'Open', color: 'hsl(var(--chart-3, 150 60% 40%))' },
+  won: { label: 'Won', color: 'hsl(142 71% 45%)' },
+  lost: { label: 'Lost', color: 'hsl(var(--destructive))' },
+  open: { label: 'Open', color: 'hsl(var(--primary))' },
 };
 
 const pipelineChartConfig = {
