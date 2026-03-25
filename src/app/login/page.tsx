@@ -139,42 +139,47 @@ export default function LoginPage() {
   }, [accounts, router]);
 
   const handleDevBypass = async () => {
-    setAccount(
-      {
-        homeAccountId: 'dev-mock-id',
-        environment: 'login.microsoftonline.com',
-        tenantId: 'dev-tenant',
-        username: 'dev@ingrammicro.com',
-        localAccountId: 'dev-local-id',
-        name: 'Dev User',
-        idTokenClaims: {},
-        nativeAccountId: undefined,
-        authorityType: 'MSSTS',
-      } as unknown as AccountInfo,
-      'mock-dev-token'
-    );
+    try {
+      setAccount(
+        {
+          homeAccountId: 'dev-mock-id',
+          environment: 'login.microsoftonline.com',
+          tenantId: 'dev-tenant',
+          username: 'dev@ingrammicro.com',
+          localAccountId: 'dev-local-id',
+          name: 'Dev User',
+          idTokenClaims: {},
+          nativeAccountId: undefined,
+          authorityType: 'MSSTS',
+        } as unknown as AccountInfo,
+        'mock-dev-token'
+      );
 
-    if (isTauriApp()) {
-      const { upsertUser, isUserAdmin, updateUserRole } = await import('@/lib/db/queries/users');
-      const now = new Date().toISOString();
-      await upsertUser({
-        id: 'dev-local-id',
-        email: 'dev@ingrammicro.com',
-        name: 'Dev User',
-        role: 'admin',
-        businessUnit: null,
-        lastActiveAt: now,
-        createdAt: now,
-        updatedAt: now,
-      });
-      const admin = await isUserAdmin('dev-local-id');
-      if (!admin) await updateUserRole('dev-local-id', 'admin');
-      useAuthStore.getState().setIsAdmin(true);
-    } else {
-      useAuthStore.getState().setIsAdmin(true);
+      if (isTauriApp()) {
+        const { upsertUser, isUserAdmin, updateUserRole } = await import('@/lib/db/queries/users');
+        const now = new Date().toISOString();
+        await upsertUser({
+          id: 'dev-local-id',
+          email: 'dev@ingrammicro.com',
+          name: 'Dev User',
+          role: 'admin',
+          businessUnit: null,
+          lastActiveAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+        const admin = await isUserAdmin('dev-local-id');
+        if (!admin) await updateUserRole('dev-local-id', 'admin');
+        useAuthStore.getState().setIsAdmin(true);
+      } else {
+        useAuthStore.getState().setIsAdmin(true);
+      }
+
+      router.replace('/customers');
+    } catch (err) {
+      console.error('[login] Dev bypass failed:', err);
+      setError('Dev bypass failed. Check the console for details.');
     }
-
-    router.replace('/customers');
   };
 
   const handleLogin = async () => {
@@ -184,9 +189,12 @@ export default function LoginPage() {
     try {
       const result = await signIn();
       if (result) {
+        // Popup flow (browser) — got a result immediately
         setAccount(result.account, result.accessToken);
         router.replace('/customers');
-      } else {
+      } else if (!isTauriApp()) {
+        // Only show error for browser popup flow — Tauri uses redirect
+        // (page navigates away, response handled on reload in providers.tsx)
         setError('Login was cancelled or failed. Please try again.');
       }
     } catch (err) {

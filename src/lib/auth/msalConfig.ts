@@ -1,9 +1,6 @@
 import { type Configuration, LogLevel } from '@azure/msal-browser';
 
 function getRedirectUri(): string {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    return 'tauri://localhost';
-  }
   if (typeof window !== 'undefined') {
     return window.location.origin;
   }

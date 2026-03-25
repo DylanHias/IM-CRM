@@ -7,6 +7,7 @@ import { initializeMsal } from '@/lib/auth/msalInstance';
 import { initDb } from '@/lib/db/client';
 import { lightTheme, darkTheme } from '@/styles/theme';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { Toaster } from 'sonner';
 import type { PublicClientApplication } from '@azure/msal-browser';
@@ -25,6 +26,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const init = async () => {
       const instance = await initializeMsal();
+
+      // Handle MSAL redirect response (Tauri uses loginRedirect instead of loginPopup)
+      try {
+        const response = await instance.handleRedirectPromise();
+        if (response?.account) {
+          instance.setActiveAccount(response.account);
+          useAuthStore.getState().setAccount(response.account, response.accessToken);
+        }
+      } catch (err) {
+        console.error('[MSAL] Redirect handling failed:', err);
+      }
 
       try {
         await initDb();
