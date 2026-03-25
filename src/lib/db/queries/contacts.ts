@@ -66,8 +66,12 @@ export async function deleteContact(id: string): Promise<void> {
 
 export async function updateContactNotes(contactId: string, notes: string): Promise<void> {
   const db = await getDb();
+  const rows = await db.select<ContactRow[]>(`SELECT * FROM contacts WHERE id = $1`, [contactId]);
   await db.execute(
     `UPDATE contacts SET notes = $1, updated_at = $2 WHERE id = $3`,
     [notes, new Date().toISOString(), contactId]
   );
+  if (rows[0]) {
+    logAudit('contact', contactId, 'update', 'system', 'System', { notes: rows[0].notes }, { notes });
+  }
 }

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { AuditEntityType, AuditAction, AuditLogEntry } from '@/types/admin';
 
-const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity'];
+const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity', 'training'];
 const ACTIONS: AuditAction[] = ['create', 'update', 'delete'];
 
 const ACTION_COLORS: Record<AuditAction, string> = {

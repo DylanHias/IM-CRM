@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Training } from '@/types/entities';
 import type { TrainingRow } from '@/types/db';
+import { logAudit } from '@/lib/db/auditHelper';
 
 function rowToTraining(row: TrainingRow): Training {
   return {
@@ -27,11 +28,18 @@ export async function queryTrainingsByCustomer(customerId: string): Promise<Trai
 
 export async function deleteTraining(id: string): Promise<void> {
   const db = await getDb();
+  const rows = await db.select<TrainingRow[]>(`SELECT * FROM trainings WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM trainings WHERE id=$1`, [id]);
+  if (rows[0]) {
+    logAudit('training', id, 'delete', 'system', 'System (sync)', { title: rows[0].title }, null);
+  }
 }
 
 export async function upsertTraining(training: Training): Promise<void> {
   const db = await getDb();
+  const existing = await db.select<TrainingRow[]>(`SELECT * FROM trainings WHERE id = $1`, [training.id]);
+  const isUpdate = existing.length > 0;
+
   await db.execute(
     `INSERT INTO trainings (
       id, customer_id, title, training_date, participant, provider, status, synced_at, created_at
@@ -46,4 +54,17 @@ export async function upsertTraining(training: Training): Promise<void> {
       training.syncedAt, training.createdAt,
     ]
   );
+
+  if (isUpdate) {
+    const old = existing[0];
+    const changes: Record<string, unknown> = {};
+    const oldVals: Record<string, unknown> = {};
+    if (old.title !== training.title) { oldVals.title = old.title; changes.title = training.title; }
+    if (old.status !== training.status) { oldVals.status = old.status; changes.status = training.status; }
+    if (Object.keys(changes).length > 0) {
+      logAudit('training', training.id, 'update', 'system', 'System (sync)', oldVals, changes);
+    }
+  } else {
+    logAudit('training', training.id, 'create', 'system', 'System (sync)', null, { title: training.title });
+  }
 }
