@@ -56,7 +56,7 @@ export interface ActivityBreakdown {
 }
 
 export interface ActivityTimelinePoint {
-  month: string;
+  date: string;
   meeting: number;
   call: number;
   visit: number;

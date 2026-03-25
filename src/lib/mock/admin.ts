@@ -96,20 +96,23 @@ export const mockDataQuality: DataQualityMetrics = {
 export const mockActivityTimeline: ActivityTimelinePoint[] = (() => {
   const points: ActivityTimelinePoint[] = [];
   const now = new Date();
-  const meetingCounts = [2, 1, 3, 2, 1, 3, 2, 4, 2, 1, 3, 4];
-  const callCounts =    [1, 2, 1, 2, 3, 2, 1, 2, 2, 3, 2, 3];
-  const visitCounts =   [0, 1, 0, 2, 1, 1, 1, 2, 1, 1, 2, 1];
-  const noteCounts =    [0, 1, 0, 1, 1, 2, 1, 1, 2, 1, 1, 2];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    const idx = 11 - i;
+  // Seed-based pseudo-random for deterministic data
+  let seed = 42;
+  function rand(max: number) {
+    seed = (seed * 16807 + 0) % 2147483647;
+    return seed % (max + 1);
+  }
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const day = d.getDay();
+    const isWeekend = day === 0 || day === 6;
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     points.push({
-      month: label,
-      meeting: meetingCounts[idx],
-      call: callCounts[idx],
-      visit: visitCounts[idx],
-      note: noteCounts[idx],
+      date: label,
+      meeting: isWeekend ? 0 : rand(3),
+      call: isWeekend ? rand(1) : rand(4),
+      visit: isWeekend ? 0 : rand(2),
+      note: rand(2),
     });
   }
   return points;

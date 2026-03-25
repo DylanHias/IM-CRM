@@ -56,20 +56,20 @@ export async function queryDataQualityMetrics(staleActivityDays = 90): Promise<D
 
 export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> {
   const db = await getDb();
-  const rows = await db.select<{ month: string; type: string; count: number }[]>(
-    `SELECT strftime('%Y-%m', occurred_at) as month, type, COUNT(*) as count
+  const rows = await db.select<{ date: string; type: string; count: number }[]>(
+    `SELECT strftime('%Y-%m-%d', occurred_at) as date, type, COUNT(*) as count
      FROM activities
-     WHERE occurred_at >= datetime('now', '-12 months')
-     GROUP BY month, type
-     ORDER BY month`
+     WHERE occurred_at >= datetime('now', '-90 days')
+     GROUP BY date, type
+     ORDER BY date`
   );
 
   const map = new Map<string, ActivityTimelinePoint>();
-  for (const { month, type, count } of rows) {
-    if (!map.has(month)) {
-      map.set(month, { month, meeting: 0, call: 0, visit: 0, note: 0 });
+  for (const { date, type, count } of rows) {
+    if (!map.has(date)) {
+      map.set(date, { date, meeting: 0, call: 0, visit: 0, note: 0 });
     }
-    const point = map.get(month)!;
+    const point = map.get(date)!;
     if (type in point) {
       (point as Record<string, number>)[type] = count;
     }

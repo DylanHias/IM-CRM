@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import {
   AreaChart, Area,
@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const COLORS = [
   'hsl(var(--primary))',
@@ -29,16 +30,30 @@ const activityChartConfig = {
   note: { label: 'Note', color: 'hsl(var(--chart-4, 280 65% 60%))' },
 };
 
+type TimeRange = '7d' | '30d' | '90d';
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  '90d': 'Last 3 months',
+};
+
 export function AnalyticsReports() {
   const {
     dataQuality, activityTimeline,
     activityByUser, pipelineByStage, winRate,
     isLoading, loadAnalytics,
   } = useAdminStore();
+  const [timeRange, setTimeRange] = useState<TimeRange>('90d');
 
   useEffect(() => {
     loadAnalytics();
   }, [loadAnalytics]);
+
+  const filteredTimeline = useMemo(() => {
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    return activityTimeline.slice(-days);
+  }, [activityTimeline, timeRange]);
 
   if (isLoading && !dataQuality) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading analytics...</p>;
@@ -79,10 +94,24 @@ export function AnalyticsReports() {
 
       {/* Activities by Type & Month — Stacked Area Chart */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities Over Time</p>
-        <p className="mb-4 text-xs text-muted-foreground">Breakdown by type over the last 12 months</p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities Over Time</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Breakdown by type for the {TIME_RANGE_LABELS[timeRange].toLowerCase()}</p>
+          </div>
+          <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
+            <SelectTrigger className="h-8 w-[148px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="90d">Last 3 months</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <ChartContainer config={activityChartConfig} className="aspect-auto h-[280px] w-full">
-          <AreaChart data={activityTimeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+          <AreaChart data={filteredTimeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <defs>
               {ACTIVITY_TYPES.map((type) => (
                 <linearGradient key={type} id={`fill-${type}`} x1="0" y1="0" x2="0" y2="1">
@@ -92,7 +121,7 @@ export function AnalyticsReports() {
               ))}
             </defs>
             <CartesianGrid vertical={false} className="stroke-border" />
-            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} />
+            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 11 }} />
             <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
             {ACTIVITY_TYPES.map((type) => (
