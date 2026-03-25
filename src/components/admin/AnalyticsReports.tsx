@@ -9,6 +9,8 @@ import {
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
 
 const COLORS = [
   'hsl(var(--primary))',
@@ -55,10 +57,17 @@ export function AnalyticsReports() {
     isLoading, loadAnalytics,
   } = useAdminStore();
   const [timeRange, setTimeRange] = useState<TimeRange>('90d');
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     loadAnalytics();
   }, [loadAnalytics]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return activityByUser;
+    return activityByUser.filter((u) => u.userName.toLowerCase().includes(q));
+  }, [activityByUser, userSearch]);
 
   const filteredTimeline = useMemo(() => {
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
@@ -166,20 +175,45 @@ export function AnalyticsReports() {
 
       {/* Activities by User */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
-        <p className="mb-3 text-xs text-muted-foreground">{activityByUser.length} user{activityByUser.length !== 1 ? 's' : ''}</p>
-        <ChartContainer
-          config={{ count: { label: 'Activities', color: 'hsl(var(--primary))' } }}
-          className="w-full"
-          style={{ height: Math.max(120, activityByUser.length * 36) }}
-        >
-          <BarChart data={activityByUser} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
-            <XAxis type="number" hide />
-            <YAxis dataKey="userName" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={140} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} barSize={20} />
-          </BarChart>
-        </ChartContainer>
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="relative w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+            <Input
+              placeholder="Search users…"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="pl-8 h-8 pr-7 text-xs bg-card shadow-sm border-border/70 rounded-lg"
+            />
+            {userSearch && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setUserSearch('')}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+        {filteredUsers.length > 0 ? (
+          <ChartContainer
+            config={{ count: { label: 'Activities', color: 'hsl(var(--primary))' } }}
+            className="w-full"
+            style={{ height: Math.max(120, filteredUsers.length * 36) }}
+          >
+            <BarChart data={filteredUsers} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
+              <XAxis type="number" hide />
+              <YAxis dataKey="userName" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={140} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} barSize={20} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">No users found</p>
+        )}
       </div>
 
       {/* Opportunity Statistics divider */}
