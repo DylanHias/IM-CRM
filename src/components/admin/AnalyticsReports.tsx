@@ -25,7 +25,6 @@ const ACTIVITY_TYPES = ['meeting', 'call', 'visit', 'note'] as const;
 
 const pipelineChartConfig = {
   count: { label: 'Deals', color: 'hsl(var(--primary))' },
-  revenueK: { label: 'Revenue (€K)', color: 'hsl(var(--chart-2, 220 70% 50%))' },
 };
 
 const activityChartConfig = {
@@ -54,10 +53,6 @@ export function AnalyticsReports() {
   useEffect(() => {
     loadAnalytics();
   }, [loadAnalytics]);
-
-  const pipelineData = useMemo(() =>
-    pipelineByStage.map((s) => ({ ...s, revenueK: Math.round(s.totalRevenue / 1000) })),
-  [pipelineByStage]);
 
   const filteredTimeline = useMemo(() => {
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
@@ -161,16 +156,22 @@ export function AnalyticsReports() {
         {/* Pipeline by Stage */}
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pipeline by Stage</p>
-          <p className="mb-3 text-xs text-muted-foreground">Deal count and revenue (€K) per stage</p>
+          <p className="mb-3 text-xs text-muted-foreground">Deals per stage · hover for revenue</p>
           <ChartContainer config={pipelineChartConfig} className="aspect-auto h-[200px] w-full">
-            <BarChart data={pipelineData}>
+            <BarChart data={pipelineByStage}>
               <CartesianGrid vertical={false} className="stroke-border" />
               <XAxis dataKey="stage" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 10 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <ChartLegend content={<ChartLegendContent />} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
+              <ChartTooltip
+                content={<ChartTooltipContent />}
+                formatter={(value, name) =>
+                  name === 'count'
+                    ? [`${value} deals`, 'Deals']
+                    : [`€${Number(value).toLocaleString('nl-BE')}`, 'Revenue']
+                }
+              />
               <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="revenueK" fill="var(--color-revenueK)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="totalRevenue" fill="transparent" legendType="none" />
             </BarChart>
           </ChartContainer>
         </div>
