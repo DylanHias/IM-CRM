@@ -102,6 +102,13 @@ export function AnalyticsReports() {
         ))}
       </div>
 
+      {/* Activity Statistics divider */}
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border/60" />
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Statistics</span>
+        <div className="h-px flex-1 bg-border/60" />
+      </div>
+
       {/* Activities by Type & Month — Stacked Area Chart */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
         <div className="flex items-start justify-between mb-4">
@@ -154,6 +161,20 @@ export function AnalyticsReports() {
             ))}
             <ChartLegend content={<ChartLegendContent />} />
           </AreaChart>
+        </ChartContainer>
+      </div>
+
+      {/* Activities by User */}
+      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
+        <ChartContainer config={{}} className="aspect-auto h-[200px] w-full">
+          <BarChart data={activityByUser} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis type="number" tick={{ fontSize: 11 }} />
+            <YAxis dataKey="userName" type="category" tick={{ fontSize: 11 }} width={120} />
+            <Tooltip />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+          </BarChart>
         </ChartContainer>
       </div>
 
@@ -216,20 +237,6 @@ export function AnalyticsReports() {
             </PieChart>
           </ChartContainer>
         </div>
-      </div>
-
-      {/* Activities by User */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activities by User</p>
-        <ChartContainer config={{}} className="aspect-auto h-[200px] w-full">
-          <BarChart data={activityByUser} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis type="number" tick={{ fontSize: 11 }} />
-            <YAxis dataKey="userName" type="category" tick={{ fontSize: 11 }} width={120} />
-            <Tooltip />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ChartContainer>
       </div>
     </div>
   );
