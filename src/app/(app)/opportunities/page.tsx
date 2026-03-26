@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Target, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Target, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
 import type { OpportunityFormData } from '@/components/opportunities/OpportunityForm';
@@ -19,36 +20,41 @@ import { mockContacts } from '@/lib/mock/contacts';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Opportunity, Contact } from '@/types/entities';
+import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OpportunitiesPage() {
   const router = useRouter();
   const { account } = useAuthStore();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const loadData = useCallback(async () => {
     try {
       const useMock = useSettingsStore.getState().mockDataEnabled;
       if (!useMock && isTauriApp()) {
-        const [opps, customers] = await Promise.all([
+        const [opps, custs] = await Promise.all([
           queryAllOpportunities(),
           queryAllCustomers(),
         ]);
         setOpportunities(opps);
-        setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
+        setCustomers(custs);
+        setCustomerMap(new Map(custs.map((c) => [c.id, c.name])));
       } else {
         setOpportunities(mockOpportunities);
+        setCustomers(mockCustomers as Customer[]);
         setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
       }
     } catch (err) {
       console.error('[opportunity] Failed to load opportunities:', err);
       setOpportunities(mockOpportunities);
+      setCustomers(mockCustomers as Customer[]);
       setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
     }
   }, []);
@@ -248,7 +254,7 @@ export default function OpportunitiesPage() {
         </div>
       )}
 
-      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) setSelectedCustomerId(null); }}>
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedCustomerId(null); setCustomerSearch(''); } }}>
         <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Opportunity</DialogTitle>
@@ -256,21 +262,41 @@ export default function OpportunitiesPage() {
           {!selectedCustomerId ? (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Select a customer:</p>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, BCN, or account number..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
               <div className="max-h-60 overflow-y-auto border border-border rounded-lg divide-y divide-border/50">
-                {Array.from(customerMap.entries()).map(([id, name]) => (
-                  <button
-                    key={id}
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors"
-                    onClick={() => setSelectedCustomerId(id)}
-                  >
-                    {name}
-                  </button>
-                ))}
+                {customers
+                  .filter((c) => {
+                    if (!customerSearch.trim()) return true;
+                    const q = customerSearch.toLowerCase();
+                    return c.name.toLowerCase().includes(q)
+                      || (c.bcn && c.bcn.toLowerCase().includes(q))
+                      || (c.accountNumber && c.accountNumber.toLowerCase().includes(q));
+                  })
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors"
+                      onClick={() => { setSelectedCustomerId(c.id); setCustomerSearch(''); }}
+                    >
+                      <span className="font-medium">{c.name}</span>
+                      {c.bcn && <span className="text-xs text-muted-foreground ml-2">BCN: {c.bcn}</span>}
+                    </button>
+                  ))}
               </div>
             </div>
           ) : (
             <OpportunityForm
               contacts={contacts}
+              customer={customers.find((c) => c.id === selectedCustomerId)}
               onSubmit={handleCreate}
               onCancel={() => { setAddOpen(false); setSelectedCustomerId(null); }}
             />
