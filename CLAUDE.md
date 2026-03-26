@@ -85,6 +85,7 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 ## Git Workflow
 
+- **Run tests before pushing** — after every code change, run affected tests (`pnpm vitest run <path>`). Add new tests if the change introduces new behavior or modifies existing logic. Never push without green tests.
 - **Commit after every completed change** — each logical unit of work gets its own commit
 - **Push to remote** after committing — always run `git push` after a successful commit
 
