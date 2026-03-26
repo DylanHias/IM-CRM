@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, Download, Loader2, CheckCircle2 } from 'lucide-react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { storeChangelog } from '@/components/layout/ChangelogDialog';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -52,8 +53,9 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
 export function AppearanceSettings() {
   const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, updateSetting, resetSection } =
     useSettingsStore();
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'up-to-date'>('idle');
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'up-to-date'>('idle');
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const updateRef = useRef<Awaited<ReturnType<typeof import('@tauri-apps/plugin-updater').check>> | null>(null);
 
   const checkForUpdates = useCallback(async () => {
     if (!isTauriApp()) return;
@@ -62,6 +64,7 @@ export function AppearanceSettings() {
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check();
       if (update) {
+        updateRef.current = update;
         setUpdateStatus('available');
         setUpdateVersion(update.version);
       } else {
@@ -70,6 +73,23 @@ export function AppearanceSettings() {
     } catch (error) {
       console.error('[updater] Failed to check for updates:', error);
       setUpdateStatus('idle');
+    }
+  }, []);
+
+  const installUpdate = useCallback(async () => {
+    const update = updateRef.current;
+    if (!update) return;
+    try {
+      setUpdateStatus('downloading');
+      if (update.body) {
+        await storeChangelog(update.body, update.version);
+      }
+      await update.downloadAndInstall();
+      const { relaunch } = await import('@tauri-apps/plugin-process');
+      await relaunch();
+    } catch (error) {
+      console.error('[updater] Failed to install update:', error);
+      setUpdateStatus('available');
     }
   }, []);
 
@@ -174,26 +194,30 @@ export function AppearanceSettings() {
         <div className="min-w-0">
           <p className="text-sm font-medium">Updates</p>
           <p className="text-xs text-muted-foreground">
-            {updateStatus === 'available' && updateVersion
-              ? `Version ${updateVersion} is available`
-              : updateStatus === 'up-to-date'
-                ? 'You\'re on the latest version'
-                : 'Check if a newer version is available'}
+            {updateStatus === 'downloading'
+              ? `Downloading version ${updateVersion}...`
+              : updateStatus === 'available' && updateVersion
+                ? `Version ${updateVersion} is available`
+                : updateStatus === 'up-to-date'
+                  ? 'You\'re on the latest version'
+                  : 'Check if a newer version is available'}
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
           className="h-8 text-xs"
-          disabled={updateStatus === 'checking'}
-          onClick={checkForUpdates}
+          disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+          onClick={updateStatus === 'available' ? installUpdate : checkForUpdates}
         >
           {updateStatus === 'checking' ? (
             <><Loader2 size={13} className="mr-1.5 animate-spin" />Checking...</>
+          ) : updateStatus === 'downloading' ? (
+            <><Loader2 size={13} className="mr-1.5 animate-spin" />Downloading...</>
           ) : updateStatus === 'up-to-date' ? (
             <><CheckCircle2 size={13} className="mr-1.5" />Up to date</>
           ) : updateStatus === 'available' ? (
-            <><Download size={13} className="mr-1.5" />Update available</>
+            <><Download size={13} className="mr-1.5" />Install update</>
           ) : (
             <><Download size={13} className="mr-1.5" />Check for updates</>
           )}
