@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Target, Pencil, Trash2 } from 'lucide-react';
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
 import type { OpportunityFormData } from '@/components/opportunities/OpportunityForm';
-import { useOpportunityStore } from '@/store/opportunityStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryAllOpportunities, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
@@ -17,6 +16,7 @@ import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { mockOpportunities } from '@/lib/mock/opportunities';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
+import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity, Contact } from '@/types/entities';
@@ -25,35 +25,43 @@ import { v4 as uuidv4 } from 'uuid';
 export default function OpportunitiesPage() {
   const router = useRouter();
   const { account } = useAuthStore();
-  const { opportunities, setOpportunities, addOpportunity, updateOpportunity, removeOpportunity } = useOpportunityStore();
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
-          const [opps, customers] = await Promise.all([
-            queryAllOpportunities(),
-            queryAllCustomers(),
-          ]);
-          setOpportunities(opps.length > 0 ? opps : mockOpportunities, null);
-          setCustomerMap(new Map((customers.length > 0 ? customers : mockCustomers).map((c) => [c.id, c.name])));
-        } else {
-          setOpportunities(mockOpportunities, null);
-          setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
-        }
-      } catch {
-        setOpportunities(mockOpportunities, null);
+  const loadData = useCallback(async () => {
+    try {
+      const useMock = useSettingsStore.getState().mockDataEnabled;
+      if (!useMock && isTauriApp()) {
+        const [opps, customers] = await Promise.all([
+          queryAllOpportunities(),
+          queryAllCustomers(),
+        ]);
+        setOpportunities(opps);
+        setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
+      } else {
+        setOpportunities(mockOpportunities);
         setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
       }
-    };
-    load();
-  }, [setOpportunities]);
+    } catch (err) {
+      console.error('[opportunity] Failed to load opportunities:', err);
+      setOpportunities(mockOpportunities);
+      setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    return onDataEvent((e) => {
+      if (e.entity === 'opportunity') loadData();
+    });
+  }, [loadData]);
 
   useEffect(() => {
     if (!selectedCustomerId) return;
@@ -62,11 +70,12 @@ export default function OpportunitiesPage() {
         const useMock = useSettingsStore.getState().mockDataEnabled;
         if (!useMock && isTauriApp()) {
           const c = await queryContactsByCustomer(selectedCustomerId);
-          setContacts(c.length > 0 ? c : mockContacts.filter((c) => c.customerId === selectedCustomerId));
+          setContacts(c);
         } else {
           setContacts(mockContacts.filter((c) => c.customerId === selectedCustomerId));
         }
-      } catch {
+      } catch (err) {
+        console.error('[opportunity] Failed to load contacts:', err);
         setContacts(mockContacts.filter((c) => c.customerId === selectedCustomerId));
       }
     };
@@ -94,7 +103,8 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB insert failed:', err);
       }
     }
-    addOpportunity(opp);
+    setOpportunities((prev) => [opp, ...prev]);
+    emitDataEvent('opportunity', 'created', selectedCustomerId);
     setAddOpen(false);
     setSelectedCustomerId(null);
   };
@@ -113,7 +123,8 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB update failed:', err);
       }
     }
-    updateOpportunity(updated);
+    setOpportunities((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    emitDataEvent('opportunity', 'updated', editing.customerId);
     setEditing(null);
     setSelectedCustomerId(null);
   };
@@ -127,7 +138,8 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB delete failed:', err);
       }
     }
-    removeOpportunity(opp.id);
+    setOpportunities((prev) => prev.filter((o) => o.id !== opp.id));
+    emitDataEvent('opportunity', 'deleted', opp.customerId);
   };
 
   const openEdit = (opp: Opportunity) => {

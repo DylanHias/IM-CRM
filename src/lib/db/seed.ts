@@ -6,7 +6,7 @@ import { mockTrainings } from '@/lib/mock/trainings';
 import { mockFollowUps } from '@/lib/mock/followups';
 import { MOCK_INVOICE_ITEMS, MOCK_RESELLER_INVOICE_MAP, MOCK_INVOICE_DETAILS } from '@/lib/mock/invoices';
 import { mockOpportunities } from '@/lib/mock/opportunities';
-import { mockUsers, mockAuditEntries, mockSyncErrors } from '@/lib/mock/admin';
+import { mockUsers, mockAuditEntries, mockSyncRecords } from '@/lib/mock/admin';
 
 async function seedCustomers(db: Database): Promise<void> {
   for (const c of mockCustomers) {
@@ -107,7 +107,7 @@ async function seedAuditLog(db: Database): Promise<void> {
 }
 
 async function seedSyncRecords(db: Database): Promise<void> {
-  for (const s of mockSyncErrors) {
+  for (const s of mockSyncRecords) {
     await db.execute(
       `INSERT OR IGNORE INTO sync_records (id,sync_type,status,started_at,finished_at,records_pulled,records_pushed,error_message,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [s.id,s.syncType,s.status,s.startedAt,s.finishedAt,s.recordsPulled,s.recordsPushed,s.errorMessage,s.createdAt]

@@ -90,12 +90,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }
       const { queryAllUsers } = await import('@/lib/db/queries/users');
       const users = await queryAllUsers();
-      if (users.length > 0) {
-        set({ users });
-      } else {
-        const { mockUsers } = await import('@/lib/mock/admin');
-        set({ users: mockUsers });
-      }
+      set({ users });
     } catch (e) {
       console.error('[admin] loadUsers failed:', e);
       const { mockUsers } = await import('@/lib/mock/admin');
@@ -147,11 +142,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         queryAuditLog(filters),
         queryAuditLogCount(filters),
       ]);
-      if (entries.length > 0 || totalCount > 0) {
-        set({ auditEntries: entries, auditTotalCount: totalCount });
-      } else {
-        await applyMockFilters();
-      }
+      set({ auditEntries: entries, auditTotalCount: totalCount });
     } catch (e) {
       console.error('[admin] loadAuditLog failed:', e);
       await applyMockFilters();
@@ -163,8 +154,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   loadSyncAdmin: async () => {
     set({ isLoading: true });
     const loadMock = async () => {
-      const { mockSyncHealth, mockSyncErrors } = await import('@/lib/mock/admin');
-      set({ syncHealth: mockSyncHealth, syncErrors: mockSyncErrors });
+      const { mockSyncHealth, mockSyncRecords } = await import('@/lib/mock/admin');
+      set({ syncHealth: mockSyncHealth, syncErrors: mockSyncRecords });
     };
     try {
       const useMock = useSettingsStore.getState().mockDataEnabled;
@@ -177,11 +168,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         querySyncHealthMetrics().catch((e) => { console.error('[admin] syncHealth query failed:', e); return null; }),
         querySyncErrors().catch((e) => { console.error('[admin] syncErrors query failed:', e); return [] as SyncRecord[]; }),
       ]);
-      if (health && health.totalSyncs > 0) {
-        set({ syncHealth: health, syncErrors: errors });
-      } else {
-        await loadMock();
-      }
+      set({ syncHealth: health, syncErrors: errors });
     } catch (e) {
       console.error('[admin] loadSyncAdmin failed:', e);
       await loadMock();

@@ -7,6 +7,7 @@ import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { mockActivities } from '@/lib/mock/activities';
+import { emitDataEvent } from '@/lib/dataEvents';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -25,18 +26,14 @@ export function useActivities(customerId: string) {
         const useMock = useSettingsStore.getState().mockDataEnabled;
         if (!useMock && isTauriApp()) {
           const data = await queryActivitiesByCustomer(customerId);
-          if (data.length > 0) {
-            setActivities(data, customerId);
-            const pending = await countPendingActivities();
-            setPendingCount(pending);
-          } else {
-            setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
-          }
+          setActivities(data, customerId);
+          const pending = await countPendingActivities();
+          setPendingCount(pending);
         } else {
           setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
         }
       } catch (err) {
-        console.error('[useActivities] Failed to load:', err);
+        console.error('[activity] Failed to load:', err);
         setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
       } finally {
         setLoading(false);
@@ -64,6 +61,7 @@ export function useActivities(customerId: string) {
         await updateCustomerLastActivity(customerId, activity.occurredAt);
       }
       addActivity(activity);
+      emitDataEvent('activity', 'created', customerId);
       return activity;
     },
     [account, customerId, addActivity]
@@ -75,8 +73,9 @@ export function useActivities(customerId: string) {
         await dbUpdateActivity(activity);
       }
       updateActivity(activity);
+      emitDataEvent('activity', 'updated', customerId);
     },
-    [updateActivity]
+    [customerId, updateActivity]
   );
 
   const removeAct = useCallback(
@@ -85,8 +84,9 @@ export function useActivities(customerId: string) {
         await dbDeleteActivity(id);
       }
       removeActivity(id);
+      emitDataEvent('activity', 'deleted', customerId);
     },
-    [removeActivity]
+    [customerId, removeActivity]
   );
 
   return {

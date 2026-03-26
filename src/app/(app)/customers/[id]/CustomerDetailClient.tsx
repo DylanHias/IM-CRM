@@ -167,14 +167,14 @@ export default function CustomerDetailClient() {
             queryContactsByCustomer(customerId),
             queryTrainingsByCustomer(customerId),
           ]);
-          setContacts(c.length > 0 ? c : mockContacts.filter((c) => c.customerId === customerId));
-          setTrainings(t.length > 0 ? t : mockTrainings.filter((t) => t.customerId === customerId));
+          setContacts(c);
+          setTrainings(t);
         } else {
           setContacts(mockContacts.filter((c) => c.customerId === customerId));
           setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
         }
       } catch (err) {
-        console.error('[customer] Failed to load detail data, using fallback:', err);
+        console.error('[customer] Failed to load detail data:', err);
         setContacts(mockContacts.filter((c) => c.customerId === customerId));
         setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
       }

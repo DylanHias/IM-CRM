@@ -44,12 +44,12 @@ export function useCustomers() {
             await seedMockData(db);
             data = await queryAllCustomers();
           }
-          setCustomers(data.length > 0 ? data : mockCustomers);
+          setCustomers(data);
         } else {
           setCustomers(mockCustomers);
         }
       } catch (err) {
-        console.error('[useCustomers] Failed to load customers:', err);
+        console.error('[customer] Failed to load customers:', err);
         setCustomers(mockCustomers);
       } finally {
         setLoading(false);
@@ -66,12 +66,12 @@ export function useCustomers() {
         const useMock = useSettingsStore.getState().mockDataEnabled;
         if (!useMock && isTauriApp()) {
           const contacts = await queryAllContacts();
-          setAllContacts(contacts.length > 0 ? contacts : mockContacts);
+          setAllContacts(contacts);
         } else {
           setAllContacts(mockContacts);
         }
       } catch (err) {
-        console.error('[useCustomers] Failed to load contacts:', err);
+        console.error('[customer] Failed to load contacts:', err);
         setAllContacts(mockContacts);
       }
     };

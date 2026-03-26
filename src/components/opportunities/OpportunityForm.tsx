@@ -11,10 +11,10 @@ import { stageToProbability } from '@/hooks/useOpportunities';
 import type { Opportunity, OpportunityStatus, OpportunityType, OpportunityStage, SellType, PrimaryVendor, Contact, Customer } from '@/types/entities';
 
 const STATUSES: OpportunityStatus[] = ['Open', 'Won', 'Lost'];
-const OPPORTUNITY_TYPES: OpportunityType[] = ['Services', 'SPA', 'SPA - Partner Agreement', 'CMP', 'Trad', 'MPO2Connect', 'Azure Private Offer', 'Breath'];
+const OPPORTUNITY_TYPES: OpportunityType[] = ['Services', 'SPA', 'SPA - Partner Agreement', 'CMP', 'Trad', 'MPO2Connect', 'Azure Private Offer', 'Breath', 'Licensing'];
 const STAGES: OpportunityStage[] = ['Prospecting', 'Validated', 'Qualified', 'Verbal Received', 'Contract Received', 'Billing Rejection', 'Pending Vendor Confirmation', 'Purchased'];
 const SELL_TYPES: SellType[] = ['New', 'Install'];
-const PRIMARY_VENDORS: PrimaryVendor[] = ['AWS', 'Azure', 'Adobe'];
+const PRIMARY_VENDORS: PrimaryVendor[] = ['AWS', 'Azure', 'Adobe', 'HPE', 'Dell', 'Cisco', 'Palo Alto', 'NetApp', 'VMware', 'Lenovo', 'Microsoft'];
 
 interface OpportunityFormProps {
   opportunity?: Opportunity;

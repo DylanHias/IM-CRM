@@ -88,10 +88,10 @@ export interface FollowUp {
 }
 
 export type OpportunityStatus = 'Open' | 'Won' | 'Lost';
-export type OpportunityType = 'Services' | 'SPA' | 'SPA - Partner Agreement' | 'CMP' | 'Trad' | 'MPO2Connect' | 'Azure Private Offer' | 'Breath';
+export type OpportunityType = 'Services' | 'SPA' | 'SPA - Partner Agreement' | 'CMP' | 'Trad' | 'MPO2Connect' | 'Azure Private Offer' | 'Breath' | 'Licensing';
 export type OpportunityStage = 'Prospecting' | 'Validated' | 'Qualified' | 'Verbal Received' | 'Contract Received' | 'Billing Rejection' | 'Pending Vendor Confirmation' | 'Purchased';
 export type SellType = 'New' | 'Install';
-export type PrimaryVendor = 'AWS' | 'Azure' | 'Adobe';
+export type PrimaryVendor = 'AWS' | 'Azure' | 'Adobe' | 'HPE' | 'Dell' | 'Cisco' | 'Palo Alto' | 'NetApp' | 'VMware' | 'Lenovo' | 'Microsoft';
 
 export interface Opportunity {
   id: string;

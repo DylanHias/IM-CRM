@@ -57,4 +57,49 @@ export const mockActivities: Activity[] = [
   // cust-025 ProHR
   { id: 'act-024', customerId: 'cust-025', contactId: 'con-028', type: 'call', subject: 'HRIS evaluation support', description: 'Discussed how Ingram Micro products integrate with SAP SuccessFactors.', occurredAt: ago(9), createdById: SYSTEM_USER_ID, createdByName: SYSTEM_USER_NAME, syncStatus: 'synced', remoteId: 'D365-ACT-024', createdAt: ago(9), updatedAt: ago(9) },
   { id: 'act-025', customerId: 'cust-025', contactId: 'con-027', type: 'meeting', subject: 'Executive relationship meeting', description: 'Quarterly catch-up with MD. Very positive relationship. Referred 2 new prospects.', occurredAt: ago(20), createdById: SYSTEM_USER_ID, createdByName: SYSTEM_USER_NAME, syncStatus: 'synced', remoteId: 'D365-ACT-025', createdAt: ago(20), updatedAt: ago(20) },
+
+  // cust-009 CyberShield
+  { id: 'act-026', customerId: 'cust-009', contactId: 'con-017', type: 'meeting', subject: 'Security audit findings review', description: 'Reviewed penetration test results. Three critical findings to address. Follow-up in two weeks.', occurredAt: ago(8), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-026', createdAt: ago(8), updatedAt: ago(8) },
+
+  // cust-010 RetailPro
+  { id: 'act-027', customerId: 'cust-010', contactId: 'con-018', type: 'visit', subject: 'POS system on-site assessment', description: 'Visited Luxembourg store locations to assess current POS infrastructure. Identified upgrade path.', occurredAt: ago(15), createdById: 'owner-3', createdByName: 'Pieter Claes', syncStatus: 'synced', remoteId: 'D365-ACT-027', createdAt: ago(15), updatedAt: ago(15) },
+
+  // cust-015 MediaHub
+  { id: 'act-028', customerId: 'cust-015', contactId: 'con-019', type: 'call', subject: 'Content delivery network pricing', description: 'Discussed CDN options for video streaming platform. Sent comparison sheet for Cloudflare and Akamai.', occurredAt: ago(12), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-028', createdAt: ago(12), updatedAt: ago(12) },
+
+  // cust-020 PublicSector
+  { id: 'act-029', customerId: 'cust-020', contactId: null, type: 'note', subject: 'Tender submission deadline noted', description: 'Public tender for network refresh closes April 15. Must submit through Mercurius portal.', occurredAt: ago(3), createdById: 'owner-2', createdByName: 'Sophie Martens', syncStatus: 'pending', remoteId: null, createdAt: ago(3), updatedAt: ago(3) },
+
+  // cust-021 SecureNet
+  { id: 'act-030', customerId: 'cust-021', contactId: 'con-024', type: 'meeting', subject: 'Firewall replacement planning', description: 'Mapped current Fortinet estate. Planning migration to next-gen firewalls over Q2.', occurredAt: ago(6), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-030', createdAt: ago(6), updatedAt: ago(6) },
+
+  // cust-026 Flux Manufacturing
+  { id: 'act-031', customerId: 'cust-026', contactId: 'con-003', type: 'visit', subject: 'Factory floor IT walkthrough', description: 'Toured production facility in Mechelen. Discussed OT/IT convergence and edge computing needs.', occurredAt: ago(4), createdById: 'owner-4', createdByName: 'Lotte Van den Berghe', syncStatus: 'synced', remoteId: 'D365-ACT-031', createdAt: ago(4), updatedAt: ago(4) },
+
+  // cust-028 Ardenne Énergie
+  { id: 'act-032', customerId: 'cust-028', contactId: 'con-006', type: 'call', subject: 'Smart grid data platform inquiry', description: 'CTO interested in real-time data analytics for grid management. Scheduling deep-dive with vendor.', occurredAt: ago(6), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-032', createdAt: ago(6), updatedAt: ago(6) },
+
+  // cust-030 Luxembourg Health Institute
+  { id: 'act-033', customerId: 'cust-030', contactId: 'con-009', type: 'meeting', subject: 'Medical imaging storage requirements', description: 'Discussed PACS storage expansion. Need 500TB within 6 months. Pure Storage shortlisted.', occurredAt: ago(8), createdById: 'owner-3', createdByName: 'Pieter Claes', syncStatus: 'synced', remoteId: 'D365-ACT-033', createdAt: ago(8), updatedAt: ago(8) },
+
+  // cust-032 Gemeente Brugge
+  { id: 'act-034', customerId: 'cust-032', contactId: null, type: 'note', subject: 'Budget approval expected Q2', description: 'IT manager confirmed city council will vote on digital transformation budget in April session.', occurredAt: ago(15), createdById: 'owner-5', createdByName: 'Thomas Willems', syncStatus: 'pending', remoteId: null, createdAt: ago(15), updatedAt: ago(15) },
+
+  // cust-033 FinTrust
+  { id: 'act-035', customerId: 'cust-033', contactId: 'con-020', type: 'call', subject: 'Compliance reporting tools demo', description: 'Walked through regulatory reporting dashboard capabilities. Strong interest in automated compliance.', occurredAt: ago(3), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-035', createdAt: ago(3), updatedAt: ago(3) },
+
+  // cust-035 NovaTech
+  { id: 'act-036', customerId: 'cust-035', contactId: 'con-021', type: 'meeting', subject: 'Managed services proposal review', description: 'Presented managed infrastructure proposal. Competitive with current Proximus contract.', occurredAt: ago(7), createdById: 'owner-3', createdByName: 'Pieter Claes', syncStatus: 'synced', remoteId: 'D365-ACT-036', createdAt: ago(7), updatedAt: ago(7) },
+
+  // cust-036 CargoLink
+  { id: 'act-037', customerId: 'cust-036', contactId: 'con-025', type: 'visit', subject: 'Logistics hub network assessment', description: 'Assessed Amsterdam distribution centre. WiFi 6E and SD-WAN deployment recommended.', occurredAt: ago(2), createdById: 'owner-4', createdByName: 'Lotte Van den Berghe', syncStatus: 'synced', remoteId: 'D365-ACT-037', createdAt: ago(2), updatedAt: ago(2) },
+
+  // cust-038 SteelForge
+  { id: 'act-038', customerId: 'cust-038', contactId: 'con-014', type: 'call', subject: 'ERP modernisation discussion', description: 'Discussed SAP S/4HANA migration path. Current on-prem system reaching end of support.', occurredAt: ago(12), createdById: 'owner-1', createdByName: 'Jan De Vries', syncStatus: 'synced', remoteId: 'D365-ACT-038', createdAt: ago(12), updatedAt: ago(12) },
+
+  // cust-040 MedVision
+  { id: 'act-039', customerId: 'cust-040', contactId: 'con-015', type: 'meeting', subject: 'Diagnostic imaging AI platform', description: 'Demoed AI-assisted diagnostic tools. IT director wants pilot program for radiology department.', occurredAt: ago(5), createdById: 'owner-5', createdByName: 'Thomas Willems', syncStatus: 'pending', remoteId: null, createdAt: ago(5), updatedAt: ago(5) },
+
+  // cust-027 Benelux Freight
+  { id: 'act-040', customerId: 'cust-027', contactId: 'con-016', type: 'call', subject: 'Fleet tracking software renewal', description: 'Annual renewal discussion. Opportunity to add real-time temperature monitoring module.', occurredAt: ago(11), createdById: 'owner-5', createdByName: 'Thomas Willems', syncStatus: 'synced', remoteId: 'D365-ACT-040', createdAt: ago(11), updatedAt: ago(11) },
 ];

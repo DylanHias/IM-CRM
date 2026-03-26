@@ -22,6 +22,7 @@ function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
 export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
   const [dbReady, setDbReady] = useState(false);
+  const [dbError, setDbError] = useState<string | null>(null);
   const theme = useSettingsStore((s) => s.theme);
 
   useEffect(() => {
@@ -41,10 +42,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       try {
         await initDb();
+        setDbReady(true);
       } catch (err) {
         console.error('[db] Initialization failed:', err);
+        setDbError(err instanceof Error ? err.message : 'Database initialization failed');
       }
-      setDbReady(true);
 
       // Hydrate settings from SQLite after DB is ready
       await useSettingsStore.getState().hydrateFromDb();
@@ -53,6 +55,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
     init();
   }, []);
+
+  if (dbError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-2">
+          <p className="text-destructive font-medium">Database failed to initialize</p>
+          <p className="text-sm text-muted-foreground">{dbError}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!msalInstance || !dbReady) {
     return (

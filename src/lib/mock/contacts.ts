@@ -63,4 +63,96 @@ export const mockContacts: Contact[] = [
   // cust-025 ProHR
   { id: 'con-027', customerId: 'cust-025', firstName: 'Valérie', lastName: 'Lecomte', jobTitle: 'Managing Director', email: 'v.lecomte@prohr.be', phone: '+32 2 123 45 01', mobile: '+32 479 345 678', notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(30) },
   { id: 'con-028', customerId: 'cust-025', firstName: 'Nicolas', lastName: 'Simon', jobTitle: 'HR Technology Lead', email: 'n.simon@prohr.be', phone: '+32 2 123 45 02', mobile: null, notes: 'Evaluating new HRIS.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(9) },
+
+  // cust-011 AgroTech Partners
+  { id: 'con-029', customerId: 'cust-011', firstName: 'Pieter', lastName: 'Coppens', jobTitle: 'IT Manager', email: 'p.coppens@agrotech.be', phone: '+32 89 234 56 10', mobile: '+32 478 345 012', notes: 'Main IT contact. Manages on-prem servers.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(3) },
+  { id: 'con-030', customerId: 'cust-011', firstName: 'Elien', lastName: 'Maes', jobTitle: 'Procurement Manager', email: 'e.maes@agrotech.be', phone: '+32 89 234 56 11', mobile: null, notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(22) },
+  { id: 'con-031', customerId: 'cust-011', firstName: 'Wim', lastName: 'Jacobs', jobTitle: 'Operations Manager', email: 'w.jacobs@agrotech.be', phone: '+32 89 234 56 12', mobile: '+32 470 456 123', notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(45) },
+
+  // cust-015 MediaHub Productions
+  { id: 'con-032', customerId: 'cust-015', firstName: 'Jasper', lastName: 'De Smedt', jobTitle: 'CTO', email: 'j.desmedt@mediahub.be', phone: '+32 3 567 89 20', mobile: '+32 479 567 234', notes: 'Drives all tech decisions.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(5) },
+  { id: 'con-033', customerId: 'cust-015', firstName: 'Noor', lastName: 'El Amrani', jobTitle: 'Creative Director', email: 'n.elamrani@mediahub.be', phone: '+32 3 567 89 21', mobile: null, notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(18) },
+  { id: 'con-034', customerId: 'cust-015', firstName: 'Stijn', lastName: 'Pauwels', jobTitle: 'Systems Engineer', email: 's.pauwels@mediahub.be', phone: null, mobile: '+32 471 678 345', notes: 'Handles storage and rendering infrastructure.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(35) },
+
+  // cust-016 SmartBuild Engineering
+  { id: 'con-035', customerId: 'cust-016', firstName: 'Ruben', lastName: 'Mertens', jobTitle: 'IT Director', email: 'r.mertens@smartbuild.be', phone: '+32 11 456 78 30', mobile: '+32 472 789 456', notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(7) },
+  { id: 'con-036', customerId: 'cust-016', firstName: 'Katrien', lastName: 'Bogaert', jobTitle: 'CFO', email: 'k.bogaert@smartbuild.be', phone: '+32 11 456 78 31', mobile: null, notes: 'Budget holder. Requires formal quotes.', contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(28) },
+  { id: 'con-037', customerId: 'cust-016', firstName: 'Tom', lastName: 'Aerts', jobTitle: 'BIM Coordinator', email: 't.aerts@smartbuild.be', phone: null, mobile: '+32 473 890 567', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(60) },
+
+  // cust-017 TravelEase Benelux
+  { id: 'con-038', customerId: 'cust-017', firstName: 'Sofie', lastName: 'Van Damme', jobTitle: 'CIO', email: 's.vandamme@travelease.be', phone: '+32 2 678 90 40', mobile: '+32 474 901 678', notes: 'Prefers video calls over in-person.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(2) },
+  { id: 'con-039', customerId: 'cust-017', firstName: 'Mehdi', lastName: 'Benhaddou', jobTitle: 'Network Engineer', email: 'm.benhaddou@travelease.be', phone: '+32 2 678 90 41', mobile: null, notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(40) },
+  { id: 'con-040', customerId: 'cust-017', firstName: 'Lynn', lastName: 'Verhoeven', jobTitle: 'Procurement Manager', email: 'l.verhoeven@travelease.be', phone: '+32 2 678 90 42', mobile: '+32 475 012 789', notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(15) },
+
+  // cust-019 FoodChain Logistics
+  { id: 'con-041', customerId: 'cust-019', firstName: 'Rik', lastName: 'Peeters', jobTitle: 'IT Manager', email: 'r.peeters@foodchain.be', phone: '+32 15 789 01 50', mobile: '+32 476 123 890', notes: 'Looking into cold chain IoT solutions.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(4) },
+  { id: 'con-042', customerId: 'cust-019', firstName: 'Hilde', lastName: 'Stevens', jobTitle: 'Supply Chain Director', email: 'h.stevens@foodchain.be', phone: '+32 15 789 01 51', mobile: null, notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(30) },
+  { id: 'con-043', customerId: 'cust-019', firstName: 'Youssef', lastName: 'Benali', jobTitle: 'Security Officer', email: 'y.benali@foodchain.be', phone: null, mobile: '+32 477 234 901', notes: 'GDPR and food safety compliance focus.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(55) },
+
+  // cust-020 PublicSector IT
+  { id: 'con-044', customerId: 'cust-020', firstName: 'Jan', lastName: 'Vermeersch', jobTitle: 'Head of IT', email: 'j.vermeersch@publicsectorit.be', phone: '+32 2 890 12 60', mobile: '+32 478 345 012', notes: 'Government framework agreements required.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(6) },
+  { id: 'con-045', customerId: 'cust-020', firstName: 'Anja', lastName: 'Claes', jobTitle: 'Project Manager', email: 'a.claes@publicsectorit.be', phone: '+32 2 890 12 61', mobile: null, notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(20) },
+  { id: 'con-046', customerId: 'cust-020', firstName: 'Bram', lastName: 'De Wolf', jobTitle: 'Cloud Architect', email: 'b.dewolf@publicsectorit.be', phone: null, mobile: '+32 479 456 123', notes: 'Evaluating sovereign cloud options.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(10) },
+
+  // cust-021 SecureNet Communications
+  { id: 'con-047', customerId: 'cust-021', firstName: 'Dieter', lastName: 'Vos', jobTitle: 'CTO', email: 'd.vos@securenet.be', phone: '+32 9 901 23 70', mobile: '+32 470 567 234', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(1) },
+  { id: 'con-048', customerId: 'cust-021', firstName: 'Charlotte', lastName: 'Lemaire', jobTitle: 'Sales Director', email: 'c.lemaire@securenet.be', phone: '+32 9 901 23 71', mobile: '+32 471 678 345', notes: 'Partner channel contact.', contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(14) },
+  { id: 'con-049', customerId: 'cust-021', firstName: 'Geert', lastName: 'Willems', jobTitle: 'Network Engineer', email: 'g.willems@securenet.be', phone: null, mobile: null, notes: null, contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(50) },
+
+  // cust-023 Urban Mobility SPRL
+  { id: 'con-050', customerId: 'cust-023', firstName: 'Marie', lastName: 'Laurent', jobTitle: 'Managing Director', email: 'm.laurent@urbanmobility.be', phone: '+32 2 012 34 80', mobile: '+32 472 789 456', notes: 'Final sign-off on all purchases.', contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(8) },
+  { id: 'con-051', customerId: 'cust-023', firstName: 'Jens', lastName: 'Declerck', jobTitle: 'IT Manager', email: 'j.declerck@urbanmobility.be', phone: '+32 2 012 34 81', mobile: null, notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(25) },
+
+  // cust-024 EcoWaste Solutions
+  { id: 'con-052', customerId: 'cust-024', firstName: 'Eva', lastName: 'Martens', jobTitle: 'Operations Manager', email: 'e.martens@ecowaste.be', phone: '+32 14 123 45 90', mobile: '+32 473 890 567', notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(11) },
+  { id: 'con-053', customerId: 'cust-024', firstName: 'Sander', lastName: 'Thijs', jobTitle: 'Systems Engineer', email: 's.thijs@ecowaste.be', phone: '+32 14 123 45 91', mobile: null, notes: 'Manages fleet tracking and route optimization systems.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(33) },
+
+  // cust-002 Nexgen Retail (extra)
+  { id: 'con-054', customerId: 'cust-002', firstName: 'Julie', lastName: 'Hendrickx', jobTitle: 'Cloud Architect', email: 'j.hendrickx@nexgenretail.com', phone: null, mobile: '+32 474 901 678', notes: 'Technical evaluator for cloud migrations.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(9) },
+
+  // cust-004 MediCare Systems (extra)
+  { id: 'con-055', customerId: 'cust-004', firstName: 'Griet', lastName: 'Van Hoeck', jobTitle: 'Security Officer', email: 'g.vanhoeck@medcaresys.be', phone: '+32 9 654 32 13', mobile: null, notes: 'Handles GDPR and patient data compliance.', contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(16) },
+
+  // cust-005 EduLearn Platform (extra)
+  { id: 'con-056', customerId: 'cust-005', firstName: 'Robin', lastName: 'Celis', jobTitle: 'IT Coordinator', email: 'r.celis@edulearn.be', phone: '+32 16 234 56 80', mobile: '+32 475 012 789', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(42) },
+  { id: 'con-057', customerId: 'cust-005', firstName: 'Ines', lastName: 'Verstraete', jobTitle: 'Procurement', email: 'i.verstraete@edulearn.be', phone: '+32 16 234 56 81', mobile: null, notes: 'Handles all purchase orders.', contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(70) },
+
+  // cust-007 GreenEnergy Benelux (extra)
+  { id: 'con-058', customerId: 'cust-007', firstName: 'Wouter', lastName: 'De Graaf', jobTitle: 'Cloud Architect', email: 'w.degraaf@greenenergy.nl', phone: '+31 10 789 01 25', mobile: '+31 6 34567012', notes: 'Evaluating Azure migration.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(5) },
+
+  // cust-009 CyberShield Security (extra)
+  { id: 'con-059', customerId: 'cust-009', firstName: 'Liesbeth', lastName: 'Francois', jobTitle: 'Sales Director', email: 'l.francois@cybershield.be', phone: '+32 2 567 89 03', mobile: '+32 476 123 890', notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(19) },
+  { id: 'con-060', customerId: 'cust-009', firstName: 'Maxime', lastName: 'Dumont', jobTitle: 'Systems Engineer', email: 'm.dumont@cybershield.be', phone: null, mobile: '+32 477 234 901', notes: 'Handles SOC tooling and SIEM deployments.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(38) },
+
+  // cust-026 Flux Manufacturing
+  { id: 'con-061', customerId: 'cust-026', firstName: 'Tom', lastName: 'Mertens', jobTitle: 'Plant IT Manager', email: 't.mertens@fluxmfg.be', phone: '+32 15 345 67 01', mobile: '+32 478 901 234', notes: 'Manages factory floor OT/IT convergence.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(3) },
+  { id: 'con-062', customerId: 'cust-026', firstName: 'Eline', lastName: 'Maes', jobTitle: 'Procurement Lead', email: 'e.maes@fluxmfg.be', phone: '+32 15 345 67 02', mobile: null, notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(18) },
+
+  // cust-027 Benelux Freight Services
+  { id: 'con-063', customerId: 'cust-027', firstName: 'Stijn', lastName: 'Coppens', jobTitle: 'IT Director', email: 's.coppens@beneluxfreight.be', phone: '+32 3 567 89 10', mobile: '+32 479 012 345', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(7) },
+
+  // cust-028 Ardenne Énergie
+  { id: 'con-064', customerId: 'cust-028', firstName: 'François', lastName: 'Gilles', jobTitle: 'Responsable IT', email: 'f.gilles@ardenne-energie.be', phone: '+32 81 234 56 01', mobile: '+32 470 123 456', notes: 'French-speaking. Prefers calls over email.', contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(12) },
+
+  // cust-029 DigiMedia Productions
+  { id: 'con-065', customerId: 'cust-029', firstName: 'Sien', lastName: 'Van Damme', jobTitle: 'Creative Director', email: 's.vandamme@digimedia.be', phone: '+32 2 678 90 20', mobile: '+32 471 234 567', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(5) },
+  { id: 'con-066', customerId: 'cust-029', firstName: 'Pieter-Jan', lastName: 'Aerts', jobTitle: 'Technical Producer', email: 'pj.aerts@digimedia.be', phone: null, mobile: '+32 472 345 678', notes: 'Evaluating cloud rendering solutions.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(22) },
+
+  // cust-030 Luxembourg Health Institute
+  { id: 'con-067', customerId: 'cust-030', firstName: 'Sophie', lastName: 'Muller', jobTitle: 'CIO', email: 's.muller@luxhealth.lu', phone: '+352 26 789 01', mobile: '+352 691 345 678', notes: 'Executive sponsor for digital health platform.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(2) },
+
+  // cust-031 Vlaams Onderwijscentrum
+  { id: 'con-068', customerId: 'cust-031', firstName: 'Rik', lastName: 'Verhoeven', jobTitle: 'ICT Coordinator', email: 'r.verhoeven@vlaamso.be', phone: '+32 16 456 78 01', mobile: null, notes: 'Public sector procurement rules apply.', contactType: null, syncedAt: now, createdAt: now, updatedAt: ago(15) },
+
+  // cust-032 Gemeente Brugge IT
+  { id: 'con-069', customerId: 'cust-032', firstName: 'Annelies', lastName: 'De Smedt', jobTitle: 'IT Manager', email: 'a.desmedt@brugge.be', phone: '+32 50 345 67 01', mobile: '+32 473 456 789', notes: null, contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(8) },
+
+  // cust-033 FinTrust Advisors
+  { id: 'con-070', customerId: 'cust-033', firstName: 'Mathias', lastName: 'Bollen', jobTitle: 'Head of Technology', email: 'm.bollen@fintrust.be', phone: '+32 2 789 01 30', mobile: '+32 474 567 890', notes: 'Compliance-driven purchase decisions.', contactType: 'Cloud Contact', syncedAt: now, createdAt: now, updatedAt: ago(4) },
+
+  // cust-034 Precision Plastics
+  { id: 'con-071', customerId: 'cust-034', firstName: 'Bart', lastName: 'Vanderstraeten', jobTitle: 'Operations Manager', email: 'b.vanderstraeten@precisionplastics.nl', phone: '+31 40 567 89 01', mobile: null, notes: null, contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(30) },
+
+  // cust-035 NovaTech Consulting
+  { id: 'con-072', customerId: 'cust-035', firstName: 'Laura', lastName: 'Peeters', jobTitle: 'Managing Partner', email: 'l.peeters@novatech.be', phone: '+32 3 890 12 40', mobile: '+32 475 678 901', notes: 'Decision maker. Also a potential reseller partner.', contactType: 'Reseller', syncedAt: now, createdAt: now, updatedAt: ago(6) },
 ];

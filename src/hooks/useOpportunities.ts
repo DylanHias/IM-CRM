@@ -6,6 +6,7 @@ import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as d
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { mockOpportunities } from '@/lib/mock/opportunities';
+import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -39,11 +40,7 @@ export function useOpportunities(customerId: string) {
         const useMock = useSettingsStore.getState().mockDataEnabled;
         if (!useMock && isTauriApp()) {
           const data = await queryOpportunitiesByCustomer(customerId);
-          if (data.length > 0) {
-            setOpportunities(data, customerId);
-          } else {
-            setOpportunities(mockOpportunities.filter((o) => o.customerId === customerId), customerId);
-          }
+          setOpportunities(data, customerId);
         } else {
           setOpportunities(mockOpportunities.filter((o) => o.customerId === customerId), customerId);
         }
@@ -75,13 +72,14 @@ export function useOpportunities(customerId: string) {
         try {
           await insertOpportunity(opportunity);
         } catch (err) {
-          console.error('[useOpportunities] DB insert failed, adding to store only:', err);
+          console.error('[opportunity] DB insert failed, adding to store only:', err);
         }
       }
       addOpportunity(opportunity);
+      emitDataEvent('opportunity', 'created', customerId);
       return opportunity;
     },
-    [account, addOpportunity]
+    [account, customerId, addOpportunity]
   );
 
   const editOpportunity = useCallback(
@@ -90,12 +88,13 @@ export function useOpportunities(customerId: string) {
         try {
           await dbUpdateOpportunity(opportunity);
         } catch (err) {
-          console.error('[useOpportunities] DB update failed:', err);
+          console.error('[opportunity] DB update failed:', err);
         }
       }
       updateOpportunity(opportunity);
+      emitDataEvent('opportunity', 'updated', customerId);
     },
-    [updateOpportunity]
+    [customerId, updateOpportunity]
   );
 
   const removeOpp = useCallback(
@@ -104,12 +103,13 @@ export function useOpportunities(customerId: string) {
         try {
           await dbDeleteOpportunity(id);
         } catch (err) {
-          console.error('[useOpportunities] DB delete failed:', err);
+          console.error('[opportunity] DB delete failed:', err);
         }
       }
       removeOpportunity(id);
+      emitDataEvent('opportunity', 'deleted', customerId);
     },
-    [removeOpportunity]
+    [customerId, removeOpportunity]
   );
 
   return {

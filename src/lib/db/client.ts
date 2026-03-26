@@ -3,7 +3,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { seedMockData } from '@/lib/db/seed';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockOpportunities } from '@/lib/mock/opportunities';
-import { mockUsers, mockAuditEntries, mockSyncErrors } from '@/lib/mock/admin';
+import { mockUsers, mockAuditEntries, mockSyncRecords } from '@/lib/mock/admin';
 
 let dbInstance: Database | null = null;
 let initPromise: Promise<Database> | null = null;
@@ -37,8 +37,7 @@ export async function initDb(): Promise<void> {
   await seedIfNeeded(db);
 }
 
-async function runSchema(db: Database): Promise<void> {
-  // Check schema version
+async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS app_settings (
       key   TEXT PRIMARY KEY,
@@ -47,17 +46,6 @@ async function runSchema(db: Database): Promise<void> {
     )
   `);
 
-  const rows = await db.select<{ value: string }[]>(
-    `SELECT value FROM app_settings WHERE key = 'schema_version'`
-  );
-
-  if (rows.length > 0) {
-    const version = parseInt(rows[0].value, 10);
-    await runMigrations(db, version);
-    return;
-  }
-
-  // Run full schema
   await db.execute(`
     CREATE TABLE IF NOT EXISTS customers (
       id              TEXT PRIMARY KEY,
@@ -277,7 +265,23 @@ async function runSchema(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_at ON audit_log(changed_at DESC)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_by ON audit_log(changed_by_id)`);
+}
 
+async function runSchema(db: Database): Promise<void> {
+  // Always ensure all tables exist first — guards against partial init or corruption
+  await ensureTablesExist(db);
+
+  const rows = await db.select<{ value: string }[]>(
+    `SELECT value FROM app_settings WHERE key = 'schema_version'`
+  );
+
+  if (rows.length > 0) {
+    const version = parseInt(rows[0].value, 10);
+    await runMigrations(db, version);
+    return;
+  }
+
+  // Fresh install — set initial metadata
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '6')`
   );
@@ -434,7 +438,7 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     }
 
-    for (const s of mockSyncErrors) {
+    for (const s of mockSyncRecords) {
       await db.execute(
         `INSERT OR IGNORE INTO sync_records (id,sync_type,status,started_at,finished_at,records_pulled,records_pushed,error_message,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [s.id,s.syncType,s.status,s.startedAt,s.finishedAt,s.recordsPulled,s.recordsPushed,s.errorMessage,s.createdAt]

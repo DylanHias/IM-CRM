@@ -13,6 +13,7 @@ import {
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { mockFollowUps } from '@/lib/mock/followups';
+import { emitDataEvent } from '@/lib/dataEvents';
 import type { FollowUp } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -31,18 +32,14 @@ export function useFollowUps(customerId: string) {
         const useMock = useSettingsStore.getState().mockDataEnabled;
         if (!useMock && isTauriApp()) {
           const data = await queryFollowUpsByCustomer(customerId);
-          if (data.length > 0) {
-            setFollowUps(data, customerId);
-            const overdue = await queryOverdueFollowUpCount();
-            setOverdueCount(overdue);
-          } else {
-            setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
-          }
+          setFollowUps(data, customerId);
+          const overdue = await queryOverdueFollowUpCount();
+          setOverdueCount(overdue);
         } else {
           setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
         }
       } catch (err) {
-        console.error('[useFollowUps] Failed to load:', err);
+        console.error('[followup] Failed to load:', err);
         setFollowUps(mockFollowUps.filter((f) => f.customerId === customerId), customerId);
       } finally {
         setLoading(false);
@@ -71,9 +68,10 @@ export function useFollowUps(customerId: string) {
         await insertFollowUp(followUp);
       }
       addFollowUp(followUp);
+      emitDataEvent('followup', 'created', customerId);
       return followUp;
     },
-    [account, addFollowUp]
+    [account, customerId, addFollowUp]
   );
 
   const complete = useCallback(
@@ -82,8 +80,9 @@ export function useFollowUps(customerId: string) {
         await completeFollowUp(id);
       }
       markComplete(id);
+      emitDataEvent('followup', 'completed', customerId);
     },
-    [markComplete]
+    [customerId, markComplete]
   );
 
   const editFollowUp = useCallback(
@@ -92,8 +91,9 @@ export function useFollowUps(customerId: string) {
         await dbUpdateFollowUp(followUp);
       }
       updateFollowUp(followUp);
+      emitDataEvent('followup', 'updated', customerId);
     },
-    [updateFollowUp]
+    [customerId, updateFollowUp]
   );
 
   const removeFU = useCallback(
@@ -102,8 +102,9 @@ export function useFollowUps(customerId: string) {
         await dbDeleteFollowUp(id);
       }
       removeFollowUp(id);
+      emitDataEvent('followup', 'deleted', customerId);
     },
-    [removeFollowUp]
+    [customerId, removeFollowUp]
   );
 
   return {

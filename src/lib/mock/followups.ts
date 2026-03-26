@@ -8,6 +8,14 @@ const now = new Date().toISOString();
 const USER_ID = 'mock-user-001';
 const USER_NAME = 'Jan De Vries';
 
+const OWNERS: Record<string, string> = {
+  'owner-1': 'Jan De Vries',
+  'owner-2': 'Sophie Janssens',
+  'owner-3': 'Pieter Wouters',
+  'owner-4': 'Katrien Peeters',
+  'owner-5': 'Bram Claes',
+};
+
 export const mockFollowUps: FollowUp[] = [
   // cust-001 Open
   { id: 'fu-001', customerId: 'cust-001', activityId: 'act-001', title: 'Send updated pricing proposal', description: 'Send revised Q2 pricing for storage infrastructure.', dueDate: future(3), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(3), updatedAt: ago(3) },
@@ -55,4 +63,37 @@ export const mockFollowUps: FollowUp[] = [
   { id: 'fu-018', customerId: 'cust-025', activityId: 'act-024', title: 'Send SAP integration compatibility matrix', description: null, dueDate: past(5), completed: true, completedAt: ago(6), createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'synced', remoteId: 'D365-FU-018', createdAt: ago(9), updatedAt: ago(6) },
   // cust-025 Overdue
   { id: 'fu-019', customerId: 'cust-025', activityId: 'act-025', title: 'Reach out to referred prospects', description: 'Valerie referred Logistics Plus and HR Innovations — follow up.', dueDate: past(8), completed: false, completedAt: null, createdById: USER_ID, createdByName: USER_NAME, syncStatus: 'pending', remoteId: null, createdAt: ago(20), updatedAt: ago(20) },
+
+  // cust-005 Open
+  { id: 'fu-020', customerId: 'cust-005', activityId: 'act-004', title: 'Schedule Veeam backup demo', description: 'Set up a 2-hour hands-on demo of Veeam Backup & Replication for their IT team.', dueDate: future(5), completed: false, completedAt: null, createdById: 'owner-1', createdByName: OWNERS['owner-1'], syncStatus: 'synced', remoteId: 'D365-FU-020', createdAt: ago(8), updatedAt: ago(8) },
+  // cust-009 Open
+  { id: 'fu-021', customerId: 'cust-009', activityId: 'act-006', title: 'Send cloud migration proposal', description: 'Azure landing zone proposal with cost breakdown for 50 VMs.', dueDate: future(9), completed: false, completedAt: null, createdById: 'owner-2', createdByName: OWNERS['owner-2'], syncStatus: 'pending', remoteId: null, createdAt: ago(4), updatedAt: ago(4) },
+  // cust-010 Overdue
+  { id: 'fu-022', customerId: 'cust-010', activityId: 'act-011', title: 'Follow up on Cisco Meraki quote', description: 'Quote sent 3 weeks ago, no response from procurement.', dueDate: past(7), completed: false, completedAt: null, createdById: 'owner-3', createdByName: OWNERS['owner-3'], syncStatus: 'pending', remoteId: null, createdAt: ago(28), updatedAt: ago(28) },
+  // cust-011 Open
+  { id: 'fu-023', customerId: 'cust-011', activityId: null, title: 'Prepare Microsoft EA renewal overview', description: 'Enterprise Agreement renewal due in Q3 — compile current license usage.', dueDate: future(14), completed: false, completedAt: null, createdById: 'owner-1', createdByName: OWNERS['owner-1'], syncStatus: 'synced', remoteId: 'D365-FU-023', createdAt: ago(2), updatedAt: ago(2) },
+  // cust-014 Open
+  { id: 'fu-024', customerId: 'cust-014', activityId: 'act-019', title: 'Send UPS sizing recommendation', description: 'APC Smart-UPS sizing for their new server room expansion.', dueDate: future(3), completed: false, completedAt: null, createdById: 'owner-4', createdByName: OWNERS['owner-4'], syncStatus: 'pending', remoteId: null, createdAt: ago(6), updatedAt: ago(6) },
+  // cust-015 Completed
+  { id: 'fu-025', customerId: 'cust-015', activityId: 'act-020', title: 'Deliver endpoint security assessment', description: null, dueDate: past(12), completed: true, completedAt: ago(14), createdById: 'owner-2', createdByName: OWNERS['owner-2'], syncStatus: 'synced', remoteId: 'D365-FU-025', createdAt: ago(30), updatedAt: ago(14) },
+  // cust-016 Open
+  { id: 'fu-026', customerId: 'cust-016', activityId: null, title: 'Share Dell APEX flex-on-demand brochure', description: 'Customer interested in consumption-based server model.', dueDate: future(6), completed: false, completedAt: null, createdById: 'owner-5', createdByName: OWNERS['owner-5'], syncStatus: 'pending', remoteId: null, createdAt: ago(3), updatedAt: ago(3) },
+  // cust-017 Overdue
+  { id: 'fu-027', customerId: 'cust-017', activityId: 'act-022', title: 'Confirm VMware license renewal pricing', description: 'Broadcom pricing changes — need to confirm new tier for 200 sockets.', dueDate: past(4), completed: false, completedAt: null, createdById: 'owner-3', createdByName: OWNERS['owner-3'], syncStatus: 'pending', remoteId: null, createdAt: ago(18), updatedAt: ago(18) },
+  // cust-019 Open
+  { id: 'fu-028', customerId: 'cust-019', activityId: null, title: 'Book on-site visit for storage refresh', description: 'NetApp FAS replacement discussion — book visit for early April.', dueDate: future(11), completed: false, completedAt: null, createdById: 'owner-1', createdByName: OWNERS['owner-1'], syncStatus: 'synced', remoteId: 'D365-FU-028', createdAt: ago(5), updatedAt: ago(5) },
+  // cust-020 Open
+  { id: 'fu-029', customerId: 'cust-020', activityId: 'act-002', title: 'Send HPE GreenLake proposal', description: 'Hybrid cloud proposal with 3-year commitment.', dueDate: future(8), completed: false, completedAt: null, createdById: 'owner-4', createdByName: OWNERS['owner-4'], syncStatus: 'pending', remoteId: null, createdAt: ago(7), updatedAt: ago(7) },
+  // cust-021 Overdue
+  { id: 'fu-030', customerId: 'cust-021', activityId: 'act-010', title: 'Escalate delayed Lenovo shipment', description: 'Order placed 6 weeks ago — ThinkStation delivery still pending.', dueDate: past(12), completed: false, completedAt: null, createdById: 'owner-5', createdByName: OWNERS['owner-5'], syncStatus: 'pending', remoteId: null, createdAt: ago(40), updatedAt: ago(40) },
+  // cust-023 Completed
+  { id: 'fu-031', customerId: 'cust-023', activityId: 'act-015', title: 'Send signed NDA to legal', description: null, dueDate: past(18), completed: true, completedAt: ago(20), createdById: 'owner-2', createdByName: OWNERS['owner-2'], syncStatus: 'synced', remoteId: 'D365-FU-031', createdAt: ago(25), updatedAt: ago(20) },
+  // cust-024 Open
+  { id: 'fu-032', customerId: 'cust-024', activityId: null, title: 'Prepare Palo Alto firewall comparison', description: 'PA-450 vs PA-460 comparison sheet for their branch offices.', dueDate: future(4), completed: false, completedAt: null, createdById: 'owner-3', createdByName: OWNERS['owner-3'], syncStatus: 'pending', remoteId: null, createdAt: ago(1), updatedAt: ago(1) },
+  // cust-002 Overdue
+  { id: 'fu-033', customerId: 'cust-002', activityId: 'act-006', title: 'Chase PO for approved Azure deal', description: 'Deal approved in meeting 2 weeks ago but PO still not received.', dueDate: past(3), completed: false, completedAt: null, createdById: 'owner-1', createdByName: OWNERS['owner-1'], syncStatus: 'pending', remoteId: null, createdAt: ago(16), updatedAt: ago(16) },
+  // cust-009 Open
+  { id: 'fu-034', customerId: 'cust-009', activityId: null, title: 'Send Sophos MDR quote', description: 'Managed detection & response for 300 endpoints.', dueDate: future(7), completed: false, completedAt: null, createdById: 'owner-4', createdByName: OWNERS['owner-4'], syncStatus: 'synced', remoteId: 'D365-FU-034', createdAt: ago(9), updatedAt: ago(9) },
+  // cust-015 Open
+  { id: 'fu-035', customerId: 'cust-015', activityId: 'act-020', title: 'Follow up on Aruba wireless site survey', description: 'Site survey completed last week — send results and proposal.', dueDate: future(2), completed: false, completedAt: null, createdById: 'owner-5', createdByName: OWNERS['owner-5'], syncStatus: 'pending', remoteId: null, createdAt: ago(11), updatedAt: ago(11) },
 ];

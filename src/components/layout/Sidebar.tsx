@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, Shield } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { signOut } from '@/lib/auth/authHelpers';
+import { onDataEvent } from '@/lib/dataEvents';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
@@ -296,20 +297,36 @@ export function Sidebar() {
   const { account, isAdmin } = useAuthStore();
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      if (isTauriApp()) {
-        const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
-        const count = await queryOverdueFollowUpCount();
-        setOverdueCount(count);
-      } else {
-        const { mockFollowUps } = await import('@/lib/mock/followups');
-        const today = new Date().toISOString().split('T')[0];
-        setOverdueCount(mockFollowUps.filter((f) => !f.completed && f.dueDate < today).length);
-      }
-    };
-    load();
+  const refreshCounts = useCallback(async () => {
+    if (isTauriApp()) {
+      const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
+      const { countPendingActivities } = await import('@/lib/db/queries/activities');
+      const { countPendingFollowUps } = await import('@/lib/db/queries/followups');
+      const [overdue, pendingAct, pendingFu] = await Promise.all([
+        queryOverdueFollowUpCount(),
+        countPendingActivities(),
+        countPendingFollowUps(),
+      ]);
+      setOverdueCount(overdue);
+      useSyncStore.getState().setPendingCounts(pendingAct, pendingFu);
+    } else {
+      const { mockFollowUps } = await import('@/lib/mock/followups');
+      const today = new Date().toISOString().split('T')[0];
+      setOverdueCount(mockFollowUps.filter((f) => !f.completed && f.dueDate < today).length);
+    }
   }, [setOverdueCount]);
+
+  useEffect(() => {
+    refreshCounts();
+  }, [refreshCounts]);
+
+  useEffect(() => {
+    return onDataEvent((e) => {
+      if (e.entity === 'followup' || e.entity === 'activity') {
+        refreshCounts();
+      }
+    });
+  }, [refreshCounts]);
 
   const totalPending = pendingActivityCount + pendingFollowUpCount;
   const { updateAvailable, downloading, install } = useAppUpdater();
