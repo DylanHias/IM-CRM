@@ -136,25 +136,11 @@ describe('customerStore', () => {
       expect(store().getFilteredCustomers().map((c) => c.id)).toEqual(['2']);
     });
 
-    it('searches by contact name', () => {
+    it('does not search by contact fields', () => {
       const contact = createContact({ customerId: '3', firstName: 'Alice', lastName: 'Wonder' });
       store().setAllContacts([contact]);
       store().setSearchQuery('alice');
-      expect(store().getFilteredCustomers().map((c) => c.id)).toEqual(['3']);
-    });
-
-    it('searches by contact email', () => {
-      const contact = createContact({ customerId: '3', email: 'unique@test.com' });
-      store().setAllContacts([contact]);
-      store().setSearchQuery('unique@test');
-      expect(store().getFilteredCustomers().map((c) => c.id)).toEqual(['3']);
-    });
-
-    it('searches by contact jobTitle', () => {
-      const contact = createContact({ customerId: '2', jobTitle: 'VP Engineering' });
-      store().setAllContacts([contact]);
-      store().setSearchQuery('VP Engineering');
-      expect(store().getFilteredCustomers().map((c) => c.id)).toEqual(['2']);
+      expect(store().getFilteredCustomers()).toHaveLength(0);
     });
 
     it('returns empty for no matches', () => {

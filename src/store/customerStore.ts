@@ -95,7 +95,7 @@ export const useCustomerStore = create<CustomerState>()(
 
       getFilteredCustomers: () => {
         const {
-          customers, allContacts, searchQuery, sortBy, sortDir,
+          customers, searchQuery, sortBy, sortDir,
           filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity,
         } = get();
 
@@ -103,22 +103,12 @@ export const useCustomerStore = create<CustomerState>()(
 
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchingCustomerIds = new Set(
-            allContacts
-              .filter((c) =>
-                `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
-                c.email?.toLowerCase().includes(q) ||
-                c.jobTitle?.toLowerCase().includes(q)
-              )
-              .map((c) => c.customerId)
-          );
           result = result.filter((c) =>
             c.name.toLowerCase().includes(q) ||
             c.accountNumber?.toLowerCase().includes(q) ||
             c.addressCity?.toLowerCase().includes(q) ||
             c.email?.toLowerCase().includes(q) ||
-            c.industry?.toLowerCase().includes(q) ||
-            matchingCustomerIds.has(c.id)
+            c.industry?.toLowerCase().includes(q)
           );
         }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Users } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
 
 export function CustomerFilters() {
   const {
-    customers, allContacts,
+    customers,
     searchQuery, sortBy, sortDir,
     filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity,
     setSearchQuery, setSortBy, setSortDir,
@@ -54,19 +54,6 @@ export function CustomerFilters() {
     Array.from(new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])).sort(),
     [customers]);
 
-  const contactMatchCount = useMemo(() => {
-    if (!searchQuery.trim()) return 0;
-    const q = searchQuery.toLowerCase();
-    return Array.from(new Set(
-      allContacts
-        .filter((c) =>
-          `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
-          c.email?.toLowerCase().includes(q) ||
-          c.jobTitle?.toLowerCase().includes(q)
-        )
-        .map((c) => c.customerId)
-    )).length;
-  }, [searchQuery, allContacts]);
 
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
 
@@ -78,7 +65,7 @@ export function CustomerFilters() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
           <Input
             ref={searchInputRef}
-            placeholder="Search customers or contacts..."
+            placeholder="Search customers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-9 pr-8 bg-card shadow-sm border-border/70 rounded-lg"
@@ -133,13 +120,6 @@ export function CustomerFilters() {
         )}
       </div>
 
-      {/* Contact match hint */}
-      {searchQuery && contactMatchCount > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-primary">
-          <Users size={12} />
-          {contactMatchCount} customer{contactMatchCount !== 1 ? 's' : ''} matched by contact name / email
-        </div>
-      )}
 
       {/* Filter panel */}
       {showFilters && (
