@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { useSettingsStore } from '@/store/settingsStore';
 import type {
   CrmUser,
   UserRole,
@@ -82,19 +81,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   loadUsers: async () => {
     set({ isLoading: true });
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (useMock || !isTauriApp()) {
-        const { mockUsers } = await import('@/lib/mock/admin');
-        set({ users: mockUsers });
-        return;
-      }
       const { queryAllUsers } = await import('@/lib/db/queries/users');
       const users = await queryAllUsers();
       set({ users });
     } catch (e) {
       console.error('[admin] loadUsers failed:', e);
-      const { mockUsers } = await import('@/lib/mock/admin');
-      set({ users: mockUsers });
     } finally {
       set({ isLoading: false });
     }
@@ -117,25 +108,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   loadAuditLog: async () => {
     set({ isLoading: true });
-    const applyMockFilters = async () => {
-      const { mockAuditEntries } = await import('@/lib/mock/admin');
-      const filters = get().auditFilters;
-      let filtered = mockAuditEntries;
-      if (filters.entityType) filtered = filtered.filter((e) => e.entityType === filters.entityType);
-      if (filters.action) filtered = filtered.filter((e) => e.action === filters.action);
-      if (filters.changedById) filtered = filtered.filter((e) => e.changedById === filters.changedById);
-      if (filters.dateFrom) filtered = filtered.filter((e) => e.changedAt >= filters.dateFrom!);
-      if (filters.dateTo) filtered = filtered.filter((e) => e.changedAt <= filters.dateTo!);
-      const totalCount = filtered.length;
-      const entries = filtered.slice(filters.offset, filters.offset + filters.limit);
-      set({ auditEntries: entries, auditTotalCount: totalCount });
-    };
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (useMock || !isTauriApp()) {
-        await applyMockFilters();
-        return;
-      }
       const { queryAuditLog, queryAuditLogCount } = await import('@/lib/db/queries/auditLog');
       const filters = get().auditFilters;
       const [entries, totalCount] = await Promise.all([
@@ -145,7 +118,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ auditEntries: entries, auditTotalCount: totalCount });
     } catch (e) {
       console.error('[admin] loadAuditLog failed:', e);
-      await applyMockFilters();
     } finally {
       set({ isLoading: false });
     }
@@ -153,16 +125,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   loadSyncAdmin: async () => {
     set({ isLoading: true });
-    const loadMock = async () => {
-      const { mockSyncHealth, mockSyncRecords } = await import('@/lib/mock/admin');
-      set({ syncHealth: mockSyncHealth, syncErrors: mockSyncRecords });
-    };
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (useMock || !isTauriApp()) {
-        await loadMock();
-        return;
-      }
       const { querySyncHealthMetrics, querySyncErrors } = await import('@/lib/db/queries/adminAnalytics');
       const [health, errors] = await Promise.all([
         querySyncHealthMetrics().catch((e) => { console.error('[admin] syncHealth query failed:', e); return null; }),
@@ -171,7 +134,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ syncHealth: health, syncErrors: errors });
     } catch (e) {
       console.error('[admin] loadSyncAdmin failed:', e);
-      await loadMock();
     } finally {
       set({ isLoading: false });
     }
@@ -179,23 +141,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   loadAnalytics: async () => {
     set({ isLoading: true });
-    const loadMock = async () => {
-      const {
-        mockDataQuality, mockActivityTimeline,
-        mockActivityByUser, mockPipelineByStage, mockWinRate,
-      } = await import('@/lib/mock/admin');
-      set({
-        dataQuality: mockDataQuality, activityTimeline: mockActivityTimeline,
-        activityByUser: mockActivityByUser,
-        pipelineByStage: mockPipelineByStage, winRate: mockWinRate,
-      });
-    };
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (useMock || !isTauriApp()) {
-        await loadMock();
-        return;
-      }
       const {
         queryDataQualityMetrics,
         queryActivityTimeline,
@@ -216,7 +162,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate });
     } catch (e) {
       console.error('[admin] loadAnalytics failed:', e);
-      await loadMock();
     } finally {
       set({ isLoading: false });
     }
@@ -225,19 +170,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   loadDataManagement: async () => {
     set({ isLoading: true });
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (useMock || !isTauriApp()) {
-        const { mockTableStats } = await import('@/lib/mock/admin');
-        set({ tableStats: mockTableStats });
-        return;
-      }
       const { queryTableStats } = await import('@/lib/db/queries/adminAnalytics');
       const tableStats = await queryTableStats();
       set({ tableStats });
     } catch (e) {
       console.error('[admin] loadDataManagement failed:', e);
-      const { mockTableStats } = await import('@/lib/mock/admin');
-      set({ tableStats: mockTableStats });
     } finally {
       set({ isLoading: false });
     }
