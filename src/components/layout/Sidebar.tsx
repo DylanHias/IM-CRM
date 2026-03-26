@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, Shield } from 'lucide-react';
+import { Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle, Settings, Keyboard, LogOut, Shield, Bug } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useState, useEffect, useCallback } from 'react';
@@ -464,6 +464,15 @@ export function Sidebar() {
               >
                 <Settings size={14} />
                 Account settings
+              </PopoverMenuItem>
+              <PopoverMenuItem
+                onClick={() => {
+                  setAccountPopoverOpen(false);
+                  router.push('/debug');
+                }}
+              >
+                <Bug size={14} />
+                Debug
               </PopoverMenuItem>
               <PopoverMenuItem disabled style={{ opacity: 0.5, cursor: 'default' }}>
                 <Keyboard size={14} />
