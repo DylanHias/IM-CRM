@@ -15,6 +15,7 @@ export function useShortcuts() {
   const router = useRouter();
   const pathname = usePathname();
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const customKeybindings = useSettingsStore((s) => s.customKeybindings);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const handleShortcut = useCallback(
@@ -54,19 +55,21 @@ export function useShortcuts() {
   );
 
   useEffect(() => {
-    const shortcuts = getAllShortcuts(sidebarOrder);
+    const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
     const handler = (e: KeyboardEvent) => {
       // Don't intercept when a modifier-less shortcut fires inside an input
-      const hasModifier = e.ctrlKey || e.metaKey;
+      const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
 
       for (const shortcut of shortcuts) {
         const wantsCtrl = shortcut.ctrlKey ?? false;
         const wantsShift = shortcut.shiftKey ?? false;
+        const wantsAlt = shortcut.altKey ?? false;
 
         // Match modifiers
         if (wantsCtrl !== (e.ctrlKey || e.metaKey)) continue;
         if (wantsShift !== e.shiftKey) continue;
+        if (wantsAlt !== e.altKey) continue;
 
         // Match key (case-insensitive for letters)
         const pressedKey = e.key.length === 1 ? e.key.toLowerCase() : e.key;
@@ -87,7 +90,7 @@ export function useShortcuts() {
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [sidebarOrder, pathname, handleShortcut]);
+  }, [sidebarOrder, customKeybindings, pathname, handleShortcut]);
 }
 
 /**

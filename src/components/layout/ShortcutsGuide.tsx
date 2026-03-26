@@ -4,32 +4,18 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { KbdGroup } from '@/components/ui/kbd';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcuts/shortcuts';
-
-function Kbd({ children }: { children: string }) {
-  const keys = children.split('+');
-  return (
-    <span className="flex items-center gap-0.5">
-      {keys.map((key, i) => (
-        <span key={i}>
-          {i > 0 && <span className="mx-0.5 text-muted-foreground text-[10px]">+</span>}
-          <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1.5 font-mono text-[11px] font-medium text-muted-foreground">
-            {key}
-          </kbd>
-        </span>
-      ))}
-    </span>
-  );
-}
 
 export function ShortcutsGuide() {
   const open = useUIStore((s) => s.shortcutsGuideOpen);
   const setOpen = useUIStore((s) => s.setShortcutsGuideOpen);
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const customKeybindings = useSettingsStore((s) => s.customKeybindings);
 
-  const shortcuts = getAllShortcuts(sidebarOrder);
+  const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
   const grouped = SHORTCUT_SECTIONS
     .map((section) => ({
@@ -58,7 +44,7 @@ export function ShortcutsGuide() {
                     className="flex items-center justify-between py-1 px-1"
                   >
                     <span className="text-sm">{shortcut.label}</span>
-                    <Kbd>{getDisplayKey(shortcut)}</Kbd>
+                    <KbdGroup keys={getDisplayKey(shortcut)} />
                   </div>
                 ))}
               </div>

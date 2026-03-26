@@ -8,6 +8,8 @@ type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 type ExportFormat = 'xlsx' | 'csv';
 
+export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
+
 export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/arr-overview';
 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
@@ -51,6 +53,9 @@ interface SettingsState {
   defaultExportFormat: ExportFormat;
   mockDataEnabled: boolean;
 
+  // Keybindings
+  customKeybindings: Record<string, CustomKeybinding>;
+
   // Actions
   updateSetting: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
   resetSection: (section: SettingsSection) => void;
@@ -58,7 +63,7 @@ interface SettingsState {
   hydrateFromDb: () => Promise<void>;
 }
 
-type SettingsSection = 'appearance' | 'dataDefaults' | 'notifications' | 'sync' | 'dataManagement';
+type SettingsSection = 'appearance' | 'dataDefaults' | 'notifications' | 'sync' | 'dataManagement' | 'keybindings';
 
 const APPEARANCE_DEFAULTS = {
   theme: 'light' as Theme,
@@ -96,12 +101,17 @@ const DATA_MANAGEMENT_DEFAULTS = {
   mockDataEnabled: false,
 };
 
+const KEYBINDINGS_DEFAULTS = {
+  customKeybindings: {} as Record<string, CustomKeybinding>,
+};
+
 const SECTION_DEFAULTS: Record<SettingsSection, Record<string, unknown>> = {
   appearance: APPEARANCE_DEFAULTS,
   dataDefaults: DATA_DEFAULTS,
   notifications: NOTIFICATION_DEFAULTS,
   sync: SYNC_DEFAULTS,
   dataManagement: DATA_MANAGEMENT_DEFAULTS,
+  keybindings: KEYBINDINGS_DEFAULTS,
 };
 
 const ALL_DEFAULTS = {
@@ -110,6 +120,7 @@ const ALL_DEFAULTS = {
   ...NOTIFICATION_DEFAULTS,
   ...SYNC_DEFAULTS,
   ...DATA_MANAGEMENT_DEFAULTS,
+  ...KEYBINDINGS_DEFAULTS,
 };
 
 const SETTINGS_KEYS = Object.keys(ALL_DEFAULTS) as (keyof typeof ALL_DEFAULTS)[];

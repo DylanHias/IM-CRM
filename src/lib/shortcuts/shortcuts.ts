@@ -7,11 +7,14 @@ interface ShortcutDefinition {
   key: string;
   ctrlKey?: boolean;
   shiftKey?: boolean;
+  altKey?: boolean;
   label: string;
   section: ShortcutSection;
   /** Only active on pages matching this prefix */
   when?: string;
 }
+
+type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
 const SHORTCUT_SECTIONS: ShortcutSection[] = [
   'Navigation',
@@ -63,15 +66,69 @@ const STATIC_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'sync', key: 'r', ctrlKey: true, shiftKey: true, label: 'Trigger Sync', section: 'Data' },
 ];
 
-function getAllShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinition[] {
+function getDefaultShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinition[] {
   return [...buildNavigationShortcuts(sidebarOrder), ...STATIC_SHORTCUTS];
 }
 
-function getDisplayKey(shortcut: ShortcutDefinition): string {
+function getAllShortcuts(
+  sidebarOrder: SidebarTab[],
+  customKeybindings?: Record<string, CustomKeybinding>
+): ShortcutDefinition[] {
+  const base = getDefaultShortcuts(sidebarOrder);
+  if (!customKeybindings || Object.keys(customKeybindings).length === 0) return base;
+  return base.map((s) => {
+    const override = customKeybindings[s.id];
+    if (!override) return s;
+    return {
+      ...s,
+      key: override.key,
+      ctrlKey: override.ctrlKey,
+      shiftKey: override.shiftKey,
+      altKey: override.altKey,
+    };
+  });
+}
+
+function getDefaultBinding(
+  id: string,
+  sidebarOrder: SidebarTab[]
+): CustomKeybinding | undefined {
+  const defaults = getDefaultShortcuts(sidebarOrder);
+  const shortcut = defaults.find((s) => s.id === id);
+  if (!shortcut) return undefined;
+  return { key: shortcut.key, ctrlKey: shortcut.ctrlKey, shiftKey: shortcut.shiftKey, altKey: shortcut.altKey };
+}
+
+function normalizeBinding(b: CustomKeybinding): string {
+  const parts: string[] = [];
+  if (b.ctrlKey) parts.push('ctrl');
+  if (b.shiftKey) parts.push('shift');
+  if (b.altKey) parts.push('alt');
+  parts.push(b.key.toLowerCase());
+  return parts.join('+');
+}
+
+function findConflict(
+  shortcuts: ShortcutDefinition[],
+  candidateId: string,
+  binding: CustomKeybinding
+): ShortcutDefinition | null {
+  const candidateNorm = normalizeBinding(binding);
+  for (const s of shortcuts) {
+    if (s.id === candidateId) continue;
+    const sNorm = normalizeBinding({ key: s.key, ctrlKey: s.ctrlKey, shiftKey: s.shiftKey, altKey: s.altKey });
+    if (sNorm === candidateNorm) return s;
+  }
+  return null;
+}
+
+function getDisplayKey(shortcut: ShortcutDefinition | CustomKeybinding): string {
   const parts: string[] = [];
   if (shortcut.ctrlKey) parts.push('Ctrl');
+  if (shortcut.altKey) parts.push('Alt');
   if (shortcut.shiftKey) parts.push('Shift');
 
+  const key = 'key' in shortcut ? shortcut.key : '';
   const keyMap: Record<string, string> = {
     ArrowDown: '↓',
     ArrowUp: '↑',
@@ -81,7 +138,7 @@ function getDisplayKey(shortcut: ShortcutDefinition): string {
     '/': '/',
   };
 
-  parts.push(keyMap[shortcut.key] ?? shortcut.key.toUpperCase());
+  parts.push(keyMap[key] ?? key.toUpperCase());
   return parts.join('+');
 }
 
@@ -94,5 +151,16 @@ function isInputFocused(): boolean {
   return false;
 }
 
-export { SHORTCUT_SECTIONS, getAllShortcuts, getDisplayKey, isInputFocused, buildNavigationShortcuts, STATIC_SHORTCUTS };
-export type { ShortcutDefinition, ShortcutSection };
+export {
+  SHORTCUT_SECTIONS,
+  getAllShortcuts,
+  getDefaultShortcuts,
+  getDefaultBinding,
+  getDisplayKey,
+  isInputFocused,
+  buildNavigationShortcuts,
+  findConflict,
+  normalizeBinding,
+  STATIC_SHORTCUTS,
+};
+export type { ShortcutDefinition, ShortcutSection, CustomKeybinding };

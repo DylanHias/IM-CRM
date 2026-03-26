@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings2, Palette, Database, Bell, RefreshCw } from 'lucide-react';
+import { Settings2, Palette, Database, Bell, RefreshCw, Keyboard } from 'lucide-react';
 import { GeneralSettings } from '@/components/settings/GeneralSettings';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { DataDefaultsSettings } from '@/components/settings/DataDefaultsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { SyncSettings } from '@/components/settings/SyncSettings';
+import { KeybindingsSettings } from '@/components/settings/KeybindingsSettings';
 import styled from 'styled-components';
 
 const TABS = [
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'data-defaults', label: 'Data & Defaults', icon: Database },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
+  { id: 'keybindings', label: 'Keybindings', icon: Keyboard },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -85,6 +87,7 @@ export default function SettingsPage() {
           {activeTab === 'data-defaults' && <DataDefaultsSettings />}
           {activeTab === 'notifications' && <NotificationSettings />}
           {activeTab === 'sync' && <SyncSettings />}
+          {activeTab === 'keybindings' && <KeybindingsSettings />}
         </Panel>
       </Container>
     </div>

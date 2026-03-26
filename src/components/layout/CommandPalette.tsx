@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
-  CommandGroup, CommandItem, CommandShortcut,
+  CommandGroup, CommandItem,
 } from '@/components/ui/command';
+import { KbdGroup } from '@/components/ui/kbd';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcuts/shortcuts';
@@ -50,10 +51,11 @@ export function CommandPalette() {
   const open = useUIStore((s) => s.commandPaletteOpen);
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const customKeybindings = useSettingsStore((s) => s.customKeybindings);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const router = useRouter();
 
-  const shortcuts = getAllShortcuts(sidebarOrder);
+  const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
   const handleSelect = useCallback(
     (shortcut: ShortcutDefinition) => {
@@ -116,8 +118,8 @@ export function CommandPalette() {
                   onSelect={() => handleSelect(shortcut)}
                 >
                   {Icon && <Icon className="mr-2 h-4 w-4 opacity-60" />}
-                  <span>{shortcut.label}</span>
-                  <CommandShortcut>{getDisplayKey(shortcut)}</CommandShortcut>
+                  <span className="flex-1">{shortcut.label}</span>
+                  <KbdGroup keys={getDisplayKey(shortcut)} className="ml-auto" />
                 </CommandItem>
               );
             })}
