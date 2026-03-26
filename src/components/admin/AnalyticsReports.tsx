@@ -231,7 +231,30 @@ export function AnalyticsReports() {
           <ChartContainer config={pipelineChartConfig} className="aspect-auto h-[200px] w-full">
             <BarChart data={pipelineByStage}>
               <CartesianGrid vertical={false} className="stroke-border" />
-              <XAxis dataKey="stage" tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 10 }} />
+              <XAxis
+                dataKey="stage"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={4}
+                interval={0}
+                tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
+                  const words = payload.value.split(' ');
+                  const lines: string[] = [];
+                  let cur = '';
+                  for (const w of words) {
+                    if (cur && (cur + ' ' + w).length > 12) { lines.push(cur); cur = w; }
+                    else cur = cur ? cur + ' ' + w : w;
+                  }
+                  if (cur) lines.push(cur);
+                  return (
+                    <text x={x} y={y} textAnchor="middle" fontSize={10} fill="currentColor">
+                      {lines.map((line, i) => (
+                        <tspan key={i} x={x} dy={i === 0 ? 0 : 12}>{line}</tspan>
+                      ))}
+                    </text>
+                  );
+                }}
+              />
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
               <ChartTooltip
                 content={
