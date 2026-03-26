@@ -1,11 +1,13 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2 } from 'lucide-react';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, Download, Loader2, CheckCircle2 } from 'lucide-react';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -50,6 +52,26 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
 export function AppearanceSettings() {
   const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, updateSetting, resetSection } =
     useSettingsStore();
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'up-to-date'>('idle');
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+
+  const checkForUpdates = useCallback(async () => {
+    if (!isTauriApp()) return;
+    setUpdateStatus('checking');
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (update) {
+        setUpdateStatus('available');
+        setUpdateVersion(update.version);
+      } else {
+        setUpdateStatus('up-to-date');
+      }
+    } catch (error) {
+      console.error('[updater] Failed to check for updates:', error);
+      setUpdateStatus('idle');
+    }
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -144,6 +166,38 @@ export function AppearanceSettings() {
             </div>
           </SortableContext>
         </DndContext>
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Updates</p>
+          <p className="text-xs text-muted-foreground">
+            {updateStatus === 'available' && updateVersion
+              ? `Version ${updateVersion} is available`
+              : updateStatus === 'up-to-date'
+                ? 'You\'re on the latest version'
+                : 'Check if a newer version is available'}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs"
+          disabled={updateStatus === 'checking'}
+          onClick={checkForUpdates}
+        >
+          {updateStatus === 'checking' ? (
+            <><Loader2 size={13} className="mr-1.5 animate-spin" />Checking...</>
+          ) : updateStatus === 'up-to-date' ? (
+            <><CheckCircle2 size={13} className="mr-1.5" />Up to date</>
+          ) : updateStatus === 'available' ? (
+            <><Download size={13} className="mr-1.5" />Update available</>
+          ) : (
+            <><Download size={13} className="mr-1.5" />Check for updates</>
+          )}
+        </Button>
       </div>
     </div>
   );
