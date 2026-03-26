@@ -167,7 +167,6 @@ async function runSchema(db: Database): Promise<void> {
     CREATE TABLE IF NOT EXISTS invoices (
       invoice_number          TEXT NOT NULL,
       reseller_id             TEXT NOT NULL,
-      PRIMARY KEY (invoice_number, reseller_id),
       invoice_status          TEXT NOT NULL,
       invoice_date            TEXT NOT NULL,
       invoice_due_date        TEXT NOT NULL,
@@ -177,7 +176,8 @@ async function runSchema(db: Database): Promise<void> {
       end_customer_order_number TEXT,
       order_create_date       TEXT,
       erp_order_number        TEXT,
-      payment_terms_due_date  TEXT
+      payment_terms_due_date  TEXT,
+      PRIMARY KEY (invoice_number, reseller_id)
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_invoices_reseller ON invoices(reseller_id)`);
