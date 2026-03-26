@@ -3,6 +3,7 @@
 import { Phone, Users, MapPin, FileText, Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
 import type { Activity } from '@/types/entities';
 
@@ -70,9 +71,11 @@ export function ActivityItem({ activity, contactName, onEdit, onDelete }: Activi
               </Button>
             )}
             {onDelete && (
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={onDelete} title="Delete">
-                <Trash2 size={13} />
-              </Button>
+              <ConfirmPopover message={`Delete "${activity.subject}"?`} confirmLabel="Delete" onConfirm={onDelete}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete">
+                  <Trash2 size={13} />
+                </Button>
+              </ConfirmPopover>
             )}
           </div>
         </div>

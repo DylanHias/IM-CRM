@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { RotateCcw } from 'lucide-react';
 
 export function DataDefaultsSettings() {
@@ -16,10 +17,12 @@ export function DataDefaultsSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Data & Defaults</h2>
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => { if (confirm('Reset data & defaults settings to defaults?')) resetSection('dataDefaults'); }}>
-          <RotateCcw size={12} className="mr-1" />
-          Reset
-        </Button>
+        <ConfirmPopover message="Reset data & defaults settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('dataDefaults')}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
+            <RotateCcw size={12} className="mr-1" />
+            Reset
+          </Button>
+        </ConfirmPopover>
       </div>
 
       <div className="space-y-5">

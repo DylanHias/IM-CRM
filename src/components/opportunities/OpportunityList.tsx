@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, Target, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityForm } from './OpportunityForm';
 import type { OpportunityFormData } from './OpportunityForm';
@@ -67,7 +68,6 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
   };
 
   const handleDelete = async (opp: Opportunity) => {
-    if (!confirm(`Delete "${opp.subject}"?`)) return;
     await deleteOpportunity(opp.id);
   };
 
@@ -128,9 +128,11 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(opp)}>
                   <Pencil size={13} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(opp)}>
-                  <Trash2 size={13} />
-                </Button>
+                <ConfirmPopover message={`Delete "${opp.subject}"?`} confirmLabel="Delete" onConfirm={() => handleDelete(opp)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                    <Trash2 size={13} />
+                  </Button>
+                </ConfirmPopover>
               </div>
             </motion.div>
           ))}

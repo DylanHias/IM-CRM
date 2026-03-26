@@ -60,7 +60,6 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
   };
 
   const handleDelete = async (followUp: FollowUp) => {
-    if (!confirm(`Delete "${followUp.title}"?`)) return;
     await deleteFollowUp(followUp.id);
   };
 

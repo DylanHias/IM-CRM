@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Download, Loader2, CheckCircle2, Copy, Check } from 'lucide-react';
@@ -96,7 +97,6 @@ export function GeneralSettings() {
   }, []);
 
   const handleResetAll = useCallback(() => {
-    if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
     resetAll();
     toast.success('All settings reset to defaults');
   }, [resetAll]);
@@ -184,14 +184,15 @@ export function GeneralSettings() {
           <p className="text-sm font-medium">Reset all settings</p>
           <p className="text-xs text-muted-foreground">Restore every setting to its default value</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-          onClick={handleResetAll}
-        >
-          Reset all
-        </Button>
+        <ConfirmPopover message="Reset all settings to defaults? This cannot be undone." confirmLabel="Reset all" onConfirm={handleResetAll}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            Reset all
+          </Button>
+        </ConfirmPopover>
       </div>
     </div>
   );

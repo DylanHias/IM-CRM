@@ -108,7 +108,6 @@ export default function CustomerDetailClient() {
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
-    if (!confirm(`Delete "${activity.subject}"?`)) return;
     await deleteActivity(activity.id);
   };
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Smartphone, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { ContactForm } from '@/components/contacts/ContactForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { deleteContact } from '@/lib/db/queries/contacts';
@@ -40,7 +41,6 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
   };
 
   const handleDelete = async (contact: Contact) => {
-    if (!confirm(`Delete ${contact.firstName} ${contact.lastName}?`)) return;
     if (isTauriApp()) {
       await deleteContact(contact.id);
     }
@@ -101,13 +101,14 @@ export function ContactList({ contacts, customerId, onContactAdded, onContactUpd
                   >
                     <Pencil size={11} />
                   </button>
-                  <button
-                    className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
-                    onClick={() => handleDelete(contact)}
-                    title="Delete"
-                  >
-                    <Trash2 size={11} />
-                  </button>
+                  <ConfirmPopover message={`Delete ${contact.firstName} ${contact.lastName}?`} confirmLabel="Delete" onConfirm={() => handleDelete(contact)}>
+                    <button
+                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                      title="Delete"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </ConfirmPopover>
                 </div>
               </div>
 

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { GraduationCap, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { TrainingForm } from '@/components/trainings/TrainingForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { deleteTraining } from '@/lib/db/queries/trainings';
@@ -49,7 +50,6 @@ export function TrainingList({ trainings, customerId, onTrainingAdded, onTrainin
   };
 
   const handleDelete = async (training: Training) => {
-    if (!confirm(`Delete "${training.title}"?`)) return;
     if (isTauriApp()) {
       await deleteTraining(training.id);
     }
@@ -119,13 +119,14 @@ export function TrainingList({ trainings, customerId, onTrainingAdded, onTrainin
                         >
                           <Pencil size={11} />
                         </button>
-                        <button
-                          className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
-                          onClick={() => handleDelete(training)}
-                          title="Delete"
-                        >
-                          <Trash2 size={11} />
-                        </button>
+                        <ConfirmPopover message={`Delete "${training.title}"?`} confirmLabel="Delete" onConfirm={() => handleDelete(training)}>
+                          <button
+                            className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                            title="Delete"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </ConfirmPopover>
                       </div>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Plus, Target, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
@@ -136,7 +137,6 @@ export default function OpportunitiesPage() {
   };
 
   const handleDelete = async (opp: Opportunity) => {
-    if (!confirm(`Delete "${opp.subject}"?`)) return;
     if (isTauriApp()) {
       try {
         await dbDeleteOpportunity(opp.id);
@@ -198,9 +198,11 @@ export default function OpportunitiesPage() {
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(opp)}>
           <Pencil size={13} />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(opp)}>
-          <Trash2 size={13} />
-        </Button>
+        <ConfirmPopover message={`Delete "${opp.subject}"?`} confirmLabel="Delete" onConfirm={() => handleDelete(opp)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+            <Trash2 size={13} />
+          </Button>
+        </ConfirmPopover>
       </div>
     </motion.div>
   );

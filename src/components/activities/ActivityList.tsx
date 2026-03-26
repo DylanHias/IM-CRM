@@ -70,7 +70,6 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
   };
 
   const handleDelete = async (activity: Activity) => {
-    if (!confirm(`Delete "${activity.subject}"?`)) return;
     await deleteActivity(activity.id);
   };
 

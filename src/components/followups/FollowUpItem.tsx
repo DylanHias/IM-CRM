@@ -2,6 +2,7 @@
 
 import { CheckSquare, Square, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDueDate } from '@/lib/utils/dateUtils';
 import type { FollowUp } from '@/types/entities';
 
@@ -66,13 +67,14 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
             </button>
           )}
           {onDelete && (
-            <button
-              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
-              onClick={onDelete}
-              title="Delete"
-            >
-              <Trash2 size={11} />
-            </button>
+            <ConfirmPopover message={`Delete "${followUp.title}"?`} confirmLabel="Delete" onConfirm={onDelete}>
+              <button
+                className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                title="Delete"
+              >
+                <Trash2 size={11} />
+              </button>
+            </ConfirmPopover>
           )}
         </div>
       )}

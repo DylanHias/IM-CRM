@@ -5,6 +5,7 @@ import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
 import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -68,10 +69,12 @@ export function AppearanceSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Appearance</h2>
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => { if (confirm('Reset appearance settings to defaults?')) resetSection('appearance'); }}>
-          <RotateCcw size={12} className="mr-1" />
-          Reset
-        </Button>
+        <ConfirmPopover message="Reset appearance settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('appearance')}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
+            <RotateCcw size={12} className="mr-1" />
+            Reset
+          </Button>
+        </ConfirmPopover>
       </div>
 
       <div className="space-y-5">
