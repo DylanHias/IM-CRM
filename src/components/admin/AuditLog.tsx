@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -346,9 +346,8 @@ export function AuditLog() {
             </thead>
             <tbody className="divide-y divide-border/40">
               {displayed.map((entry) => (
-                <>
+                <Fragment key={entry.id}>
                   <tr
-                    key={entry.id}
                     className="hover:bg-muted/20 transition-colors cursor-pointer"
                     onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
                   >
@@ -367,7 +366,7 @@ export function AuditLog() {
                     </td>
                   </tr>
                   {expandedId === entry.id && (entry.oldValues || entry.newValues) && (
-                    <tr key={`${entry.id}-detail`}>
+                    <tr>
                       <td colSpan={5} className="bg-muted/10 px-4 py-3">
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           {entry.oldValues && (
@@ -386,7 +385,7 @@ export function AuditLog() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
               {displayed.length === 0 && (
                 <tr>
