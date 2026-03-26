@@ -165,7 +165,7 @@ export function AnalyticsReports() {
                 fill={`url(#fill-${type})`}
                 stroke={`var(--color-${type})`}
                 strokeWidth={2}
-                stackId="a"
+
               />
             ))}
             <ChartLegend content={<ChartLegendContent />} />
