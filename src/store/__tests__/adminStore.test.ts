@@ -1,6 +1,24 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAdminStore } from '../adminStore';
 import { createCrmUser, createAuditLogEntry, createSyncRecord } from '@/__tests__/mocks/factories';
+
+vi.mock('@/lib/db/queries/users', () => ({
+  queryAllUsers: vi.fn().mockResolvedValue([
+    { id: 'u1', email: 'jan@test.be', name: 'Jan De Vries', role: 'admin', businessUnit: null, lastActiveAt: null, createdAt: '', updatedAt: '' },
+    { id: 'u2', email: 'sophie@test.be', name: 'Sophie Martens', role: 'user', businessUnit: null, lastActiveAt: null, createdAt: '', updatedAt: '' },
+  ]),
+}));
+
+vi.mock('@/lib/db/queries/adminAnalytics', () => ({
+  queryDataQualityMetrics: vi.fn().mockResolvedValue({ totalCustomers: 10, customersWithoutContacts: 2, customersWithoutRecentActivity: 3, staleOpportunities: 1 }),
+  queryActivityTimeline: vi.fn().mockResolvedValue([{ date: '2026-03-01', meeting: 1, call: 2, visit: 0, note: 1 }]),
+  queryActivityBreakdownByUser: vi.fn().mockResolvedValue([{ userName: 'Jan De Vries', count: 5 }]),
+  queryPipelineByStage: vi.fn().mockResolvedValue([{ stage: 'Discovery', count: 3, totalRevenue: 90000 }]),
+  queryWinRate: vi.fn().mockResolvedValue({ won: 3, lost: 1, open: 5 }),
+  querySyncHealthMetrics: vi.fn().mockResolvedValue(null),
+  querySyncErrors: vi.fn().mockResolvedValue([]),
+  queryTableStats: vi.fn().mockResolvedValue([]),
+}));
 
 describe('adminStore', () => {
   beforeEach(() => {
@@ -95,13 +113,13 @@ describe('adminStore', () => {
     expect(store().isLoading).toBe(true);
   });
 
-  it('loadUsers loads mock data outside Tauri', async () => {
+  it('loadUsers queries DB and populates state', async () => {
     await store().loadUsers();
     expect(store().users.length).toBeGreaterThan(0);
     expect(store().isLoading).toBe(false);
   });
 
-  it('loadAnalytics loads mock data outside Tauri', async () => {
+  it('loadAnalytics queries DB and populates state', async () => {
     await store().loadAnalytics();
     expect(store().dataQuality).not.toBeNull();
     expect(store().activityTimeline.length).toBeGreaterThan(0);
