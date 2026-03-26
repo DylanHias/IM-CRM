@@ -155,7 +155,7 @@ export function AnalyticsReports() {
               tick={{ fontSize: 11 }}
               interval={timeRange === '7d' ? 0 : timeRange === '30d' ? 1 : 4}
             />
-            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
             {ACTIVITY_TYPES.map((type) => (
               <Area
