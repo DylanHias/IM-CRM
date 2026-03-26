@@ -5,6 +5,7 @@ import { useAdminStore } from '@/store/adminStore';
 import { Download, Trash2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { exportFile } from '@/lib/utils/exportFile';
 import { useSettingsStore } from '@/store/settingsStore';
 
 export function DataManagement() {
@@ -22,7 +23,7 @@ export function DataManagement() {
     try {
       const { getDb } = await import('@/lib/db/client');
       const db = await getDb();
-      const { utils, writeFile } = await import('xlsx');
+      const { utils, write } = await import('xlsx');
       const wb = utils.book_new();
 
       const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities', 'trainings'];
@@ -37,14 +38,18 @@ export function DataManagement() {
       }
 
       const datestamp = new Date().toISOString().split('T')[0];
-      if (exportFormat === 'csv') {
-        writeFile(wb, `im-crm-export-${datestamp}.csv`, { bookType: 'csv' });
-      } else {
-        writeFile(wb, `im-crm-export-${datestamp}.xlsx`);
-      }
+      const isCsv = exportFormat === 'csv';
+      const bookType = isCsv ? 'csv' : 'xlsx';
+      const buffer = write(wb, { bookType, type: 'array' }) as ArrayBuffer;
+
+      await exportFile({
+        defaultName: `im-crm-export-${datestamp}.${bookType}`,
+        filterLabel: isCsv ? 'CSV File' : 'Excel Spreadsheet',
+        extensions: [bookType],
+        data: buffer,
+      });
     } catch (err) {
       console.error('[data] Export failed:', err);
-      alert('Export failed. Check console for details.');
     }
   };
 

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { cn } from '@/lib/utils';
+import { exportFile } from '@/lib/utils/exportFile';
 import type { Customer, Contact } from '@/types/entities';
 
 type SortField = 'name' | 'cloudCustomer' | 'language' | 'arr';
@@ -125,7 +126,7 @@ export default function ArrOverviewPage() {
     });
   }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
 
-  function handleExport() {
+  async function handleExport() {
     const rows = filtered.map((c) => ({
       'Customer Name': c.name,
       Contact: getContactLabel(c, allContacts).name,
@@ -141,7 +142,13 @@ export default function ArrOverviewPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'ARR Overview');
 
     const date = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `arr-overview-${date}.xlsx`);
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    await exportFile({
+      defaultName: `arr-overview-${date}.xlsx`,
+      filterLabel: 'Excel Spreadsheet',
+      extensions: ['xlsx'],
+      data: buffer,
+    });
   }
 
   function toggleSort(field: SortField) {

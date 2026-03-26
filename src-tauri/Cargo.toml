@@ -1,6 +1,6 @@
 [package]
 name = "crm-mvp"
-version = "0.20.1"
+version = "0.21.0"
 edition = "2021"
 
 [lib]
@@ -17,5 +17,6 @@ tauri-plugin-http = { version = "2" }
 tauri-plugin-updater = { version = "2" }
 tauri-plugin-process = { version = "2" }
 tauri-plugin-fs = { version = "2" }
+tauri-plugin-dialog = { version = "2" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
