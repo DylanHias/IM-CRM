@@ -80,9 +80,10 @@ export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> 
 export async function queryActivityBreakdownByUser(): Promise<{ userName: string; count: number }[]> {
   const db = await getDb();
   return db.select<{ userName: string; count: number }[]>(
-    `SELECT created_by_name as userName, COUNT(*) as count
-     FROM activities
-     GROUP BY created_by_id
+    `SELECT u.name as userName, COUNT(a.id) as count
+     FROM users u
+     LEFT JOIN activities a ON a.created_by_id = u.id
+     GROUP BY u.id, u.name
      ORDER BY count DESC`
   );
 }
