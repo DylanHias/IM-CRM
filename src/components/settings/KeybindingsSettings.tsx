@@ -151,15 +151,7 @@ export function KeybindingsSettings() {
                             Press keys…
                           </span>
                         ) : (
-                          <button
-                            onClick={() => {
-                              setRecordingId(shortcut.id);
-                              setConflict(null);
-                            }}
-                            className="cursor-pointer rounded-md px-1 py-0.5 hover:bg-secondary transition-colors"
-                          >
-                            <KbdGroup keys={getDisplayKey(shortcut)} />
-                          </button>
+                          <KbdGroup keys={getDisplayKey(shortcut)} />
                         )}
 
                         <Button

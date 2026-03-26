@@ -26,14 +26,14 @@ interface KbdGroupProps extends React.HTMLAttributes<HTMLSpanElement> {
 const KbdGroup = React.forwardRef<HTMLSpanElement, KbdGroupProps>(({ keys, className, ...props }, ref) => {
   const parts = keys.split('+');
   return (
-    <span ref={ref} className={cn('flex items-center gap-0.5', className)} {...props}>
+    <Kbd ref={ref} className={className} {...props}>
       {parts.map((key, i) => (
-        <span key={i}>
-          {i > 0 && <span className="mx-0.5 text-muted-foreground text-[10px]">+</span>}
-          <Kbd>{key}</Kbd>
+        <span key={i} className="flex items-center">
+          {i > 0 && <span className="mx-0.5 text-muted-foreground/60">+</span>}
+          <span>{key}</span>
         </span>
       ))}
-    </span>
+    </Kbd>
   );
 });
 KbdGroup.displayName = 'KbdGroup';
