@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useLogEntries, clearLogs, type LogLevel } from '@/lib/logCapture';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, Trash2 } from 'lucide-react';
+import { Search, X, Trash2, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LEVEL_STYLES: Record<LogLevel, { bg: string; text: string; label: string }> = {
@@ -24,6 +24,13 @@ export function ConsoleViewer() {
   const entries = useLogEntries();
   const [levelFilter, setLevelFilter] = useState<'all' | LogLevel>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const copyEntry = useCallback((id: number, message: string) => {
+    navigator.clipboard.writeText(message);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
+  }, []);
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const result = entries.filter((e) => {
@@ -96,7 +103,7 @@ export function ConsoleViewer() {
                 <div
                   key={entry.id}
                   className={cn(
-                    'flex items-start gap-2 px-3 py-1.5 font-mono text-[11px] leading-relaxed',
+                    'group flex items-start gap-2 px-3 py-1.5 font-mono text-[11px] leading-relaxed',
                     entry.level === 'error' && 'bg-destructive/5',
                     entry.level === 'warn' && 'bg-warning/5'
                   )}
@@ -115,9 +122,20 @@ export function ConsoleViewer() {
                   {entry.tag && (
                     <span className="text-primary/70 shrink-0 select-none">{entry.tag}</span>
                   )}
-                  <span className="text-foreground/90 break-all whitespace-pre-wrap min-w-0">
+                  <span className="text-foreground/90 break-all whitespace-pre-wrap min-w-0 flex-1">
                     {entry.tag ? entry.message.slice(entry.tag.length).trimStart() : entry.message}
                   </span>
+                  <button
+                    onClick={() => copyEntry(entry.id, entry.message)}
+                    className={cn(
+                      'shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity',
+                      'text-muted-foreground/60 hover:text-foreground',
+                      copiedId === entry.id && 'opacity-100 text-emerald-500'
+                    )}
+                    title="Copy log entry"
+                  >
+                    {copiedId === entry.id ? <Check size={12} /> : <Copy size={12} />}
+                  </button>
                 </div>
               );
             })}
