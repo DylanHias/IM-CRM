@@ -75,7 +75,30 @@ export default function CustomerDetailClient() {
 
   const [addFollowUpOpen, setAddFollowUpOpen] = useState(false);
 
-  useShortcutListener('new-item', useCallback(() => setAddActivityOpen(true), []));
+  const [triggerContactAdd, setTriggerContactAdd] = useState(0);
+  const [triggerTrainingAdd, setTriggerTrainingAdd] = useState(0);
+  const [triggerOpportunityAdd, setTriggerOpportunityAdd] = useState(0);
+
+  useShortcutListener('new-item', useCallback(() => {
+    switch (activeTab) {
+      case 'overview':
+      case 'activities':
+        setAddActivityOpen(true);
+        break;
+      case 'contacts':
+        setTriggerContactAdd((n) => n + 1);
+        break;
+      case 'trainings':
+        setTriggerTrainingAdd((n) => n + 1);
+        break;
+      case 'followups':
+        setAddFollowUpOpen(true);
+        break;
+      case 'opportunities':
+        setTriggerOpportunityAdd((n) => n + 1);
+        break;
+    }
+  }, [activeTab]));
   const [newFuTitle, setNewFuTitle] = useState('');
   const [newFuDescription, setNewFuDescription] = useState('');
   const [newFuDueDate, setNewFuDueDate] = useState('');
@@ -467,6 +490,7 @@ export default function CustomerDetailClient() {
                     <ContactList
                       contacts={contacts}
                       customerId={customerId}
+                      triggerAdd={triggerContactAdd}
                       onContactAdded={(c) => setContacts((prev) => [...prev, c])}
                       onContactUpdated={(c) => setContacts((prev) => prev.map((x) => (x.id === c.id ? c : x)))}
                       onContactDeleted={(id) => setContacts((prev) => prev.filter((x) => x.id !== id))}
@@ -486,6 +510,7 @@ export default function CustomerDetailClient() {
                     <TrainingList
                       trainings={trainings}
                       customerId={customerId}
+                      triggerAdd={triggerTrainingAdd}
                       onTrainingAdded={(t) => setTrainings((prev) => [t, ...prev])}
                       onTrainingUpdated={(t) => setTrainings((prev) => prev.map((x) => (x.id === t.id ? t : x)))}
                       onTrainingDeleted={(id) => setTrainings((prev) => prev.filter((x) => x.id !== id))}
@@ -515,7 +540,7 @@ export default function CustomerDetailClient() {
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
-                    <OpportunityList customerId={customerId} />
+                    <OpportunityList customerId={customerId} triggerAdd={triggerOpportunityAdd} />
                   </motion.div>
                 )}
 

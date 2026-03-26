@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useSync } from '@/hooks/useSync';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { signOut } from '@/lib/auth/authHelpers';
 import { formatRelative } from '@/lib/utils/dateUtils';
@@ -115,6 +116,8 @@ export function TopBar() {
   const { account } = useAuthStore();
   const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
   const isOnline = useOnlineStatus();
+
+  useShortcutListener('sync', triggerSync);
 
   const handleSignOut = () => signOut();
 

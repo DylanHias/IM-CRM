@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,23 @@ const STATUS_CONFIG = {
 interface TrainingListProps {
   trainings: Training[];
   customerId: string;
+  triggerAdd?: number;
   onTrainingAdded: (training: Training) => void;
   onTrainingUpdated: (training: Training) => void;
   onTrainingDeleted: (id: string) => void;
 }
 
-export function TrainingList({ trainings, customerId, onTrainingAdded, onTrainingUpdated, onTrainingDeleted }: TrainingListProps) {
+export function TrainingList({ trainings, customerId, triggerAdd, onTrainingAdded, onTrainingUpdated, onTrainingDeleted }: TrainingListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingTraining, setEditingTraining] = useState<Training | undefined>(undefined);
   const sorted = [...trainings].sort((a, b) => b.trainingDate.localeCompare(a.trainingDate));
+
+  useEffect(() => {
+    if (triggerAdd && triggerAdd > 0) {
+      setEditingTraining(undefined);
+      setFormOpen(true);
+    }
+  }, [triggerAdd]);
 
   const openAdd = () => {
     setEditingTraining(undefined);

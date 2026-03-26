@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { AuditEntityType, AuditAction, AuditLogEntry } from '@/types/admin';
 
 const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity', 'training'];
@@ -39,6 +40,10 @@ export function AuditLog() {
   const [sortBy, setSortBy] = useState<SortField>('changedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showFilters, setShowFilters] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
+  useShortcutListener('toggle-filters', useCallback(() => setShowFilters((v) => !v), []));
 
   useEffect(() => {
     loadAuditLog();
@@ -162,6 +167,7 @@ export function AuditLog() {
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
           <Input
+            ref={searchInputRef}
             placeholder="Search user, entity, action or values…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

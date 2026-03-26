@@ -19,9 +19,10 @@ import type { Opportunity, Contact } from '@/types/entities';
 
 interface OpportunityListProps {
   customerId: string;
+  triggerAdd?: number;
 }
 
-export function OpportunityList({ customerId }: OpportunityListProps) {
+export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps) {
   const { opportunities, createOpportunity, editOpportunity, deleteOpportunity } = useOpportunities(customerId);
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
@@ -30,6 +31,10 @@ export function OpportunityList({ customerId }: OpportunityListProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
+
+  useEffect(() => {
+    if (triggerAdd && triggerAdd > 0) setAddOpen(true);
+  }, [triggerAdd]);
 
   const isStale = (opp: Opportunity) =>
     opp.status === 'Open' &&

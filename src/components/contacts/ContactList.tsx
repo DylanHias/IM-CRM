@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Smartphone, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,22 @@ import type { Contact } from '@/types/entities';
 interface ContactListProps {
   contacts: Contact[];
   customerId: string;
+  triggerAdd?: number;
   onContactAdded: (contact: Contact) => void;
   onContactUpdated: (contact: Contact) => void;
   onContactDeleted: (id: string) => void;
 }
 
-export function ContactList({ contacts, customerId, onContactAdded, onContactUpdated, onContactDeleted }: ContactListProps) {
+export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted }: ContactListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
+
+  useEffect(() => {
+    if (triggerAdd && triggerAdd > 0) {
+      setEditingContact(undefined);
+      setFormOpen(true);
+    }
+  }, [triggerAdd]);
 
   const openAdd = () => {
     setEditingContact(undefined);

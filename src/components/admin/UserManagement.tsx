@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { useAuthStore } from '@/store/authStore';
 import { RefreshCw, Search, X, ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { UserRole } from '@/types/admin';
 
 type SortField = 'name' | 'email' | 'businessUnit' | 'lastActiveAt' | 'role';
@@ -23,6 +24,10 @@ export function UserManagement() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterRole, setFilterRole] = useState('all');
   const [filterBU, setFilterBU] = useState('all');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
+  useShortcutListener('toggle-filters', useCallback(() => setShowFilters((v) => !v), []));
 
   useEffect(() => {
     loadUsers();
@@ -132,6 +137,7 @@ export function UserManagement() {
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
           <Input
+            ref={searchInputRef}
             placeholder="Search name, email or business unit…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

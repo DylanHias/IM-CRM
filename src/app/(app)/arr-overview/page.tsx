@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import {
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import { cn } from '@/lib/utils';
 import { exportFile } from '@/lib/utils/exportFile';
 import type { Customer, Contact } from '@/types/entities';
@@ -65,6 +66,10 @@ export default function ArrOverviewPage() {
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
+  useShortcutListener('toggle-filters', useCallback(() => setShowFilters((v) => !v), []));
 
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
@@ -178,6 +183,7 @@ export default function ArrOverviewPage() {
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
               <Input
+                ref={searchInputRef}
                 placeholder="Search by name…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

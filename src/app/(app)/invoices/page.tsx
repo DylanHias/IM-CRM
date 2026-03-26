@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { FileText, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { useCustomerStore } from '@/store/customerStore';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import type { Customer } from '@/types/entities';
 
@@ -13,6 +14,9 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -44,6 +48,7 @@ export default function InvoicesPage() {
           <div className="relative max-w-sm">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
             <Input
+              ref={searchInputRef}
               placeholder="Search customer by name or account number..."
               value={searchQuery}
               onChange={(e) => {

@@ -42,7 +42,6 @@ export function useShortcuts() {
           useUIStore.getState().setShortcutsGuideOpen(true);
           break;
         case 'sync':
-          router.push('/sync');
           window.dispatchEvent(new CustomEvent('shortcut:sync'));
           break;
         default:

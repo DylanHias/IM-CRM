@@ -55,7 +55,7 @@ const STATIC_SHORTCUTS: ShortcutDefinition[] = [
   // Page Actions
   { id: 'new-item', key: 'n', label: 'New Item', section: 'Page Actions' },
   { id: 'focus-search', key: '/', label: 'Focus Search', section: 'Page Actions' },
-  { id: 'toggle-filters', key: 'f', label: 'Toggle Filters', section: 'Page Actions', when: '/customers' },
+  { id: 'toggle-filters', key: 'f', label: 'Toggle Filters', section: 'Page Actions' },
 
   // List Navigation
   { id: 'list-down', key: 'ArrowDown', label: 'Move Down', section: 'List Navigation', when: '/customers' },
