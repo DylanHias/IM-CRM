@@ -474,7 +474,12 @@ export function Sidebar() {
                 <Bug size={14} />
                 Debug
               </PopoverMenuItem>
-              <PopoverMenuItem disabled style={{ opacity: 0.5, cursor: 'default' }}>
+              <PopoverMenuItem
+                onClick={() => {
+                  setAccountPopoverOpen(false);
+                  useUIStore.getState().setShortcutsGuideOpen(true);
+                }}
+              >
                 <Keyboard size={14} />
                 Keyboard shortcuts
               </PopoverMenuItem>

@@ -4,10 +4,13 @@ import { Sidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
+import { CommandPalette } from './CommandPalette';
+import { ShortcutsGuide } from './ShortcutsGuide';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
+import { useShortcuts } from '@/hooks/useShortcuts';
 import { cn } from '@/lib/utils';
 import styled from 'styled-components';
 
@@ -53,6 +56,7 @@ export function AppShell({ children }: AppShellProps) {
   useAutoSync();
   useLaunchAlerts();
   useConnectivityToasts();
+  useShortcuts();
 
   return (
     <Shell className={cn(compactMode && 'compact')}>
@@ -69,6 +73,8 @@ export function AppShell({ children }: AppShellProps) {
         </Main>
       </Body>
       <ChangelogDialog />
+      <CommandPalette />
+      <ShortcutsGuide />
     </Shell>
   );
 }

@@ -6,6 +6,8 @@ describe('uiStore', () => {
     useUIStore.setState({
       sidebarOpen: false,
       activeCustomerTab: 'timeline',
+      commandPaletteOpen: false,
+      shortcutsGuideOpen: false,
     });
   });
 
@@ -38,5 +40,23 @@ describe('uiStore', () => {
   it('setActiveCustomerTab', () => {
     store().setActiveCustomerTab('activities');
     expect(store().activeCustomerTab).toBe('activities');
+  });
+
+  it('default commandPaletteOpen is false', () => {
+    expect(store().commandPaletteOpen).toBe(false);
+  });
+
+  it('setCommandPaletteOpen', () => {
+    store().setCommandPaletteOpen(true);
+    expect(store().commandPaletteOpen).toBe(true);
+  });
+
+  it('default shortcutsGuideOpen is false', () => {
+    expect(store().shortcutsGuideOpen).toBe(false);
+  });
+
+  it('setShortcutsGuideOpen', () => {
+    store().setShortcutsGuideOpen(true);
+    expect(store().shortcutsGuideOpen).toBe(true);
   });
 });

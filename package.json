@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "0.23.2",
+  "version": "0.24.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -43,6 +43,7 @@
     "@tauri-apps/plugin-updater": "^2.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "framer-motion": "^12.36.0",
     "lucide-react": "^0.400.0",
