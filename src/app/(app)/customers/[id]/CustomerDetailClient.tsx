@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,6 +24,7 @@ import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useActivities } from '@/hooks/useActivities';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -73,6 +74,8 @@ export default function CustomerDetailClient() {
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
 
   const [addFollowUpOpen, setAddFollowUpOpen] = useState(false);
+
+  useShortcutListener('new-item', useCallback(() => setAddActivityOpen(true), []));
   const [newFuTitle, setNewFuTitle] = useState('');
   const [newFuDescription, setNewFuDescription] = useState('');
   const [newFuDueDate, setNewFuDueDate] = useState('');

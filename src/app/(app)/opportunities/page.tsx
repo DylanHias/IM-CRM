@@ -21,6 +21,7 @@ import { mockContacts } from '@/lib/mock/contacts';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,6 +36,8 @@ export default function OpportunitiesPage() {
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
+
+  useShortcutListener('new-item', useCallback(() => setAddOpen(true), []));
 
   const loadData = useCallback(async () => {
     try {

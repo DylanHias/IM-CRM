@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useShortcutListener } from '@/hooks/useShortcuts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +31,10 @@ export function CustomerFilters() {
   const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
   const [showFilters, setShowFilters] = useState(false);
   const activeFilterCount = getActiveFilterCount();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
+  useShortcutListener('toggle-filters', useCallback(() => setShowFilters((v) => !v), []));
 
   const owners = useMemo(() => {
     const map = new Map<string, string>();
@@ -72,6 +77,7 @@ export function CustomerFilters() {
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
           <Input
+            ref={searchInputRef}
             placeholder="Search customers or contacts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
