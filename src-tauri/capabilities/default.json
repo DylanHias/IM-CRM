@@ -19,6 +19,9 @@
     "core:window:allow-start-dragging",
     "fs:allow-applocaldata-read-recursive",
     "fs:allow-applocaldata-write-recursive",
-    "dialog:default"
+    "dialog:default",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

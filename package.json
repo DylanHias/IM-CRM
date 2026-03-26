@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "0.22.2",
+  "version": "0.23.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -35,6 +35,7 @@
     "@radix-ui/react-tabs": "^1.0.0",
     "@radix-ui/react-toast": "^1.0.0",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-process": "^2.3.1",
