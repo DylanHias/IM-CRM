@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Palette, Database, Bell, RefreshCw } from 'lucide-react';
+import { Settings2, Palette, Database, Bell, RefreshCw } from 'lucide-react';
+import { GeneralSettings } from '@/components/settings/GeneralSettings';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { DataDefaultsSettings } from '@/components/settings/DataDefaultsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -9,6 +10,7 @@ import { SyncSettings } from '@/components/settings/SyncSettings';
 import styled from 'styled-components';
 
 const TABS = [
+  { id: 'general', label: 'General', icon: Settings2 },
   { id: 'appearance', label: 'Appearance', icon: Palette },
   { id: 'data-defaults', label: 'Data & Defaults', icon: Database },
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -59,7 +61,7 @@ const Panel = styled.div`
 `;
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('appearance');
+  const [activeTab, setActiveTab] = useState<TabId>('general');
 
   return (
     <div>
@@ -78,6 +80,7 @@ export default function SettingsPage() {
           ))}
         </TabList>
         <Panel>
+          {activeTab === 'general' && <GeneralSettings />}
           {activeTab === 'appearance' && <AppearanceSettings />}
           {activeTab === 'data-defaults' && <DataDefaultsSettings />}
           {activeTab === 'notifications' && <NotificationSettings />}
