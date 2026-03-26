@@ -72,7 +72,7 @@ jobs:
         run: |
           CURRENT="v${{ steps.version.outputs.version }}"
           # Find the previous release tag
-          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -v "^${CURRENT}$" | head -1)
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -v "^${CURRENT}$" | head -1 || true)
           PREV_VER="${PREV_TAG#v}"
           # Collect all .changelog/v*.md files whose version is after PREV_VER and up to CURRENT
           BODY=$(node -e "
