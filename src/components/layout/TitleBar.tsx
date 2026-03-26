@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { RefreshCw, Wifi, WifiOff, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Wifi, WifiOff, ArrowLeft } from 'lucide-react';
 import { useSync } from '@/hooks/useSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { formatRelative } from '@/lib/utils/dateUtils';
@@ -74,7 +73,7 @@ function useBackLink(): { label: string; href: string } | undefined {
 
 export function TitleBar() {
   const backLink = useBackLink();
-  const { isSyncing, lastD365SyncAt, triggerSync } = useSync();
+  const { lastD365SyncAt } = useSync();
   const isOnline = useOnlineStatus();
 
   return (
@@ -99,17 +98,6 @@ export function TitleBar() {
         {lastD365SyncAt && (
           <SyncInfo>Synced {formatRelative(lastD365SyncAt)}</SyncInfo>
         )}
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={triggerSync}
-          disabled={isSyncing || !isOnline}
-          className="h-6 gap-1 text-[10.5px] px-2 text-[hsl(var(--titlebar-fg)/0.7)] hover:text-[hsl(var(--titlebar-fg))] hover:bg-[hsl(var(--titlebar-fg)/0.08)]"
-        >
-          <RefreshCw size={10} className={isSyncing ? 'animate-spin' : ''} />
-          {isSyncing ? 'Syncing\u2026' : 'Sync'}
-        </Button>
       </AppControls>
     </WindowFrame>
   );
