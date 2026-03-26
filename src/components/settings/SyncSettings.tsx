@@ -16,7 +16,7 @@ export function SyncSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Sync</h2>
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => resetSection('sync')}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => { if (confirm('Reset sync settings to defaults?')) resetSection('sync'); }}>
           <RotateCcw size={12} className="mr-1" />
           Reset
         </Button>

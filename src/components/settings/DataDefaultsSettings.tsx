@@ -16,7 +16,7 @@ export function DataDefaultsSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Data & Defaults</h2>
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => resetSection('dataDefaults')}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => { if (confirm('Reset data & defaults settings to defaults?')) resetSection('dataDefaults'); }}>
           <RotateCcw size={12} className="mr-1" />
           Reset
         </Button>

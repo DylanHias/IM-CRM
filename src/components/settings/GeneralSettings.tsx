@@ -96,6 +96,7 @@ export function GeneralSettings() {
   }, []);
 
   const handleResetAll = useCallback(() => {
+    if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
     resetAll();
     toast.success('All settings reset to defaults');
   }, [resetAll]);
