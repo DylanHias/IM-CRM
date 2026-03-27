@@ -36,7 +36,7 @@ export const loginRequest = {
 
 export const d365Request = {
   scopes: [
-    `${process.env.NEXT_PUBLIC_D365_BASE_URL ?? 'https://org.crm4.dynamics.com'}/.default`,
+    `${(process.env.NEXT_PUBLIC_D365_BASE_URL ?? 'https://org.crm4.dynamics.com').replace(/\/+$/, '')}/.default`,
   ],
 };
 

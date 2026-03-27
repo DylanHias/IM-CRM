@@ -110,6 +110,12 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 - **Only exception**: intentional silences with a comment explaining why (e.g., expected migration failures, malformed external JSON)
 - The log interceptor lives in `src/lib/logCapture.ts` — imported as a side-effect in `providers.tsx`
 
+## Subagent Usage
+
+- **Use subagents** when tasks can run in parallel, require isolated context, or involve independent workstreams that don't need to share state
+- **Work directly** for simple tasks, sequential operations, single-file edits, or tasks where context needs to be maintained across steps
+- Before spawning an agent, ask: "Does this need isolation or parallelism?" If no, just do it inline
+
 ## Tauri / Async
 
 - Guard all Tauri API calls with `isTauriApp()` (`src/lib/utils/offlineUtils.ts`)

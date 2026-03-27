@@ -133,7 +133,7 @@ async function fetchAllPages<T>(
 }
 
 class RealD365Adapter implements ID365Adapter {
-  private baseUrl = process.env.NEXT_PUBLIC_D365_BASE_URL!;
+  private baseUrl = (process.env.NEXT_PUBLIC_D365_BASE_URL ?? '').replace(/\/+$/, '');
 
   async fetchCustomers(token: string): Promise<Customer[]> {
     const select = [
