@@ -51,8 +51,9 @@ impl OAuthServer {
 <body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5">
 <div style="text-align:center">
 <h2>Signed in successfully</h2>
-<p>You can close this window and return to the app.</p>
+<p>This window will close automatically...</p>
 </div>
+<script>setTimeout(function(){window.close()},1000)</script>
 </body>
 </html>"#;
                         let response = Response::from_string(html)
