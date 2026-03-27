@@ -9,7 +9,15 @@
     "sql:allow-select",
     "sql:allow-load",
     "sql:allow-close",
-    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://login.microsoftonline.com/*" },
+        { "url": "https://login.microsoft.com/*" },
+        { "url": "https://graph.microsoft.com/*" },
+        { "url": "https://*.crm4.dynamics.com/*" }
+      ]
+    },
     "updater:default",
     "process:allow-restart",
     "core:window:allow-minimize",
