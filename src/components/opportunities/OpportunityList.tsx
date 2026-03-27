@@ -12,7 +12,6 @@ import type { OpportunityFormData } from './OpportunityForm';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { mockContacts } from '@/lib/mock/contacts';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity, Contact } from '@/types/entities';
@@ -45,13 +44,10 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       try {
         if (isTauriApp()) {
           const c = await queryContactsByCustomer(customerId);
-          setContacts(c.length > 0 ? c : mockContacts.filter((c) => c.customerId === customerId));
-        } else {
-          setContacts(mockContacts.filter((c) => c.customerId === customerId));
+          setContacts(c);
         }
       } catch (err) {
-        console.error('[opportunity] Failed to load contacts, using fallback:', err);
-        setContacts(mockContacts.filter((c) => c.customerId === customerId));
+        console.error('[opportunity] Failed to load contacts:', err);
       }
     };
     load();

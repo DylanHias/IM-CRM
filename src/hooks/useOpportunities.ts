@@ -4,8 +4,6 @@ import { useEffect, useCallback } from 'react';
 import { useOpportunityStore } from '@/store/opportunityStore';
 import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { useSettingsStore } from '@/store/settingsStore';
-import { mockOpportunities } from '@/lib/mock/opportunities';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,16 +35,15 @@ export function useOpportunities(customerId: string) {
     setLoading(true);
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           const data = await queryOpportunitiesByCustomer(customerId);
           setOpportunities(data, customerId);
         } else {
-          setOpportunities(mockOpportunities.filter((o) => o.customerId === customerId), customerId);
+          setOpportunities([], customerId);
         }
       } catch (err) {
         console.error('[useOpportunities] Failed to load:', err);
-        setOpportunities(mockOpportunities.filter((o) => o.customerId === customerId), customerId);
+        setOpportunities([], customerId);
       } finally {
         setLoading(false);
       }

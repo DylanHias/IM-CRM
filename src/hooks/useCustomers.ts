@@ -7,8 +7,6 @@ import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
-import { mockCustomers } from '@/lib/mock/customers';
-import { mockContacts } from '@/lib/mock/contacts';
 import { seedMockData } from '@/lib/db/seed';
 import { getDb } from '@/lib/db/client';
 
@@ -36,8 +34,7 @@ export function useCustomers() {
     setLoading(true);
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           let data = await queryAllCustomers();
           if (data.length === 0) {
             const db = await getDb();
@@ -46,11 +43,11 @@ export function useCustomers() {
           }
           setCustomers(data);
         } else {
-          setCustomers(mockCustomers);
+          setCustomers([]);
         }
       } catch (err) {
         console.error('[customer] Failed to load customers:', err);
-        setCustomers(mockCustomers);
+        setCustomers([]);
       } finally {
         setLoading(false);
       }
@@ -63,16 +60,15 @@ export function useCustomers() {
     if (allContacts.length > 0) return;
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           const contacts = await queryAllContacts();
           setAllContacts(contacts);
         } else {
-          setAllContacts(mockContacts);
+          setAllContacts([]);
         }
       } catch (err) {
         console.error('[customer] Failed to load contacts:', err);
-        setAllContacts(mockContacts);
+        setAllContacts([]);
       }
     };
     load();

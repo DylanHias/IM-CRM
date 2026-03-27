@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useActivities } from '@/hooks/useActivities';
 import { useActivityStore } from '@/store/activityStore';
 import { useAuthStore } from '@/store/authStore';
+import { mockActivities } from '@/lib/mock/activities';
 import type { AccountInfo } from '@azure/msal-browser';
 
 const CUSTOMER_ID = 'cust-001';
@@ -19,8 +20,8 @@ const mockAccount: AccountInfo = {
 describe('useActivities', () => {
   beforeEach(() => {
     useActivityStore.setState({
-      activities: [],
-      currentCustomerId: null,
+      activities: mockActivities.filter((a) => a.customerId === CUSTOMER_ID),
+      currentCustomerId: CUSTOMER_ID,
       pendingCount: 0,
       isLoading: false,
     });
@@ -33,13 +34,10 @@ describe('useActivities', () => {
     });
   });
 
-  it('loads mock activities for customerId', async () => {
+  it('returns activities for customerId', () => {
     const { result } = renderHook(() => useActivities(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.activities.length).toBeGreaterThan(0);
-    });
-
+    expect(result.current.activities.length).toBeGreaterThan(0);
     result.current.activities.forEach((a) => {
       expect(a.customerId).toBe(CUSTOMER_ID);
     });
@@ -75,10 +73,6 @@ describe('useActivities', () => {
   it('editActivity updates activity in store', async () => {
     const { result } = renderHook(() => useActivities(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.activities.length).toBeGreaterThan(0);
-    });
-
     const original = result.current.activities[0];
     const updated = { ...original, subject: 'Updated subject' };
 
@@ -93,10 +87,6 @@ describe('useActivities', () => {
   it('deleteActivity removes from store', async () => {
     const { result } = renderHook(() => useActivities(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.activities.length).toBeGreaterThan(0);
-    });
-
     const target = result.current.activities[0];
     const countBefore = result.current.activities.length;
 
@@ -108,13 +98,10 @@ describe('useActivities', () => {
     expect(result.current.activities.find((a) => a.id === target.id)).toBeUndefined();
   });
 
-  it('filters activities by customerId in return value', async () => {
+  it('filters activities by customerId in return value', () => {
     const { result } = renderHook(() => useActivities(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.activities.length).toBeGreaterThan(0);
-    });
-
+    expect(result.current.activities.length).toBeGreaterThan(0);
     result.current.activities.forEach((a) => {
       expect(a.customerId).toBe(CUSTOMER_ID);
     });

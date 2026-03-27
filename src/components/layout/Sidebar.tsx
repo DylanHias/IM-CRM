@@ -309,10 +309,6 @@ export function Sidebar() {
       ]);
       setOverdueCount(overdue);
       useSyncStore.getState().setPendingCounts(pendingAct, pendingFu);
-    } else {
-      const { mockFollowUps } = await import('@/lib/mock/followups');
-      const today = new Date().toISOString().split('T')[0];
-      setOverdueCount(mockFollowUps.filter((f) => !f.completed && f.dueDate < today).length);
     }
   }, [setOverdueCount]);
 

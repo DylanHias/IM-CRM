@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useAuthStore } from '@/store/authStore';
+import { mockFollowUps } from '@/lib/mock/followups';
 import type { AccountInfo } from '@azure/msal-browser';
 
 const CUSTOMER_ID = 'cust-001';
@@ -19,8 +20,8 @@ const mockAccount: AccountInfo = {
 describe('useFollowUps', () => {
   beforeEach(() => {
     useFollowUpStore.setState({
-      followUps: [],
-      currentCustomerId: null,
+      followUps: mockFollowUps.filter((f) => f.customerId === CUSTOMER_ID),
+      currentCustomerId: CUSTOMER_ID,
       overdueCount: 0,
       isLoading: false,
     });
@@ -33,13 +34,10 @@ describe('useFollowUps', () => {
     });
   });
 
-  it('loads mock follow-ups for customerId', async () => {
+  it('returns follow-ups for customerId', () => {
     const { result } = renderHook(() => useFollowUps(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.followUps.length).toBeGreaterThan(0);
-    });
-
+    expect(result.current.followUps.length).toBeGreaterThan(0);
     result.current.followUps.forEach((f) => {
       expect(f.customerId).toBe(CUSTOMER_ID);
     });
@@ -76,10 +74,6 @@ describe('useFollowUps', () => {
   it('completeFollowUp marks as complete in store', async () => {
     const { result } = renderHook(() => useFollowUps(CUSTOMER_ID));
 
-    await waitFor(() => {
-      expect(result.current.followUps.length).toBeGreaterThan(0);
-    });
-
     const target = result.current.followUps.find((f) => !f.completed);
     expect(target).toBeDefined();
 
@@ -94,10 +88,6 @@ describe('useFollowUps', () => {
 
   it('deleteFollowUp removes from store', async () => {
     const { result } = renderHook(() => useFollowUps(CUSTOMER_ID));
-
-    await waitFor(() => {
-      expect(result.current.followUps.length).toBeGreaterThan(0);
-    });
 
     const target = result.current.followUps[0];
     const countBefore = result.current.followUps.length;

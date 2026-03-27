@@ -6,7 +6,6 @@ import { ActivityForm } from '@/components/activities/ActivityForm';
 import { useCustomerStore } from '@/store/customerStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { mockContacts } from '@/lib/mock/contacts';
 import type { Contact } from '@/types/entities';
 
 function NewActivityContent() {
@@ -22,13 +21,10 @@ function NewActivityContent() {
       try {
         if (isTauriApp()) {
           const data = await queryContactsByCustomer(customerId);
-          setContacts(data.length > 0 ? data : mockContacts.filter((c) => c.customerId === customerId));
-        } else {
-          setContacts(mockContacts.filter((c) => c.customerId === customerId));
+          setContacts(data);
         }
       } catch (err) {
-        console.error('[activity] Failed to load contacts, using fallback:', err);
-        setContacts(mockContacts.filter((c) => c.customerId === customerId));
+        console.error('[activity] Failed to load contacts:', err);
       }
     };
     load();

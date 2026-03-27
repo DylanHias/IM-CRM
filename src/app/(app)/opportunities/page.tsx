@@ -15,12 +15,8 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryAllOpportunities, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { mockOpportunities } from '@/lib/mock/opportunities';
-import { mockCustomers } from '@/lib/mock/customers';
-import { mockContacts } from '@/lib/mock/contacts';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,8 +37,7 @@ export default function OpportunitiesPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (!useMock && isTauriApp()) {
+      if (isTauriApp()) {
         const [opps, custs] = await Promise.all([
           queryAllOpportunities(),
           queryAllCustomers(),
@@ -51,15 +46,15 @@ export default function OpportunitiesPage() {
         setCustomers(custs);
         setCustomerMap(new Map(custs.map((c) => [c.id, c.name])));
       } else {
-        setOpportunities(mockOpportunities);
-        setCustomers(mockCustomers as Customer[]);
-        setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+        setOpportunities([]);
+        setCustomers([]);
+        setCustomerMap(new Map());
       }
     } catch (err) {
       console.error('[opportunity] Failed to load opportunities:', err);
-      setOpportunities(mockOpportunities);
-      setCustomers(mockCustomers as Customer[]);
-      setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+      setOpportunities([]);
+      setCustomers([]);
+      setCustomerMap(new Map());
     }
   }, []);
 
@@ -77,16 +72,15 @@ export default function OpportunitiesPage() {
     if (!selectedCustomerId) return;
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           const c = await queryContactsByCustomer(selectedCustomerId);
           setContacts(c);
         } else {
-          setContacts(mockContacts.filter((c) => c.customerId === selectedCustomerId));
+          setContacts([]);
         }
       } catch (err) {
         console.error('[opportunity] Failed to load contacts:', err);
-        setContacts(mockContacts.filter((c) => c.customerId === selectedCustomerId));
+        setContacts([]);
       }
     };
     load();

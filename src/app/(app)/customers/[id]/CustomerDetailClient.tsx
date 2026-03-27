@@ -30,8 +30,6 @@ import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { queryTrainingsByCustomer } from '@/lib/db/queries/trainings';
-import { mockContacts } from '@/lib/mock/contacts';
-import { mockTrainings } from '@/lib/mock/trainings';
 import { todayISO } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
@@ -186,8 +184,7 @@ export default function CustomerDetailClient() {
     if (!customerId || customerId === '_placeholder') return;
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           const [c, t] = await Promise.all([
             queryContactsByCustomer(customerId),
             queryTrainingsByCustomer(customerId),
@@ -195,13 +192,13 @@ export default function CustomerDetailClient() {
           setContacts(c);
           setTrainings(t);
         } else {
-          setContacts(mockContacts.filter((c) => c.customerId === customerId));
-          setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
+          setContacts([]);
+          setTrainings([]);
         }
       } catch (err) {
         console.error('[customer] Failed to load detail data:', err);
-        setContacts(mockContacts.filter((c) => c.customerId === customerId));
-        setTrainings(mockTrainings.filter((t) => t.customerId === customerId));
+        setContacts([]);
+        setTrainings([]);
       }
     };
     load();

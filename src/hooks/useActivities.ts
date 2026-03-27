@@ -5,8 +5,6 @@ import { useActivityStore } from '@/store/activityStore';
 import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, deleteActivity as dbDeleteActivity, countPendingActivities } from '@/lib/db/queries/activities';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { useSettingsStore } from '@/store/settingsStore';
-import { mockActivities } from '@/lib/mock/activities';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,18 +21,17 @@ export function useActivities(customerId: string) {
     setLoading(true);
     const load = async () => {
       try {
-        const useMock = useSettingsStore.getState().mockDataEnabled;
-        if (!useMock && isTauriApp()) {
+        if (isTauriApp()) {
           const data = await queryActivitiesByCustomer(customerId);
           setActivities(data, customerId);
           const pending = await countPendingActivities();
           setPendingCount(pending);
         } else {
-          setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
+          setActivities([], customerId);
         }
       } catch (err) {
         console.error('[activity] Failed to load:', err);
-        setActivities(mockActivities.filter((a) => a.customerId === customerId), customerId);
+        setActivities([], customerId);
       } finally {
         setLoading(false);
       }

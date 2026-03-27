@@ -5,14 +5,11 @@ import { useRouter } from 'next/navigation';
 import { FollowUpItem } from '@/components/followups/FollowUpItem';
 import { Badge } from '@/components/ui/badge';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { mockFollowUps } from '@/lib/mock/followups';
-import { mockCustomers } from '@/lib/mock/customers';
 import { queryAllFollowUps, completeFollowUp } from '@/lib/db/queries/followups';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { onDataEvent } from '@/lib/dataEvents';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
-import { useSettingsStore } from '@/store/settingsStore';
 
 export default function FollowUpsPage() {
   const router = useRouter();
@@ -22,8 +19,7 @@ export default function FollowUpsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const useMock = useSettingsStore.getState().mockDataEnabled;
-      if (!useMock && isTauriApp()) {
+      if (isTauriApp()) {
         const [fups, customers] = await Promise.all([
           queryAllFollowUps(),
           queryAllCustomers(),
@@ -31,13 +27,13 @@ export default function FollowUpsPage() {
         setFollowUps(fups);
         setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
       } else {
-        setFollowUps(mockFollowUps);
-        setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+        setFollowUps([]);
+        setCustomerMap(new Map());
       }
     } catch (err) {
       console.error('[followup] Failed to load follow-ups:', err);
-      setFollowUps(mockFollowUps);
-      setCustomerMap(new Map(mockCustomers.map((c) => [c.id, c.name])));
+      setFollowUps([]);
+      setCustomerMap(new Map());
     }
   }, []);
 
