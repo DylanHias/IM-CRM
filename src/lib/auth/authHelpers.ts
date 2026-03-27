@@ -1,7 +1,7 @@
 import { InteractionRequiredAuthError, type AccountInfo } from '@azure/msal-browser';
 import { getMsalInstance } from './msalInstance';
 import { loginRequest } from './msalConfig';
-import { isTauriApp } from '@/lib/utils/offlineUtils';
+
 
 export async function getAccessToken(scopes: string[]): Promise<string | null> {
   const instance = getMsalInstance();
@@ -38,23 +38,12 @@ export function getActiveAccount(): AccountInfo | null {
 export async function signOut(): Promise<void> {
   const instance = getMsalInstance();
   const account = getActiveAccount();
-  if (isTauriApp()) {
-    await instance.logoutRedirect({ account: account ?? undefined });
-  } else {
-    await instance.logoutPopup({ account: account ?? undefined });
-  }
+  await instance.logoutPopup({ account: account ?? undefined });
 }
 
 export async function signIn(): Promise<{ account: AccountInfo; accessToken: string } | null> {
   const instance = getMsalInstance();
   try {
-    if (isTauriApp()) {
-      // Redirect flow: navigates away, response is handled on page reload
-      // via handleRedirectPromise() in providers.tsx
-      await instance.loginRedirect(loginRequest);
-      return null; // Won't reach here — page navigates away
-    }
-
     const result = await instance.loginPopup(loginRequest);
     if (result.account) {
       instance.setActiveAccount(result.account);
