@@ -1,6 +1,6 @@
 [package]
 name = "crm-mvp"
-version = "0.26.2"
+version = "0.26.3"
 edition = "2021"
 
 [lib]
@@ -11,7 +11,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-http = { version = "2" }
 tauri-plugin-updater = { version = "2" }
