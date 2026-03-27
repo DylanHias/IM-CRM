@@ -164,8 +164,6 @@ class RealD365Adapter implements ID365Adapter {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
       'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
-      // Custom contact type field — update name to match your D365 org schema
-      'new_contacttype',
     ].join(',');
 
     const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=_parentcustomerid_value ne null`;
