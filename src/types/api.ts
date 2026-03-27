@@ -56,46 +56,6 @@ export interface TrainingApiResponse {
   };
 }
 
-// SharePoint list item shapes (used by PowerAutomateAdapter)
-export interface SpCustomerItem {
-  fields: {
-    AccountId: string;
-    Title: string; // Name
-    AccountNumber: string | null;
-    Industry: string | null;
-    OwnerId: string | null;
-    OwnerName: string | null;
-    Phone: string | null;
-    Email: string | null;
-    Street: string | null;
-    City: string | null;
-    Country: string | null;
-    Website: string | null;
-    StateCode: number;
-    ModifiedOn: string;
-  };
-}
-
-export interface SpContactItem {
-  fields: {
-    ContactId: string;
-    CustomerId: string;
-    FirstName: string;
-    LastName: string;
-    JobTitle: string | null;
-    Email: string | null;
-    Phone: string | null;
-    Mobile: string | null;
-    ContactType: string | null;
-    ModifiedOn: string;
-  };
-}
-
-export interface SpListResponse<T> {
-  value: T[];
-  '@odata.nextLink'?: string;
-}
-
 export interface D365SystemUser {
   systemuserid: string;
   fullname: string;

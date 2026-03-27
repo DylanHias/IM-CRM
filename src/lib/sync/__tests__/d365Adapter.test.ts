@@ -7,7 +7,6 @@ describe('d365Adapter', () => {
     vi.resetModules();
     process.env = { ...originalEnv };
     delete process.env.NEXT_PUBLIC_D365_BASE_URL;
-    delete process.env.NEXT_PUBLIC_SP_PENDING_ACTIVITIES_LIST_ID;
   });
 
   afterAll(() => {

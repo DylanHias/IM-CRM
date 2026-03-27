@@ -39,7 +39,3 @@ export const d365Request = {
     `${(process.env.NEXT_PUBLIC_D365_BASE_URL ?? 'https://org.crm4.dynamics.com').replace(/\/+$/, '')}/.default`,
   ],
 };
-
-export const graphRequest = {
-  scopes: ['https://graph.microsoft.com/Sites.ReadWrite.All'],
-};

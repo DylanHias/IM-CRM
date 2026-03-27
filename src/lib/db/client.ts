@@ -1,8 +1,5 @@
 import type Database from '@tauri-apps/plugin-sql';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { mockCustomers } from '@/lib/mock/customers';
-import { mockOpportunities } from '@/lib/mock/opportunities';
-import { mockUsers, mockAuditEntries, mockSyncRecords } from '@/lib/mock/admin';
 
 let dbInstance: Database | null = null;
 let initPromise: Promise<Database> | null = null;
@@ -304,14 +301,6 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       try { await db.execute(`ALTER TABLE customers ADD COLUMN ${col}`); } catch { /* column may already exist */ }
     }
 
-    // Backfill from mock data
-    for (const c of mockCustomers) {
-      await db.execute(
-        `UPDATE customers SET reseller_id = $1, bcn = $2, cloud_customer = $3, language = $4, arr = $5 WHERE id = $6`,
-        [c.resellerId, c.bcn, c.cloudCustomer ? 1 : 0, c.language, c.arr, c.id]
-      );
-    }
-
     await db.execute(
       `UPDATE app_settings SET value = '3', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
@@ -414,36 +403,6 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   }
 
   if (currentVersion < 6) {
-    // Backfill opportunities, users, audit log, and sync records that were
-    // previously missing from the seed
-    for (const o of mockOpportunities) {
-      await db.execute(
-        `INSERT OR IGNORE INTO opportunities (id,customer_id,contact_id,status,subject,bcn,multi_vendor_opportunity,sell_type,primary_vendor,opportunity_type,stage,probability,expiration_date,estimated_revenue,currency,country,source,record_type,customer_need,sync_status,remote_id,created_by_id,created_by_name,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
-        [o.id,o.customerId,o.contactId,o.status,o.subject,o.bcn,o.multiVendorOpportunity?1:0,o.sellType,o.primaryVendor,o.opportunityType,o.stage,o.probability,o.expirationDate,o.estimatedRevenue,o.currency,o.country,o.source,o.recordType,o.customerNeed,o.syncStatus,o.remoteId,o.createdById,o.createdByName,o.createdAt,o.updatedAt]
-      );
-    }
-
-    for (const u of mockUsers) {
-      await db.execute(
-        `INSERT OR IGNORE INTO users (id,email,name,role,business_unit,last_active_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [u.id,u.email,u.name,u.role,u.businessUnit,u.lastActiveAt,u.createdAt,u.updatedAt]
-      );
-    }
-
-    for (const a of mockAuditEntries) {
-      await db.execute(
-        `INSERT OR IGNORE INTO audit_log (id,entity_type,entity_id,action,changed_by_id,changed_by_name,old_values,new_values,changed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [a.id,a.entityType,a.entityId,a.action,a.changedById,a.changedByName,a.oldValues ? JSON.stringify(a.oldValues) : null,a.newValues ? JSON.stringify(a.newValues) : null,a.changedAt]
-      );
-    }
-
-    for (const s of mockSyncRecords) {
-      await db.execute(
-        `INSERT OR IGNORE INTO sync_records (id,sync_type,status,started_at,finished_at,records_pulled,records_pushed,error_message,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [s.id,s.syncType,s.status,s.startedAt,s.finishedAt,s.recordsPulled,s.recordsPushed,s.errorMessage,s.createdAt]
-      );
-    }
-
     await db.execute(
       `UPDATE app_settings SET value = '6', updated_at = datetime('now') WHERE key = 'schema_version'`
     );

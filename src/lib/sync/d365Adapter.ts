@@ -2,7 +2,6 @@ import type { Customer, Contact, Activity, FollowUp } from '@/types/entities';
 import type { D365Customer, D365Contact, D365ODataResponse } from '@/types/api';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
-import { getPowerAutomateAdapter } from './powerAutomateAdapter';
 
 export interface ID365Adapter {
   fetchCustomers(token: string): Promise<Customer[]>;
@@ -280,9 +279,6 @@ function delay(ms: number) {
 export function getD365Adapter(): ID365Adapter {
   if (process.env.NEXT_PUBLIC_D365_BASE_URL) {
     return new RealD365Adapter();
-  }
-  if (process.env.NEXT_PUBLIC_SP_PENDING_ACTIVITIES_LIST_ID) {
-    return getPowerAutomateAdapter();
   }
   return new MockD365Adapter();
 }
