@@ -75,12 +75,12 @@ export async function signOut(): Promise<void> {
 }
 
 export async function signIn(): Promise<{ account: AccountInfo; accessToken: string } | null> {
-  try {
-    if (isTauriApp()) {
-      const { tauriSignIn } = await import('./tauriAuth');
-      return await tauriSignIn();
-    }
+  if (isTauriApp()) {
+    const { tauriSignIn } = await import('./tauriAuth');
+    return await tauriSignIn();
+  }
 
+  try {
     const instance = getMsalInstance();
     const result = await instance.loginPopup(loginRequest);
     if (result.account) {

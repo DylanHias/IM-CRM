@@ -193,7 +193,8 @@ export default function LoginPage() {
         setError('Login was cancelled or failed. Please try again.');
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
       console.error('[login]', err);
     } finally {
       setIsLoading(false);

@@ -181,7 +181,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
     let unlistenError: () => void = () => {};
 
     const setup = async () => {
-      unlistenCallback = await listen<string>('oauth://callback', async (event) => {
+      unlistenCallback = await listen<string>('oauth-callback', async (event) => {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
@@ -203,7 +203,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
         }
       });
 
-      unlistenError = await listen<string>('oauth://error', async (event) => {
+      unlistenError = await listen<string>('oauth-error', async (event) => {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);

@@ -64,7 +64,7 @@ impl OAuthServer {
                                 .unwrap(),
                             );
                         let _ = request.respond(response);
-                        let _ = app.emit("oauth://callback", code);
+                        let _ = app.emit("oauth-callback", code);
                         break;
                     }
                     None => {
@@ -100,7 +100,7 @@ impl OAuthServer {
                                 .unwrap(),
                             );
                         let _ = request.respond(response);
-                        let _ = app.emit("oauth://error", error);
+                        let _ = app.emit("oauth-error", error);
                         break;
                     }
                 }
