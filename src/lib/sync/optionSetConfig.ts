@@ -8,7 +8,6 @@ interface OptionSetFieldConfig {
 
 export type OptionSetFieldKey =
   | 'account.industrycode'
-  | 'contact.contacttype'
   | 'opportunity.stage'
   | 'opportunity.selltype'
   | 'opportunity.opptype'
@@ -54,11 +53,6 @@ export const OPTION_SET_FIELDS: Record<OptionSetFieldKey, OptionSetFieldConfig> 
       { value: 32, label: 'Vehicle Retail' },
       { value: 33, label: 'Wholesale' },
     ],
-  },
-  'contact.contacttype': {
-    entityName: 'contact',
-    attributeName: 'new_contacttype',
-    fallbackOptions: [],
   },
   'opportunity.stage': {
     entityName: 'opportunity',

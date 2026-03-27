@@ -82,7 +82,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     addressCountry: d365.address1_country,
     website: d365.websiteurl,
     cloudCustomer: d365.im360_cloudpurchaser ?? null,
-    language: d365.primarycontactid?.['preferredlanguagecode@OData.Community.Display.V1.FormattedValue'] ?? null,
+    language: null, // preferredlanguagecode not available on D365 contact entity in this org
     arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
     lastActivityAt: null,
@@ -154,8 +154,7 @@ class RealD365Adapter implements ID365Adapter {
       'statecode', 'modifiedon',
     ].join(',');
 
-    const expand = '$expand=primarycontactid($select=preferredlanguagecode)';
-    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&${expand}&$filter=statecode eq 0`;
+    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=statecode eq 0`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token);
     return records.map((r) => mapD365CustomerToCustomer(r, now));
