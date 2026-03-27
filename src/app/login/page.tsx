@@ -187,12 +187,9 @@ export default function LoginPage() {
     try {
       const result = await signIn();
       if (result) {
-        // Popup flow (browser) — got a result immediately
         setAccount(result.account, result.accessToken);
         router.replace('/customers');
-      } else if (!isTauriApp()) {
-        // Only show error for browser popup flow — Tauri uses redirect
-        // (page navigates away, response handled on reload in providers.tsx)
+      } else {
         setError('Login was cancelled or failed. Please try again.');
       }
     } catch (err) {
