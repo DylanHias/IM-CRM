@@ -1,6 +1,6 @@
 [package]
 name = "crm-mvp"
-version = "0.26.4"
+version = "0.26.5"
 edition = "2021"
 
 [lib]
@@ -24,3 +24,4 @@ tauri-plugin-autostart = "2.5.1"
 tauri-plugin-shell = "2"
 tiny_http = "0.12"
 url = "2"
+reqwest = { version = "0.12", features = ["json"] }

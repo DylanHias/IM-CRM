@@ -4,11 +4,6 @@ import { open } from '@tauri-apps/plugin-shell';
 import { loginRequest } from './msalConfig';
 import type { AccountInfo } from '@azure/msal-browser';
 
-async function getTauriFetch(): Promise<typeof globalThis.fetch> {
-  const { fetch: f } = await import('@tauri-apps/plugin-http');
-  return f;
-}
-
 const CLIENT_ID = process.env.NEXT_PUBLIC_AZURE_CLIENT_ID ?? '';
 const TENANT_ID = process.env.NEXT_PUBLIC_AZURE_TENANT_ID ?? 'common';
 const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
@@ -16,7 +11,7 @@ const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
 interface TokenResponse {
   access_token: string;
   id_token: string;
-  refresh_token?: string;
+  refresh_token: string | null;
   expires_in: number;
   scope: string;
   token_type: string;
@@ -56,35 +51,6 @@ function parseIdToken(idToken: string): IdTokenClaims {
   return JSON.parse(atob(payload));
 }
 
-async function exchangeCodeForTokens(
-  code: string,
-  redirectUri: string,
-  codeVerifier: string,
-): Promise<TokenResponse> {
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: 'authorization_code',
-    code,
-    redirect_uri: redirectUri,
-    code_verifier: codeVerifier,
-    scope: loginRequest.scopes.join(' '),
-  });
-
-  const tauriFetch = await getTauriFetch();
-  const res = await tauriFetch(`${AUTHORITY}/oauth2/v2.0/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Token exchange failed (${res.status}): ${text}`);
-  }
-
-  return res.json();
-}
-
 function buildAccountInfo(claims: IdTokenClaims): AccountInfo {
   const localAccountId = claims.oid ?? claims.sub ?? crypto.randomUUID();
   return {
@@ -100,43 +66,30 @@ function buildAccountInfo(claims: IdTokenClaims): AccountInfo {
   } as AccountInfo;
 }
 
-// Store refresh token for silent token renewal
 let storedRefreshToken: string | null = null;
-
-export function getRefreshToken(): string | null {
-  return storedRefreshToken;
-}
 
 export async function refreshAccessToken(scopes: string[]): Promise<{ accessToken: string; account: AccountInfo } | null> {
   if (!storedRefreshToken) return null;
 
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: 'refresh_token',
-    refresh_token: storedRefreshToken,
-    scope: scopes.join(' '),
-  });
+  try {
+    const tokens: TokenResponse = await invoke('refresh_oauth_token', {
+      refreshToken: storedRefreshToken,
+      clientId: CLIENT_ID,
+      tenantId: TENANT_ID,
+      scopes: scopes.join(' '),
+    });
 
-  const tauriFetch = await getTauriFetch();
-  const res = await tauriFetch(`${AUTHORITY}/oauth2/v2.0/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
+    if (tokens.refresh_token) {
+      storedRefreshToken = tokens.refresh_token;
+    }
 
-  if (!res.ok) {
-    console.error('[auth] Refresh token exchange failed:', await res.text());
+    const claims = parseIdToken(tokens.id_token);
+    return { accessToken: tokens.access_token, account: buildAccountInfo(claims) };
+  } catch (err) {
+    console.error('[auth] Refresh token exchange failed:', err);
     storedRefreshToken = null;
     return null;
   }
-
-  const tokens: TokenResponse = await res.json();
-  if (tokens.refresh_token) {
-    storedRefreshToken = tokens.refresh_token;
-  }
-
-  const claims = parseIdToken(tokens.id_token);
-  return { accessToken: tokens.access_token, account: buildAccountInfo(claims) };
 }
 
 export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken: string } | null> {
@@ -144,7 +97,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
   const redirectUri = `http://localhost:${port}`;
   const { verifier, challenge } = await generatePkce();
 
-  const scopes = loginRequest.scopes.join(' ');
+  const scopes = `${loginRequest.scopes.join(' ')} offline_access`;
   const state = crypto.randomUUID();
   const authUrl = [
     `${AUTHORITY}/oauth2/v2.0/authorize`,
@@ -152,7 +105,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
     `&response_type=code`,
     `&redirect_uri=${encodeURIComponent(redirectUri)}`,
     `&response_mode=query`,
-    `&scope=${encodeURIComponent(`${scopes} offline_access`)}`,
+    `&scope=${encodeURIComponent(scopes)}`,
     `&state=${state}`,
     `&code_challenge=${encodeURIComponent(challenge)}`,
     `&code_challenge_method=S256`,
@@ -187,7 +140,15 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
         clearTimeout(timeout);
 
         try {
-          const tokens = await exchangeCodeForTokens(event.payload, redirectUri, verifier);
+          const tokens: TokenResponse = await invoke('exchange_oauth_code', {
+            code: event.payload,
+            redirectUri,
+            codeVerifier: verifier,
+            clientId: CLIENT_ID,
+            tenantId: TENANT_ID,
+            scopes,
+          });
+
           const claims = parseIdToken(tokens.id_token);
           const account = buildAccountInfo(claims);
 
