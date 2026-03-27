@@ -2,8 +2,13 @@ import { InteractionRequiredAuthError, type AccountInfo } from '@azure/msal-brow
 import { getMsalInstance } from './msalInstance';
 import { loginRequest } from './msalConfig';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { useAuthStore } from '@/store/authStore';
 
 export async function getAccessToken(scopes: string[]): Promise<string | null> {
+  if (isTauriApp()) {
+    return getTauriAccessToken(scopes);
+  }
+
   const instance = getMsalInstance();
   const accounts = instance.getAllAccounts();
   if (accounts.length === 0) return null;
@@ -16,22 +21,6 @@ export async function getAccessToken(scopes: string[]): Promise<string | null> {
     return result.accessToken;
   } catch (err) {
     if (err instanceof InteractionRequiredAuthError) {
-      if (isTauriApp()) {
-        // In Tauri, we can't use popups — re-auth via system browser
-        try {
-          const { tauriSignIn } = await import('./tauriAuth');
-          await tauriSignIn();
-          // Retry silent after re-auth
-          const retryResult = await instance.acquireTokenSilent({
-            scopes,
-            account: instance.getAllAccounts()[0],
-          });
-          return retryResult.accessToken;
-        } catch (tauriErr) {
-          console.error('[auth] Tauri re-auth failed:', tauriErr);
-          return null;
-        }
-      }
       try {
         const result = await instance.acquireTokenPopup({ scopes });
         return result.accessToken;
@@ -45,33 +34,54 @@ export async function getAccessToken(scopes: string[]): Promise<string | null> {
   }
 }
 
+async function getTauriAccessToken(scopes: string[]): Promise<string | null> {
+  const { refreshAccessToken } = await import('./tauriAuth');
+  const result = await refreshAccessToken(scopes);
+  if (result) {
+    useAuthStore.getState().setAccount(result.account, result.accessToken);
+    return result.accessToken;
+  }
+  // Refresh token expired — need full re-auth
+  try {
+    const { tauriSignIn } = await import('./tauriAuth');
+    const signInResult = await tauriSignIn();
+    if (signInResult) {
+      useAuthStore.getState().setAccount(signInResult.account, signInResult.accessToken);
+      return signInResult.accessToken;
+    }
+  } catch (err) {
+    console.error('[auth] Tauri re-auth failed:', err);
+  }
+  return null;
+}
+
 export function getActiveAccount(): AccountInfo | null {
+  if (isTauriApp()) {
+    return useAuthStore.getState().account;
+  }
   const instance = getMsalInstance();
   const accounts = instance.getAllAccounts();
   return accounts[0] ?? null;
 }
 
 export async function signOut(): Promise<void> {
+  if (isTauriApp()) {
+    useAuthStore.getState().clearAuth();
+    return;
+  }
   const instance = getMsalInstance();
   const account = getActiveAccount();
-  if (isTauriApp()) {
-    // Clear MSAL cache locally — no redirect needed
-    if (account) {
-      await instance.clearCache({ account });
-    }
-  } else {
-    await instance.logoutPopup({ account: account ?? undefined });
-  }
+  await instance.logoutPopup({ account: account ?? undefined });
 }
 
 export async function signIn(): Promise<{ account: AccountInfo; accessToken: string } | null> {
-  const instance = getMsalInstance();
   try {
     if (isTauriApp()) {
       const { tauriSignIn } = await import('./tauriAuth');
       return await tauriSignIn();
     }
 
+    const instance = getMsalInstance();
     const result = await instance.loginPopup(loginRequest);
     if (result.account) {
       instance.setActiveAccount(result.account);
