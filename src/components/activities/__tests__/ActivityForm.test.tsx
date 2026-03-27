@@ -16,6 +16,8 @@ vi.mock('@/hooks/useActivities', () => ({
 
 vi.mock('@/lib/utils/dateUtils', () => ({
   todayISO: () => '2026-03-25',
+  nowDatetimeLocal: () => '2026-03-25T10:00',
+  isoToDatetimeLocal: (iso: string) => iso ? iso.slice(0, 16) : '2026-03-25T10:00',
 }));
 
 const contacts: Contact[] = [
