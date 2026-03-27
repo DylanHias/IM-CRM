@@ -35,6 +35,7 @@ export interface ContactRow {
   phone: string | null;
   mobile: string | null;
   notes: string | null;
+  contact_type: string | null;
   synced_at: string;
   created_at: string;
   updated_at: string;
@@ -48,6 +49,7 @@ export interface ActivityRow {
   subject: string;
   description: string | null;
   occurred_at: string;
+  start_time: string | null;
   created_by_id: string;
   created_by_name: string;
   sync_status: string;

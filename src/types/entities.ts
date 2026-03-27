@@ -50,6 +50,7 @@ export interface Activity {
   subject: string;
   description: string | null;
   occurredAt: string;
+  startTime: string | null;
   createdById: string;
   createdByName: string;
   syncStatus: 'pending' | 'synced' | 'error';
@@ -88,10 +89,10 @@ export interface FollowUp {
 }
 
 export type OpportunityStatus = 'Open' | 'Won' | 'Lost';
-export type OpportunityType = 'Services' | 'SPA' | 'SPA - Partner Agreement' | 'CMP' | 'Trad' | 'MPO2Connect' | 'Azure Private Offer' | 'Breath' | 'Licensing';
-export type OpportunityStage = 'Prospecting' | 'Validated' | 'Qualified' | 'Verbal Received' | 'Contract Received' | 'Billing Rejection' | 'Pending Vendor Confirmation' | 'Purchased';
-export type SellType = 'New' | 'Install';
-export type PrimaryVendor = 'AWS' | 'Azure' | 'Adobe' | 'HPE' | 'Dell' | 'Cisco' | 'Palo Alto' | 'NetApp' | 'VMware' | 'Lenovo' | 'Microsoft';
+export type OpportunityType = string;
+export type OpportunityStage = string;
+export type SellType = string;
+export type PrimaryVendor = string;
 
 export interface Opportunity {
   id: string;

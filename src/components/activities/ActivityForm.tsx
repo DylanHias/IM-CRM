@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useActivities } from '@/hooks/useActivities';
 import { useSettingsStore } from '@/store/settingsStore';
-import { todayISO } from '@/lib/utils/dateUtils';
+import { todayISO, nowDatetimeLocal } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { Contact } from '@/types/entities';
 
@@ -37,7 +37,9 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
 
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
-  const [occurredAt, setOccurredAt] = useState(todayISO());
+  const isAppointmentType = type === 'meeting' || type === 'visit';
+  const [startTime, setStartTime] = useState(nowDatetimeLocal());
+  const [occurredAt, setOccurredAt] = useState(isAppointmentType ? nowDatetimeLocal() : todayISO());
   const [contactId, setContactId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -57,6 +59,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         subject: subject.trim(),
         description: description.trim() || null,
         occurredAt: new Date(occurredAt).toISOString(),
+        startTime: isAppointmentType ? new Date(startTime).toISOString() : null,
       });
       setSuccess(true);
       setTimeout(() => router.back(), 1200);
@@ -95,7 +98,16 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
 
       <div className="space-y-1">
         <Label htmlFor="type">Activity Type *</Label>
-        <Select value={type} onValueChange={(v) => setTypeOverride(v as 'meeting' | 'visit' | 'call' | 'note')}>
+        <Select value={type} onValueChange={(v) => {
+          const newType = v as 'meeting' | 'visit' | 'call' | 'note';
+          setTypeOverride(newType);
+          const wasAppointment = type === 'meeting' || type === 'visit';
+          const isNowAppointment = newType === 'meeting' || newType === 'visit';
+          if (wasAppointment !== isNowAppointment) {
+            setOccurredAt(isNowAppointment ? nowDatetimeLocal() : todayISO());
+            setStartTime(nowDatetimeLocal());
+          }
+        }}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -129,7 +141,30 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {isAppointmentType ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="startTime">Start *</Label>
+            <Input
+              id="startTime"
+              type="datetime-local"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="occurredAt">End *</Label>
+            <Input
+              id="occurredAt"
+              type="datetime-local"
+              value={occurredAt}
+              onChange={(e) => setOccurredAt(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      ) : (
         <div className="space-y-1">
           <Label htmlFor="occurredAt">Date *</Label>
           <Input
@@ -141,7 +176,9 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
             required
           />
         </div>
+      )}
 
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label>Contact (optional)</Label>
           <Select value={contactId} onValueChange={setContactId}>

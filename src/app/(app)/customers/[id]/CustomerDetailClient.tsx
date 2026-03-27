@@ -30,7 +30,7 @@ import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { queryTrainingsByCustomer } from '@/lib/db/queries/trainings';
-import { todayISO } from '@/lib/utils/dateUtils';
+import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import type { Activity, Contact, Training } from '@/types/entities';
@@ -57,6 +57,7 @@ export default function CustomerDetailClient() {
   const [editType, setEditType] = useState<Activity['type']>('meeting');
   const [editSubject, setEditSubject] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
   const [editOccurredAt, setEditOccurredAt] = useState('');
   const [editContactId, setEditContactId] = useState('none');
   const [isSavingActivity, setIsSavingActivity] = useState(false);
@@ -67,6 +68,7 @@ export default function CustomerDetailClient() {
   const [newActType, setNewActType] = useState<Activity['type'] | null>(null);
   const [newActSubject, setNewActSubject] = useState('');
   const [newActDescription, setNewActDescription] = useState('');
+  const [newActStartTime, setNewActStartTime] = useState(nowDatetimeLocal());
   const [newActDate, setNewActDate] = useState(todayISO());
   const [newActContactId, setNewActContactId] = useState('none');
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
@@ -107,7 +109,9 @@ export default function CustomerDetailClient() {
     setEditType(activity.type);
     setEditSubject(activity.subject);
     setEditDescription(activity.description ?? '');
-    setEditOccurredAt(activity.occurredAt.split('T')[0]);
+    const isAppt = activity.type === 'meeting' || activity.type === 'visit';
+    setEditStartTime(activity.startTime ? isoToDatetimeLocal(activity.startTime) : nowDatetimeLocal());
+    setEditOccurredAt(isAppt ? isoToDatetimeLocal(activity.occurredAt) : activity.occurredAt.split('T')[0]);
     setEditContactId(activity.contactId ?? 'none');
   };
 
@@ -116,12 +120,14 @@ export default function CustomerDetailClient() {
     if (!editingActivity || !editSubject.trim()) return;
     setIsSavingActivity(true);
     try {
+      const isAppt = editType === 'meeting' || editType === 'visit';
       await editActivity({
         ...editingActivity,
         type: editType,
         subject: editSubject.trim(),
         description: editDescription.trim() || null,
         occurredAt: new Date(editOccurredAt).toISOString(),
+        startTime: isAppt ? new Date(editStartTime).toISOString() : null,
         contactId: editContactId === 'none' ? null : editContactId,
         updatedAt: new Date().toISOString(),
       });
@@ -140,18 +146,22 @@ export default function CustomerDetailClient() {
     if (!newActSubject.trim()) return;
     setIsCreatingActivity(true);
     try {
+      const actType = newActType ?? defaultActivityType;
+      const isAppt = actType === 'meeting' || actType === 'visit';
       await createActivity({
         customerId,
         contactId: newActContactId === 'none' ? null : newActContactId,
-        type: newActType ?? defaultActivityType,
+        type: actType,
         subject: newActSubject.trim(),
         description: newActDescription.trim() || null,
         occurredAt: new Date(newActDate).toISOString(),
+        startTime: isAppt ? new Date(newActStartTime).toISOString() : null,
       });
       setAddActivityOpen(false);
       setNewActType(null);
       setNewActSubject('');
       setNewActDescription('');
+      setNewActStartTime(nowDatetimeLocal());
       setNewActDate(todayISO());
       setNewActContactId('none');
     } finally {
@@ -564,7 +574,16 @@ export default function CustomerDetailClient() {
                   <form onSubmit={handleSaveActivity} className="space-y-4">
                     <div className="space-y-1">
                       <Label>Type</Label>
-                      <Select value={editType} onValueChange={(v) => setEditType(v as Activity['type'])}>
+                      <Select value={editType} onValueChange={(v) => {
+                        const newType = v as Activity['type'];
+                        const wasAppt = editType === 'meeting' || editType === 'visit';
+                        const isNowAppt = newType === 'meeting' || newType === 'visit';
+                        setEditType(newType);
+                        if (wasAppt !== isNowAppt) {
+                          setEditOccurredAt(isNowAppt ? nowDatetimeLocal() : todayISO());
+                          setEditStartTime(nowDatetimeLocal());
+                        }
+                      }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="meeting">Meeting</SelectItem>
@@ -582,11 +601,24 @@ export default function CustomerDetailClient() {
                       <Label>Description</Label>
                       <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {(editType === 'meeting' || editType === 'visit') ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Start *</Label>
+                          <Input type="datetime-local" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>End *</Label>
+                          <Input type="datetime-local" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} required />
+                        </div>
+                      </div>
+                    ) : (
                       <div className="space-y-1">
                         <Label>Date *</Label>
                         <Input type="date" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} max={todayISO()} required />
                       </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label>Contact</Label>
                         <Select value={editContactId} onValueChange={setEditContactId}>
@@ -619,7 +651,17 @@ export default function CustomerDetailClient() {
                   <form onSubmit={handleCreateActivity} className="space-y-4">
                     <div className="space-y-1">
                       <Label>Type</Label>
-                      <Select value={newActType ?? defaultActivityType} onValueChange={(v) => setNewActType(v as Activity['type'])}>
+                      <Select value={newActType ?? defaultActivityType} onValueChange={(v) => {
+                        const newType = v as Activity['type'];
+                        const prevType = newActType ?? defaultActivityType;
+                        const wasAppt = prevType === 'meeting' || prevType === 'visit';
+                        const isNowAppt = newType === 'meeting' || newType === 'visit';
+                        setNewActType(newType);
+                        if (wasAppt !== isNowAppt) {
+                          setNewActDate(isNowAppt ? nowDatetimeLocal() : todayISO());
+                          setNewActStartTime(nowDatetimeLocal());
+                        }
+                      }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="meeting">Meeting</SelectItem>
@@ -637,11 +679,24 @@ export default function CustomerDetailClient() {
                       <Label>Description</Label>
                       <Textarea value={newActDescription} onChange={(e) => setNewActDescription(e.target.value)} rows={3} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {((newActType ?? defaultActivityType) === 'meeting' || (newActType ?? defaultActivityType) === 'visit') ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Start *</Label>
+                          <Input type="datetime-local" value={newActStartTime} onChange={(e) => setNewActStartTime(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>End *</Label>
+                          <Input type="datetime-local" value={newActDate} onChange={(e) => setNewActDate(e.target.value)} required />
+                        </div>
+                      </div>
+                    ) : (
                       <div className="space-y-1">
                         <Label>Date *</Label>
                         <Input type="date" value={newActDate} onChange={(e) => setNewActDate(e.target.value)} max={todayISO()} required />
                       </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label>Contact</Label>
                         <Select value={newActContactId} onValueChange={setNewActContactId}>

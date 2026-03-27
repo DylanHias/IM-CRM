@@ -7,7 +7,7 @@ function mapD365UserToCrmUser(d365: D365SystemUser, now: string): CrmUser {
     email: d365.internalemailaddress ?? '',
     name: d365.fullname,
     role: 'user',
-    businessUnit: d365['businessunitid@OData.Community.Display.V1.FormattedValue'] ?? null,
+    businessUnit: d365['_businessunitid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     lastActiveAt: d365.modifiedon,
     createdAt: now,
     updatedAt: now,
@@ -23,7 +23,7 @@ export async function fetchD365Users(token: string): Promise<CrmUser[]> {
   ].join(',');
 
   const results: D365SystemUser[] = [];
-  let url: string | undefined = `${baseUrl}/api/data/v9.2/systemusers?$select=${select}&$expand=businessunitid($select=name)&$filter=isdisabled eq false`;
+  let url: string | undefined = `${baseUrl}/api/data/v9.2/systemusers?$select=${select},_businessunitid_value&$filter=isdisabled eq false`;
 
   while (url) {
     const res = await fetch(url, {
@@ -32,6 +32,7 @@ export async function fetchD365Users(token: string): Promise<CrmUser[]> {
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
         Accept: 'application/json',
+        Prefer: 'odata.include-annotations="*"',
       },
     });
 

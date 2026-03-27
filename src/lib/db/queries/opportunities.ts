@@ -93,6 +93,14 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
   logAudit('opportunity', opp.id, 'update', opp.createdById, opp.createdByName, null, { subject: opp.subject, stage: opp.stage, status: opp.status });
 }
 
+export async function queryUniqueVendors(): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.select<{ primary_vendor: string }[]>(
+    `SELECT DISTINCT primary_vendor FROM opportunities WHERE primary_vendor IS NOT NULL AND primary_vendor != '' ORDER BY primary_vendor`
+  );
+  return rows.map((r) => r.primary_vendor);
+}
+
 export async function deleteOpportunity(id: string): Promise<void> {
   const db = await getDb();
   const rows = await db.select<OpportunityRow[]>(`SELECT * FROM opportunities WHERE id=$1`, [id]);

@@ -14,7 +14,7 @@ function rowToContact(row: ContactRow): Contact {
     phone: row.phone,
     mobile: row.mobile,
     notes: row.notes,
-    contactType: null,
+    contactType: row.contact_type,
     syncedAt: row.synced_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -40,16 +40,17 @@ export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
-      mobile=excluded.mobile, notes=excluded.notes, synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+      mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
-      contact.notes, contact.syncedAt, contact.createdAt, contact.updatedAt,
+      contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
   logAudit('contact', contact.id, 'create', 'system', 'System', null, { firstName: contact.firstName, lastName: contact.lastName });

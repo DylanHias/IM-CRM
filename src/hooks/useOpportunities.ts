@@ -9,7 +9,7 @@ import type { Opportunity, OpportunityStage } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
 
-const STAGE_PROBABILITY: Record<OpportunityStage, number> = {
+const STAGE_PROBABILITY: Record<string, number> = {
   'Prospecting': 5,
   'Validated': 25,
   'Qualified': 50,
@@ -21,7 +21,7 @@ const STAGE_PROBABILITY: Record<OpportunityStage, number> = {
 };
 
 export function stageToProbability(stage: OpportunityStage): number {
-  return STAGE_PROBABILITY[stage];
+  return STAGE_PROBABILITY[stage] ?? 5;
 }
 
 export function useOpportunities(customerId: string) {

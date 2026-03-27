@@ -8,6 +8,7 @@ import { initializeMsal } from '@/lib/auth/msalInstance';
 import { initDb } from '@/lib/db/client';
 import { lightTheme, darkTheme } from '@/styles/theme';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useOptionSetStore } from '@/store/optionSetStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { Toaster } from 'sonner';
@@ -48,8 +49,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         setDbError(err instanceof Error ? err.message : 'Database initialization failed');
       }
 
-      // Hydrate settings from SQLite after DB is ready
-      await useSettingsStore.getState().hydrateFromDb();
+      // Hydrate settings and option sets from SQLite after DB is ready
+      await Promise.all([
+        useSettingsStore.getState().hydrateFromDb(),
+        useOptionSetStore.getState().hydrateFromDb(),
+      ]);
 
       // Restore Tauri session from persisted refresh token
       try {

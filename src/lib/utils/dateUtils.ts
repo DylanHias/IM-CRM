@@ -36,3 +36,17 @@ export function toISOString(date: Date = new Date()): string {
 export function todayISO(): string {
   return new Date().toISOString().split('T')[0];
 }
+
+/** Returns current local datetime in "YYYY-MM-DDThh:mm" format for datetime-local inputs */
+export function nowDatetimeLocal(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Converts an ISO string to "YYYY-MM-DDThh:mm" format for datetime-local inputs */
+export function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

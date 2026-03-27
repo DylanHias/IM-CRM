@@ -1,11 +1,20 @@
 import type { Customer, Contact, Activity, FollowUp } from '@/types/entities';
 import type { D365Customer, D365Contact, D365ODataResponse } from '@/types/api';
+import type { OptionSetItem } from '@/types/optionSet';
+import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
+
+interface OptionSetData {
+  entityName: string;
+  attributeName: string;
+  options: Array<{ value: number; label: string; displayOrder: number }>;
+}
 
 export interface ID365Adapter {
   fetchCustomers(token: string): Promise<Customer[]>;
   fetchContacts(token: string): Promise<Contact[]>;
+  fetchOptionSets(token: string): Promise<OptionSetData[]>;
   pushActivity(token: string, activity: Activity): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
 }
@@ -58,22 +67,22 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     id: d365.accountid,
     name: d365.name,
     accountNumber: d365.accountnumber,
-    bcn: null,
+    bcn: d365.im360_bcn,
     resellerId: null,
     industry: d365.industrycode != null
-      ? (d365.industrycode_formattedvalue ?? INDUSTRY_CODE_MAP[d365.industrycode] ?? String(d365.industrycode))
+      ? (d365['industrycode@OData.Community.Display.V1.FormattedValue'] ?? INDUSTRY_CODE_MAP[d365.industrycode] ?? String(d365.industrycode))
       : null,
-    segment: null, // D365 standard schema has no segment field — customize if your org has one
+    segment: d365['im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'] ?? null,
     ownerId: d365._ownerid_value,
-    ownerName: d365['ownerid@OData.Community.Display.V1.FormattedValue'] ?? null,
+    ownerName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     phone: d365.telephone1,
     email: d365.emailaddress1,
     addressStreet: d365.address1_line1,
     addressCity: d365.address1_city,
     addressCountry: d365.address1_country,
     website: d365.websiteurl,
-    cloudCustomer: null,
-    language: null,
+    cloudCustomer: d365.im360_cloudpurchaser ?? null,
+    language: d365.primarycontactid?.['preferredlanguagecode@OData.Community.Display.V1.FormattedValue'] ?? null,
     arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
     lastActivityAt: null,
@@ -94,7 +103,7 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     phone: d365.telephone1,
     mobile: d365.mobilephone,
     notes: null,
-    contactType: d365.new_contacttype_formattedvalue ?? null,
+    contactType: d365['new_contacttype@OData.Community.Display.V1.FormattedValue'] ?? null,
     syncedAt: now,
     createdAt: now,
     updatedAt: d365.modifiedon,
@@ -115,6 +124,7 @@ async function fetchAllPages<T>(
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
         Accept: 'application/json',
+        Prefer: 'odata.include-annotations="*"',
       },
     });
 
@@ -137,14 +147,15 @@ class RealD365Adapter implements ID365Adapter {
   async fetchCustomers(token: string): Promise<Customer[]> {
     const select = [
       'accountid', 'name', 'accountnumber', 'industrycode',
-      'industrycode_formattedvalue', '_ownerid_value',
-      'ownerid@OData.Community.Display.V1.FormattedValue',
+      '_ownerid_value',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
+      'im360_bcn', 'im360_cloudpurchaser', 'im360_mainsegmentation',
       'statecode', 'modifiedon',
     ].join(',');
 
-    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=statecode eq 0`;
+    const expand = '$expand=primarycontactid($select=preferredlanguagecode)';
+    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&${expand}&$filter=statecode eq 0`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token);
     return records.map((r) => mapD365CustomerToCustomer(r, now));
@@ -164,19 +175,68 @@ class RealD365Adapter implements ID365Adapter {
     return records.map((r) => mapD365ContactToContact(r, now));
   }
 
+  async fetchOptionSets(token: string): Promise<OptionSetData[]> {
+    const results: OptionSetData[] = [];
+    const entries = Object.entries(OPTION_SET_FIELDS) as [OptionSetFieldKey, typeof OPTION_SET_FIELDS[OptionSetFieldKey]][];
+
+    for (const [, config] of entries) {
+      try {
+        const url = `${this.baseUrl}/api/data/v9.2/EntityDefinitions(LogicalName='${config.entityName}')/Attributes(LogicalName='${config.attributeName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)`;
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            Accept: 'application/json',
+          },
+        });
+
+        if (!res.ok) {
+          console.error(`[sync] Failed to fetch option set ${config.entityName}.${config.attributeName}: ${res.status}`);
+          continue;
+        }
+
+        const json = await res.json();
+        const options = (json.OptionSet?.Options ?? []).map((opt: { Value: number; Label: { UserLocalizedLabel?: { Label: string } | null; LocalizedLabels?: Array<{ Label: string }> } }, idx: number) => ({
+          value: opt.Value,
+          label: opt.Label?.UserLocalizedLabel?.Label ?? opt.Label?.LocalizedLabels?.[0]?.Label ?? String(opt.Value),
+          displayOrder: idx,
+        }));
+
+        results.push({
+          entityName: config.entityName,
+          attributeName: config.attributeName,
+          options,
+        });
+      } catch (err) {
+        console.error(`[sync] Error fetching option set ${config.entityName}.${config.attributeName}:`, err);
+      }
+    }
+
+    return results;
+  }
+
   async pushActivity(token: string, activity: Activity): Promise<string> {
     const accountBind = `/accounts(${activity.customerId})`;
     let endpoint: string;
-    let body: Record<string, string>;
+    let body: Record<string, unknown>;
 
     if (activity.type === 'call') {
       endpoint = `${this.baseUrl}/api/data/v9.2/phonecalls`;
-      body = {
+      const callBody: Record<string, unknown> = {
         subject: activity.subject,
         description: activity.description ?? '',
         scheduledend: activity.occurredAt,
         'regardingobjectid_account@odata.bind': accountBind,
       };
+      // Bind contact as "Call To" activity party
+      if (activity.contactId) {
+        callBody.phonecall_activity_parties = [
+          { 'partyid_systemuser@odata.bind': `/systemusers(${activity.createdById})`, participationtypemask: 1 },
+          { 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 },
+        ];
+      }
+      body = callBody;
     } else if (activity.type === 'note') {
       endpoint = `${this.baseUrl}/api/data/v9.2/annotations`;
       body = {
@@ -187,12 +247,17 @@ class RealD365Adapter implements ID365Adapter {
     } else {
       // 'meeting' and 'visit' both map to appointment
       endpoint = `${this.baseUrl}/api/data/v9.2/appointments`;
-      body = {
+      const apptBody: Record<string, unknown> = {
         subject: activity.subject,
-        description: activity.description ?? '',
+        description: activity.description || activity.subject,
+        scheduledstart: activity.startTime ?? activity.occurredAt,
         scheduledend: activity.occurredAt,
         'regardingobjectid_account@odata.bind': accountBind,
       };
+      if (activity.contactId) {
+        apptBody['regardingobjectid_contact@odata.bind'] = `/contacts(${activity.contactId})`;
+      }
+      body = apptBody;
     }
 
     const res = await fetch(endpoint, {
@@ -259,6 +324,15 @@ class MockD365Adapter implements ID365Adapter {
   async fetchContacts(_token: string): Promise<Contact[]> {
     await delay(400);
     return mockContacts.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
+  }
+
+  async fetchOptionSets(_token: string): Promise<OptionSetData[]> {
+    await delay(200);
+    return Object.entries(OPTION_SET_FIELDS).map(([, config]) => ({
+      entityName: config.entityName,
+      attributeName: config.attributeName,
+      options: config.fallbackOptions.map((opt, idx) => ({ ...opt, displayOrder: idx })),
+    }));
   }
 
   async pushActivity(_token: string, activity: Activity): Promise<string> {

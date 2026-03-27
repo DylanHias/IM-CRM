@@ -49,7 +49,7 @@ function mapD365AuditToEntry(d365: D365AuditRecord): AuditLogEntry | null {
     entityId: d365._objectid_value,
     action,
     changedById: d365._userid_value,
-    changedByName: d365['userid@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    changedByName: d365['_userid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     oldValues,
     newValues,
     changedAt: d365.createdon,
@@ -92,6 +92,7 @@ export async function fetchD365AuditLog(
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
         Accept: 'application/json',
+        Prefer: 'odata.include-annotations="*"',
       },
     });
 

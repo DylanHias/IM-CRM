@@ -5,8 +5,10 @@ import { upsertContact } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError } from '@/lib/db/queries/activities';
 import { upsertTraining } from '@/lib/db/queries/trainings';
 import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
+import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
 import { useSyncStore } from '@/store/syncStore';
+import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,6 +23,7 @@ export async function runFullSync(token: string): Promise<void> {
   store.clearSyncErrors();
 
   try {
+    await syncOptionSets(token);
     await syncD365(token);
     await syncTrainings(token);
     await pushPendingActivities(token);
@@ -149,4 +152,21 @@ async function pushPendingFollowUps(token: string): Promise<void> {
 
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, null);
   store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
+}
+
+async function syncOptionSets(token: string): Promise<void> {
+  try {
+    const adapter = getD365Adapter();
+    const optionSets = await adapter.fetchOptionSets(token);
+    const now = new Date().toISOString();
+
+    for (const os of optionSets) {
+      await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
+    }
+
+    // Refresh the in-memory store
+    await useOptionSetStore.getState().hydrateFromDb();
+  } catch (err) {
+    console.error('[sync] Option set sync error:', err);
+  }
 }

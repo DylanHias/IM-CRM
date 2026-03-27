@@ -8,13 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { stageToProbability } from '@/hooks/useOpportunities';
+import { useOptionSet } from '@/hooks/useOptionSet';
+import { queryUniqueVendors } from '@/lib/db/queries/opportunities';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { Opportunity, OpportunityStatus, OpportunityType, OpportunityStage, SellType, PrimaryVendor, Contact, Customer } from '@/types/entities';
 
 const STATUSES: OpportunityStatus[] = ['Open', 'Won', 'Lost'];
-const OPPORTUNITY_TYPES: OpportunityType[] = ['Services', 'SPA', 'SPA - Partner Agreement', 'CMP', 'Trad', 'MPO2Connect', 'Azure Private Offer', 'Breath', 'Licensing'];
-const STAGES: OpportunityStage[] = ['Prospecting', 'Validated', 'Qualified', 'Verbal Received', 'Contract Received', 'Billing Rejection', 'Pending Vendor Confirmation', 'Purchased'];
-const SELL_TYPES: SellType[] = ['New', 'Install'];
-const PRIMARY_VENDORS: PrimaryVendor[] = ['AWS', 'Azure', 'Adobe', 'HPE', 'Dell', 'Cisco', 'Palo Alto', 'NetApp', 'VMware', 'Lenovo', 'Microsoft'];
 
 interface OpportunityFormProps {
   opportunity?: Opportunity;
@@ -45,6 +44,10 @@ export interface OpportunityFormData {
 }
 
 export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onCancel }: OpportunityFormProps) {
+  const { labels: stageLabels } = useOptionSet('opportunity.stage');
+  const { labels: sellTypeLabels } = useOptionSet('opportunity.selltype');
+  const { labels: oppTypeLabels } = useOptionSet('opportunity.opptype');
+  const [vendors, setVendors] = useState<string[]>([]);
   const [status, setStatus] = useState<OpportunityStatus>(opportunity?.status ?? 'Open');
   const [subject, setSubject] = useState(opportunity?.subject ?? '');
   const [bcn, setBcn] = useState(opportunity?.bcn ?? customer?.bcn ?? '');
@@ -65,6 +68,15 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
   useEffect(() => {
     setProbability(stageToProbability(stage));
   }, [stage]);
+
+  useEffect(() => {
+    if (!isTauriApp()) return;
+    const load = async () => {
+      const v = await queryUniqueVendors();
+      setVendors(v);
+    };
+    load();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +129,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
           <Select value={stage} onValueChange={(v) => setStage(v as OpportunityStage)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {STAGES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stageLabels.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -133,7 +145,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
           <Select value={sellType} onValueChange={(v) => setSellType(v as SellType)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {SELL_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {sellTypeLabels.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -142,13 +154,15 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Primary Vendor</Label>
-          <Select value={primaryVendor} onValueChange={setPrimaryVendor}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {PRIMARY_VENDORS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <Input
+            list="vendor-list"
+            value={primaryVendor === 'none' ? '' : primaryVendor}
+            onChange={(e) => setPrimaryVendor(e.target.value || 'none')}
+            placeholder="Type or select a vendor"
+          />
+          <datalist id="vendor-list">
+            {vendors.map((v) => <option key={v} value={v} />)}
+          </datalist>
         </div>
         <div className="space-y-1">
           <Label>Opportunity Type</Label>
@@ -156,7 +170,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">None</SelectItem>
-              {OPPORTUNITY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              {oppTypeLabels.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

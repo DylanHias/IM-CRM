@@ -83,6 +83,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       phone         TEXT,
       mobile        TEXT,
       notes         TEXT,
+      contact_type  TEXT,
       synced_at     TEXT NOT NULL,
       created_at    TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -99,6 +100,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       subject         TEXT NOT NULL,
       description     TEXT,
       occurred_at     TEXT NOT NULL,
+      start_time      TEXT,
       created_by_id   TEXT NOT NULL,
       created_by_name TEXT NOT NULL,
       sync_status     TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
@@ -279,7 +281,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '6')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '8')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -405,6 +407,34 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   if (currentVersion < 6) {
     await db.execute(
       `UPDATE app_settings SET value = '6', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 7) {
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN contact_type TEXT`); } catch { /* column may already exist */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '7', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 8) {
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN start_time TEXT`); } catch { /* column may already exist */ }
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS option_sets (
+        entity_name    TEXT NOT NULL,
+        attribute_name TEXT NOT NULL,
+        option_value   INTEGER NOT NULL,
+        option_label   TEXT NOT NULL,
+        display_order  INTEGER DEFAULT 0,
+        synced_at      TEXT NOT NULL,
+        PRIMARY KEY (entity_name, attribute_name, option_value)
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_option_sets_lookup ON option_sets(entity_name, attribute_name)`);
+
+    await db.execute(
+      `UPDATE app_settings SET value = '8', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
