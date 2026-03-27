@@ -7,8 +7,7 @@ import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
-import { seedMockData } from '@/lib/db/seed';
-import { getDb } from '@/lib/db/client';
+
 
 export function useCustomers() {
   const {
@@ -35,12 +34,7 @@ export function useCustomers() {
     const load = async () => {
       try {
         if (isTauriApp()) {
-          let data = await queryAllCustomers();
-          if (data.length === 0) {
-            const db = await getDb();
-            await seedMockData(db);
-            data = await queryAllCustomers();
-          }
+          const data = await queryAllCustomers();
           setCustomers(data);
         } else {
           setCustomers([]);
