@@ -55,9 +55,11 @@ async fn exchange_oauth_code(
     params.insert("code_verifier", code_verifier.as_str());
     params.insert("scope", scopes.as_str());
 
+    let origin = format!("http://localhost:{}", redirect_uri.rsplit(':').next().unwrap_or("0"));
     let client = reqwest::Client::new();
     let res = client
         .post(&token_url)
+        .header("Origin", &origin)
         .form(&params)
         .send()
         .await
@@ -65,7 +67,7 @@ async fn exchange_oauth_code(
 
     if !res.status().is_success() {
         let text = res.text().await.unwrap_or_default();
-        return Err(format!("Token exchange failed ({}): {}", "error", text));
+        return Err(format!("Token exchange failed: {text}"));
     }
 
     let body: serde_json::Value = res
@@ -104,6 +106,7 @@ async fn refresh_oauth_token(
     let client = reqwest::Client::new();
     let res = client
         .post(&token_url)
+        .header("Origin", "http://localhost")
         .form(&params)
         .send()
         .await
