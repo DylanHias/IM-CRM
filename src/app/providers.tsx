@@ -51,6 +51,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Hydrate settings from SQLite after DB is ready
       await useSettingsStore.getState().hydrateFromDb();
 
+      // Restore Tauri session from persisted refresh token
+      try {
+        const { restoreSession } = await import('@/lib/auth/authHelpers');
+        await restoreSession();
+      } catch (err) {
+        console.error('[auth] Session restore failed:', err);
+      }
+
       setMsalInstance(instance);
     };
     init();

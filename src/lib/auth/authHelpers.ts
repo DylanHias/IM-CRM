@@ -64,8 +64,25 @@ export function getActiveAccount(): AccountInfo | null {
   return accounts[0] ?? null;
 }
 
+export async function restoreSession(): Promise<boolean> {
+  if (!isTauriApp()) return false;
+
+  const { loadPersistedSession, refreshAccessToken } = await import('./tauriAuth');
+  const session = await loadPersistedSession();
+  if (!session) return false;
+
+  const result = await refreshAccessToken(['User.Read', 'openid', 'profile']);
+  if (result) {
+    useAuthStore.getState().setAccount(result.account, result.accessToken);
+    return true;
+  }
+  return false;
+}
+
 export async function signOut(): Promise<void> {
   if (isTauriApp()) {
+    const { clearPersistedSession } = await import('./tauriAuth');
+    await clearPersistedSession();
     useAuthStore.getState().clearAuth();
     return;
   }

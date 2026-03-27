@@ -8,6 +8,9 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_AZURE_CLIENT_ID ?? '';
 const TENANT_ID = process.env.NEXT_PUBLIC_AZURE_TENANT_ID ?? 'common';
 const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
 
+const REFRESH_TOKEN_KEY = 'auth.refresh_token';
+const ACCOUNT_KEY = 'auth.account';
+
 interface TokenResponse {
   access_token: string;
   id_token: string;
@@ -68,8 +71,62 @@ function buildAccountInfo(claims: IdTokenClaims): AccountInfo {
 
 let storedRefreshToken: string | null = null;
 
+async function persistRefreshToken(token: string): Promise<void> {
+  storedRefreshToken = token;
+  try {
+    const { setAppSetting } = await import('@/lib/db/queries/sync');
+    await setAppSetting(REFRESH_TOKEN_KEY, token);
+  } catch (err) {
+    console.error('[auth] Failed to persist refresh token:', err);
+  }
+}
+
+async function persistAccount(account: AccountInfo): Promise<void> {
+  try {
+    const { setAppSetting } = await import('@/lib/db/queries/sync');
+    await setAppSetting(ACCOUNT_KEY, JSON.stringify(account));
+  } catch (err) {
+    console.error('[auth] Failed to persist account:', err);
+  }
+}
+
+export async function loadPersistedSession(): Promise<{ account: AccountInfo; refreshToken: string } | null> {
+  try {
+    const { getAppSetting } = await import('@/lib/db/queries/sync');
+    const [refreshToken, accountJson] = await Promise.all([
+      getAppSetting(REFRESH_TOKEN_KEY),
+      getAppSetting(ACCOUNT_KEY),
+    ]);
+
+    if (!refreshToken || !accountJson) return null;
+
+    storedRefreshToken = refreshToken;
+    const account = JSON.parse(accountJson) as AccountInfo;
+    return { account, refreshToken };
+  } catch (err) {
+    console.error('[auth] Failed to load persisted session:', err);
+    return null;
+  }
+}
+
+export async function clearPersistedSession(): Promise<void> {
+  storedRefreshToken = null;
+  try {
+    const { setAppSetting } = await import('@/lib/db/queries/sync');
+    await Promise.all([
+      setAppSetting(REFRESH_TOKEN_KEY, ''),
+      setAppSetting(ACCOUNT_KEY, ''),
+    ]);
+  } catch (err) {
+    console.error('[auth] Failed to clear persisted session:', err);
+  }
+}
+
 export async function refreshAccessToken(scopes: string[]): Promise<{ accessToken: string; account: AccountInfo } | null> {
-  if (!storedRefreshToken) return null;
+  if (!storedRefreshToken) {
+    const session = await loadPersistedSession();
+    if (!session) return null;
+  }
 
   try {
     const tokens: TokenResponse = await invoke('refresh_oauth_token', {
@@ -80,11 +137,13 @@ export async function refreshAccessToken(scopes: string[]): Promise<{ accessToke
     });
 
     if (tokens.refresh_token) {
-      storedRefreshToken = tokens.refresh_token;
+      await persistRefreshToken(tokens.refresh_token);
     }
 
     const claims = parseIdToken(tokens.id_token);
-    return { accessToken: tokens.access_token, account: buildAccountInfo(claims) };
+    const account = buildAccountInfo(claims);
+    await persistAccount(account);
+    return { accessToken: tokens.access_token, account };
   } catch (err) {
     console.error('[auth] Refresh token exchange failed:', err);
     storedRefreshToken = null;
@@ -153,8 +212,9 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
           const account = buildAccountInfo(claims);
 
           if (tokens.refresh_token) {
-            storedRefreshToken = tokens.refresh_token;
+            await persistRefreshToken(tokens.refresh_token);
           }
+          await persistAccount(account);
 
           await cleanup();
           resolve({ account, accessToken: tokens.access_token });
