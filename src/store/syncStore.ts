@@ -9,6 +9,7 @@ interface SyncState {
   recentRecords: SyncRecord[];
   pendingActivityCount: number;
   pendingFollowUpCount: number;
+  historyPage: number;
 
   setSyncing: (syncing: boolean) => void;
   setLastD365Sync: (at: string) => void;
@@ -16,6 +17,7 @@ interface SyncState {
   clearSyncErrors: () => void;
   setRecentRecords: (records: SyncRecord[]) => void;
   setPendingCounts: (activities: number, followUps: number) => void;
+  setHistoryPage: (page: number) => void;
 }
 
 export const useSyncStore = create<SyncState>()(
@@ -27,12 +29,14 @@ export const useSyncStore = create<SyncState>()(
       recentRecords: [],
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
+      historyPage: 1,
 
       setSyncing: (isSyncing) => set({ isSyncing }),
       setLastD365Sync: (at) => set({ lastD365SyncAt: at }),
       addSyncError: (error) => set((s) => ({ syncErrors: [error, ...s.syncErrors].slice(0, 50) })),
       clearSyncErrors: () => set({ syncErrors: [] }),
-      setRecentRecords: (recentRecords) => set({ recentRecords }),
+      setRecentRecords: (recentRecords) => set({ recentRecords, historyPage: 1 }),
+      setHistoryPage: (historyPage) => set({ historyPage }),
       setPendingCounts: (activities, followUps) =>
         set({ pendingActivityCount: activities, pendingFollowUpCount: followUps }),
     }),

@@ -3,9 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Wifi, WifiOff, ArrowLeft } from 'lucide-react';
-import { useSync } from '@/hooks/useSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { formatRelative } from '@/lib/utils/dateUtils';
 import { WindowFrame } from './WindowFrame';
 import styled from 'styled-components';
 
@@ -58,12 +56,6 @@ const StatusPill = styled.div<{ $online: boolean }>`
       : 'hsl(var(--destructive) / 0.08)'};
 `;
 
-const SyncInfo = styled.span`
-  font-size: 10.5px;
-  color: hsl(var(--titlebar-fg) / 0.5);
-  white-space: nowrap;
-`;
-
 function useBackLink(): { label: string; href: string } | undefined {
   const pathname = usePathname();
   if (/^\/customers\/[^/]+\/?$/.test(pathname))
@@ -73,7 +65,6 @@ function useBackLink(): { label: string; href: string } | undefined {
 
 export function TitleBar() {
   const backLink = useBackLink();
-  const { lastD365SyncAt } = useSync();
   const isOnline = useOnlineStatus();
 
   return (
@@ -95,9 +86,6 @@ export function TitleBar() {
           {isOnline ? 'Online' : 'Offline'}
         </StatusPill>
 
-        {lastD365SyncAt && (
-          <SyncInfo>Synced {formatRelative(lastD365SyncAt)}</SyncInfo>
-        )}
       </AppControls>
     </WindowFrame>
   );
