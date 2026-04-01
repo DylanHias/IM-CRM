@@ -28,8 +28,8 @@ export interface D365Customer {
 export interface D365Contact {
   contactid: string;
   _parentcustomerid_value: string;
-  firstname: string;
-  lastname: string;
+  firstname: string | null;
+  lastname: string | null;
   jobtitle: string | null;
   emailaddress1: string | null;
   telephone1: string | null;

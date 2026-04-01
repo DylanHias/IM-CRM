@@ -58,6 +58,13 @@ export async function upsertContact(contact: Contact): Promise<void> {
 
 export async function upsertContactBulk(contact: Contact): Promise<void> {
   const db = await getDb();
+  // Skip contacts whose parent customer doesn't exist locally (e.g. inactive accounts filtered out)
+  const parent = await db.select<{ id: string }[]>(
+    `SELECT id FROM customers WHERE id = $1`,
+    [contact.customerId]
+  );
+  if (parent.length === 0) return;
+
   await db.execute(
     `INSERT INTO contacts (
       id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at

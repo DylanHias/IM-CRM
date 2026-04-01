@@ -1,6 +1,5 @@
 import type { Customer, Contact, Activity, FollowUp } from '@/types/entities';
 import type { D365Customer, D365Contact, D365ODataResponse } from '@/types/api';
-import type { OptionSetItem } from '@/types/optionSet';
 import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
@@ -96,8 +95,8 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
   return {
     id: d365.contactid,
     customerId: d365._parentcustomerid_value,
-    firstName: d365.firstname,
-    lastName: d365.lastname,
+    firstName: d365.firstname ?? '',
+    lastName: d365.lastname ?? '',
     jobTitle: d365.jobtitle,
     email: d365.emailaddress1,
     phone: d365.telephone1,
@@ -210,12 +209,8 @@ class RealD365Adapter implements ID365Adapter {
       }
     });
 
-    const settled = await Promise.allSettled(promises);
-
-    return settled
-      .filter((r): r is PromiseFulfilledResult<OptionSetData | null> => r.status === 'fulfilled')
-      .map((r) => r.value)
-      .filter((v): v is OptionSetData => v !== null);
+    const results = await Promise.all(promises);
+    return results.filter((v): v is OptionSetData => v !== null);
   }
 
   async pushActivity(token: string, activity: Activity): Promise<string> {
