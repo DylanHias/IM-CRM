@@ -56,7 +56,7 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 ## Git & Versioning
 
 - Test before pushing; commit each logical unit; push after commit
-- Version: bump in `package.json` only (same commit as the change), then `pnpm sync-version`
+- **Every commit** must include: version bump in `package.json`, `pnpm sync-version`, and a `.changelog/v{version}.md` entry
 - Semver: patch = fixes, minor = features, major = breaking
 - Changelog: `.changelog/v{version}.md` — plain language, zero tech terms, explain what the user sees
 - Releases: manual via `workflow_dispatch`
