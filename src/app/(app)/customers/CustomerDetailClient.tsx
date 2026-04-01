@@ -316,6 +316,9 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   {customer.accountNumber && (
                     <DetailRow label="Account No." value={customer.accountNumber} />
                   )}
+                  {customer.bcn && (
+                    <DetailRow label="BCN" value={customer.bcn} />
+                  )}
                   {customer.resellerId && (
                     <DetailRow label="Reseller ID" value={customer.resellerId} />
                   )}
