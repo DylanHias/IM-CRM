@@ -1,5 +1,5 @@
 import { getD365Adapter } from './d365Adapter';
-import { upsertCustomerBulk } from '@/lib/db/queries/customers';
+import { upsertCustomerBulk, recomputeLastActivityDates } from '@/lib/db/queries/customers';
 import { upsertContactBulk } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
@@ -88,6 +88,9 @@ async function syncD365(token: string): Promise<void> {
     }
     console.log(`[sync] Contacts: ${contacts.length} fetched, ${contactsChanged} changed, ${contacts.length - contactsChanged - contactErrors} unchanged, ${contactErrors} errors`);
     errors += contactErrors;
+
+    // Recompute last activity dates from actual activities + contact changes
+    await recomputeLastActivityDates();
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);
     const now = new Date().toISOString();

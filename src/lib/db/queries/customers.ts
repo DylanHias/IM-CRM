@@ -142,6 +142,20 @@ export async function updateCustomerLastActivity(customerId: string, at: string)
   );
 }
 
+/** Recompute last_activity_at for all customers based on actual activities and contact changes. */
+export async function recomputeLastActivityDates(): Promise<void> {
+  const db = await getDb();
+  await db.execute(`
+    UPDATE customers SET last_activity_at = (
+      SELECT MAX(dt) FROM (
+        SELECT MAX(occurred_at) AS dt FROM activities WHERE customer_id = customers.id
+        UNION ALL
+        SELECT MAX(updated_at) AS dt FROM contacts WHERE customer_id = customers.id
+      )
+    )
+  `);
+}
+
 export async function queryUniqueOwners(): Promise<{ id: string; name: string }[]> {
   const db = await getDb();
   const rows = await db.select<{ owner_id: string; owner_name: string }[]>(
