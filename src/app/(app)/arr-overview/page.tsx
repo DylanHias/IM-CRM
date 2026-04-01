@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import {
   Search, Download, Building2, User, X,
   SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { cn } from '@/lib/utils';
 import { exportFile } from '@/lib/utils/exportFile';
@@ -57,6 +59,8 @@ export default function ArrOverviewPage() {
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
+  const [page, setPage] = useState(1);
+  const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
@@ -81,6 +85,7 @@ export default function ArrOverviewPage() {
     setFilterLanguage('all');
     setArrMin('');
     setArrMax('');
+    setPage(1);
   }
 
   const filtered = useMemo(() => {
@@ -121,6 +126,10 @@ export default function ArrOverviewPage() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const safePage = Math.min(page, totalPages);
+  const pagedRows = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   async function handleExport() {
     try {
@@ -181,7 +190,7 @@ export default function ArrOverviewPage() {
                 ref={searchInputRef}
                 placeholder="Search by name…"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                 className="pl-9 h-9 pr-8 bg-card shadow-sm border-border/70 rounded-lg"
               />
               {searchQuery && (
@@ -257,7 +266,7 @@ export default function ArrOverviewPage() {
             <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 shadow-sm">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Cloud Customer</label>
-                <Select value={filterCloud} onValueChange={(v) => setFilterCloud(v as 'all' | 'yes' | 'no')}>
+                <Select value={filterCloud} onValueChange={(v) => { setFilterCloud(v as 'all' | 'yes' | 'no'); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
@@ -268,7 +277,7 @@ export default function ArrOverviewPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Language</label>
-                <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+                <Select value={filterLanguage} onValueChange={(v) => { setFilterLanguage(v); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All languages</SelectItem>
@@ -284,7 +293,7 @@ export default function ArrOverviewPage() {
                   type="number"
                   placeholder="Min"
                   value={arrMin}
-                  onChange={(e) => setArrMin(e.target.value)}
+                  onChange={(e) => { setArrMin(e.target.value); setPage(1); }}
                   className="h-8 text-xs"
                 />
               </div>
@@ -294,7 +303,7 @@ export default function ArrOverviewPage() {
                   type="number"
                   placeholder="Max"
                   value={arrMax}
-                  onChange={(e) => setArrMax(e.target.value)}
+                  onChange={(e) => { setArrMax(e.target.value); setPage(1); }}
                   className="h-8 text-xs"
                 />
               </div>
@@ -378,19 +387,19 @@ export default function ArrOverviewPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {filtered.length === 0 ? (
+                  {pagedRows.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
                         No customers match your search.
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((customer, index) => (
+                    pagedRows.map((customer, index) => (
                       <tr
                         key={customer.id}
                         className="hover:bg-muted/30 transition-colors"
                       >
-                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{index + 1}</td>
+                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * itemsPerPage + index + 1}</td>
                         <td className="px-4 py-3 font-medium">
                           <button
                             onClick={() => router.push(`/customers/${customer.id}`)}
@@ -440,6 +449,38 @@ export default function ArrOverviewPage() {
               </table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-1">
+              <p className="text-xs text-muted-foreground">
+                {(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage(safePage - 1)}
+                >
+                  <ChevronLeft size={14} />
+                </Button>
+                <span className="text-xs text-muted-foreground px-2">
+                  {safePage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage(safePage + 1)}
+                >
+                  <ChevronRight size={14} />
+                </Button>
+              </div>
+            </div>
+          )}
     </div>
   );
 }
