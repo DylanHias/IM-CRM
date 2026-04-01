@@ -102,6 +102,31 @@ export function GeneralSettings() {
     toast.success('All settings reset to defaults');
   }, [resetAll]);
 
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearDatabase = useCallback(async () => {
+    if (!isTauriApp()) return;
+    setClearing(true);
+    try {
+      const { getDb } = await import('@/lib/db/client');
+      const db = await getDb();
+      const tables = [
+        'invoice_lines', 'invoices', 'activities', 'follow_ups',
+        'contacts', 'opportunities', 'option_sets', 'sync_records',
+        'audit_log', 'customers',
+      ];
+      for (const table of tables) {
+        await db.execute(`DELETE FROM ${table}`);
+      }
+      toast.success('Local database cleared');
+    } catch (error) {
+      console.error('[db] Failed to clear local database:', error);
+      toast.error('Failed to clear local database');
+    } finally {
+      setClearing(false);
+    }
+  }, []);
+
   const copyVersionInfo = useCallback(async () => {
     const info = `App: ${APP_VERSION}${schemaVersion ? ` | Schema: v${schemaVersion}` : ''}`;
     await navigator.clipboard.writeText(info);
@@ -192,6 +217,23 @@ export function GeneralSettings() {
             className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
           >
             Reset all
+          </Button>
+        </ConfirmPopover>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Clear local database</p>
+          <p className="text-xs text-muted-foreground">Delete all synced data (customers, contacts, activities, etc.)</p>
+        </div>
+        <ConfirmPopover message="Delete all local data? You'll need to re-sync from D365." confirmLabel="Clear" onConfirm={handleClearDatabase}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+            disabled={clearing}
+          >
+            {clearing ? <><Loader2 size={13} className="mr-1.5 animate-spin" />Clearing...</> : 'Clear data'}
           </Button>
         </ConfirmPopover>
       </div>

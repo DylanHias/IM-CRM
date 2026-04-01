@@ -320,7 +320,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '8')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '9')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -471,6 +471,16 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 
     await db.execute(
       `UPDATE app_settings SET value = '8', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 9) {
+    // Fix: ensure hardcoded admin emails always have role='admin' in the DB
+    await db.execute(
+      `UPDATE users SET role = 'admin', updated_at = datetime('now') WHERE LOWER(email) = 'dylan.hias@ingrammicro.com' AND role != 'admin'`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '9', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

@@ -21,7 +21,7 @@ export async function upsertUser(user: CrmUser): Promise<void> {
     `INSERT INTO users (id, email, name, role, business_unit, last_active_at, created_at, updated_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      ON CONFLICT(id) DO UPDATE SET
-       email=excluded.email, name=excluded.name,
+       email=excluded.email, name=excluded.name, role=excluded.role,
        business_unit=excluded.business_unit, last_active_at=excluded.last_active_at,
        updated_at=excluded.updated_at`,
     [user.id, user.email, user.name, user.role, user.businessUnit, user.lastActiveAt, user.createdAt, user.updatedAt]
