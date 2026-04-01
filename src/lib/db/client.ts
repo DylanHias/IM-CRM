@@ -16,6 +16,7 @@ export async function getDb(): Promise<Database> {
       await dbInstance.execute('PRAGMA synchronous=NORMAL');
       await dbInstance.execute('PRAGMA cache_size=-64000');
       await dbInstance.execute('PRAGMA temp_store=MEMORY');
+      await dbInstance.execute('PRAGMA busy_timeout=5000');
       return dbInstance;
     } catch (err) {
       initPromise = null; // reset so next call can retry
