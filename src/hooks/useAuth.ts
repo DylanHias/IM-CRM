@@ -69,11 +69,13 @@ async function syncUserToDb(
   try {
     const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
     const now = new Date().toISOString();
+    const email = account.username ?? '';
+    const role = email.toLowerCase() === 'dylan.hias@ingrammicro.com' ? 'admin' : 'user';
     await upsertUser({
       id: account.localAccountId,
-      email: account.username ?? '',
+      email,
       name: account.name ?? 'Unknown',
-      role: 'user',
+      role,
       businessUnit: null,
       lastActiveAt: now,
       createdAt: now,

