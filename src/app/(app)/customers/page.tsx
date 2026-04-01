@@ -1,7 +1,9 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { CustomerFilters } from '@/components/customers/CustomerFilters';
 import { CustomerList } from '@/components/customers/CustomerList';
+import CustomerDetailClient from './CustomerDetailClient';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -9,6 +11,17 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CustomersPage() {
+  const searchParams = useSearchParams();
+  const customerId = searchParams.get('id');
+
+  if (customerId) {
+    return <CustomerDetailClient customerId={customerId} />;
+  }
+
+  return <CustomerListView />;
+}
+
+function CustomerListView() {
   const { customers, allCustomers, isLoading } = useCustomers();
   const { page, setPage } = useCustomerStore();
   const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);

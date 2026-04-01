@@ -98,7 +98,7 @@ export default function FollowUpsPage() {
               <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60">
                 {overdue.map((f) => (
                   <div key={f.id}>
-                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
+                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                       {getCustomerName(f.customerId)}
                     </p>
                     <FollowUpItem followUp={f} onComplete={handleComplete} />
@@ -114,7 +114,7 @@ export default function FollowUpsPage() {
               <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
                 {upcoming.map((f) => (
                   <div key={f.id}>
-                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers/${f.customerId}`)}>
+                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                       {getCustomerName(f.customerId)}
                     </p>
                     <FollowUpItem followUp={f} onComplete={handleComplete} />

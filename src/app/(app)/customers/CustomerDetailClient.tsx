@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
@@ -35,10 +35,12 @@ import type { Activity, Contact } from '@/types/entities';
 
 type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'invoices';
 
-export default function CustomerDetailClient() {
-  const params = useParams();
+interface CustomerDetailProps {
+  customerId: string;
+}
+
+export default function CustomerDetailClient({ customerId }: CustomerDetailProps) {
   const router = useRouter();
-  const customerId = params.id as string;
 
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);

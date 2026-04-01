@@ -173,7 +173,7 @@ export default function OpportunitiesPage() {
       <div className="flex-1 min-w-0">
         <p
           className="text-xs text-muted-foreground mb-0.5 cursor-pointer hover:underline"
-          onClick={() => router.push(`/customers/${opp.customerId}`)}
+          onClick={() => router.push(`/customers?id=${opp.customerId}`)}
         >
           {customerMap.get(opp.customerId) ?? opp.customerId}
         </p>

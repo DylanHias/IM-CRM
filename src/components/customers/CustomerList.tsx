@@ -125,7 +125,7 @@ export function CustomerList({ customers }: CustomerListProps) {
 
   const handleClick = (customer: Customer) => {
     setSelectedCustomerId(customer.id);
-    router.push(`/customers/${customer.id}`);
+    router.push(`/customers?id=${customer.id}`);
   };
 
   if (customers.length === 0) {

@@ -402,7 +402,7 @@ export default function ArrOverviewPage() {
                         <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * itemsPerPage + index + 1}</td>
                         <td className="px-4 py-3 font-medium">
                           <button
-                            onClick={() => router.push(`/customers/${customer.id}`)}
+                            onClick={() => router.push(`/customers?id=${customer.id}`)}
                             className="text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
                           >
                             {customer.name}
