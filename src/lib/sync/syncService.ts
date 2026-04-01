@@ -5,6 +5,7 @@ import { queryPendingActivities, markActivitySynced, markActivitySyncError } fro
 import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
+import { withBatchedTransactions } from '@/lib/db/client';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -47,16 +48,12 @@ async function syncD365(token: string): Promise<void> {
     const lastSyncTs = lastSync && lastSync.length > 0 ? lastSync : undefined;
 
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
-    for (const customer of customers) {
-      await upsertCustomerBulk(customer);
-      pulled++;
-    }
+    await withBatchedTransactions(customers, (customer) => upsertCustomerBulk(customer));
+    pulled += customers.length;
 
     const contacts = await adapter.fetchContacts(token, lastSyncTs);
-    for (const contact of contacts) {
-      await upsertContactBulk(contact);
-      pulled++;
-    }
+    await withBatchedTransactions(contacts, (contact) => upsertContactBulk(contact));
+    pulled += contacts.length;
 
     await updateSyncRecord(recordId, 'success', pulled, 0, null);
     const now = new Date().toISOString();
@@ -135,9 +132,9 @@ async function syncOptionSets(token: string): Promise<void> {
     const optionSets = await adapter.fetchOptionSets(token);
     const now = new Date().toISOString();
 
-    for (const os of optionSets) {
-      await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
-    }
+    await withBatchedTransactions(optionSets, (os) =>
+      upsertOptionSet(os.entityName, os.attributeName, os.options, now)
+    );
 
     await useOptionSetStore.getState().hydrateFromDb();
   } catch (err) {

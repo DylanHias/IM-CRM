@@ -23,7 +23,7 @@ export function useFollowUps(customerId: string) {
   const { account } = useAuthStore();
 
   useEffect(() => {
-    if (currentCustomerId === customerId && followUps.length > 0) return;
+    if (currentCustomerId === customerId) return;
 
     setLoading(true);
     const load = async () => {
@@ -44,7 +44,7 @@ export function useFollowUps(customerId: string) {
       }
     };
     load();
-  }, [customerId, currentCustomerId, followUps.length, setFollowUps, setLoading, setOverdueCount]);
+  }, [customerId, currentCustomerId, setFollowUps, setLoading, setOverdueCount]);
 
   const createFollowUp = useCallback(
     async (input: Omit<FollowUp, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt' | 'completed' | 'completedAt'>) => {

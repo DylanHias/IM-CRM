@@ -31,7 +31,7 @@ export function useOpportunities(customerId: string) {
   const { account } = useAuthStore();
 
   useEffect(() => {
-    if (currentCustomerId === customerId && opportunities.length > 0) return;
+    if (currentCustomerId === customerId) return;
 
     setLoading(true);
     const load = async () => {
@@ -50,7 +50,7 @@ export function useOpportunities(customerId: string) {
       }
     };
     load();
-  }, [customerId, currentCustomerId, opportunities.length, setOpportunities, setLoading]);
+  }, [customerId, currentCustomerId, setOpportunities, setLoading]);
 
   const createOpportunity = useCallback(
     async (input: Omit<Opportunity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt'>) => {

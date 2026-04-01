@@ -16,7 +16,7 @@ export function useActivities(customerId: string) {
   const { account } = useAuthStore();
 
   useEffect(() => {
-    if (currentCustomerId === customerId && activities.length > 0) return;
+    if (currentCustomerId === customerId) return;
 
     setLoading(true);
     const load = async () => {
@@ -37,7 +37,7 @@ export function useActivities(customerId: string) {
       }
     };
     load();
-  }, [customerId, currentCustomerId, activities.length, setActivities, setLoading, setPendingCount]);
+  }, [customerId, currentCustomerId, setActivities, setLoading, setPendingCount]);
 
   const createActivity = useCallback(
     async (input: Omit<Activity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt'>) => {
