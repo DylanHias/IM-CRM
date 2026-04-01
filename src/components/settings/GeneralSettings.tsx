@@ -118,6 +118,8 @@ export function GeneralSettings() {
       for (const table of tables) {
         await db.execute(`DELETE FROM ${table}`);
       }
+      const { resetSyncWatermark } = await import('@/lib/sync/syncService');
+      await resetSyncWatermark();
       toast.success('Local database cleared');
     } catch (error) {
       console.error('[db] Failed to clear local database:', error);
