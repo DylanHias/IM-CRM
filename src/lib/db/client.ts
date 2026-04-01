@@ -47,6 +47,22 @@ export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+const BATCH_SIZE = 500;
+
+export async function withBatchedTransactions<T>(
+  items: T[],
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < items.length; i += BATCH_SIZE) {
+    const chunk = items.slice(i, i + BATCH_SIZE);
+    await withTransaction(async () => {
+      for (const item of chunk) {
+        await fn(item);
+      }
+    });
+  }
+}
+
 export async function initDb(): Promise<void> {
   if (!isTauriApp()) {
     console.warn('[db] Not running in Tauri — SQLite unavailable');

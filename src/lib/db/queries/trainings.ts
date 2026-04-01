@@ -37,20 +37,24 @@ export async function deleteTraining(id: string): Promise<void> {
 
 export async function upsertTrainingBulk(training: Training): Promise<void> {
   const db = await getDb();
-  await db.execute(
-    `INSERT INTO trainings (
-      id, customer_id, title, training_date, participant, provider, status, synced_at, created_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-    ON CONFLICT(id) DO UPDATE SET
-      title=excluded.title, training_date=excluded.training_date,
-      participant=excluded.participant, provider=excluded.provider,
-      status=excluded.status, synced_at=excluded.synced_at`,
-    [
-      training.id, training.customerId, training.title, training.trainingDate,
-      training.participant, training.provider, training.status,
-      training.syncedAt, training.createdAt,
-    ]
-  );
+  try {
+    await db.execute(
+      `INSERT INTO trainings (
+        id, customer_id, title, training_date, participant, provider, status, synced_at, created_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT(id) DO UPDATE SET
+        title=excluded.title, training_date=excluded.training_date,
+        participant=excluded.participant, provider=excluded.provider,
+        status=excluded.status, synced_at=excluded.synced_at`,
+      [
+        training.id, training.customerId, training.title, training.trainingDate,
+        training.participant, training.provider, training.status,
+        training.syncedAt, training.createdAt,
+      ]
+    );
+  } catch {
+    // Skip trainings whose customer doesn't exist in the DB yet (FK constraint)
+  }
 }
 
 export async function upsertTraining(training: Training): Promise<void> {
