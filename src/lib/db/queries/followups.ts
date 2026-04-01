@@ -17,6 +17,7 @@ function rowToFollowUp(row: FollowUpRow): FollowUp {
     createdByName: row.created_by_name,
     syncStatus: row.sync_status as FollowUp['syncStatus'],
     remoteId: row.remote_id,
+    source: (row.source ?? 'local') as FollowUp['source'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -83,13 +84,13 @@ export async function insertFollowUp(followUp: FollowUp): Promise<void> {
   await db.execute(
     `INSERT INTO follow_ups (
       id, customer_id, activity_id, title, description, due_date, completed,
-      completed_at, created_by_id, created_by_name, sync_status, remote_id, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      completed_at, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
     [
       followUp.id, followUp.customerId, followUp.activityId, followUp.title,
       followUp.description, followUp.dueDate, followUp.completed ? 1 : 0,
       followUp.completedAt, followUp.createdById, followUp.createdByName,
-      followUp.syncStatus, followUp.remoteId, followUp.createdAt, followUp.updatedAt,
+      followUp.syncStatus, followUp.remoteId, followUp.source ?? 'local', followUp.createdAt, followUp.updatedAt,
     ]
   );
   logAudit('follow_up', followUp.id, 'create', followUp.createdById, followUp.createdByName, null, { title: followUp.title, dueDate: followUp.dueDate });
@@ -104,13 +105,15 @@ export async function updateFollowUp(followUp: FollowUp): Promise<void> {
   logAudit('follow_up', followUp.id, 'update', followUp.createdById, followUp.createdByName, null, { title: followUp.title, dueDate: followUp.dueDate });
 }
 
-export async function deleteFollowUp(id: string): Promise<void> {
+export async function deleteFollowUp(id: string): Promise<{ remoteId: string | null } | null> {
   const db = await getDb();
   const rows = await db.select<FollowUpRow[]>(`SELECT * FROM follow_ups WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM follow_ups WHERE id=$1`, [id]);
   if (rows[0]) {
     logAudit('follow_up', id, 'delete', rows[0].created_by_id, rows[0].created_by_name, { title: rows[0].title }, null);
+    return { remoteId: rows[0].remote_id };
   }
+  return null;
 }
 
 export async function completeFollowUp(id: string): Promise<void> {
@@ -132,6 +135,58 @@ export async function markFollowUpSynced(id: string, remoteId: string): Promise<
     `UPDATE follow_ups SET sync_status = 'synced', remote_id = $1, updated_at = $2 WHERE id = $3`,
     [remoteId, new Date().toISOString(), id]
   );
+}
+
+export async function upsertPulledFollowUp(followUp: FollowUp): Promise<boolean> {
+  const db = await getDb();
+
+  // Skip if this remote_id exists locally with pending changes
+  const existing = await db.select<FollowUpRow[]>(
+    `SELECT id, sync_status FROM follow_ups WHERE remote_id = $1`,
+    [followUp.remoteId]
+  );
+  if (existing.length > 0 && existing[0].sync_status === 'pending') {
+    return false;
+  }
+
+  // Check that the customer exists locally (Benelux scope filter)
+  const customerExists = await db.select<{ id: string }[]>(
+    `SELECT id FROM customers WHERE id = $1`,
+    [followUp.customerId]
+  );
+  if (customerExists.length === 0) {
+    return false;
+  }
+
+  if (existing.length > 0) {
+    // Update existing record
+    await db.execute(
+      `UPDATE follow_ups SET customer_id=$1, title=$2, description=$3, due_date=$4,
+       completed=$5, completed_at=$6, created_by_id=$7, created_by_name=$8,
+       sync_status='synced', source='d365', updated_at=$9
+       WHERE remote_id=$10`,
+      [
+        followUp.customerId, followUp.title, followUp.description, followUp.dueDate,
+        followUp.completed ? 1 : 0, followUp.completedAt,
+        followUp.createdById, followUp.createdByName, followUp.updatedAt, followUp.remoteId,
+      ]
+    );
+  } else {
+    // Insert new record
+    await db.execute(
+      `INSERT INTO follow_ups (
+        id, customer_id, activity_id, title, description, due_date, completed,
+        completed_at, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      [
+        followUp.id, followUp.customerId, followUp.activityId, followUp.title,
+        followUp.description, followUp.dueDate, followUp.completed ? 1 : 0,
+        followUp.completedAt, followUp.createdById, followUp.createdByName,
+        'synced', followUp.remoteId, 'd365', followUp.createdAt, followUp.updatedAt,
+      ]
+    );
+  }
+  return true;
 }
 
 export async function countPendingFollowUps(): Promise<number> {

@@ -54,6 +54,7 @@ export interface ActivityRow {
   created_by_name: string;
   sync_status: string;
   remote_id: string | null;
+  source: string;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +72,7 @@ export interface FollowUpRow {
   created_by_name: string;
   sync_status: string;
   remote_id: string | null;
+  source: string;
   created_at: string;
   updated_at: string;
 }

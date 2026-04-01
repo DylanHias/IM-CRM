@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useActivityStore } from '@/store/activityStore';
 import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, deleteActivity as dbDeleteActivity, countPendingActivities } from '@/lib/db/queries/activities';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
@@ -40,7 +41,7 @@ export function useActivities(customerId: string) {
   }, [customerId, currentCustomerId, setActivities, setLoading, setPendingCount]);
 
   const createActivity = useCallback(
-    async (input: Omit<Activity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt'>) => {
+    async (input: Omit<Activity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'source' | 'createdAt' | 'updatedAt'>) => {
       const now = new Date().toISOString();
       const activity: Activity = {
         ...input,
@@ -49,6 +50,7 @@ export function useActivities(customerId: string) {
         createdByName: account?.name ?? 'Unknown User',
         syncStatus: 'pending',
         remoteId: null,
+        source: 'local',
         createdAt: now,
         updatedAt: now,
       };
@@ -78,7 +80,11 @@ export function useActivities(customerId: string) {
   const removeAct = useCallback(
     async (id: string) => {
       if (isTauriApp()) {
-        await dbDeleteActivity(id);
+        const deleted = await dbDeleteActivity(id);
+        if (deleted?.remoteId) {
+          const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
+          await insertPendingDelete(entityType, deleted.remoteId);
+        }
       }
       removeActivity(id);
       emitDataEvent('activity', 'deleted', customerId);

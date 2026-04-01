@@ -10,6 +10,7 @@ import {
   deleteFollowUp as dbDeleteFollowUp,
   queryOverdueFollowUpCount,
 } from '@/lib/db/queries/followups';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
@@ -47,7 +48,7 @@ export function useFollowUps(customerId: string) {
   }, [customerId, currentCustomerId, setFollowUps, setLoading, setOverdueCount]);
 
   const createFollowUp = useCallback(
-    async (input: Omit<FollowUp, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt' | 'completed' | 'completedAt'>) => {
+    async (input: Omit<FollowUp, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'source' | 'createdAt' | 'updatedAt' | 'completed' | 'completedAt'>) => {
       const now = new Date().toISOString();
       const followUp: FollowUp = {
         ...input,
@@ -56,6 +57,7 @@ export function useFollowUps(customerId: string) {
         createdByName: account?.name ?? 'Unknown User',
         syncStatus: 'pending',
         remoteId: null,
+        source: 'local',
         completed: false,
         completedAt: null,
         createdAt: now,
@@ -98,7 +100,10 @@ export function useFollowUps(customerId: string) {
   const removeFU = useCallback(
     async (id: string) => {
       if (isTauriApp()) {
-        await dbDeleteFollowUp(id);
+        const deleted = await dbDeleteFollowUp(id);
+        if (deleted?.remoteId) {
+          await insertPendingDelete('task', deleted.remoteId);
+        }
       }
       removeFollowUp(id);
       emitDataEvent('followup', 'deleted', customerId);

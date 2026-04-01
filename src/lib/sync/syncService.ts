@@ -1,8 +1,9 @@
 import { getD365Adapter } from './d365Adapter';
 import { upsertCustomerBulk, recomputeLastActivityDates } from '@/lib/db/queries/customers';
 import { upsertContactBulk } from '@/lib/db/queries/contacts';
-import { queryPendingActivities, markActivitySynced, markActivitySyncError } from '@/lib/db/queries/activities';
-import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
+import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
+import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
+import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
 import { useSyncStore } from '@/store/syncStore';
@@ -32,6 +33,7 @@ export async function runFullSync(token: string): Promise<void> {
     await syncD365(token);
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
+    await pushPendingDeletes(token);
 
     const records = await queryRecentSyncRecords(20);
     store.setRecentRecords(records);
@@ -88,6 +90,88 @@ async function syncD365(token: string): Promise<void> {
     }
     console.log(`[sync] Contacts: ${contacts.length} fetched, ${contactsChanged} changed, ${contacts.length - contactsChanged - contactErrors} unchanged, ${contactErrors} errors`);
     errors += contactErrors;
+
+    // Pull activities from D365
+    try {
+      console.log('[sync] Fetching phone calls from D365...');
+      const phoneCalls = await adapter.fetchPhoneCalls(token, lastSyncTs);
+      console.log(`[sync] Fetched ${phoneCalls.length} phone calls`);
+      let phoneCallsUpserted = 0;
+      let phoneCallsSkipped = 0;
+      for (const activity of phoneCalls) {
+        try {
+          const upserted = await upsertPulledActivity(activity);
+          if (upserted) { phoneCallsUpserted++; pulled++; } else { phoneCallsSkipped++; }
+        } catch (err) {
+          errors++;
+          console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err);
+        }
+      }
+      console.log(`[sync] Phone calls: ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped (no local customer or pending)`);
+    } catch (err) {
+      console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
+    }
+
+    try {
+      console.log('[sync] Fetching appointments from D365...');
+      const appointments = await adapter.fetchAppointments(token, lastSyncTs);
+      console.log(`[sync] Fetched ${appointments.length} appointments`);
+      let appointmentsUpserted = 0;
+      let appointmentsSkipped = 0;
+      for (const activity of appointments) {
+        try {
+          const upserted = await upsertPulledActivity(activity);
+          if (upserted) { appointmentsUpserted++; pulled++; } else { appointmentsSkipped++; }
+        } catch (err) {
+          errors++;
+          console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err);
+        }
+      }
+      console.log(`[sync] Appointments: ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped`);
+    } catch (err) {
+      console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
+    }
+
+    try {
+      console.log('[sync] Fetching annotations from D365...');
+      const annotations = await adapter.fetchAnnotations(token, lastSyncTs);
+      console.log(`[sync] Fetched ${annotations.length} annotations`);
+      let annotationsUpserted = 0;
+      let annotationsSkipped = 0;
+      for (const activity of annotations) {
+        try {
+          const upserted = await upsertPulledActivity(activity);
+          if (upserted) { annotationsUpserted++; pulled++; } else { annotationsSkipped++; }
+        } catch (err) {
+          errors++;
+          console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err);
+        }
+      }
+      console.log(`[sync] Annotations: ${annotationsUpserted} upserted, ${annotationsSkipped} skipped`);
+    } catch (err) {
+      console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
+    }
+
+    // Pull tasks (follow-ups) from D365
+    try {
+      console.log('[sync] Fetching tasks from D365...');
+      const tasks = await adapter.fetchTasks(token, lastSyncTs);
+      console.log(`[sync] Fetched ${tasks.length} tasks`);
+      let tasksUpserted = 0;
+      let tasksSkipped = 0;
+      for (const followUp of tasks) {
+        try {
+          const upserted = await upsertPulledFollowUp(followUp);
+          if (upserted) { tasksUpserted++; pulled++; } else { tasksSkipped++; }
+        } catch (err) {
+          errors++;
+          console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err);
+        }
+      }
+      console.log(`[sync] Tasks: ${tasksUpserted} upserted, ${tasksSkipped} skipped`);
+    } catch (err) {
+      console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
+    }
 
     // Recompute last activity dates from actual activities + contact changes
     await recomputeLastActivityDates();
@@ -175,6 +259,32 @@ async function pushPendingFollowUps(token: string): Promise<void> {
   console.log(`[sync] Pushed ${pushed}/${pending.length} follow-ups`);
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, null);
   store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
+}
+
+async function pushPendingDeletes(token: string): Promise<void> {
+  const pending = await queryPendingDeletes();
+  if (pending.length === 0) return;
+
+  console.log(`[sync] Pushing ${pending.length} pending deletes to D365`);
+  let deleted = 0;
+  const adapter = getD365Adapter();
+
+  for (const item of pending) {
+    try {
+      if (item.entityType === 'task') {
+        await adapter.deleteFollowUp(token, item.remoteId);
+      } else {
+        const activityType = item.entityType === 'phonecall' ? 'call' : item.entityType === 'annotation' ? 'note' : 'meeting';
+        await adapter.deleteActivity(token, item.remoteId, activityType);
+      }
+      await removePendingDelete(item.id);
+      deleted++;
+    } catch (err) {
+      console.error(`[sync] Failed to delete ${item.entityType} ${item.remoteId} from D365:`, err instanceof Error ? err.message : err);
+    }
+  }
+
+  console.log(`[sync] Deleted ${deleted}/${pending.length} records from D365`);
 }
 
 async function syncOptionSets(token: string): Promise<void> {

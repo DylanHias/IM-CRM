@@ -302,6 +302,15 @@ async function ensureTablesExist(db: Database): Promise<void> {
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_option_sets_lookup ON option_sets(entity_name, attribute_name)`);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS pending_deletes (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task')),
+      remote_id  TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 async function runSchema(db: Database): Promise<void> {
@@ -320,7 +329,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '9')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '10')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -481,6 +490,15 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     );
     await db.execute(
       `UPDATE app_settings SET value = '9', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 10) {
+    // Add source column to activities and follow_ups for D365 pull sync
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN source TEXT DEFAULT 'local'`); } catch { /* column may already exist */ }
+    try { await db.execute(`ALTER TABLE follow_ups ADD COLUMN source TEXT DEFAULT 'local'`); } catch { /* column may already exist */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '10', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

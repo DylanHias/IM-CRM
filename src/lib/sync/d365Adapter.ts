@@ -1,5 +1,9 @@
-import type { Customer, Contact, Activity, FollowUp } from '@/types/entities';
-import type { D365Customer, D365Contact, D365ODataResponse } from '@/types/api';
+import type { Customer, Contact, Activity, FollowUp, ActivityType } from '@/types/entities';
+import type {
+  D365Customer, D365Contact, D365ODataResponse,
+  D365PhoneCall, D365Appointment, D365Annotation, D365Task,
+} from '@/types/api';
+import { v4 as uuidv4 } from 'uuid';
 import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
@@ -13,9 +17,15 @@ interface OptionSetData {
 export interface ID365Adapter {
   fetchCustomers(token: string, lastSync?: string): Promise<Customer[]>;
   fetchContacts(token: string, lastSync?: string): Promise<Contact[]>;
+  fetchPhoneCalls(token: string, lastSync?: string): Promise<Activity[]>;
+  fetchAppointments(token: string, lastSync?: string): Promise<Activity[]>;
+  fetchAnnotations(token: string, lastSync?: string): Promise<Activity[]>;
+  fetchTasks(token: string, lastSync?: string): Promise<FollowUp[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
   pushActivity(token: string, activity: Activity): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
+  deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
+  deleteFollowUp(token: string, remoteId: string): Promise<void>;
 }
 
 // D365 standard industry code → label mapping
@@ -109,6 +119,103 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
   };
 }
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity {
+  return {
+    id: uuidv4(),
+    customerId: d365._im360_account_value ?? '',
+    contactId: d365._im360_contact_value ?? null,
+    type: 'call' as ActivityType,
+    subject: d365.subject ?? 'Phone Call',
+    description: d365.description ?? d365.im360_internalcomments ?? null,
+    occurredAt: d365.actualend ?? d365.createdon,
+    startTime: null,
+    createdById: d365._ownerid_value ?? '',
+    createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    syncStatus: 'synced',
+    remoteId: d365.activityid,
+    source: 'd365',
+    createdAt: d365.createdon,
+    updatedAt: d365.modifiedon,
+  };
+}
+
+function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activity {
+  const type: ActivityType = d365.im360_appointmenttype === 2 ? 'visit' : 'meeting';
+  const rawDesc = d365.description ?? '';
+  const description = rawDesc.includes('<') ? stripHtml(rawDesc) : rawDesc;
+
+  return {
+    id: uuidv4(),
+    customerId: d365._im360_account_value ?? '',
+    contactId: d365._im360_contact_value ?? null,
+    type,
+    subject: d365.subject ?? 'Appointment',
+    description: description || null,
+    occurredAt: d365.scheduledend ?? d365.createdon,
+    startTime: d365.scheduledstart ?? null,
+    createdById: d365._ownerid_value ?? '',
+    createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    syncStatus: 'synced',
+    remoteId: d365.activityid,
+    source: 'd365',
+    createdAt: d365.createdon,
+    updatedAt: d365.modifiedon,
+  };
+}
+
+function mapD365AnnotationToActivity(d365: D365Annotation, now: string): Activity {
+  return {
+    id: uuidv4(),
+    customerId: d365._objectid_value ?? '',
+    contactId: null,
+    type: 'note' as ActivityType,
+    subject: d365.subject ?? 'Note',
+    description: d365.notetext ?? null,
+    occurredAt: d365.createdon,
+    startTime: null,
+    createdById: d365._ownerid_value ?? '',
+    createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    syncStatus: 'synced',
+    remoteId: d365.annotationid,
+    source: 'd365',
+    createdAt: d365.createdon,
+    updatedAt: d365.modifiedon,
+  };
+}
+
+function mapD365TaskToFollowUp(d365: D365Task, now: string): FollowUp {
+  const completed = d365.statecode === 1;
+  return {
+    id: uuidv4(),
+    customerId: d365._regardingobjectid_value ?? '',
+    activityId: null,
+    title: d365.subject ?? 'Task',
+    description: d365.description ?? null,
+    dueDate: d365.scheduledend ? d365.scheduledend.split('T')[0] : now.split('T')[0],
+    completed,
+    completedAt: completed ? (d365.actualend ?? d365.im360_completedon ?? d365.modifiedon) : null,
+    createdById: d365._ownerid_value ?? '',
+    createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    syncStatus: 'synced',
+    remoteId: d365.activityid,
+    source: 'd365',
+    createdAt: d365.createdon,
+    updatedAt: d365.modifiedon,
+  };
+}
+
 async function fetchAllPages<T>(
   firstUrl: string,
   token: string,
@@ -180,6 +287,65 @@ class RealD365Adapter implements ID365Adapter {
     return records.map((r) => mapD365ContactToContact(r, now));
   }
 
+  async fetchPhoneCalls(token: string, lastSync?: string): Promise<Activity[]> {
+    const select = [
+      'activityid', 'subject', 'description', 'im360_internalcomments',
+      '_im360_account_value', '_im360_contact_value', '_ownerid_value',
+      'actualend', 'createdon', 'statecode', 'modifiedon',
+    ].join(',');
+
+    let filter = '_im360_account_value ne null';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/phonecalls?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const now = new Date().toISOString();
+    const records = await fetchAllPages<D365PhoneCall>(url, token, 'Phone Calls');
+    return records.map((r) => mapD365PhoneCallToActivity(r, now));
+  }
+
+  async fetchAppointments(token: string, lastSync?: string): Promise<Activity[]> {
+    const select = [
+      'activityid', 'subject', 'description', 'im360_appointmenttype',
+      '_im360_account_value', '_im360_contact_value', '_ownerid_value',
+      'scheduledstart', 'scheduledend', 'statecode', 'createdon', 'modifiedon',
+    ].join(',');
+
+    let filter = '_im360_account_value ne null and im360_appointmenttype ne 1';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/appointments?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const now = new Date().toISOString();
+    const records = await fetchAllPages<D365Appointment>(url, token, 'Appointments');
+    return records.map((r) => mapD365AppointmentToActivity(r, now));
+  }
+
+  async fetchAnnotations(token: string, lastSync?: string): Promise<Activity[]> {
+    const select = [
+      'annotationid', 'subject', 'notetext', '_objectid_value',
+      'objecttypecode', '_ownerid_value', 'createdon', 'modifiedon',
+    ].join(',');
+
+    let filter = "objecttypecode eq 'account'";
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/annotations?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const now = new Date().toISOString();
+    const records = await fetchAllPages<D365Annotation>(url, token, 'Annotations');
+    return records.map((r) => mapD365AnnotationToActivity(r, now));
+  }
+
+  async fetchTasks(token: string, lastSync?: string): Promise<FollowUp[]> {
+    const select = [
+      'activityid', 'subject', 'description', '_regardingobjectid_value',
+      '_ownerid_value', 'scheduledend', 'statecode', 'actualend',
+      'im360_completedon', 'createdon', 'modifiedon',
+    ].join(',');
+
+    let filter = '_regardingobjectid_value ne null';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/tasks?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const now = new Date().toISOString();
+    const records = await fetchAllPages<D365Task>(url, token, 'Tasks');
+    return records.map((r) => mapD365TaskToFollowUp(r, now));
+  }
+
   async fetchOptionSets(token: string): Promise<OptionSetData[]> {
     const entries = Object.entries(OPTION_SET_FIELDS) as [OptionSetFieldKey, typeof OPTION_SET_FIELDS[OptionSetFieldKey]][];
 
@@ -219,19 +385,19 @@ class RealD365Adapter implements ID365Adapter {
   }
 
   async pushActivity(token: string, activity: Activity): Promise<string> {
+    const isUpdate = !!activity.remoteId;
     const accountBind = `/accounts(${activity.customerId})`;
-    let endpoint: string;
+    let entitySet: string;
     let body: Record<string, unknown>;
 
     if (activity.type === 'call') {
-      endpoint = `${this.baseUrl}/api/data/v9.2/phonecalls`;
+      entitySet = 'phonecalls';
       const callBody: Record<string, unknown> = {
         subject: activity.subject,
         description: activity.description ?? '',
         scheduledend: activity.occurredAt,
         'regardingobjectid_account@odata.bind': accountBind,
       };
-      // Bind contact as "Call To" activity party
       if (activity.contactId) {
         callBody.phonecall_activity_parties = [
           { 'partyid_systemuser@odata.bind': `/systemusers(${activity.createdById})`, participationtypemask: 1 },
@@ -240,7 +406,7 @@ class RealD365Adapter implements ID365Adapter {
       }
       body = callBody;
     } else if (activity.type === 'note') {
-      endpoint = `${this.baseUrl}/api/data/v9.2/annotations`;
+      entitySet = 'annotations';
       body = {
         subject: activity.subject,
         notetext: activity.description ?? '',
@@ -248,12 +414,13 @@ class RealD365Adapter implements ID365Adapter {
       };
     } else {
       // 'meeting' and 'visit' both map to appointment
-      endpoint = `${this.baseUrl}/api/data/v9.2/appointments`;
+      entitySet = 'appointments';
       const apptBody: Record<string, unknown> = {
         subject: activity.subject,
         description: activity.description || activity.subject,
         scheduledstart: activity.startTime ?? activity.occurredAt,
         scheduledend: activity.occurredAt,
+        im360_appointmenttype: activity.type === 'visit' ? 2 : 0,
         'regardingobjectid_account@odata.bind': accountBind,
       };
       if (activity.contactId) {
@@ -262,8 +429,12 @@ class RealD365Adapter implements ID365Adapter {
       body = apptBody;
     }
 
+    const endpoint = isUpdate
+      ? `${this.baseUrl}/api/data/v9.2/${entitySet}(${activity.remoteId})`
+      : `${this.baseUrl}/api/data/v9.2/${entitySet}`;
+
     const res = await fetch(endpoint, {
-      method: 'POST',
+      method: isUpdate ? 'PATCH' : 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'OData-MaxVersion': '4.0',
@@ -279,22 +450,35 @@ class RealD365Adapter implements ID365Adapter {
       throw new Error(`D365 push activity failed ${res.status}: ${text}`);
     }
 
-    // D365 returns the new entity URI in OData-EntityId header
+    if (isUpdate) {
+      return activity.remoteId!;
+    }
+    // D365 returns the new entity URI in OData-EntityId header for POST
     const entityId = res.headers.get('OData-EntityId') ?? '';
     const match = entityId.match(/\(([^)]+)\)$/);
     return match ? match[1] : entityId;
   }
 
   async pushFollowUp(token: string, followUp: FollowUp): Promise<string> {
-    const body = {
+    const isUpdate = !!followUp.remoteId;
+    const body: Record<string, unknown> = {
       subject: followUp.title,
       description: followUp.description ?? '',
       scheduledend: followUp.dueDate,
       'regardingobjectid_account@odata.bind': `/accounts(${followUp.customerId})`,
     };
 
-    const res = await fetch(`${this.baseUrl}/api/data/v9.2/tasks`, {
-      method: 'POST',
+    if (followUp.completed) {
+      body.statecode = 1;
+      body.statuscode = 5;
+    }
+
+    const endpoint = isUpdate
+      ? `${this.baseUrl}/api/data/v9.2/tasks(${followUp.remoteId})`
+      : `${this.baseUrl}/api/data/v9.2/tasks`;
+
+    const res = await fetch(endpoint, {
+      method: isUpdate ? 'PATCH' : 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'OData-MaxVersion': '4.0',
@@ -310,9 +494,49 @@ class RealD365Adapter implements ID365Adapter {
       throw new Error(`D365 push follow-up failed ${res.status}: ${text}`);
     }
 
+    if (isUpdate) {
+      return followUp.remoteId!;
+    }
     const entityId = res.headers.get('OData-EntityId') ?? '';
     const match = entityId.match(/\(([^)]+)\)$/);
     return match ? match[1] : entityId;
+  }
+
+  async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
+    let entitySet: string;
+    if (type === 'call') entitySet = 'phonecalls';
+    else if (type === 'note') entitySet = 'annotations';
+    else entitySet = 'appointments';
+
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/${entitySet}(${remoteId})`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+      },
+    });
+
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new Error(`D365 delete activity failed ${res.status}: ${text}`);
+    }
+  }
+
+  async deleteFollowUp(token: string, remoteId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/tasks(${remoteId})`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+      },
+    });
+
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new Error(`D365 delete follow-up failed ${res.status}: ${text}`);
+    }
   }
 }
 
@@ -326,6 +550,26 @@ class MockD365Adapter implements ID365Adapter {
   async fetchContacts(_token: string, _lastSync?: string): Promise<Contact[]> {
     await delay(400);
     return mockContacts.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
+  }
+
+  async fetchPhoneCalls(_token: string, _lastSync?: string): Promise<Activity[]> {
+    await delay(200);
+    return [];
+  }
+
+  async fetchAppointments(_token: string, _lastSync?: string): Promise<Activity[]> {
+    await delay(200);
+    return [];
+  }
+
+  async fetchAnnotations(_token: string, _lastSync?: string): Promise<Activity[]> {
+    await delay(200);
+    return [];
+  }
+
+  async fetchTasks(_token: string, _lastSync?: string): Promise<FollowUp[]> {
+    await delay(200);
+    return [];
   }
 
   async fetchOptionSets(_token: string): Promise<OptionSetData[]> {
@@ -345,6 +589,14 @@ class MockD365Adapter implements ID365Adapter {
   async pushFollowUp(_token: string, followUp: FollowUp): Promise<string> {
     await delay(200);
     return `D365-FU-${followUp.id.slice(0, 8).toUpperCase()}`;
+  }
+
+  async deleteActivity(_token: string, _remoteId: string, _type: string): Promise<void> {
+    await delay(200);
+  }
+
+  async deleteFollowUp(_token: string, _remoteId: string): Promise<void> {
+    await delay(200);
   }
 }
 

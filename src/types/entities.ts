@@ -42,6 +42,8 @@ export interface Contact {
 
 export type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 
+export type ActivitySource = 'local' | 'd365';
+
 export interface Activity {
   id: string;
   customerId: string;
@@ -55,9 +57,12 @@ export interface Activity {
   createdByName: string;
   syncStatus: 'pending' | 'synced' | 'error';
   remoteId: string | null;
+  source: ActivitySource;
   createdAt: string;
   updatedAt: string;
 }
+
+export type FollowUpSource = 'local' | 'd365';
 
 export interface FollowUp {
   id: string;
@@ -72,6 +77,7 @@ export interface FollowUp {
   createdByName: string;
   syncStatus: 'pending' | 'synced' | 'error';
   remoteId: string | null;
+  source: FollowUpSource;
   createdAt: string;
   updatedAt: string;
 }

@@ -44,6 +44,64 @@ export interface D365ODataResponse<T> {
   '@odata.nextLink'?: string;
 }
 
+export interface D365PhoneCall {
+  activityid: string;
+  subject: string | null;
+  description: string | null;
+  im360_internalcomments: string | null;
+  _im360_account_value: string | null;
+  _im360_contact_value: string | null;
+  _ownerid_value: string | null;
+  '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  actualend: string | null;
+  createdon: string;
+  statecode: number;
+  modifiedon: string;
+}
+
+export interface D365Appointment {
+  activityid: string;
+  subject: string | null;
+  description: string | null;
+  im360_appointmenttype: number | null;
+  _im360_account_value: string | null;
+  _im360_contact_value: string | null;
+  _ownerid_value: string | null;
+  '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  scheduledstart: string | null;
+  scheduledend: string | null;
+  statecode: number;
+  createdon: string;
+  modifiedon: string;
+}
+
+export interface D365Annotation {
+  annotationid: string;
+  subject: string | null;
+  notetext: string | null;
+  _objectid_value: string | null;
+  objecttypecode: string | null;
+  _ownerid_value: string | null;
+  '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  createdon: string;
+  modifiedon: string;
+}
+
+export interface D365Task {
+  activityid: string;
+  subject: string | null;
+  description: string | null;
+  _regardingobjectid_value: string | null;
+  _ownerid_value: string | null;
+  '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  scheduledend: string | null;
+  statecode: number;
+  actualend: string | null;
+  im360_completedon: string | null;
+  createdon: string;
+  modifiedon: string;
+}
+
 export interface D365SystemUser {
   systemuserid: string;
   fullname: string;
