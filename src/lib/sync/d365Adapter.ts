@@ -16,11 +16,11 @@ interface OptionSetData {
 
 export interface ID365Adapter {
   fetchCustomers(token: string, lastSync?: string): Promise<Customer[]>;
-  fetchContacts(token: string, lastSync?: string): Promise<Contact[]>;
-  fetchPhoneCalls(token: string, lastSync?: string): Promise<Activity[]>;
-  fetchAppointments(token: string, lastSync?: string): Promise<Activity[]>;
-  fetchAnnotations(token: string, lastSync?: string): Promise<Activity[]>;
-  fetchTasks(token: string, lastSync?: string): Promise<FollowUp[]>;
+  fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]>;
+  fetchPhoneCalls(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]>;
+  fetchAppointments(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]>;
+  fetchAnnotations(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]>;
+  fetchTasks(token: string, customerIds: Set<string>, lastSync?: string): Promise<FollowUp[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
   pushActivity(token: string, activity: Activity): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
@@ -273,21 +273,24 @@ class RealD365Adapter implements ID365Adapter {
     return records.map((r) => mapD365CustomerToCustomer(r, now));
   }
 
-  async fetchContacts(token: string, lastSync?: string): Promise<Contact[]> {
+  async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
       'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
     ].join(',');
 
-    let filter = '_parentcustomerid_value ne null';
+    const benelux = "(parentcustomerid_account/address1_country eq 'Belgium' or parentcustomerid_account/address1_country eq 'Netherlands' or parentcustomerid_account/address1_country eq 'Luxembourg')";
+    let filter = `_parentcustomerid_value ne null and ${benelux}`;
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Contact>(url, token, 'Contacts');
-    return records.map((r) => mapD365ContactToContact(r, now));
+    return records
+      .map((r) => mapD365ContactToContact(r, now))
+      .filter((c) => customerIds.has(c.customerId));
   }
 
-  async fetchPhoneCalls(token: string, lastSync?: string): Promise<Activity[]> {
+  async fetchPhoneCalls(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]> {
     const select = [
       'activityid', 'subject', 'description', 'im360_internalcomments',
       '_im360_account_value', '_im360_contact_value', '_ownerid_value',
@@ -299,10 +302,12 @@ class RealD365Adapter implements ID365Adapter {
     const url = `${this.baseUrl}/api/data/v9.2/phonecalls?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365PhoneCall>(url, token, 'Phone Calls');
-    return records.map((r) => mapD365PhoneCallToActivity(r, now));
+    return records
+      .map((r) => mapD365PhoneCallToActivity(r, now))
+      .filter((a) => customerIds.has(a.customerId));
   }
 
-  async fetchAppointments(token: string, lastSync?: string): Promise<Activity[]> {
+  async fetchAppointments(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]> {
     const select = [
       'activityid', 'subject', 'description', 'im360_appointmenttype',
       '_im360_account_value', '_im360_contact_value', '_ownerid_value',
@@ -314,10 +319,12 @@ class RealD365Adapter implements ID365Adapter {
     const url = `${this.baseUrl}/api/data/v9.2/appointments?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Appointment>(url, token, 'Appointments');
-    return records.map((r) => mapD365AppointmentToActivity(r, now));
+    return records
+      .map((r) => mapD365AppointmentToActivity(r, now))
+      .filter((a) => customerIds.has(a.customerId));
   }
 
-  async fetchAnnotations(token: string, lastSync?: string): Promise<Activity[]> {
+  async fetchAnnotations(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]> {
     const select = [
       'annotationid', 'subject', 'notetext', '_objectid_value',
       'objecttypecode', '_ownerid_value', 'createdon', 'modifiedon',
@@ -328,10 +335,12 @@ class RealD365Adapter implements ID365Adapter {
     const url = `${this.baseUrl}/api/data/v9.2/annotations?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Annotation>(url, token, 'Annotations');
-    return records.map((r) => mapD365AnnotationToActivity(r, now));
+    return records
+      .map((r) => mapD365AnnotationToActivity(r, now))
+      .filter((a) => customerIds.has(a.customerId));
   }
 
-  async fetchTasks(token: string, lastSync?: string): Promise<FollowUp[]> {
+  async fetchTasks(token: string, customerIds: Set<string>, lastSync?: string): Promise<FollowUp[]> {
     const select = [
       'activityid', 'subject', 'description', '_regardingobjectid_value',
       '_ownerid_value', 'scheduledend', 'statecode', 'actualend',
@@ -343,7 +352,9 @@ class RealD365Adapter implements ID365Adapter {
     const url = `${this.baseUrl}/api/data/v9.2/tasks?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Task>(url, token, 'Tasks');
-    return records.map((r) => mapD365TaskToFollowUp(r, now));
+    return records
+      .map((r) => mapD365TaskToFollowUp(r, now))
+      .filter((t) => customerIds.has(t.customerId));
   }
 
   async fetchOptionSets(token: string): Promise<OptionSetData[]> {
@@ -547,27 +558,29 @@ class MockD365Adapter implements ID365Adapter {
     return mockCustomers.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
   }
 
-  async fetchContacts(_token: string, _lastSync?: string): Promise<Contact[]> {
+  async fetchContacts(_token: string, customerIds: Set<string>, _lastSync?: string): Promise<Contact[]> {
     await delay(400);
-    return mockContacts.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
+    return mockContacts
+      .map((c) => ({ ...c, syncedAt: new Date().toISOString() }))
+      .filter((c) => customerIds.has(c.customerId));
   }
 
-  async fetchPhoneCalls(_token: string, _lastSync?: string): Promise<Activity[]> {
+  async fetchPhoneCalls(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<Activity[]> {
     await delay(200);
     return [];
   }
 
-  async fetchAppointments(_token: string, _lastSync?: string): Promise<Activity[]> {
+  async fetchAppointments(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<Activity[]> {
     await delay(200);
     return [];
   }
 
-  async fetchAnnotations(_token: string, _lastSync?: string): Promise<Activity[]> {
+  async fetchAnnotations(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<Activity[]> {
     await delay(200);
     return [];
   }
 
-  async fetchTasks(_token: string, _lastSync?: string): Promise<FollowUp[]> {
+  async fetchTasks(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<FollowUp[]> {
     await delay(200);
     return [];
   }
