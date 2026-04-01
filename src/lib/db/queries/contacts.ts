@@ -56,16 +56,17 @@ export async function upsertContact(contact: Contact): Promise<void> {
   logAudit('contact', contact.id, 'create', 'system', 'System', null, { firstName: contact.firstName, lastName: contact.lastName });
 }
 
-export async function upsertContactBulk(contact: Contact): Promise<void> {
+/** Returns true if the record was actually inserted or updated, false if skipped. */
+export async function upsertContactBulk(contact: Contact): Promise<boolean> {
   const db = await getDb();
   // Skip contacts whose parent customer doesn't exist locally (e.g. inactive accounts filtered out)
   const parent = await db.select<{ id: string }[]>(
     `SELECT id FROM customers WHERE id = $1`,
     [contact.customerId]
   );
-  if (parent.length === 0) return;
+  if (parent.length === 0) return false;
 
-  await db.execute(
+  const result = await db.execute(
     `INSERT INTO contacts (
       id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
@@ -73,13 +74,16 @@ export async function upsertContactBulk(contact: Contact): Promise<void> {
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
-      synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+      synced_at=excluded.synced_at, updated_at=excluded.updated_at
+    WHERE excluded.updated_at > contacts.updated_at
+       OR contacts.updated_at IS NULL`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
       contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
+  return result.rowsAffected > 0;
 }
 
 export async function deleteContact(id: string): Promise<void> {

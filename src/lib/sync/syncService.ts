@@ -54,31 +54,33 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] D365 delta sync — last sync: ${lastSyncTs ?? 'never'}`);
 
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
-    console.log(`[sync] Fetched ${customers.length} customers from D365, upserting...`);
+    let customersChanged = 0;
     for (const customer of customers) {
       try {
-        await upsertCustomerBulk(customer);
+        const changed = await upsertCustomerBulk(customer);
+        if (changed) customersChanged++;
         pulled++;
       } catch (err) {
         errors++;
         console.error(`[sync] Failed to upsert customer ${customer.name} (${customer.id}):`, err instanceof Error ? err.message : err);
       }
     }
-    if (errors > 0) console.warn(`[sync] ${errors} customer upsert errors out of ${customers.length}`);
+    console.log(`[sync] Customers: ${customers.length} fetched, ${customersChanged} changed, ${customers.length - customersChanged - errors} unchanged, ${errors} errors`);
 
     const contacts = await adapter.fetchContacts(token, lastSyncTs);
-    console.log(`[sync] Fetched ${contacts.length} contacts from D365, upserting...`);
+    let contactsChanged = 0;
     let contactErrors = 0;
     for (const contact of contacts) {
       try {
-        await upsertContactBulk(contact);
+        const changed = await upsertContactBulk(contact);
+        if (changed) contactsChanged++;
         pulled++;
       } catch (err) {
         contactErrors++;
         console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err);
       }
     }
-    if (contactErrors > 0) console.warn(`[sync] ${contactErrors} contact upsert errors out of ${contacts.length}`);
+    console.log(`[sync] Contacts: ${contacts.length} fetched, ${contactsChanged} changed, ${contacts.length - contactsChanged - contactErrors} unchanged, ${contactErrors} errors`);
     errors += contactErrors;
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);

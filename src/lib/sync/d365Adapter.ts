@@ -155,7 +155,7 @@ class RealD365Adapter implements ID365Adapter {
 
     let filter = 'statecode eq 0';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
-    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${filter}`;
+    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token);
     return records.map((r) => mapD365CustomerToCustomer(r, now));
@@ -169,7 +169,7 @@ class RealD365Adapter implements ID365Adapter {
 
     let filter = '_parentcustomerid_value ne null';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
-    const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${filter}`;
+    const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Contact>(url, token);
     return records.map((r) => mapD365ContactToContact(r, now));

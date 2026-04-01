@@ -98,9 +98,10 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
   }
 }
 
-export async function upsertCustomerBulk(customer: Customer): Promise<void> {
+/** Returns true if the record was actually inserted or updated, false if skipped (unchanged). */
+export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
   const db = await getDb();
-  await db.execute(
+  const result = await db.execute(
     `INSERT INTO customers (
       id, name, account_number, industry, segment, owner_id, owner_name,
       phone, email, address_street, address_city, address_country, website,
@@ -118,7 +119,9 @@ export async function upsertCustomerBulk(customer: Customer): Promise<void> {
       cloud_customer=excluded.cloud_customer, language=excluded.language, arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
-      updated_at=excluded.updated_at`,
+      updated_at=excluded.updated_at
+    WHERE excluded.updated_at > customers.updated_at
+       OR customers.updated_at IS NULL`,
     [
       customer.id, customer.name, customer.accountNumber, customer.industry,
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
@@ -128,6 +131,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<void> {
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );
+  return result.rowsAffected > 0;
 }
 
 export async function updateCustomerLastActivity(customerId: string, at: string): Promise<void> {
