@@ -2,12 +2,11 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import type { Activity, Training, FollowUp, TimelineEvent } from '@/types/entities';
+import type { Activity, FollowUp, TimelineEvent } from '@/types/entities';
 import { TimelineItem } from './TimelineItem';
 
 interface TimelineProps {
   activities: Activity[];
-  trainings: Training[];
   followUps: FollowUp[];
   onEditActivity?: (activity: Activity) => void;
   onDeleteActivity?: (activity: Activity) => void;
@@ -15,19 +14,17 @@ interface TimelineProps {
 
 function getEventDate(event: TimelineEvent): string {
   if (event.kind === 'activity') return event.occurredAt;
-  if (event.kind === 'training') return event.trainingDate;
   return event.dueDate;
 }
 
-export function Timeline({ activities, trainings, followUps, onEditActivity, onDeleteActivity }: TimelineProps) {
+export function Timeline({ activities, followUps, onEditActivity, onDeleteActivity }: TimelineProps) {
   const events: TimelineEvent[] = useMemo(() => {
     const all: TimelineEvent[] = [
       ...activities.map((a) => ({ kind: 'activity' as const, ...a })),
-      ...trainings.map((t) => ({ kind: 'training' as const, ...t })),
       ...followUps.map((f) => ({ kind: 'followup' as const, ...f })),
     ];
     return all.sort((a, b) => getEventDate(b).localeCompare(getEventDate(a)));
-  }, [activities, trainings, followUps]);
+  }, [activities, followUps]);
 
   if (events.length === 0) {
     return (

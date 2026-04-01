@@ -7,7 +7,6 @@ describe('syncStore', () => {
     useSyncStore.setState({
       isSyncing: false,
       lastD365SyncAt: null,
-      lastTrainingSyncAt: null,
       syncErrors: [],
       recentRecords: [],
       pendingActivityCount: 0,
@@ -25,11 +24,6 @@ describe('syncStore', () => {
   it('setLastD365Sync', () => {
     store().setLastD365Sync('2026-03-25T12:00:00.000Z');
     expect(store().lastD365SyncAt).toBe('2026-03-25T12:00:00.000Z');
-  });
-
-  it('setLastTrainingSync', () => {
-    store().setLastTrainingSync('2026-03-25T12:00:00.000Z');
-    expect(store().lastTrainingSyncAt).toBe('2026-03-25T12:00:00.000Z');
   });
 
   it('addSyncError prepends', () => {
@@ -69,7 +63,6 @@ describe('syncStore', () => {
   it('initial state defaults', () => {
     expect(store().isSyncing).toBe(false);
     expect(store().lastD365SyncAt).toBeNull();
-    expect(store().lastTrainingSyncAt).toBeNull();
     expect(store().syncErrors).toHaveLength(0);
     expect(store().pendingActivityCount).toBe(0);
   });

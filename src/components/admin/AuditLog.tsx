@@ -16,7 +16,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { AuditEntityType, AuditAction, AuditLogEntry } from '@/types/admin';
 
-const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity', 'training'];
+const ENTITY_TYPES: AuditEntityType[] = ['customer', 'contact', 'activity', 'follow_up', 'opportunity'];
 const ACTIONS: AuditAction[] = ['create', 'update', 'delete'];
 
 const ACTION_COLORS: Record<AuditAction, string> = {

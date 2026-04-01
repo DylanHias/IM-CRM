@@ -59,18 +59,6 @@ export interface Activity {
   updatedAt: string;
 }
 
-export interface Training {
-  id: string;
-  customerId: string;
-  title: string;
-  trainingDate: string;
-  participant: string | null;
-  provider: string | null;
-  status: 'completed' | 'registered' | 'cancelled' | null;
-  syncedAt: string;
-  createdAt: string;
-}
-
 export interface FollowUp {
   id: string;
   customerId: string;
@@ -124,5 +112,4 @@ export interface Opportunity {
 
 export type TimelineEvent =
   | ({ kind: 'activity' } & Activity)
-  | ({ kind: 'training' } & Training)
   | ({ kind: 'followup' } & FollowUp);

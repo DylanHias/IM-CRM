@@ -1,4 +1,4 @@
-export type SyncType = 'd365' | 'training' | 'push_activities' | 'push_followups';
+export type SyncType = 'd365' | 'push_activities' | 'push_followups';
 export type SyncStatus = 'running' | 'success' | 'partial' | 'error';
 
 export interface SyncRecord {

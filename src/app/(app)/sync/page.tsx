@@ -23,7 +23,7 @@ export default function SyncPage() {
       <div>
         <h2 className="text-xl font-semibold text-foreground">Sync</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Sync customer and training data from external systems, and push local changes.
+          Sync customer data from Dynamics 365 and push local changes.
         </p>
       </div>
       <SyncPanel records={recentRecords} />

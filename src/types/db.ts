@@ -58,18 +58,6 @@ export interface ActivityRow {
   updated_at: string;
 }
 
-export interface TrainingRow {
-  id: string;
-  customer_id: string;
-  title: string;
-  training_date: string;
-  participant: string | null;
-  provider: string | null;
-  status: string | null;
-  synced_at: string;
-  created_at: string;
-}
-
 export interface FollowUpRow {
   id: string;
   customer_id: string;

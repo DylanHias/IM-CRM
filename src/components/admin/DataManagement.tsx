@@ -26,7 +26,7 @@ export function DataManagement() {
       const { utils, write } = await import('xlsx');
       const wb = utils.book_new();
 
-      const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities', 'trainings'];
+      const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
       for (const table of tables) {
         try {
           const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${table}`);

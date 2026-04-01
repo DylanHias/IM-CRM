@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Users, MapPin, FileText, GraduationCap, CheckSquare, Calendar, MessageCircle, Pencil, Trash2 } from 'lucide-react';
+import { Phone, Users, MapPin, FileText, CheckSquare, Calendar, MessageCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
@@ -76,38 +76,6 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (event.kind === 'training') {
-    const statusLabel = event.status === 'completed' ? 'Completed' : event.status === 'registered' ? 'Upcoming' : 'Cancelled';
-    const statusVariant = event.status === 'completed' ? 'success' : event.status === 'registered' ? 'info' : 'secondary';
-    return (
-      <div className="flex gap-3.5 px-4 py-3.5 group">
-        <div className="relative z-10 flex-shrink-0 mt-0.5">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center bg-training-bg ring-[3px] ring-card">
-            <GraduationCap size={15} className="text-training" />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm text-foreground">
-                <span className="font-medium">{event.title}</span>
-                {' '}
-                <Badge variant={statusVariant} className="text-[10px] ml-1 align-middle">{statusLabel}</Badge>
-              </p>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {event.provider}
-                {event.participant && ` \u00b7 ${event.participant}`}
-              </p>
-            </div>
-            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
-              {formatDate(event.trainingDate)}
-            </span>
           </div>
         </div>
       </div>

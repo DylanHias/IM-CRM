@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Customer, Contact, Activity, FollowUp, Opportunity, Training } from '@/types/entities';
+import type { Customer, Contact, Activity, FollowUp, Opportunity } from '@/types/entities';
 import type { SyncRecord, SyncError } from '@/types/sync';
 import type { CrmUser, AuditLogEntry } from '@/types/admin';
 import type { InvoiceSearchItem, InvoiceDetail } from '@/types/invoice';
@@ -121,21 +121,6 @@ export function createOpportunity(overrides?: Partial<Opportunity>): Opportunity
     createdByName: 'Dylan',
     createdAt: NOW,
     updatedAt: NOW,
-    ...overrides,
-  };
-}
-
-export function createTraining(overrides?: Partial<Training>): Training {
-  return {
-    id: uuidv4(),
-    customerId: uuidv4(),
-    title: 'Azure Fundamentals',
-    trainingDate: '2026-03-15',
-    participant: 'John Doe',
-    provider: 'Microsoft',
-    status: 'completed',
-    syncedAt: NOW,
-    createdAt: NOW,
     ...overrides,
   };
 }

@@ -50,7 +50,6 @@ const resetSyncStore = () =>
   useSyncStore.setState({
     isSyncing: false,
     lastD365SyncAt: null,
-    lastTrainingSyncAt: null,
     syncErrors: [],
     recentRecords: [],
     pendingActivityCount: 0,

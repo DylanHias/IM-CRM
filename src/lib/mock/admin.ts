@@ -170,20 +170,15 @@ export const mockSyncHealth: SyncHealthMetrics = {
 
 export const mockSyncRecords: SyncRecord[] = [
   { id: 1, syncType: 'd365', status: 'error', startedAt: ago(1, 4), finishedAt: ago(1, 4), recordsPulled: 12, recordsPushed: 0, errorMessage: 'D365 API timeout after 30s — retry scheduled', createdAt: ago(1, 4) },
-  { id: 2, syncType: 'training', status: 'error', startedAt: ago(5, 8), finishedAt: ago(5, 8), recordsPulled: 0, recordsPushed: 3, errorMessage: 'Conflict on opportunity opp-012: remote version newer', createdAt: ago(5, 8) },
-  { id: 3, syncType: 'd365', status: 'error', startedAt: ago(12, 2), finishedAt: ago(12, 2), recordsPulled: 45, recordsPushed: 0, errorMessage: 'Authentication token expired mid-sync', createdAt: ago(12, 2) },
-  { id: 4, syncType: 'training', status: 'error', startedAt: ago(18, 6), finishedAt: ago(18, 6), recordsPulled: 0, recordsPushed: 1, errorMessage: 'Network unreachable — offline mode activated', createdAt: ago(18, 6) },
-  { id: 5, syncType: 'd365', status: 'error', startedAt: ago(23, 3), finishedAt: ago(23, 3), recordsPulled: 8, recordsPushed: 0, errorMessage: 'D365 rate limit exceeded (429) — backing off', createdAt: ago(23, 3) },
-  { id: 6, syncType: 'training', status: 'error', startedAt: ago(28, 1), finishedAt: ago(28, 1), recordsPulled: 0, recordsPushed: 2, errorMessage: 'Schema mismatch on contact entity — field removed upstream', createdAt: ago(28, 1) },
-  { id: 7, syncType: 'd365', status: 'success', startedAt: ago(0, 6), finishedAt: ago(0, 6), recordsPulled: 134, recordsPushed: 0, errorMessage: null, createdAt: ago(0, 6) },
-  { id: 8, syncType: 'push_activities', status: 'success', startedAt: ago(0, 8), finishedAt: ago(0, 8), recordsPulled: 0, recordsPushed: 47, errorMessage: null, createdAt: ago(0, 8) },
-  { id: 9, syncType: 'training', status: 'success', startedAt: ago(1, 2), finishedAt: ago(1, 2), recordsPulled: 28, recordsPushed: 0, errorMessage: null, createdAt: ago(1, 2) },
-  { id: 10, syncType: 'push_followups', status: 'success', startedAt: ago(2, 3), finishedAt: ago(2, 3), recordsPulled: 0, recordsPushed: 15, errorMessage: null, createdAt: ago(2, 3) },
-  { id: 11, syncType: 'd365', status: 'success', startedAt: ago(3, 5), finishedAt: ago(3, 5), recordsPulled: 189, recordsPushed: 0, errorMessage: null, createdAt: ago(3, 5) },
-  { id: 12, syncType: 'push_activities', status: 'partial', startedAt: ago(4, 1), finishedAt: ago(4, 1), recordsPulled: 0, recordsPushed: 32, errorMessage: '3 of 35 activities failed: missing required field "subject"', createdAt: ago(4, 1) },
-  { id: 13, syncType: 'd365', status: 'success', startedAt: ago(6, 4), finishedAt: ago(6, 4), recordsPulled: 97, recordsPushed: 0, errorMessage: null, createdAt: ago(6, 4) },
-  { id: 14, syncType: 'push_followups', status: 'partial', startedAt: ago(8, 2), finishedAt: ago(8, 2), recordsPulled: 0, recordsPushed: 18, errorMessage: '2 of 20 follow-ups skipped: duplicate dueDate conflict', createdAt: ago(8, 2) },
-  { id: 15, syncType: 'training', status: 'success', startedAt: ago(10, 7), finishedAt: ago(10, 7), recordsPulled: 56, recordsPushed: 0, errorMessage: null, createdAt: ago(10, 7) },
+  { id: 2, syncType: 'd365', status: 'error', startedAt: ago(12, 2), finishedAt: ago(12, 2), recordsPulled: 45, recordsPushed: 0, errorMessage: 'Authentication token expired mid-sync', createdAt: ago(12, 2) },
+  { id: 3, syncType: 'd365', status: 'error', startedAt: ago(23, 3), finishedAt: ago(23, 3), recordsPulled: 8, recordsPushed: 0, errorMessage: 'D365 rate limit exceeded (429) — backing off', createdAt: ago(23, 3) },
+  { id: 4, syncType: 'd365', status: 'success', startedAt: ago(0, 6), finishedAt: ago(0, 6), recordsPulled: 134, recordsPushed: 0, errorMessage: null, createdAt: ago(0, 6) },
+  { id: 5, syncType: 'push_activities', status: 'success', startedAt: ago(0, 8), finishedAt: ago(0, 8), recordsPulled: 0, recordsPushed: 47, errorMessage: null, createdAt: ago(0, 8) },
+  { id: 6, syncType: 'push_followups', status: 'success', startedAt: ago(2, 3), finishedAt: ago(2, 3), recordsPulled: 0, recordsPushed: 15, errorMessage: null, createdAt: ago(2, 3) },
+  { id: 7, syncType: 'd365', status: 'success', startedAt: ago(3, 5), finishedAt: ago(3, 5), recordsPulled: 189, recordsPushed: 0, errorMessage: null, createdAt: ago(3, 5) },
+  { id: 8, syncType: 'push_activities', status: 'partial', startedAt: ago(4, 1), finishedAt: ago(4, 1), recordsPulled: 0, recordsPushed: 32, errorMessage: '3 of 35 activities failed: missing required field "subject"', createdAt: ago(4, 1) },
+  { id: 9, syncType: 'd365', status: 'success', startedAt: ago(6, 4), finishedAt: ago(6, 4), recordsPulled: 97, recordsPushed: 0, errorMessage: null, createdAt: ago(6, 4) },
+  { id: 10, syncType: 'push_followups', status: 'partial', startedAt: ago(8, 2), finishedAt: ago(8, 2), recordsPulled: 0, recordsPushed: 18, errorMessage: '2 of 20 follow-ups skipped: duplicate dueDate conflict', createdAt: ago(8, 2) },
 ];
 
 // ── Analytics ──────────────────────────────────────────────────────────
@@ -250,7 +245,6 @@ export const mockTableStats: TableStats[] = [
   { tableName: 'activities', rowCount: 586 },
   { tableName: 'follow_ups', rowCount: 203 },
   { tableName: 'opportunities', rowCount: 89 },
-  { tableName: 'trainings', rowCount: 64 },
   { tableName: 'users', rowCount: 15 },
   { tableName: 'audit_log', rowCount: 120 },
   { tableName: 'sync_records', rowCount: 248 },

@@ -5,7 +5,6 @@ import type { SyncError, SyncRecord } from '@/types/sync';
 interface SyncState {
   isSyncing: boolean;
   lastD365SyncAt: string | null;
-  lastTrainingSyncAt: string | null;
   syncErrors: SyncError[];
   recentRecords: SyncRecord[];
   pendingActivityCount: number;
@@ -13,7 +12,6 @@ interface SyncState {
 
   setSyncing: (v: boolean) => void;
   setLastD365Sync: (at: string) => void;
-  setLastTrainingSync: (at: string) => void;
   addSyncError: (error: SyncError) => void;
   clearSyncErrors: () => void;
   setRecentRecords: (records: SyncRecord[]) => void;
@@ -25,7 +23,6 @@ export const useSyncStore = create<SyncState>()(
     (set) => ({
       isSyncing: false,
       lastD365SyncAt: null,
-      lastTrainingSyncAt: null,
       syncErrors: [],
       recentRecords: [],
       pendingActivityCount: 0,
@@ -33,7 +30,6 @@ export const useSyncStore = create<SyncState>()(
 
       setSyncing: (isSyncing) => set({ isSyncing }),
       setLastD365Sync: (at) => set({ lastD365SyncAt: at }),
-      setLastTrainingSync: (at) => set({ lastTrainingSyncAt: at }),
       addSyncError: (error) => set((s) => ({ syncErrors: [error, ...s.syncErrors].slice(0, 50) })),
       clearSyncErrors: () => set({ syncErrors: [] }),
       setRecentRecords: (recentRecords) => set({ recentRecords }),
@@ -44,7 +40,6 @@ export const useSyncStore = create<SyncState>()(
       name: 'crm-sync-store',
       partialize: (s) => ({
         lastD365SyncAt: s.lastD365SyncAt,
-        lastTrainingSyncAt: s.lastTrainingSyncAt,
       }),
     }
   )

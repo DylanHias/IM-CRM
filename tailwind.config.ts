@@ -87,10 +87,6 @@ const config: Config = {
           note: 'hsl(var(--activity-note))',
           'note-bg': 'hsl(var(--activity-note-bg))',
         },
-        training: {
-          DEFAULT: 'hsl(var(--training))',
-          bg: 'hsl(var(--training-bg))',
-        },
       },
       borderRadius: {
         lg: 'var(--radius)',

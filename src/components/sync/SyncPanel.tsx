@@ -16,7 +16,6 @@ const STATUS_CONFIG = {
 
 const SYNC_TYPE_LABELS: Record<string, string> = {
   d365: 'Dynamics 365',
-  training: 'Training API',
   push_activities: 'Push Activities',
   push_followups: 'Push Follow-Ups',
 };
@@ -27,24 +26,18 @@ interface SyncPanelProps {
 
 export function SyncPanel({ records }: SyncPanelProps) {
   const {
-    isSyncing, isOnline, lastD365SyncAt, lastTrainingSyncAt,
+    isSyncing, isOnline, lastD365SyncAt,
     pendingActivityCount, pendingFollowUpCount, triggerSync,
   } = useSync();
 
   return (
     <div className="space-y-5">
       {/* Status overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">D365 Last Sync</p>
           <p className="text-sm font-medium mt-1">
             {lastD365SyncAt ? formatRelative(lastD365SyncAt) : 'Never'}
-          </p>
-        </div>
-        <div className="bg-card border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Training Last Sync</p>
-          <p className="text-sm font-medium mt-1">
-            {lastTrainingSyncAt ? formatRelative(lastTrainingSyncAt) : 'Never'}
           </p>
         </div>
         <div className="bg-card border rounded-lg p-4">

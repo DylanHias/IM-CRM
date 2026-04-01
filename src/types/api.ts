@@ -44,26 +44,6 @@ export interface D365ODataResponse<T> {
   '@odata.nextLink'?: string;
 }
 
-// Training API response shapes
-export interface TrainingApiRecord {
-  id: string;
-  customerId: string;
-  courseName: string;
-  courseDate: string;
-  participantName: string | null;
-  providerName: string | null;
-  enrollmentStatus: 'completed' | 'registered' | 'cancelled';
-}
-
-export interface TrainingApiResponse {
-  data: TrainingApiRecord[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-  };
-}
-
 export interface D365SystemUser {
   systemuserid: string;
   fullname: string;

@@ -106,7 +106,7 @@ pnpm dev / pnpm tauri dev / pnpm tauri build / pnpm lint
 
 - **Never write silent `catch` blocks** — every `catch` must call `console.error` (or `console.warn` for non-fatal) so the error surfaces in the admin Console tab (`Admin → Console`)
 - **Tag format**: `console.error('[tag] Short description:', err)` — lowercase, bracketed
-- **Standard tags**: `[auth]`, `[db]`, `[seed]`, `[audit]`, `[sync]`, `[admin]`, `[msal]`, `[settings]`, `[login]`, `[activity]`, `[contact]`, `[followup]`, `[opportunity]`, `[training]`, `[invoice]`, `[customer]`, `[updater]`, `[changelog]`, `[data]`
+- **Standard tags**: `[auth]`, `[db]`, `[seed]`, `[audit]`, `[sync]`, `[admin]`, `[msal]`, `[settings]`, `[login]`, `[activity]`, `[contact]`, `[followup]`, `[opportunity]`, `[invoice]`, `[customer]`, `[updater]`, `[changelog]`, `[data]`
 - **Only exception**: intentional silences with a comment explaining why (e.g., expected migration failures, malformed external JSON)
 - The log interceptor lives in `src/lib/logCapture.ts` — imported as a side-effect in `providers.tsx`
 

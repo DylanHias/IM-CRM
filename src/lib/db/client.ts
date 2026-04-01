@@ -154,21 +154,6 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_activities_sync ON activities(sync_status)`);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS trainings (
-      id            TEXT PRIMARY KEY,
-      customer_id   TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-      title         TEXT NOT NULL,
-      training_date TEXT NOT NULL,
-      participant   TEXT,
-      provider      TEXT,
-      status        TEXT,
-      synced_at     TEXT NOT NULL,
-      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_trainings_customer ON trainings(customer_id)`);
-
-  await db.execute(`
     CREATE TABLE IF NOT EXISTS follow_ups (
       id              TEXT PRIMARY KEY,
       customer_id     TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -230,7 +215,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS sync_records (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','training','push_activities','push_followups')),
+      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','push_activities','push_followups')),
       status         TEXT NOT NULL CHECK(status IN ('running','success','partial','error')),
       started_at     TEXT NOT NULL,
       finished_at    TEXT,
@@ -338,9 +323,6 @@ async function runSchema(db: Database): Promise<void> {
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
-  );
-  await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_training_sync', '')`
   );
 }
 

@@ -1,9 +1,7 @@
 import { getD365Adapter } from './d365Adapter';
-import { getTrainingAdapter } from './trainingAdapter';
 import { upsertCustomerBulk } from '@/lib/db/queries/customers';
 import { upsertContactBulk } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError } from '@/lib/db/queries/activities';
-import { upsertTrainingBulk } from '@/lib/db/queries/trainings';
 import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
@@ -26,7 +24,6 @@ export async function runFullSync(token: string): Promise<void> {
   try {
     await syncOptionSets(token);
     await syncD365(token);
-    await syncTrainings(token);
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
 
@@ -71,33 +68,6 @@ async function syncD365(token: string): Promise<void> {
     await updateSyncRecord(recordId, 'error', pulled, 0, message);
     store.addSyncError({ id: uuidv4(), syncType: 'd365', message, occurredAt: new Date().toISOString() });
     console.error('[sync] D365 error:', err);
-  }
-}
-
-async function syncTrainings(token: string): Promise<void> {
-  const store = useSyncStore.getState();
-  const startedAt = new Date().toISOString();
-  const recordId = await insertSyncRecord('training', 'running', startedAt);
-  let pulled = 0;
-
-  try {
-    const adapter = getTrainingAdapter();
-    const trainings = await adapter.fetchTrainings(token);
-
-    await withBatchedTransactions(trainings, async (training) => {
-      await upsertTrainingBulk(training);
-      pulled++;
-    });
-
-    await updateSyncRecord(recordId, 'success', pulled, 0, null);
-    const now = new Date().toISOString();
-    await setAppSetting('last_training_sync', now);
-    store.setLastTrainingSync(now);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Training sync failed';
-    await updateSyncRecord(recordId, 'error', pulled, 0, message);
-    store.addSyncError({ id: uuidv4(), syncType: 'training', message, occurredAt: new Date().toISOString() });
-    console.error('[sync] Training error:', err);
   }
 }
 

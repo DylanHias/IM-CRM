@@ -13,7 +13,7 @@ export interface CrmUser {
 
 export type AuditAction = 'create' | 'update' | 'delete';
 
-export type AuditEntityType = 'customer' | 'contact' | 'activity' | 'follow_up' | 'opportunity' | 'training';
+export type AuditEntityType = 'customer' | 'contact' | 'activity' | 'follow_up' | 'opportunity';
 
 export interface AuditLogEntry {
   id: number;

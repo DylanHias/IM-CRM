@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
-  Clock, User, Info, Loader2,
+  Clock, User, Loader2,
   Mail, Phone, Globe, FileText, Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ContactList } from '@/components/contacts/ContactList';
 import { OpportunityList } from '@/components/opportunities/OpportunityList';
 
-import { TrainingList } from '@/components/trainings/TrainingList';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
@@ -29,13 +28,12 @@ import { useActivities } from '@/hooks/useActivities';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { queryTrainingsByCustomer } from '@/lib/db/queries/trainings';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
-import type { Activity, Contact, Training } from '@/types/entities';
+import type { Activity, Contact } from '@/types/entities';
 
-type ProfileTab = 'overview' | 'activities' | 'contacts' | 'trainings' | 'followups' | 'opportunities' | 'invoices';
+type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'invoices';
 
 export default function CustomerDetailClient() {
   const params = useParams();
@@ -50,7 +48,6 @@ export default function CustomerDetailClient() {
   const { opportunities: customerOpportunities } = useOpportunities(customerId);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [trainings, setTrainings] = useState<Training[]>([]);
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
 
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -76,7 +73,6 @@ export default function CustomerDetailClient() {
   const [addFollowUpOpen, setAddFollowUpOpen] = useState(false);
 
   const [triggerContactAdd, setTriggerContactAdd] = useState(0);
-  const [triggerTrainingAdd, setTriggerTrainingAdd] = useState(0);
   const [triggerOpportunityAdd, setTriggerOpportunityAdd] = useState(0);
 
   useShortcutListener('new-item', useCallback(() => {
@@ -87,9 +83,6 @@ export default function CustomerDetailClient() {
         break;
       case 'contacts':
         setTriggerContactAdd((n) => n + 1);
-        break;
-      case 'trainings':
-        setTriggerTrainingAdd((n) => n + 1);
         break;
       case 'followups':
         setAddFollowUpOpen(true);
@@ -195,20 +188,14 @@ export default function CustomerDetailClient() {
     const load = async () => {
       try {
         if (isTauriApp()) {
-          const [c, t] = await Promise.all([
-            queryContactsByCustomer(customerId),
-            queryTrainingsByCustomer(customerId),
-          ]);
+          const c = await queryContactsByCustomer(customerId);
           setContacts(c);
-          setTrainings(t);
         } else {
           setContacts([]);
-          setTrainings([]);
         }
       } catch (err) {
         console.error('[customer] Failed to load detail data:', err);
         setContacts([]);
-        setTrainings([]);
       }
     };
     load();
@@ -218,11 +205,10 @@ export default function CustomerDetailClient() {
     { key: 'overview', label: 'Overview', icon: Settings },
     { key: 'activities', label: 'Activities', icon: Clock, count: activities.length },
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
-    { key: 'trainings', label: 'Trainings', icon: Info, count: trainings.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities', label: 'Opportunities', icon: Target, count: customerOpportunities.length },
     { key: 'invoices', label: 'Invoices', icon: FileText },
-  ], [activities.length, contacts.length, trainings.length, followUps.length, customerOpportunities.length]);
+  ], [activities.length, contacts.length, followUps.length, customerOpportunities.length]);
 
 
   if (!customer) {
@@ -408,7 +394,6 @@ export default function CustomerDetailClient() {
                           { label: 'Activities', value: String(activities.length) },
                           { label: 'Open Follow-Ups', value: String(followUps.filter((f) => !f.completed).length) },
                           { label: 'Contacts', value: String(contacts.length) },
-                          { label: 'Trainings', value: String(trainings.length) },
                         ].filter(Boolean) as { label: string; value: string }[];
 
                         return (
@@ -449,7 +434,6 @@ export default function CustomerDetailClient() {
                       <h3 className="text-base font-semibold text-foreground mb-3">Recent Activity</h3>
                       <Timeline
                         activities={activities.slice(0, 5)}
-                        trainings={trainings.slice(0, 3)}
                         followUps={followUps.slice(0, 3)}
                       />
                     </motion.div>
@@ -477,7 +461,6 @@ export default function CustomerDetailClient() {
                     </div>
                     <Timeline
                       activities={activities}
-                      trainings={[]}
                       followUps={[]}
                       onEditActivity={openEditActivity}
                       onDeleteActivity={handleDeleteActivity}
@@ -501,26 +484,6 @@ export default function CustomerDetailClient() {
                       onContactAdded={(c) => setContacts((prev) => [...prev, c])}
                       onContactUpdated={(c) => setContacts((prev) => prev.map((x) => (x.id === c.id ? c : x)))}
                       onContactDeleted={(id) => setContacts((prev) => prev.filter((x) => x.id !== id))}
-                    />
-                  </motion.div>
-                )}
-
-                {/* Trainings Tab */}
-                {activeTab === 'trainings' && (
-                  <motion.div
-                    key="trainings"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  >
-                    <TrainingList
-                      trainings={trainings}
-                      customerId={customerId}
-                      triggerAdd={triggerTrainingAdd}
-                      onTrainingAdded={(t) => setTrainings((prev) => [t, ...prev])}
-                      onTrainingUpdated={(t) => setTrainings((prev) => prev.map((x) => (x.id === t.id ? t : x)))}
-                      onTrainingDeleted={(id) => setTrainings((prev) => prev.filter((x) => x.id !== id))}
                     />
                   </motion.div>
                 )}

@@ -50,10 +50,6 @@
     --activity-call-bg: 142 100% 97%;
     --activity-note: 38 92% 50%;
     --activity-note-bg: 39 100% 96%;
-
-    /* Training */
-    --training: 226 71% 56%;
-    --training-bg: 226 100% 97%;
   }
 
   .dark {
@@ -100,8 +96,6 @@
     --activity-call-bg: 142 25% 21%;
     --activity-note: 38 80% 55%;
     --activity-note-bg: 38 30% 21%;
-    --training: 226 65% 65%;
-    --training-bg: 226 25% 21%;
   }
 
 }
