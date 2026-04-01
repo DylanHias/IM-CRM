@@ -26,16 +26,24 @@ export async function getDb(): Promise<Database> {
   return initPromise;
 }
 
+let txActive = false;
+
 export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
+  // Skip nesting — if a transaction is already active, just run the function
+  if (txActive) return fn();
+
   const db = await getDb();
-  await db.execute('BEGIN TRANSACTION');
+  txActive = true;
+  await db.execute('BEGIN');
   try {
     const result = await fn();
     await db.execute('COMMIT');
     return result;
   } catch (err) {
-    await db.execute('ROLLBACK');
+    try { await db.execute('ROLLBACK'); } catch { /* may already be rolled back */ }
     throw err;
+  } finally {
+    txActive = false;
   }
 }
 
