@@ -56,6 +56,25 @@ export async function upsertContact(contact: Contact): Promise<void> {
   logAudit('contact', contact.id, 'create', 'system', 'System', null, { firstName: contact.firstName, lastName: contact.lastName });
 }
 
+export async function upsertContactBulk(contact: Contact): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `INSERT INTO contacts (
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    ON CONFLICT(id) DO UPDATE SET
+      first_name=excluded.first_name, last_name=excluded.last_name,
+      job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
+      mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+    [
+      contact.id, contact.customerId, contact.firstName, contact.lastName,
+      contact.jobTitle, contact.email, contact.phone, contact.mobile,
+      contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
+    ]
+  );
+}
+
 export async function deleteContact(id: string): Promise<void> {
   const db = await getDb();
   const rows = await db.select<ContactRow[]>(`SELECT * FROM contacts WHERE id=$1`, [id]);

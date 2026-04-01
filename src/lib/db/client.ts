@@ -13,6 +13,9 @@ export async function getDb(): Promise<Database> {
       const { default: SqlDatabase } = await import('@tauri-apps/plugin-sql');
       dbInstance = await SqlDatabase.load('sqlite:crm.db');
       await dbInstance.execute('PRAGMA journal_mode=WAL');
+      await dbInstance.execute('PRAGMA synchronous=NORMAL');
+      await dbInstance.execute('PRAGMA cache_size=-64000');
+      await dbInstance.execute('PRAGMA temp_store=MEMORY');
       return dbInstance;
     } catch (err) {
       initPromise = null; // reset so next call can retry
@@ -21,6 +24,19 @@ export async function getDb(): Promise<Database> {
   })();
 
   return initPromise;
+}
+
+export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
+  const db = await getDb();
+  await db.execute('BEGIN TRANSACTION');
+  try {
+    const result = await fn();
+    await db.execute('COMMIT');
+    return result;
+  } catch (err) {
+    await db.execute('ROLLBACK');
+    throw err;
+  }
 }
 
 export async function initDb(): Promise<void> {

@@ -1,14 +1,15 @@
 import { getD365Adapter } from './d365Adapter';
 import { getTrainingAdapter } from './trainingAdapter';
-import { upsertCustomer } from '@/lib/db/queries/customers';
-import { upsertContact } from '@/lib/db/queries/contacts';
+import { upsertCustomerBulk } from '@/lib/db/queries/customers';
+import { upsertContactBulk } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError } from '@/lib/db/queries/activities';
-import { upsertTraining } from '@/lib/db/queries/trainings';
+import { upsertTrainingBulk } from '@/lib/db/queries/trainings';
 import { queryPendingFollowUps, markFollowUpSynced } from '@/lib/db/queries/followups';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
-import { insertSyncRecord, updateSyncRecord, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
+import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
+import { withTransaction } from '@/lib/db/client';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,17 +46,24 @@ async function syncD365(token: string): Promise<void> {
   try {
     const adapter = getD365Adapter();
 
-    const customers = await adapter.fetchCustomers(token);
-    for (const customer of customers) {
-      await upsertCustomer(customer);
-      pulled++;
-    }
+    // Delta sync: only fetch records modified since last sync
+    const lastSync = await getAppSetting('last_d365_sync');
+    const lastSyncTs = lastSync && lastSync.length > 0 ? lastSync : undefined;
 
-    const contacts = await adapter.fetchContacts(token);
-    for (const contact of contacts) {
-      await upsertContact(contact);
-      pulled++;
-    }
+    const customers = await adapter.fetchCustomers(token, lastSyncTs);
+    const contacts = await adapter.fetchContacts(token, lastSyncTs);
+
+    // Bulk upsert in a single transaction — no SELECT, no audit logging
+    await withTransaction(async () => {
+      for (const customer of customers) {
+        await upsertCustomerBulk(customer);
+        pulled++;
+      }
+      for (const contact of contacts) {
+        await upsertContactBulk(contact);
+        pulled++;
+      }
+    });
 
     await updateSyncRecord(recordId, 'success', pulled, 0, null);
     const now = new Date().toISOString();
@@ -78,10 +86,14 @@ async function syncTrainings(token: string): Promise<void> {
   try {
     const adapter = getTrainingAdapter();
     const trainings = await adapter.fetchTrainings(token);
-    for (const training of trainings) {
-      await upsertTraining(training);
-      pulled++;
-    }
+
+    // Bulk upsert in a single transaction
+    await withTransaction(async () => {
+      for (const training of trainings) {
+        await upsertTrainingBulk(training);
+        pulled++;
+      }
+    });
 
     await updateSyncRecord(recordId, 'success', pulled, 0, null);
     const now = new Date().toISOString();
@@ -160,11 +172,13 @@ async function syncOptionSets(token: string): Promise<void> {
     const optionSets = await adapter.fetchOptionSets(token);
     const now = new Date().toISOString();
 
-    for (const os of optionSets) {
-      await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
-    }
+    // Wrap all option set upserts in a single transaction
+    await withTransaction(async () => {
+      for (const os of optionSets) {
+        await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
+      }
+    });
 
-    // Refresh the in-memory store
     await useOptionSetStore.getState().hydrateFromDb();
   } catch (err) {
     console.error('[sync] Option set sync error:', err);

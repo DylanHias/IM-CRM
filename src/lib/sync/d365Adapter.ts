@@ -12,8 +12,8 @@ interface OptionSetData {
 }
 
 export interface ID365Adapter {
-  fetchCustomers(token: string): Promise<Customer[]>;
-  fetchContacts(token: string): Promise<Contact[]>;
+  fetchCustomers(token: string, lastSync?: string): Promise<Customer[]>;
+  fetchContacts(token: string, lastSync?: string): Promise<Contact[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
   pushActivity(token: string, activity: Activity): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
@@ -144,7 +144,7 @@ async function fetchAllPages<T>(
 class RealD365Adapter implements ID365Adapter {
   private baseUrl = (process.env.NEXT_PUBLIC_D365_BASE_URL ?? '').replace(/\/+$/, '');
 
-  async fetchCustomers(token: string): Promise<Customer[]> {
+  async fetchCustomers(token: string, lastSync?: string): Promise<Customer[]> {
     const select = [
       'accountid', 'name', 'accountnumber', 'industrycode',
       '_ownerid_value',
@@ -154,29 +154,32 @@ class RealD365Adapter implements ID365Adapter {
       'statecode', 'modifiedon',
     ].join(',');
 
-    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=statecode eq 0`;
+    let filter = 'statecode eq 0';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${filter}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token);
     return records.map((r) => mapD365CustomerToCustomer(r, now));
   }
 
-  async fetchContacts(token: string): Promise<Contact[]> {
+  async fetchContacts(token: string, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
       'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
     ].join(',');
 
-    const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=_parentcustomerid_value ne null`;
+    let filter = '_parentcustomerid_value ne null';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${filter}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Contact>(url, token);
     return records.map((r) => mapD365ContactToContact(r, now));
   }
 
   async fetchOptionSets(token: string): Promise<OptionSetData[]> {
-    const results: OptionSetData[] = [];
     const entries = Object.entries(OPTION_SET_FIELDS) as [OptionSetFieldKey, typeof OPTION_SET_FIELDS[OptionSetFieldKey]][];
 
-    for (const [, config] of entries) {
+    const promises = entries.map(async ([, config]): Promise<OptionSetData | null> => {
       try {
         const url = `${this.baseUrl}/api/data/v9.2/EntityDefinitions(LogicalName='${config.entityName}')/Attributes(LogicalName='${config.attributeName}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options)`;
         const res = await fetch(url, {
@@ -190,7 +193,7 @@ class RealD365Adapter implements ID365Adapter {
 
         if (!res.ok) {
           console.error(`[sync] Failed to fetch option set ${config.entityName}.${config.attributeName}: ${res.status}`);
-          continue;
+          return null;
         }
 
         const json = await res.json();
@@ -200,17 +203,19 @@ class RealD365Adapter implements ID365Adapter {
           displayOrder: idx,
         }));
 
-        results.push({
-          entityName: config.entityName,
-          attributeName: config.attributeName,
-          options,
-        });
+        return { entityName: config.entityName, attributeName: config.attributeName, options };
       } catch (err) {
         console.error(`[sync] Error fetching option set ${config.entityName}.${config.attributeName}:`, err);
+        return null;
       }
-    }
+    });
 
-    return results;
+    const settled = await Promise.allSettled(promises);
+
+    return settled
+      .filter((r): r is PromiseFulfilledResult<OptionSetData | null> => r.status === 'fulfilled')
+      .map((r) => r.value)
+      .filter((v): v is OptionSetData => v !== null);
   }
 
   async pushActivity(token: string, activity: Activity): Promise<string> {
@@ -313,12 +318,12 @@ class RealD365Adapter implements ID365Adapter {
 
 // Mock implementation — returns static data, simulates network delay
 class MockD365Adapter implements ID365Adapter {
-  async fetchCustomers(_token: string): Promise<Customer[]> {
+  async fetchCustomers(_token: string, _lastSync?: string): Promise<Customer[]> {
     await delay(600);
     return mockCustomers.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
   }
 
-  async fetchContacts(_token: string): Promise<Contact[]> {
+  async fetchContacts(_token: string, _lastSync?: string): Promise<Contact[]> {
     await delay(400);
     return mockContacts.map((c) => ({ ...c, syncedAt: new Date().toISOString() }));
   }

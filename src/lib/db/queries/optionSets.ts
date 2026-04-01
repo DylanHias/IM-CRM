@@ -8,14 +8,12 @@ export async function upsertOptionSet(
   syncedAt: string,
 ): Promise<void> {
   const db = await getDb();
-  await db.execute(
-    `DELETE FROM option_sets WHERE entity_name = $1 AND attribute_name = $2`,
-    [entityName, attributeName],
-  );
   for (const opt of options) {
     await db.execute(
       `INSERT INTO option_sets (entity_name, attribute_name, option_value, option_label, display_order, synced_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT(entity_name, attribute_name, option_value) DO UPDATE SET
+         option_label=excluded.option_label, display_order=excluded.display_order, synced_at=excluded.synced_at`,
       [entityName, attributeName, opt.value, opt.label, opt.displayOrder, syncedAt],
     );
   }

@@ -98,6 +98,37 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
   }
 }
 
+export async function upsertCustomerBulk(customer: Customer): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `INSERT INTO customers (
+      id, name, account_number, industry, segment, owner_id, owner_name,
+      phone, email, address_street, address_city, address_country, website,
+      reseller_id, bcn, cloud_customer, language, arr,
+      status, last_activity_at, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+    ON CONFLICT(id) DO UPDATE SET
+      name=excluded.name, account_number=excluded.account_number,
+      industry=excluded.industry, segment=excluded.segment,
+      owner_id=excluded.owner_id, owner_name=excluded.owner_name,
+      phone=excluded.phone, email=excluded.email,
+      address_street=excluded.address_street, address_city=excluded.address_city,
+      address_country=excluded.address_country, website=excluded.website,
+      reseller_id=excluded.reseller_id, bcn=excluded.bcn,
+      cloud_customer=excluded.cloud_customer, language=excluded.language, arr=excluded.arr,
+      status=excluded.status, synced_at=excluded.synced_at,
+      updated_at=excluded.updated_at`,
+    [
+      customer.id, customer.name, customer.accountNumber, customer.industry,
+      customer.segment, customer.ownerId, customer.ownerName, customer.phone,
+      customer.email, customer.addressStreet, customer.addressCity,
+      customer.addressCountry, customer.website, customer.resellerId, customer.bcn,
+      customer.cloudCustomer ? 1 : 0, customer.language, customer.arr, customer.status,
+      customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
+    ]
+  );
+}
+
 export async function updateCustomerLastActivity(customerId: string, at: string): Promise<void> {
   const db = await getDb();
   await db.execute(
