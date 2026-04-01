@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
 import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
+import { SettingRow } from './SettingRow';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -181,24 +181,6 @@ function SortableTabItem({ id }: { id: SidebarTab }) {
       </button>
       <Icon size={14} className="text-muted-foreground flex-shrink-0" />
       <span className="text-sm">{meta.label}</span>
-    </div>
-  );
-}
-
-interface SettingRowProps {
-  label: string;
-  description: string;
-  children: React.ReactNode;
-}
-
-function SettingRow({ label, description, children }: SettingRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-1">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <div className="flex-shrink-0">{children}</div>
     </div>
   );
 }

@@ -1,9 +1,6 @@
-'use client';
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { OptionSetItem } from '@/types/optionSet';
-import { queryAllOptionSets } from '@/lib/db/queries/optionSets';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 interface OptionSetState {
@@ -30,6 +27,7 @@ export const useOptionSetStore = create<OptionSetState>()(
       hydrateFromDb: async () => {
         if (!isTauriApp()) return;
         try {
+          const { queryAllOptionSets } = await import('@/lib/db/queries/optionSets');
           const data = await queryAllOptionSets();
           set({ optionSets: data, isLoaded: true });
         } catch (err) {

@@ -72,7 +72,6 @@ export async function initDb(): Promise<void> {
   }
   const db = await getDb();
   await runSchema(db);
-  await seedIfNeeded(db);
 }
 
 async function ensureTablesExist(db: Database): Promise<void> {
@@ -476,6 +475,3 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   }
 }
 
-async function seedIfNeeded(_db: Database): Promise<void> {
-  // No-op: database starts empty and is populated via D365 sync
-}

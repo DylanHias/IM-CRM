@@ -515,7 +515,8 @@ export async function mockSearchInvoices(
   let items = indices.map((i) => mockInvoiceItems[i]);
 
   if (params.invoiceNumber) {
-    items = items.filter((inv) => inv.invoiceNumber.toLowerCase().includes(params.invoiceNumber!.toLowerCase()));
+    const needle = params.invoiceNumber.toLowerCase();
+    items = items.filter((inv) => inv.invoiceNumber.toLowerCase().includes(needle));
   }
   if (params.invoiceStatus) {
     items = items.filter((inv) => inv.invoiceStatus === params.invoiceStatus);

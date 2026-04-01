@@ -31,23 +31,14 @@ function getMostRecentContact(customerId: string, contacts: Contact[]): Contact 
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
 }
 
-type ContactField = { value: string; isFallback: boolean; contactName: string | null };
-
-function getPhone(customer: Customer, contacts: Contact[]): ContactField {
+function getPhone(customer: Customer, contacts: Contact[]): string {
   const contact = getMostRecentContact(customer.id, contacts);
-  const fromContact = contact?.phone ?? contact?.mobile ?? null;
-  if (fromContact && contact) return { value: fromContact, isFallback: false, contactName: `${contact.firstName} ${contact.lastName}` };
-  return { value: customer.phone ?? '—', isFallback: true, contactName: null };
+  return contact?.phone ?? contact?.mobile ?? customer.phone ?? '—';
 }
 
-function getEmail(customer: Customer, contacts: Contact[]): ContactField {
+function getEmail(customer: Customer, contacts: Contact[]): string {
   const contact = getMostRecentContact(customer.id, contacts);
-  if (contact?.email) return { value: contact.email, isFallback: false, contactName: `${contact.firstName} ${contact.lastName}` };
-  return { value: customer.email ?? '—', isFallback: true, contactName: null };
-}
-
-function ContactCell({ field }: { field: ContactField }) {
-  return <span>{field.value}</span>;
+  return contact?.email ?? customer.email ?? '—';
 }
 
 function getContactLabel(customer: Customer, contacts: Contact[]): { name: string; isCompany: boolean } {
@@ -132,28 +123,32 @@ export default function ArrOverviewPage() {
   }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
 
   async function handleExport() {
-    const rows = filtered.map((c) => ({
-      'Customer Name': c.name,
-      Contact: getContactLabel(c, allContacts).name,
-      Phone: getPhone(c, allContacts).value,
-      Email: getEmail(c, allContacts).value,
-      'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-      Language: c.language ?? '',
-      'ARR (€)': c.arr ?? '',
-    }));
+    try {
+      const rows = filtered.map((c) => ({
+        'Customer Name': c.name,
+        Contact: getContactLabel(c, allContacts).name,
+        Phone: getPhone(c, allContacts),
+        Email: getEmail(c, allContacts),
+        'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
+        Language: c.language ?? '',
+        'ARR (€)': c.arr ?? '',
+      }));
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'ARR Overview');
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ARR Overview');
 
-    const date = new Date().toISOString().split('T')[0];
-    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
-    await exportFile({
-      defaultName: `arr-overview-${date}.xlsx`,
-      filterLabel: 'Excel Spreadsheet',
-      extensions: ['xlsx'],
-      data: buffer,
-    });
+      const date = new Date().toISOString().split('T')[0];
+      const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+      await exportFile({
+        defaultName: `arr-overview-${date}.xlsx`,
+        filterLabel: 'Excel Spreadsheet',
+        extensions: ['xlsx'],
+        data: buffer,
+      });
+    } catch (err) {
+      console.error('[data] ARR export failed:', err);
+    }
   }
 
   function toggleSort(field: SortField) {
@@ -420,10 +415,10 @@ export default function ArrOverviewPage() {
                           })()}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
-                          <ContactCell field={getPhone(customer, allContacts)} />
+                          {getPhone(customer, allContacts)}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
-                          <ContactCell field={getEmail(customer, allContacts)} />
+                          {getEmail(customer, allContacts)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           {customer.cloudCustomer === true ? (

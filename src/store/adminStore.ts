@@ -101,6 +101,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       await bulkUpsertUsers(d365Users);
       const users = await queryAllUsers();
       set({ users });
+    } catch (e) {
+      console.error('[admin] refreshUsersFromD365 failed:', e);
     } finally {
       set({ isLoading: false });
     }

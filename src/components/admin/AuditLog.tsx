@@ -63,6 +63,8 @@ export function AuditLog() {
         await insertAuditLog(entry);
       }
       await loadAuditLog();
+    } catch (err) {
+      console.error('[audit] Refresh from D365 failed:', err);
     } finally {
       setRefreshing(false);
     }

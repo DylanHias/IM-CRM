@@ -2,7 +2,7 @@ import { getDb } from '@/lib/db/client';
 import type { SyncRecord } from '@/types/sync';
 import type { SyncRecordRow } from '@/types/db';
 
-function rowToSyncRecord(row: SyncRecordRow): SyncRecord {
+export function rowToSyncRecord(row: SyncRecordRow): SyncRecord {
   return {
     id: row.id,
     syncType: row.sync_type as SyncRecord['syncType'],

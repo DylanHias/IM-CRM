@@ -13,7 +13,6 @@ import { useFollowUps } from '@/hooks/useFollowUps';
 import { todayISO } from '@/lib/utils/dateUtils';
 import type { FollowUp } from '@/types/entities';
 
-
 interface FollowUpListProps {
   followUps: FollowUp[];
   customerId: string;
@@ -54,13 +53,19 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
         updatedAt: new Date().toISOString(),
       });
       setEditing(null);
+    } catch (err) {
+      console.error('[followup] Failed to edit:', err);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (followUp: FollowUp) => {
-    await deleteFollowUp(followUp.id);
+    try {
+      await deleteFollowUp(followUp.id);
+    } catch (err) {
+      console.error('[followup] Failed to delete:', err);
+    }
   };
 
   return (

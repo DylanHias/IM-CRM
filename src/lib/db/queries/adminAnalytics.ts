@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db/client';
+import { rowToSyncRecord } from '@/lib/db/queries/sync';
 import type {
   DataQualityMetrics,
   ActivityTimelinePoint,
@@ -8,20 +9,6 @@ import type {
 } from '@/types/admin';
 import type { SyncRecordRow } from '@/types/db';
 import type { SyncRecord } from '@/types/sync';
-
-function rowToSyncRecord(row: SyncRecordRow): SyncRecord {
-  return {
-    id: row.id,
-    syncType: row.sync_type as SyncRecord['syncType'],
-    status: row.status as SyncRecord['status'],
-    startedAt: row.started_at,
-    finishedAt: row.finished_at,
-    recordsPulled: row.records_pulled,
-    recordsPushed: row.records_pushed,
-    errorMessage: row.error_message,
-    createdAt: row.created_at,
-  };
-}
 
 export async function queryDataQualityMetrics(staleActivityDays = 90): Promise<DataQualityMetrics> {
   const db = await getDb();

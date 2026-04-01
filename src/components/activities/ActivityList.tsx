@@ -69,13 +69,19 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
         updatedAt: new Date().toISOString(),
       });
       setEditing(null);
+    } catch (err) {
+      console.error('[activity] Failed to edit:', err);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (activity: Activity) => {
-    await deleteActivity(activity.id);
+    try {
+      await deleteActivity(activity.id);
+    } catch (err) {
+      console.error('[activity] Failed to delete:', err);
+    }
   };
 
   const getContactName = (contactId: string | null) => {

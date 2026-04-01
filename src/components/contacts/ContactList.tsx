@@ -49,10 +49,14 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
   };
 
   const handleDelete = async (contact: Contact) => {
-    if (isTauriApp()) {
-      await deleteContact(contact.id);
+    try {
+      if (isTauriApp()) {
+        await deleteContact(contact.id);
+      }
+      onContactDeleted(contact.id);
+    } catch (err) {
+      console.error('[contact] Failed to delete:', err);
     }
-    onContactDeleted(contact.id);
   };
 
   return (

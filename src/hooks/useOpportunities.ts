@@ -43,7 +43,7 @@ export function useOpportunities(customerId: string) {
           setOpportunities([], customerId);
         }
       } catch (err) {
-        console.error('[useOpportunities] Failed to load:', err);
+        console.error('[opportunity] Failed to load:', err);
         setOpportunities([], customerId);
       } finally {
         setLoading(false);

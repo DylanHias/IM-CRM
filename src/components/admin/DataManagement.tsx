@@ -55,22 +55,30 @@ export function DataManagement() {
 
   const handlePurgeAudit = async () => {
     if (!isTauriApp()) return;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - auditPurgeDays);
-    const { purgeAuditLogBefore } = await import('@/lib/db/queries/auditLog');
-    const deleted = await purgeAuditLogBefore(cutoff.toISOString());
-    alert(`Purged ${deleted} audit log entries.`);
-    await loadDataManagement();
+    try {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - auditPurgeDays);
+      const { purgeAuditLogBefore } = await import('@/lib/db/queries/auditLog');
+      const deleted = await purgeAuditLogBefore(cutoff.toISOString());
+      alert(`Purged ${deleted} audit log entries.`);
+      await loadDataManagement();
+    } catch (err) {
+      console.error('[audit] Purge audit log failed:', err);
+    }
   };
 
   const handlePurgeSync = async () => {
     if (!isTauriApp()) return;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - syncPurgeDays);
-    const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');
-    const deleted = await purgeSyncRecordsBefore(cutoff.toISOString());
-    alert(`Purged ${deleted} sync records.`);
-    await loadDataManagement();
+    try {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - syncPurgeDays);
+      const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');
+      const deleted = await purgeSyncRecordsBefore(cutoff.toISOString());
+      alert(`Purged ${deleted} sync records.`);
+      await loadDataManagement();
+    } catch (err) {
+      console.error('[sync] Purge sync records failed:', err);
+    }
   };
 
   return (

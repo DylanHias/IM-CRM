@@ -54,22 +54,34 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   }, [customerId]);
 
   const handleCreate = async (data: OpportunityFormData) => {
-    await createOpportunity({ ...data, customerId });
-    setAddOpen(false);
+    try {
+      await createOpportunity({ ...data, customerId });
+      setAddOpen(false);
+    } catch (err) {
+      console.error('[opportunity] Failed to create:', err);
+    }
   };
 
   const handleEdit = async (data: OpportunityFormData) => {
     if (!editing) return;
-    await editOpportunity({
-      ...editing,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
-    setEditing(null);
+    try {
+      await editOpportunity({
+        ...editing,
+        ...data,
+        updatedAt: new Date().toISOString(),
+      });
+      setEditing(null);
+    } catch (err) {
+      console.error('[opportunity] Failed to edit:', err);
+    }
   };
 
   const handleDelete = async (opp: Opportunity) => {
-    await deleteOpportunity(opp.id);
+    try {
+      await deleteOpportunity(opp.id);
+    } catch (err) {
+      console.error('[opportunity] Failed to delete:', err);
+    }
   };
 
   const statusVariant = (status: Opportunity['status']) => {

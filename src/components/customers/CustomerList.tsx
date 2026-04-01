@@ -145,10 +145,12 @@ export function CustomerList({ customers }: CustomerListProps) {
         initial="hidden"
         animate="visible"
       >
-        {customers.map((customer) => (
+        {customers.map((customer) => {
+          const iconColor = getIconColor(customer.name);
+          return (
           <motion.div key={customer.id} variants={itemVariants}>
             <Row onClick={() => handleClick(customer)}>
-              <Icon $bg={getIconColor(customer.name).bg} $fg={getIconColor(customer.name).fg}>
+              <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
                 <Building2 size={16} />
               </Icon>
 
@@ -192,7 +194,8 @@ export function CustomerList({ customers }: CustomerListProps) {
               <ChevronRight size={14} className="text-muted-foreground ml-2" />
             </Row>
           </motion.div>
-        ))}
+          );
+        })}
       </motion.div>
     </List>
   );

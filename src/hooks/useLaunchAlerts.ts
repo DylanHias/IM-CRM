@@ -24,15 +24,11 @@ export function useLaunchAlerts() {
         '@/lib/db/queries/followups'
       );
 
-      let overdueCount = 0;
-      let upcomingCount = 0;
-      let dueTodayCount = 0;
-
-      overdueCount = await queryOverdueFollowUpCount();
-      dueTodayCount = await queryDueTodayFollowUpCount();
-      if (followUpReminderDays > 0) {
-        upcomingCount = await queryUpcomingFollowUpCount(followUpReminderDays);
-      }
+      const overdueCount = await queryOverdueFollowUpCount();
+      const dueTodayCount = await queryDueTodayFollowUpCount();
+      const upcomingCount = followUpReminderDays > 0
+        ? await queryUpcomingFollowUpCount(followUpReminderDays)
+        : 0;
 
       // Overdue follow-up alerts
       if (overdueAlertsOnLaunch && overdueCount > 0) {

@@ -10,7 +10,7 @@ interface SyncState {
   pendingActivityCount: number;
   pendingFollowUpCount: number;
 
-  setSyncing: (v: boolean) => void;
+  setSyncing: (syncing: boolean) => void;
   setLastD365Sync: (at: string) => void;
   addSyncError: (error: SyncError) => void;
   clearSyncErrors: () => void;

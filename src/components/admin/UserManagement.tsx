@@ -99,6 +99,8 @@ export function UserManagement() {
     setChangingRole(userId);
     try {
       await updateUserRole(userId, role);
+    } catch (err) {
+      console.error('[admin] Role change failed:', err);
     } finally {
       setChangingRole(null);
     }
@@ -106,7 +108,11 @@ export function UserManagement() {
 
   const handleRefresh = async () => {
     if (!accessToken) return;
-    await refreshUsersFromD365(accessToken);
+    try {
+      await refreshUsersFromD365(accessToken);
+    } catch (err) {
+      console.error('[admin] Refresh users from D365 failed:', err);
+    }
   };
 
   const columns = [

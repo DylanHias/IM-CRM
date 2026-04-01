@@ -81,6 +81,8 @@ export function SyncAdministration() {
     try {
       await runFullSync(accessToken);
       await loadSyncAdmin();
+    } catch (err) {
+      console.error('[sync] Force re-sync failed:', err);
     } finally {
       setSyncing(false);
     }
@@ -88,12 +90,16 @@ export function SyncAdministration() {
 
   const handlePurge = async () => {
     if (!isTauriApp()) return;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - purgeDays);
-    const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');
-    const deleted = await purgeSyncRecordsBefore(cutoff.toISOString());
-    alert(`Purged ${deleted} sync records.`);
-    await loadSyncAdmin();
+    try {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - purgeDays);
+      const { purgeSyncRecordsBefore } = await import('@/lib/db/queries/adminAnalytics');
+      const deleted = await purgeSyncRecordsBefore(cutoff.toISOString());
+      alert(`Purged ${deleted} sync records.`);
+      await loadSyncAdmin();
+    } catch (err) {
+      console.error('[sync] Purge sync records failed:', err);
+    }
   };
 
   const metrics = [

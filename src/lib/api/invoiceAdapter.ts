@@ -17,7 +17,7 @@ class MockInvoiceAdapter implements IInvoiceAdapter {
 }
 
 class RealInvoiceAdapter implements IInvoiceAdapter {
-  private baseUrl = process.env.NEXT_PUBLIC_XVANTAGE_API_URL!;
+  private baseUrl = process.env.NEXT_PUBLIC_XVANTAGE_API_URL ?? '';
 
   async searchInvoices(resellerId: string, countryCode: string, params?: InvoiceSearchParams): Promise<InvoiceSearchResponse> {
     const { getXvantageToken } = await import('./invoiceAuth');

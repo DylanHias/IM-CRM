@@ -28,7 +28,7 @@ export function useInvoices(resellerId: string | null, countryCode: string) {
       const result = await adapter.searchInvoices(resellerId, countryCode, params);
       setInvoices(result.invoices, result.recordsFound, result.pageNumber);
     } catch (err) {
-      console.error('[useInvoices] Failed to load:', err);
+      console.error('[invoice] Failed to load:', err);
       setError(err instanceof Error ? err.message : 'Failed to load invoices');
     } finally {
       setLoading(false);
@@ -42,7 +42,7 @@ export function useInvoices(resellerId: string | null, countryCode: string) {
       const detail = await adapter.getInvoiceDetail(invoiceNumber, resellerId, countryCode);
       setDetail(detail);
     } catch (err) {
-      console.error('[useInvoices] Failed to load detail:', err);
+      console.error('[invoice] Failed to load detail:', err);
       setError(err instanceof Error ? err.message : 'Failed to load invoice detail');
     } finally {
       setLoadingDetail(false);

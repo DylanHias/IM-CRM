@@ -9,7 +9,7 @@ import { useSyncStore } from '@/store/syncStore';
 let didAutoSync = false;
 
 export function useAutoSync() {
-  const { triggerSync, isSyncing, isOnline } = useSync();
+  const { triggerSync, isOnline } = useSync();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const autoSyncOnLaunch = useSettingsStore((s) => s.autoSyncOnLaunch);
@@ -59,7 +59,8 @@ export function useAutoSync() {
         } else {
           toast.success('Background sync complete');
         }
-      } catch {
+      } catch (err) {
+        console.error('[sync] Background sync failed:', err);
         toast.error('Background sync failed', { description: 'Will retry at next interval' });
       }
     }, ms);

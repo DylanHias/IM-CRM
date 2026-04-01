@@ -1,11 +1,6 @@
 import type {
   CrmUser,
   AuditLogEntry,
-  SyncHealthMetrics,
-  DataQualityMetrics,
-  ActivityTimelinePoint,
-  PipelineStats,
-  TableStats,
 } from '@/types/admin';
 import type { SyncRecord } from '@/types/sync';
 
@@ -157,17 +152,6 @@ export const mockAuditEntries: AuditLogEntry[] = [
   { id: 120, entityType: 'customer', entityId: 'cust-032', action: 'create', changedById: 'owner-10', changedByName: 'Lies Van Hoeck', oldValues: null, newValues: { name: 'CloudNine Solutions', city: 'Brussels' }, changedAt: ago(90, 2) },
 ];
 
-// ── Sync Health ────────────────────────────────────────────────────────
-
-export const mockSyncHealth: SyncHealthMetrics = {
-  totalSyncs: 248,
-  successCount: 233,
-  errorCount: 6,
-  successRate: 96.4,
-  avgDurationMs: 3180,
-  totalRecordsProcessed: 8542,
-};
-
 export const mockSyncRecords: SyncRecord[] = [
   { id: 1, syncType: 'd365', status: 'error', startedAt: ago(1, 4), finishedAt: ago(1, 4), recordsPulled: 12, recordsPushed: 0, errorMessage: 'D365 API timeout after 30s — retry scheduled', createdAt: ago(1, 4) },
   { id: 2, syncType: 'd365', status: 'error', startedAt: ago(12, 2), finishedAt: ago(12, 2), recordsPulled: 45, recordsPushed: 0, errorMessage: 'Authentication token expired mid-sync', createdAt: ago(12, 2) },
@@ -181,71 +165,3 @@ export const mockSyncRecords: SyncRecord[] = [
   { id: 10, syncType: 'push_followups', status: 'partial', startedAt: ago(8, 2), finishedAt: ago(8, 2), recordsPulled: 0, recordsPushed: 18, errorMessage: '2 of 20 follow-ups skipped: duplicate dueDate conflict', createdAt: ago(8, 2) },
 ];
 
-// ── Analytics ──────────────────────────────────────────────────────────
-
-export const mockDataQuality: DataQualityMetrics = {
-  customersWithoutContacts: 12,
-  customersWithoutRecentActivity: 23,
-  staleOpportunities: 8,
-  totalCustomers: 147,
-  totalContacts: 312,
-  totalActivities: 586,
-};
-
-export const mockActivityTimeline: ActivityTimelinePoint[] = (() => {
-  const points: ActivityTimelinePoint[] = [];
-  const now = new Date();
-  // Gentle waves with a slow drift and a faster ripple for natural variation
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const t = (89 - i) / 89;
-    const slow = Math.sin(t * Math.PI * 2.5);
-    const fast = Math.sin(t * Math.PI * 8);
-    points.push({
-      date: label,
-      meeting: Math.max(0, Math.round(2.5 + 1.2 * slow + 0.5 * fast)),
-      call:    Math.max(0, Math.round(2 + slow + 0.4 * Math.sin(t * Math.PI * 7 + 1))),
-      visit:   Math.max(0, Math.round(1.2 + 0.6 * slow + 0.3 * Math.sin(t * Math.PI * 6 + 2))),
-      note:    Math.max(0, Math.round(1 + 0.5 * Math.sin(t * Math.PI * 3 + 1.5) + 0.3 * fast)),
-    });
-  }
-  return points;
-})();
-
-export const mockActivityByUser: { userName: string; count: number }[] = [
-  { userName: 'Jan De Vries', count: 24 },
-  { userName: 'Sophie Martens', count: 18 },
-  { userName: 'Pieter Claes', count: 14 },
-  { userName: 'Lotte Van den Berghe', count: 8 },
-  { userName: 'Thomas Willems', count: 4 },
-  { userName: 'Noor Bakker', count: 11 },
-  { userName: 'Wouter Janssens', count: 16 },
-  { userName: 'Eline De Clercq', count: 9 },
-  { userName: 'Bram Peeters', count: 13 },
-  { userName: 'Lies Van Hoeck', count: 7 },
-];
-
-export const mockPipelineByStage: PipelineStats[] = [
-  { stage: 'Discovery', count: 3, totalRevenue: 95000 },
-  { stage: 'Qualification', count: 5, totalRevenue: 210000 },
-  { stage: 'Proposal', count: 4, totalRevenue: 185000 },
-  { stage: 'Negotiation', count: 2, totalRevenue: 140000 },
-  { stage: 'Closed Won', count: 6, totalRevenue: 420000 },
-  { stage: 'Closed Lost', count: 3, totalRevenue: 115000 },
-];
-
-export const mockWinRate = { won: 6, lost: 3, open: 14 };
-
-// ── Data Management ────────────────────────────────────────────────────
-
-export const mockTableStats: TableStats[] = [
-  { tableName: 'customers', rowCount: 147 },
-  { tableName: 'contacts', rowCount: 312 },
-  { tableName: 'activities', rowCount: 586 },
-  { tableName: 'follow_ups', rowCount: 203 },
-  { tableName: 'opportunities', rowCount: 89 },
-  { tableName: 'users', rowCount: 15 },
-  { tableName: 'audit_log', rowCount: 120 },
-  { tableName: 'sync_records', rowCount: 248 },
-];

@@ -98,8 +98,7 @@ export function useShortcuts() {
  */
 export function useShortcutListener(shortcutId: string, callback: () => void) {
   useEffect(() => {
-    const handler = () => callback();
-    window.addEventListener(`shortcut:${shortcutId}`, handler);
-    return () => window.removeEventListener(`shortcut:${shortcutId}`, handler);
+    window.addEventListener(`shortcut:${shortcutId}`, callback);
+    return () => window.removeEventListener(`shortcut:${shortcutId}`, callback);
   }, [shortcutId, callback]);
 }

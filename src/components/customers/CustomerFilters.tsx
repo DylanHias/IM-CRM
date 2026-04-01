@@ -54,7 +54,6 @@ export function CustomerFilters() {
     Array.from(new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])).sort(),
     [customers]);
 
-
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
 
   return (
@@ -119,7 +118,6 @@ export function CustomerFilters() {
           </Button>
         )}
       </div>
-
 
       {/* Filter panel */}
       {showFilters && (

@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Download, Loader2, CheckCircle2, Copy, Check } from 'lucide-react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { SettingRow } from './SettingRow';
 import { storeChangelog } from '@/components/layout/ChangelogDialog';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from 'sonner';
@@ -194,24 +195,6 @@ export function GeneralSettings() {
           </Button>
         </ConfirmPopover>
       </div>
-    </div>
-  );
-}
-
-interface SettingRowProps {
-  label: string;
-  description: string;
-  children: React.ReactNode;
-}
-
-function SettingRow({ label, description, children }: SettingRowProps) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-1">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <div className="flex-shrink-0">{children}</div>
     </div>
   );
 }
