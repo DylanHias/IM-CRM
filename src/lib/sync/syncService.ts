@@ -82,17 +82,13 @@ async function syncD365(token: string): Promise<void> {
     errors += contactErrors;
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);
-
-    // Only advance the sync watermark when all records succeeded —
-    // otherwise the next sync re-fetches and retries the failed ones
-    if (errors === 0) {
-      const now = new Date().toISOString();
-      await setAppSetting('last_d365_sync', now);
-      store.setLastD365Sync(now);
-    } else {
-      console.warn(`[sync] Keeping last_d365_sync at ${lastSyncTs ?? 'never'} so failed records are retried next sync`);
+    const now = new Date().toISOString();
+    await setAppSetting('last_d365_sync', now);
+    store.setLastD365Sync(now);
+    if (errors > 0) {
+      console.warn(`[sync] ${errors} records failed to upsert — watermark advanced, failed records retry when modified in D365`);
     }
-    console.log(`[sync] D365 sync done — pulled ${pulled} records, ${errors} errors`);
+    console.log(`[sync] D365 sync done — pulled ${pulled}, errors ${errors}, watermark set to ${now}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'D365 sync failed';
     console.error(`[sync] D365 sync error: ${message}`, err);
