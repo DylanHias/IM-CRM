@@ -10,6 +10,12 @@ import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
 
+export async function resetSyncWatermark(): Promise<void> {
+  await setAppSetting('last_d365_sync', '');
+  useSyncStore.getState().setLastD365Sync('');
+  console.log('[sync] Watermark reset — next sync will fetch all records from D365');
+}
+
 export async function runFullSync(token: string): Promise<void> {
   if (!isTauriApp()) {
     console.warn('[sync] Not in Tauri — skipping sync');

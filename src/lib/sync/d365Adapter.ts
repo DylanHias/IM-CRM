@@ -112,18 +112,21 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
 async function fetchAllPages<T>(
   firstUrl: string,
   token: string,
+  label?: string,
 ): Promise<T[]> {
   const results: T[] = [];
   let url: string | undefined = firstUrl;
+  let page = 0;
 
   while (url) {
+    page++;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
         Accept: 'application/json',
-        Prefer: 'odata.include-annotations="*"',
+        Prefer: 'odata.include-annotations="*",odata.maxpagesize=5000',
       },
     });
 
@@ -134,9 +137,11 @@ async function fetchAllPages<T>(
 
     const json: D365ODataResponse<T> = await res.json();
     results.push(...json.value);
+    console.log(`[sync] ${label ?? 'D365'} page ${page}: ${json.value.length} records (total so far: ${results.length})`);
     url = json['@odata.nextLink'];
   }
 
+  console.log(`[sync] ${label ?? 'D365'} fetch complete: ${results.length} records across ${page} page(s)`);
   return results;
 }
 
@@ -157,7 +162,7 @@ class RealD365Adapter implements ID365Adapter {
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
-    const records = await fetchAllPages<D365Customer>(url, token);
+    const records = await fetchAllPages<D365Customer>(url, token, 'Accounts');
     return records.map((r) => mapD365CustomerToCustomer(r, now));
   }
 
@@ -171,7 +176,7 @@ class RealD365Adapter implements ID365Adapter {
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
-    const records = await fetchAllPages<D365Contact>(url, token);
+    const records = await fetchAllPages<D365Contact>(url, token, 'Contacts');
     return records.map((r) => mapD365ContactToContact(r, now));
   }
 

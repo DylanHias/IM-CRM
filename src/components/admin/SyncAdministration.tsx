@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { runFullSync } from '@/lib/sync/syncService';
+import { runFullSync, resetSyncWatermark } from '@/lib/sync/syncService';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 type SortField = 'syncType' | 'errorMessage' | 'createdAt';
@@ -79,6 +79,7 @@ export function SyncAdministration() {
     if (!accessToken || !isTauriApp()) return;
     setSyncing(true);
     try {
+      await resetSyncWatermark();
       await runFullSync(accessToken);
       await loadSyncAdmin();
     } catch (err) {
