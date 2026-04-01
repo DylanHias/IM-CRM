@@ -46,16 +46,11 @@ export function useAuth() {
         }
       };
       acquireToken();
-    } else if (!isAuthenticated) {
+    } else {
+      // No cached accounts — mark as not authenticated
       clearAuth();
     }
-  }, [accounts, inProgress, instance, setAccount, clearAuth, setIsAdmin, isAuthenticated]);
-
-  useEffect(() => {
-    if (inProgress === 'none') {
-      setLoading(false);
-    }
-  }, [inProgress, setLoading]);
+  }, [accounts, inProgress, instance, setAccount, clearAuth, setLoading, setIsAdmin, isAuthenticated]);
 
   return { isAuthenticated, account, inProgress };
 }
