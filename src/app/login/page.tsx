@@ -131,12 +131,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   // Already logged in?
   useEffect(() => {
-    if (accounts.length > 0) {
+    if (accounts.length > 0 || isAuthenticated) {
       router.replace('/customers');
     }
-  }, [accounts, router]);
+  }, [accounts, router, isAuthenticated]);
 
   const handleDevBypass = async () => {
     setAccount(

@@ -14,23 +14,11 @@ export function useAuth() {
   useEffect(() => {
     if (inProgress !== 'none') return;
 
-    if (accounts.length > 0) {
-      // MSAL has cached accounts (browser flow) — acquire token silently
-      const acquireToken = async () => {
-        try {
-          const result = await instance.acquireTokenSilent({ ...loginRequest, account: accounts[0] });
-          setAccount(accounts[0], result.accessToken);
-          await syncUserToDb(accounts[0], setIsAdmin);
-        } catch (err) {
-          console.error('[auth] Silent token acquisition failed:', err);
-          clearAuth();
-        }
-      };
-      acquireToken();
-    } else if (!isAuthenticated && !restoredRef.current) {
-      // No MSAL accounts and not yet authenticated — try Tauri session restore
-      restoredRef.current = true;
-      if (isTauriApp()) {
+    // In Tauri, auth is handled by the custom OAuth server — skip MSAL token acquisition
+    // entirely to prevent stale MSAL cache entries from triggering clearAuth()
+    if (isTauriApp()) {
+      if (!isAuthenticated && !restoredRef.current) {
+        restoredRef.current = true;
         const tryRestore = async () => {
           try {
             const { restoreSession } = await import('@/lib/auth/authHelpers');
@@ -47,9 +35,26 @@ export function useAuth() {
           }
         };
         tryRestore();
-      } else {
-        clearAuth();
       }
+      return;
+    }
+
+    if (accounts.length > 0) {
+      // MSAL has cached accounts (browser flow) — acquire token silently
+      const acquireToken = async () => {
+        try {
+          const result = await instance.acquireTokenSilent({ ...loginRequest, account: accounts[0] });
+          setAccount(accounts[0], result.accessToken);
+          await syncUserToDb(accounts[0], setIsAdmin);
+        } catch (err) {
+          console.error('[auth] Silent token acquisition failed:', err);
+          clearAuth();
+        }
+      };
+      acquireToken();
+    } else if (!isAuthenticated && !restoredRef.current) {
+      restoredRef.current = true;
+      clearAuth();
     }
   }, [accounts, inProgress, instance, setAccount, clearAuth, setIsAdmin, isAuthenticated]);
 
