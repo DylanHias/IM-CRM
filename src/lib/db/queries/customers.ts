@@ -31,6 +31,12 @@ function rowToCustomer(row: CustomerRow): Customer {
   };
 }
 
+export async function queryAllCustomerIds(): Promise<Set<string>> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string }[]>(`SELECT id FROM customers`);
+  return new Set(rows.map((r) => r.id));
+}
+
 export async function queryAllCustomers(): Promise<Customer[]> {
   const db = await getDb();
   const rows = await db.select<CustomerRow[]>(

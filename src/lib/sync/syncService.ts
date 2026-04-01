@@ -1,5 +1,5 @@
 import { getD365Adapter } from './d365Adapter';
-import { upsertCustomerBulk, recomputeLastActivityDates } from '@/lib/db/queries/customers';
+import { upsertCustomerBulk, recomputeLastActivityDates, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { upsertContactBulk } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
@@ -75,10 +75,15 @@ async function syncD365(token: string): Promise<void> {
     }
     console.log(`[sync] Customers: ${customers.length} fetched, ${customersChanged} changed, ${customers.length - customersChanged - errors} unchanged, ${errors} errors`);
 
+    // Build set of local customer IDs so child entities are scoped to Benelux customers only
+    const localCustomerIds = await queryAllCustomerIds();
+    console.log(`[sync] ${localCustomerIds.size} local customers — filtering child entities to this scope`);
+
     const contacts = await adapter.fetchContacts(token, lastSyncTs);
+    const scopedContacts = contacts.filter((c) => localCustomerIds.has(c.customerId));
     let contactsChanged = 0;
     let contactErrors = 0;
-    for (const contact of contacts) {
+    for (const contact of scopedContacts) {
       try {
         const changed = await upsertContactBulk(contact);
         if (changed) contactsChanged++;
@@ -88,17 +93,17 @@ async function syncD365(token: string): Promise<void> {
         console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err);
       }
     }
-    console.log(`[sync] Contacts: ${contacts.length} fetched, ${contactsChanged} changed, ${contacts.length - contactsChanged - contactErrors} unchanged, ${contactErrors} errors`);
+    console.log(`[sync] Contacts: ${contacts.length} fetched, ${contacts.length - scopedContacts.length} filtered out, ${contactsChanged} changed, ${contactErrors} errors`);
     errors += contactErrors;
 
-    // Pull activities from D365
+    // Pull activities from D365 (filtered to local customers)
     try {
       console.log('[sync] Fetching phone calls from D365...');
       const phoneCalls = await adapter.fetchPhoneCalls(token, lastSyncTs);
-      console.log(`[sync] Fetched ${phoneCalls.length} phone calls`);
+      const scopedPhoneCalls = phoneCalls.filter((a) => localCustomerIds.has(a.customerId));
       let phoneCallsUpserted = 0;
       let phoneCallsSkipped = 0;
-      for (const activity of phoneCalls) {
+      for (const activity of scopedPhoneCalls) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { phoneCallsUpserted++; pulled++; } else { phoneCallsSkipped++; }
@@ -107,7 +112,7 @@ async function syncD365(token: string): Promise<void> {
           console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Phone calls: ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped (no local customer or pending)`);
+      console.log(`[sync] Phone calls: ${phoneCalls.length} fetched, ${phoneCalls.length - scopedPhoneCalls.length} filtered out, ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped`);
     } catch (err) {
       console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
     }
@@ -115,10 +120,10 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching appointments from D365...');
       const appointments = await adapter.fetchAppointments(token, lastSyncTs);
-      console.log(`[sync] Fetched ${appointments.length} appointments`);
+      const scopedAppointments = appointments.filter((a) => localCustomerIds.has(a.customerId));
       let appointmentsUpserted = 0;
       let appointmentsSkipped = 0;
-      for (const activity of appointments) {
+      for (const activity of scopedAppointments) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { appointmentsUpserted++; pulled++; } else { appointmentsSkipped++; }
@@ -127,7 +132,7 @@ async function syncD365(token: string): Promise<void> {
           console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Appointments: ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped`);
+      console.log(`[sync] Appointments: ${appointments.length} fetched, ${appointments.length - scopedAppointments.length} filtered out, ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped`);
     } catch (err) {
       console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
     }
@@ -135,10 +140,10 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching annotations from D365...');
       const annotations = await adapter.fetchAnnotations(token, lastSyncTs);
-      console.log(`[sync] Fetched ${annotations.length} annotations`);
+      const scopedAnnotations = annotations.filter((a) => localCustomerIds.has(a.customerId));
       let annotationsUpserted = 0;
       let annotationsSkipped = 0;
-      for (const activity of annotations) {
+      for (const activity of scopedAnnotations) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { annotationsUpserted++; pulled++; } else { annotationsSkipped++; }
@@ -147,19 +152,19 @@ async function syncD365(token: string): Promise<void> {
           console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Annotations: ${annotationsUpserted} upserted, ${annotationsSkipped} skipped`);
+      console.log(`[sync] Annotations: ${annotations.length} fetched, ${annotations.length - scopedAnnotations.length} filtered out, ${annotationsUpserted} upserted, ${annotationsSkipped} skipped`);
     } catch (err) {
       console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
     }
 
-    // Pull tasks (follow-ups) from D365
+    // Pull tasks (follow-ups) from D365 (filtered to local customers)
     try {
       console.log('[sync] Fetching tasks from D365...');
       const tasks = await adapter.fetchTasks(token, lastSyncTs);
-      console.log(`[sync] Fetched ${tasks.length} tasks`);
+      const scopedTasks = tasks.filter((t) => localCustomerIds.has(t.customerId));
       let tasksUpserted = 0;
       let tasksSkipped = 0;
-      for (const followUp of tasks) {
+      for (const followUp of scopedTasks) {
         try {
           const upserted = await upsertPulledFollowUp(followUp);
           if (upserted) { tasksUpserted++; pulled++; } else { tasksSkipped++; }
@@ -168,7 +173,7 @@ async function syncD365(token: string): Promise<void> {
           console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Tasks: ${tasksUpserted} upserted, ${tasksSkipped} skipped`);
+      console.log(`[sync] Tasks: ${tasks.length} fetched, ${tasks.length - scopedTasks.length} filtered out, ${tasksUpserted} upserted, ${tasksSkipped} skipped`);
     } catch (err) {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }
