@@ -41,6 +41,7 @@ export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
     await db.execute('COMMIT');
     return result;
   } catch (err) {
+    console.error('[db] Transaction failed, rolling back:', err instanceof Error ? err.message : err);
     try { await db.execute('ROLLBACK'); } catch { /* may already be rolled back */ }
     throw err;
   } finally {
