@@ -117,6 +117,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<void> {
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
       cloud_customer=excluded.cloud_customer, language=excluded.language, arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
+      last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
       updated_at=excluded.updated_at`,
     [
       customer.id, customer.name, customer.accountNumber, customer.industry,

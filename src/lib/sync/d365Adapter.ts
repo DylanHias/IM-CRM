@@ -85,7 +85,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     language: null, // preferredlanguagecode not available on D365 contact entity in this org
     arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
-    lastActivityAt: null,
+    lastActivityAt: d365.modifiedon,
     syncedAt: now,
     createdAt: now,
     updatedAt: d365.modifiedon,

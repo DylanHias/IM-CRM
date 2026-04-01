@@ -10,6 +10,7 @@ import {
   deleteFollowUp as dbDeleteFollowUp,
   queryOverdueFollowUpCount,
 } from '@/lib/db/queries/followups';
+import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { FollowUp } from '@/types/entities';
@@ -63,6 +64,7 @@ export function useFollowUps(customerId: string) {
 
       if (isTauriApp()) {
         await insertFollowUp(followUp);
+        await updateCustomerLastActivity(customerId, now);
       }
       addFollowUp(followUp);
       emitDataEvent('followup', 'created', customerId);

@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useOpportunityStore } from '@/store/opportunityStore';
 import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
+import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
@@ -68,6 +69,7 @@ export function useOpportunities(customerId: string) {
       if (isTauriApp()) {
         try {
           await insertOpportunity(opportunity);
+          await updateCustomerLastActivity(customerId, now);
         } catch (err) {
           console.error('[opportunity] DB insert failed, adding to store only:', err);
         }
