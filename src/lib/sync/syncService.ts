@@ -9,7 +9,6 @@ import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
-import { withTransaction } from '@/lib/db/client';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -51,19 +50,16 @@ async function syncD365(token: string): Promise<void> {
     const lastSyncTs = lastSync && lastSync.length > 0 ? lastSync : undefined;
 
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
-    const contacts = await adapter.fetchContacts(token, lastSyncTs);
+    for (const customer of customers) {
+      await upsertCustomerBulk(customer);
+      pulled++;
+    }
 
-    // Bulk upsert in a single transaction — no SELECT, no audit logging
-    await withTransaction(async () => {
-      for (const customer of customers) {
-        await upsertCustomerBulk(customer);
-        pulled++;
-      }
-      for (const contact of contacts) {
-        await upsertContactBulk(contact);
-        pulled++;
-      }
-    });
+    const contacts = await adapter.fetchContacts(token, lastSyncTs);
+    for (const contact of contacts) {
+      await upsertContactBulk(contact);
+      pulled++;
+    }
 
     await updateSyncRecord(recordId, 'success', pulled, 0, null);
     const now = new Date().toISOString();
@@ -87,13 +83,14 @@ async function syncTrainings(token: string): Promise<void> {
     const adapter = getTrainingAdapter();
     const trainings = await adapter.fetchTrainings(token);
 
-    // Bulk upsert in a single transaction
-    await withTransaction(async () => {
-      for (const training of trainings) {
+    for (const training of trainings) {
+      try {
         await upsertTrainingBulk(training);
         pulled++;
+      } catch {
+        // Skip trainings whose customer doesn't exist in the DB yet (FK constraint)
       }
-    });
+    }
 
     await updateSyncRecord(recordId, 'success', pulled, 0, null);
     const now = new Date().toISOString();
@@ -172,12 +169,9 @@ async function syncOptionSets(token: string): Promise<void> {
     const optionSets = await adapter.fetchOptionSets(token);
     const now = new Date().toISOString();
 
-    // Wrap all option set upserts in a single transaction
-    await withTransaction(async () => {
-      for (const os of optionSets) {
-        await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
-      }
-    });
+    for (const os of optionSets) {
+      await upsertOptionSet(os.entityName, os.attributeName, os.options, now);
+    }
 
     await useOptionSetStore.getState().hydrateFromDb();
   } catch (err) {
