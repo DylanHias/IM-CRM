@@ -21,20 +21,24 @@ export function useAuth() {
           setAccount(activeAccount, result.accessToken);
 
           if (isTauriApp() && activeAccount.localAccountId) {
-            const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
-            const now = new Date().toISOString();
-            await upsertUser({
-              id: activeAccount.localAccountId,
-              email: activeAccount.username ?? '',
-              name: activeAccount.name ?? 'Unknown',
-              role: 'user',
-              businessUnit: null,
-              lastActiveAt: now,
-              createdAt: now,
-              updatedAt: now,
-            });
-            const admin = await isUserAdmin(activeAccount.localAccountId);
-            setIsAdmin(admin);
+            try {
+              const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
+              const now = new Date().toISOString();
+              await upsertUser({
+                id: activeAccount.localAccountId,
+                email: activeAccount.username ?? '',
+                name: activeAccount.name ?? 'Unknown',
+                role: 'user',
+                businessUnit: null,
+                lastActiveAt: now,
+                createdAt: now,
+                updatedAt: now,
+              });
+              const admin = await isUserAdmin(activeAccount.localAccountId);
+              setIsAdmin(admin);
+            } catch (dbErr) {
+              console.error('[auth] DB user sync failed (staying authenticated):', dbErr);
+            }
           }
         } catch (err) {
           console.error('[auth] Silent token acquisition failed:', err);
