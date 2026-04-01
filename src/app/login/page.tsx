@@ -190,6 +190,31 @@ export default function LoginPage() {
       const result = await signIn();
       if (result) {
         setAccount(result.account, result.accessToken);
+
+        // Sync user to DB and check admin status
+        if (isTauriApp() && result.account.localAccountId) {
+          try {
+            const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
+            const now = new Date().toISOString();
+            const email = result.account.username ?? '';
+            const role = email.toLowerCase() === 'dylan.hias@ingrammicro.com' ? 'admin' : 'user';
+            await upsertUser({
+              id: result.account.localAccountId,
+              email,
+              name: result.account.name ?? 'Unknown',
+              role,
+              businessUnit: null,
+              lastActiveAt: now,
+              createdAt: now,
+              updatedAt: now,
+            });
+            const admin = await isUserAdmin(result.account.localAccountId);
+            useAuthStore.getState().setIsAdmin(admin);
+          } catch (dbErr) {
+            console.error('[login] DB user sync failed (non-fatal):', dbErr);
+          }
+        }
+
         router.replace('/customers');
       } else {
         setError('Login was cancelled or failed. Please try again.');
