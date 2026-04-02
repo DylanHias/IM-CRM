@@ -15,6 +15,7 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   setShortcutsGuideOpen: (open: boolean) => void;
   addRecentCustomer: (id: string) => void;
+  clearRecentCustomers: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -35,6 +36,7 @@ export const useUIStore = create<UIState>()(
         set((s) => ({
           recentCustomerIds: [id, ...s.recentCustomerIds.filter((cid) => cid !== id)].slice(0, 5),
         })),
+      clearRecentCustomers: () => set({ recentCustomerIds: [] }),
     }),
     {
       name: 'crm-ui-store',

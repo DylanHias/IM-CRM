@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
-  Settings, Keyboard, LogOut, Shield, Bug, Building2,
+  Settings, Keyboard, LogOut, Shield, Bug, Building2, X,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -65,6 +65,7 @@ export function AppSidebar() {
   const { account, isAdmin } = useAuthStore();
   const d365UserId = useD365UserId();
   const recentCustomerIds = useUIStore((s) => s.recentCustomerIds);
+  const clearRecentCustomers = useUIStore((s) => s.clearRecentCustomers);
   const customers = useCustomerStore((s) => s.customers);
 
   const refreshCounts = useCallback(async () => {
@@ -190,8 +191,15 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {recentCustomers.length > 0 && (
-          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          <SidebarGroup className="group/recent group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel>Recent</SidebarGroupLabel>
+            <button
+              onClick={clearRecentCustomers}
+              className="absolute right-3 top-3 flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground opacity-0 group-hover/recent:opacity-100 transition-opacity"
+            >
+              <X className="size-3" />
+              Clear
+            </button>
             <SidebarGroupContent>
               <SidebarMenu>
                 {recentCustomers.map((c) => (

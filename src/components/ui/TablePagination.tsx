@@ -25,43 +25,37 @@ export function TablePagination({
 }: TablePaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
-  const rangeStart = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
-  const rangeEnd = Math.min(safePage * pageSize, totalItems);
 
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
-        <Select
-          value={String(pageSize)}
-          onValueChange={(v) => {
-            onPageSizeChange(Number(v));
-            onPageChange(1);
-          }}
-        >
-          <SelectTrigger className="h-8 w-[70px] text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {pageSizeOptions.map((opt) => (
-              <SelectItem key={opt} value={String(opt)}>
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        </div>
-        <span className="text-sm text-muted-foreground whitespace-nowrap">
-          {rangeStart}–{rangeEnd} of {totalItems}
-        </span>
-      </div>
-
       <span className="text-sm text-muted-foreground">
         Page {safePage} of {totalPages}
       </span>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => {
+              onPageSizeChange(Number(v));
+              onPageChange(1);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pageSizeOptions.map((opt) => (
+                <SelectItem key={opt} value={String(opt)}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="icon"
@@ -98,6 +92,7 @@ export function TablePagination({
         >
           <ChevronsRight size={14} />
         </Button>
+        </div>
       </div>
     </div>
   );
