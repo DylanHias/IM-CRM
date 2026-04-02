@@ -349,7 +349,7 @@ function RecentCustomerItem({ customer }: { customer: { id: string; name: string
         <Collapsible.Trigger asChild>
           <SidebarMenuButton tooltip={customer.name}>
             <Building2 />
-            <span>{customer.name}</span>
+            <span className="truncate">{customer.name}</span>
             <ChevronRight className={cn('ml-auto size-3.5 transition-transform', open && 'rotate-90')} />
           </SidebarMenuButton>
         </Collapsible.Trigger>
