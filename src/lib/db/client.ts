@@ -146,6 +146,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       created_by_name TEXT NOT NULL,
       sync_status     TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
       remote_id       TEXT,
+      source          TEXT DEFAULT 'local',
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -168,6 +169,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       created_by_name TEXT NOT NULL,
       sync_status     TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
       remote_id       TEXT,
+      source          TEXT DEFAULT 'local',
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -495,10 +497,33 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
 
   if (currentVersion < 10) {
     // Add source column to activities and follow_ups for D365 pull sync
-    try { await db.execute(`ALTER TABLE activities ADD COLUMN source TEXT DEFAULT 'local'`); } catch { /* column may already exist */ }
-    try { await db.execute(`ALTER TABLE follow_ups ADD COLUMN source TEXT DEFAULT 'local'`); } catch { /* column may already exist */ }
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN source TEXT DEFAULT 'local'`); } catch (err) {
+      // Expected if column already exists (duplicate column name)
+      if (!(err instanceof Error && err.message.includes('duplicate column'))) {
+        console.error('[db] Failed to add source column to activities:', err);
+      }
+    }
+    try { await db.execute(`ALTER TABLE follow_ups ADD COLUMN source TEXT DEFAULT 'local'`); } catch (err) {
+      // Expected if column already exists (duplicate column name)
+      if (!(err instanceof Error && err.message.includes('duplicate column'))) {
+        console.error('[db] Failed to add source column to follow_ups:', err);
+      }
+    }
     await db.execute(
       `UPDATE app_settings SET value = '10', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 11) {
+    // Retry adding source columns — migration v10 silently swallowed failures
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN source TEXT DEFAULT 'local'`); } catch {
+      // Column already exists — expected on fresh installs or successful v10 migration
+    }
+    try { await db.execute(`ALTER TABLE follow_ups ADD COLUMN source TEXT DEFAULT 'local'`); } catch {
+      // Column already exists — expected on fresh installs or successful v10 migration
+    }
+    await db.execute(
+      `UPDATE app_settings SET value = '11', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
