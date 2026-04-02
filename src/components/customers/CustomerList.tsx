@@ -54,6 +54,10 @@ const Row = styled.div`
   &:hover {
     background-color: hsl(var(--muted) / 0.6);
   }
+
+  &:hover .bookmark-btn {
+    opacity: 1;
+  }
 `;
 
 const Icon = styled.div<{ $bg: string; $fg: string }>`
@@ -151,16 +155,6 @@ export function CustomerList({ customers }: CustomerListProps) {
           return (
           <motion.div key={customer.id} variants={itemVariants}>
             <Row onClick={() => handleClick(customer)}>
-              <button
-                className="mr-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(customer.id);
-                }}
-                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
-              </button>
               <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
                 <Building2 size={16} />
               </Icon>
@@ -187,6 +181,17 @@ export function CustomerList({ customers }: CustomerListProps) {
                   )}
                 </Meta>
               </Info>
+
+              <button
+                className={`bookmark-btn ml-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-all ${isFavorite ? 'opacity-100' : 'opacity-0'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(customer.id);
+                }}
+                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
+              </button>
 
               <Right>
                 <Badge
