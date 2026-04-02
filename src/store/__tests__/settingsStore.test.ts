@@ -27,7 +27,7 @@ describe('settingsStore', () => {
     expect(store().showConnectivityToasts).toBe(true);
     expect(store().showUpdateToasts).toBe(true);
     expect(store().opportunityStaleReminderDays).toBe(30);
-    expect(store().autoSyncOnLaunch).toBe(true);
+    expect(store().autoSyncOnLaunch).toBe(false);
     expect(store().syncIntervalMinutes).toBe(15);
     expect(store().defaultExportFormat).toBe('xlsx');
     expect(store().mockDataEnabled).toBe(false);
@@ -136,7 +136,7 @@ describe('settingsStore', () => {
 
       store().resetSection('sync');
 
-      expect(store().autoSyncOnLaunch).toBe(true);
+      expect(store().autoSyncOnLaunch).toBe(false);
       expect(store().syncIntervalMinutes).toBe(15);
     });
 
@@ -201,7 +201,7 @@ describe('settingsStore', () => {
       expect(store().overdueAlertsOnLaunch).toBe(true);
       expect(store().showSyncToasts).toBe(true);
       // Sync
-      expect(store().autoSyncOnLaunch).toBe(true);
+      expect(store().autoSyncOnLaunch).toBe(false);
       expect(store().syncIntervalMinutes).toBe(15);
       // Data Management
       expect(store().defaultExportFormat).toBe('xlsx');
