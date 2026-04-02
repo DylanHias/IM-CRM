@@ -241,9 +241,16 @@ async function pushPendingActivities(token: string): Promise<void> {
   let pushed = 0;
 
   const adapter = getD365Adapter();
+  let callerD365Id: string | undefined;
+  try {
+    callerD365Id = await adapter.whoAmI(token);
+    console.log(`[sync] Resolved caller D365 systemuserid: ${callerD365Id}`);
+  } catch (err) {
+    console.error('[sync] Failed to resolve caller D365 ID via WhoAmI, falling back to activity.createdById:', err instanceof Error ? err.message : err);
+  }
   for (const activity of pending) {
     try {
-      const remoteId = await adapter.pushActivity(token, activity);
+      const remoteId = await adapter.pushActivity(token, activity, callerD365Id);
       await markActivitySynced(activity.id, remoteId);
       pushed++;
     } catch (err) {

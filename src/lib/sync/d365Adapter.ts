@@ -22,7 +22,8 @@ export interface ID365Adapter {
   fetchAnnotations(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]>;
   fetchTasks(token: string, customerIds: Set<string>, lastSync?: string): Promise<FollowUp[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
-  pushActivity(token: string, activity: Activity): Promise<string>;
+  whoAmI(token: string): Promise<string>;
+  pushActivity(token: string, activity: Activity, callerD365Id?: string): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
@@ -398,9 +399,26 @@ class RealD365Adapter implements ID365Adapter {
     return results.filter((v): v is OptionSetData => v !== null);
   }
 
-  async pushActivity(token: string, activity: Activity): Promise<string> {
+  async whoAmI(token: string): Promise<string> {
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/WhoAmI`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 WhoAmI failed ${res.status}: ${text}`);
+    }
+    const data = await res.json() as { UserId: string };
+    return data.UserId;
+  }
+
+  async pushActivity(token: string, activity: Activity, callerD365Id?: string): Promise<string> {
     const isUpdate = !!activity.remoteId;
     const accountBind = `/accounts(${activity.customerId})`;
+    const systemUserId = callerD365Id ?? activity.createdById;
     let entitySet: string;
     let body: Record<string, unknown>;
 
@@ -414,7 +432,7 @@ class RealD365Adapter implements ID365Adapter {
       };
       if (activity.contactId) {
         callBody.phonecall_activity_parties = [
-          { 'partyid_systemuser@odata.bind': `/systemusers(${activity.createdById})`, participationtypemask: 1 },
+          { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 1 },
           { 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 },
         ];
       }
@@ -597,7 +615,12 @@ class MockD365Adapter implements ID365Adapter {
     }));
   }
 
-  async pushActivity(_token: string, activity: Activity): Promise<string> {
+  async whoAmI(_token: string): Promise<string> {
+    await delay(100);
+    return 'mock-system-user-id';
+  }
+
+  async pushActivity(_token: string, activity: Activity, _callerD365Id?: string): Promise<string> {
     await delay(200);
     return `D365-ACT-${activity.id.slice(0, 8).toUpperCase()}`;
   }
