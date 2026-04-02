@@ -120,16 +120,18 @@ async function syncD365(token: string): Promise<void> {
       emitProgress('Syncing calls...');
       let phoneCallsUpserted = 0;
       let phoneCallsSkipped = 0;
+      let phoneCallErrors = 0;
       for (const activity of phoneCalls) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { phoneCallsUpserted++; pulled++; processed++; emitProgress('Syncing calls...'); } else { phoneCallsSkipped++; }
         } catch (err) {
+          phoneCallErrors++;
           errors++;
           console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Phone calls: ${phoneCalls.length} scoped, ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped`);
+      console.log(`[sync] Phone calls: ${phoneCalls.length} scoped, ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped, ${phoneCallErrors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
     }
@@ -141,16 +143,18 @@ async function syncD365(token: string): Promise<void> {
       emitProgress('Syncing appointments...');
       let appointmentsUpserted = 0;
       let appointmentsSkipped = 0;
+      let appointmentErrors = 0;
       for (const activity of appointments) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { appointmentsUpserted++; pulled++; processed++; emitProgress('Syncing appointments...'); } else { appointmentsSkipped++; }
         } catch (err) {
+          appointmentErrors++;
           errors++;
           console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Appointments: ${appointments.length} scoped, ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped`);
+      console.log(`[sync] Appointments: ${appointments.length} scoped, ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped, ${appointmentErrors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
     }
@@ -162,16 +166,18 @@ async function syncD365(token: string): Promise<void> {
       emitProgress('Syncing notes...');
       let annotationsUpserted = 0;
       let annotationsSkipped = 0;
+      let annotationErrors = 0;
       for (const activity of annotations) {
         try {
           const upserted = await upsertPulledActivity(activity);
           if (upserted) { annotationsUpserted++; pulled++; processed++; emitProgress('Syncing notes...'); } else { annotationsSkipped++; }
         } catch (err) {
+          annotationErrors++;
           errors++;
           console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Annotations: ${annotations.length} scoped, ${annotationsUpserted} upserted, ${annotationsSkipped} skipped`);
+      console.log(`[sync] Annotations: ${annotations.length} scoped, ${annotationsUpserted} upserted, ${annotationsSkipped} skipped, ${annotationErrors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
     }
@@ -184,16 +190,18 @@ async function syncD365(token: string): Promise<void> {
       emitProgress('Syncing tasks...');
       let tasksUpserted = 0;
       let tasksSkipped = 0;
+      let taskErrors = 0;
       for (const followUp of tasks) {
         try {
           const upserted = await upsertPulledFollowUp(followUp);
           if (upserted) { tasksUpserted++; pulled++; processed++; emitProgress('Syncing tasks...'); } else { tasksSkipped++; }
         } catch (err) {
+          taskErrors++;
           errors++;
           console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err);
         }
       }
-      console.log(`[sync] Tasks: ${tasks.length} scoped, ${tasksUpserted} upserted, ${tasksSkipped} skipped`);
+      console.log(`[sync] Tasks: ${tasks.length} scoped, ${tasksUpserted} upserted, ${tasksSkipped} skipped, ${taskErrors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }

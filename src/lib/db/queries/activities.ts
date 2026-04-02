@@ -114,6 +114,18 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
     return false;
   }
 
+  // Skip if contact doesn't exist locally (inactive or filtered out)
+  if (activity.contactId) {
+    const contactExists = await db.select<{ id: string }[]>(
+      `SELECT id FROM contacts WHERE id = $1`,
+      [activity.contactId]
+    );
+    if (contactExists.length === 0) {
+      console.log(`[sync] Skipped activity ${activity.remoteId}: contact ${activity.contactId} not found locally`);
+      return false;
+    }
+  }
+
   if (existing.length > 0) {
     // Update existing record
     await db.execute(
