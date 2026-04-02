@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Customer, Contact } from '@/types/entities';
 import { useSettingsStore } from '@/store/settingsStore';
+import { addCustomerFavorite, removeCustomerFavorite } from '@/lib/db/queries/customers';
 
 export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry';
 export type SortDir = 'asc' | 'desc';
@@ -10,6 +11,7 @@ interface CustomerState {
   customers: Customer[];
   allContacts: Contact[];
   selectedCustomerId: string | null;
+  favoriteIds: Set<string>;
   searchQuery: string;
   sortBy: SortBy;
   sortDir: SortDir;
@@ -19,12 +21,15 @@ interface CustomerState {
   filterSegment: string | null;
   filterCountry: string | null;
   filterNoRecentActivity: boolean;
+  filterFavorites: boolean;
   page: number;
   isLoading: boolean;
 
   setCustomers: (customers: Customer[]) => void;
   setAllContacts: (contacts: Contact[]) => void;
   setSelectedCustomerId: (id: string | null) => void;
+  setFavoriteIds: (ids: Set<string>) => void;
+  toggleFavorite: (id: string) => void;
   setSearchQuery: (q: string) => void;
   setSortBy: (s: SortBy) => void;
   setSortDir: (d: SortDir) => void;
@@ -34,6 +39,7 @@ interface CustomerState {
   setFilterSegment: (s: string | null) => void;
   setFilterCountry: (c: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
+  toggleFavoritesFilter: () => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -48,6 +54,7 @@ export const useCustomerStore = create<CustomerState>()(
       customers: [],
       allContacts: [],
       selectedCustomerId: null,
+      favoriteIds: new Set<string>(),
       searchQuery: '',
       sortBy: useSettingsStore.getState().defaultCustomerSort,
       sortDir: 'desc',
@@ -57,12 +64,30 @@ export const useCustomerStore = create<CustomerState>()(
       filterSegment: null,
       filterCountry: null,
       filterNoRecentActivity: false,
+      filterFavorites: false,
       page: 1,
       isLoading: false,
 
       setCustomers: (customers) => set({ customers }),
       setAllContacts: (allContacts) => set({ allContacts }),
       setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
+      setFavoriteIds: (favoriteIds) => set({ favoriteIds }),
+      toggleFavorite: (id) => {
+        const { favoriteIds } = get();
+        const next = new Set(favoriteIds);
+        if (next.has(id)) {
+          next.delete(id);
+          removeCustomerFavorite(id).catch((err) =>
+            console.error('[customer] Failed to remove favorite:', err)
+          );
+        } else {
+          next.add(id);
+          addCustomerFavorite(id).catch((err) =>
+            console.error('[customer] Failed to add favorite:', err)
+          );
+        }
+        set({ favoriteIds: next });
+      },
       setSearchQuery: (searchQuery) => set({ searchQuery, page: 1 }),
       setSortBy: (sortBy) => set({ sortBy, page: 1 }),
       setSortDir: (sortDir) => set({ sortDir, page: 1 }),
@@ -72,7 +97,9 @@ export const useCustomerStore = create<CustomerState>()(
       setFilterSegment: (filterSegment) => set({ filterSegment, page: 1 }),
       setFilterCountry: (filterCountry) => set({ filterCountry, page: 1 }),
       toggleNoRecentActivityFilter: () =>
-        set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity })),
+        set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity, page: 1 })),
+      toggleFavoritesFilter: () =>
+        set((s) => ({ filterFavorites: !s.filterFavorites, page: 1 })),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -84,19 +111,20 @@ export const useCustomerStore = create<CustomerState>()(
         filterSegment: null,
         filterCountry: null,
         filterNoRecentActivity: false,
+        filterFavorites: false,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity } = get();
-        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterNoRecentActivity]
+        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites } = get();
+        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites]
           .filter(Boolean).length;
       },
 
       getFilteredCustomers: () => {
         const {
-          customers, searchQuery, sortBy, sortDir,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity,
+          customers, searchQuery, sortBy, sortDir, favoriteIds,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites,
         } = get();
 
         let result = customers;
@@ -131,6 +159,9 @@ export const useCustomerStore = create<CustomerState>()(
           const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
           const cutoff = new Date(Date.now() - thresholdDays * 86400000).toISOString();
           result = result.filter((c) => !c.lastActivityAt || c.lastActivityAt < cutoff);
+        }
+        if (filterFavorites) {
+          result = result.filter((c) => favoriteIds.has(c.id));
         }
 
         result = [...result].sort((a, b) => {
@@ -169,6 +200,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterSegment: state.filterSegment,
         filterCountry: state.filterCountry,
         filterNoRecentActivity: state.filterNoRecentActivity,
+        filterFavorites: state.filterFavorites,
       }),
     }
   )

@@ -17,6 +17,7 @@ interface InvoiceState {
   setLoading: (loading: boolean) => void;
   setLoadingDetail: (loading: boolean) => void;
   setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
   setFilters: (filters: InvoiceSearchParams) => void;
   setError: (error: string | null) => void;
   reset: () => void;
@@ -40,6 +41,7 @@ export const useInvoiceStore = create<InvoiceState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setLoadingDetail: (isLoadingDetail) => set({ isLoadingDetail }),
   setPage: (currentPage) => set({ currentPage }),
+  setPageSize: (pageSize) => set({ pageSize, currentPage: 1 }),
   setFilters: (searchFilters) => set({ searchFilters, currentPage: 1 }),
   setError: (error) => set({ error }),
   reset: () => set({ invoices: [], selectedDetail: null, totalRecords: 0, currentPage: 1, searchFilters: {}, error: null }),

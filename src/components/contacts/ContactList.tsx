@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/TablePagination';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { ContactForm } from '@/components/contacts/ContactForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -20,13 +22,12 @@ interface ContactListProps {
   onContactDeleted: (id: string) => void;
 }
 
-const PAGE_SIZE = 10;
-
 export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted }: ContactListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('contacts');
 
   const filteredContacts = useMemo(() => {
     if (!searchQuery.trim()) return contacts;
@@ -36,11 +37,11 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
     );
   }, [contacts, searchQuery]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredContacts.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredContacts.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pagedContacts = useMemo(
-    () => filteredContacts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
-    [filteredContacts, safePage],
+    () => filteredContacts.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredContacts, safePage, pageSize],
   );
 
   useEffect(() => {
@@ -192,36 +193,14 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-muted-foreground">
-            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredContacts.length)} of {filteredContacts.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={safePage <= 1}
-              onClick={() => setPage(safePage - 1)}
-            >
-              <ChevronLeft size={14} />
-            </Button>
-            <span className="text-xs text-muted-foreground px-2">
-              {safePage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={safePage >= totalPages}
-              onClick={() => setPage(safePage + 1)}
-            >
-              <ChevronRight size={14} />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        totalItems={filteredContacts.length}
+        page={safePage}
+        pageSize={pageSize}
+        pageSizeOptions={pageSizeOptions}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

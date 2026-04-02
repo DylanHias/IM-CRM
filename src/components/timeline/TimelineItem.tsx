@@ -15,19 +15,21 @@ const ACTIVITY_CONFIG = {
 
 interface TimelineItemProps {
   event: TimelineEvent;
+  isLast?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
+export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemProps) {
   if (event.kind === 'activity') {
     const config = ACTIVITY_CONFIG[event.type];
     const Icon = config.icon;
     return (
       <div className="flex gap-3.5 px-4 py-3.5 group">
         <div className="relative z-10 flex-shrink-0 mt-0.5">
+          {!isLast && <div className="absolute left-1/2 top-1/2 bottom-0 -translate-x-1/2 w-px bg-border/60 h-[calc(100%+14px)]" />}
           <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${config.bgClass}`}
+            className={`relative w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${config.bgClass}`}
           >
             <Icon size={15} className={config.colorClass} />
           </div>
@@ -86,7 +88,8 @@ export function TimelineItem({ event, onEdit, onDelete }: TimelineItemProps) {
   return (
     <div className="flex gap-3.5 px-4 py-3.5 group">
       <div className="relative z-10 flex-shrink-0 mt-0.5">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-success/10' : 'bg-warning/10'}`}>
+        {!isLast && <div className="absolute left-1/2 top-1/2 bottom-0 -translate-x-1/2 w-px bg-border/60 h-[calc(100%+14px)]" />}
+        <div className={`relative w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-success/10' : 'bg-warning/10'}`}>
           {event.completed
             ? <CheckSquare size={15} className="text-success" />
             : <Calendar size={15} className="text-warning" />

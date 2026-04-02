@@ -11,7 +11,7 @@ import { RotateCcw } from 'lucide-react';
 export function DataDefaultsSettings() {
   const {
     defaultActivityType, defaultCustomerSort,
-    itemsPerPage, noRecentActivityDays, updateSetting, resetSection,
+    noRecentActivityDays, updateSetting, resetSection,
   } = useSettingsStore();
 
   return (
@@ -53,21 +53,6 @@ export function DataDefaultsSettings() {
               <SelectItem value="industry">Industry</SelectItem>
             </SelectContent>
           </Select>
-        </SettingRow>
-
-        <SettingRow label="Items per page" description="Number of items shown in list views">
-          <Input
-            type="number"
-            min={10}
-            max={200}
-            step={10}
-            value={itemsPerPage}
-            onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (val >= 10 && val <= 200) updateSetting('itemsPerPage', val);
-            }}
-            className="w-[80px] h-8 text-xs text-center"
-          />
         </SettingRow>
 
         <SettingRow label="No recent activity threshold" description="Customers with no activity in this many days appear when you use the 'No activity' filter">

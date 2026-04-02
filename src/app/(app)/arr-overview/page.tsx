@@ -6,7 +6,6 @@ import * as XLSX from 'xlsx';
 import {
   Search, Download, Building2, User, X,
   SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
-  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,8 @@ import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
 import type { ColumnDef } from '@/components/ui/ColumnPicker';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { cn } from '@/lib/utils';
 import { exportFile } from '@/lib/utils/exportFile';
@@ -119,7 +119,7 @@ export default function ArrOverviewPage() {
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
-  const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('arrOverview');
   const { visibleColumns } = useColumnConfig('arrOverview', ARR_COLUMNS);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -187,9 +187,9 @@ export default function ArrOverviewPage() {
     });
   }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pagedRows = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const pagedRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   async function handleExport() {
     try {
@@ -457,7 +457,7 @@ export default function ArrOverviewPage() {
                         key={customer.id}
                         className="hover:bg-muted/30 transition-colors"
                       >
-                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * itemsPerPage + index + 1}</td>
+                        <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * pageSize + index + 1}</td>
                         {visibleColumns.map((id) => {
                           const col = ARR_COLUMN_MAP.get(id);
                           if (!col) return null;
@@ -475,37 +475,14 @@ export default function ArrOverviewPage() {
             </div>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-1">
-              <p className="text-xs text-muted-foreground">
-                {(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, filtered.length)} of {filtered.length}
-              </p>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  disabled={safePage <= 1}
-                  onClick={() => setPage(safePage - 1)}
-                >
-                  <ChevronLeft size={14} />
-                </Button>
-                <span className="text-xs text-muted-foreground px-2">
-                  {safePage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  disabled={safePage >= totalPages}
-                  onClick={() => setPage(safePage + 1)}
-                >
-                  <ChevronRight size={14} />
-                </Button>
-              </div>
-            </div>
-          )}
+          <TablePagination
+            totalItems={filtered.length}
+            page={safePage}
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
     </div>
   );
 }

@@ -297,6 +297,13 @@ async function ensureTablesExist(db: Database): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS customer_favorites (
+      customer_id TEXT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 async function runSchema(db: Database): Promise<void> {
@@ -315,7 +322,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '12')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '13')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -500,6 +507,18 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     }
     await db.execute(
       `UPDATE app_settings SET value = '12', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 13) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS customer_favorites (
+        customer_id TEXT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(
+      `UPDATE app_settings SET value = '13', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

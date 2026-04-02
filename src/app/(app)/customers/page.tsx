@@ -6,9 +6,9 @@ import { CustomerList } from '@/components/customers/CustomerList';
 import CustomerDetailClient from './CustomerDetailClient';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
+import { TablePagination } from '@/components/ui/TablePagination';
+import { RefreshCw } from 'lucide-react';
 
 export default function CustomersPage() {
   const searchParams = useSearchParams();
@@ -24,11 +24,11 @@ export default function CustomersPage() {
 function CustomerListView() {
   const { customers, allCustomers, isLoading } = useCustomers();
   const { page, setPage } = useCustomerStore();
-  const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('customers');
 
-  const totalPages = Math.max(1, Math.ceil(customers.length / itemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(customers.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pagedCustomers = customers.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const pagedCustomers = customers.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
@@ -54,36 +54,14 @@ function CustomerListView() {
           ) : (
             <>
               <CustomerList customers={pagedCustomers} />
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-xs text-muted-foreground">
-                    {(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, customers.length)} of {customers.length}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      disabled={safePage <= 1}
-                      onClick={() => setPage(safePage - 1)}
-                    >
-                      <ChevronLeft size={14} />
-                    </Button>
-                    <span className="text-xs text-muted-foreground px-2">
-                      {safePage} / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      disabled={safePage >= totalPages}
-                      onClick={() => setPage(safePage + 1)}
-                    >
-                      <ChevronRight size={14} />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <TablePagination
+                totalItems={customers.length}
+                page={safePage}
+                pageSize={pageSize}
+                pageSizeOptions={pageSizeOptions}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
             </>
           )}
     </div>

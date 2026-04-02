@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,10 @@ export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites,
     setSearchQuery, setSortBy, setSortDir,
     setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry,
-    toggleNoRecentActivityFilter, clearFilters, getActiveFilterCount,
+    toggleNoRecentActivityFilter, toggleFavoritesFilter, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
   const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
@@ -95,6 +95,16 @@ export function CustomerFilters() {
             {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
           </Button>
         </div>
+
+        <Button
+          variant={filterFavorites ? 'default' : 'outline'}
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={toggleFavoritesFilter}
+        >
+          <Bookmark size={13} className={filterFavorites ? 'fill-primary-foreground' : ''} />
+          Favorites
+        </Button>
 
         <Button
           variant={showFilters || activeFilterCount > 0 ? 'default' : 'outline'}
@@ -231,6 +241,11 @@ export function CustomerFilters() {
           {filterNoRecentActivity && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={toggleNoRecentActivityFilter}>
               No recent activity <X size={10} />
+            </Badge>
+          )}
+          {filterFavorites && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={toggleFavoritesFilter}>
+              Favorites <X size={10} />
             </Badge>
           )}
         </div>

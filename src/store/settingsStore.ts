@@ -33,7 +33,6 @@ interface SettingsState {
   defaultActivityType: ActivityType;
   defaultCustomerSort: SortBy;
   defaultCustomerFilterOwner: boolean;
-  itemsPerPage: number;
   noRecentActivityDays: number;
 
   // Notifications & Reminders
@@ -80,7 +79,6 @@ const DATA_DEFAULTS = {
   defaultActivityType: 'meeting' as ActivityType,
   defaultCustomerSort: 'lastActivity' as SortBy,
   defaultCustomerFilterOwner: false,
-  itemsPerPage: 50,
   noRecentActivityDays: 90,
 };
 

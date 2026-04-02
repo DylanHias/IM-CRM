@@ -144,6 +144,30 @@ export async function recomputeLastActivityDates(): Promise<void> {
   `);
 }
 
+export async function queryFavoriteCustomerIds(): Promise<Set<string>> {
+  const db = await getDb();
+  const rows = await db.select<{ customer_id: string }[]>(
+    `SELECT customer_id FROM customer_favorites`
+  );
+  return new Set(rows.map((r) => r.customer_id));
+}
+
+export async function addCustomerFavorite(customerId: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `INSERT OR IGNORE INTO customer_favorites (customer_id) VALUES ($1)`,
+    [customerId]
+  );
+}
+
+export async function removeCustomerFavorite(customerId: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `DELETE FROM customer_favorites WHERE customer_id = $1`,
+    [customerId]
+  );
+}
+
 export async function queryUniqueOwners(): Promise<{ id: string; name: string }[]> {
   const db = await getDb();
   const rows = await db.select<{ owner_id: string; owner_name: string }[]>(

@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Loader2, ChevronLeft, ChevronRight, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { FileText, Loader2, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
 import type { ColumnDef } from '@/components/ui/ColumnPicker';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { InvoiceDetailPanel } from './InvoiceDetailPanel';
 import { useInvoices } from '@/hooks/useInvoices';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import type { InvoiceSearchParams } from '@/types/invoice';
@@ -57,11 +58,12 @@ interface InvoiceListProps {
 }
 
 export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('invoices');
   const {
     invoices, selectedDetail, isLoading, isLoadingDetail,
-    totalRecords, currentPage, pageSize, error,
-    loadInvoiceDetail, goToPage, applyFilters, closeDetail,
-  } = useInvoices(resellerId, countryCode);
+    totalRecords, currentPage, error,
+    loadInvoiceDetail, goToPage, applyFilters, closeDetail, setPageSize: setStorePageSize,
+  } = useInvoices(resellerId, countryCode, pageSize);
 
   const [filterNumber, setFilterNumber] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -102,8 +104,6 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch();
   };
-
-  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
   // Show detail panel if selected
   if (selectedDetail || isLoadingDetail) {
@@ -223,30 +223,18 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
             </div>
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              {totalRecords} record{totalRecords !== 1 ? 's' : ''} · Page {currentPage} of {totalPages}
-            </p>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1 || isLoading}
-                onClick={() => goToPage(currentPage - 1)}
-              >
-                <ChevronLeft size={14} />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages || isLoading}
-                onClick={() => goToPage(currentPage + 1)}
-              >
-                <ChevronRight size={14} />
-              </Button>
-            </div>
-          </div>
+          <TablePagination
+            totalItems={totalRecords}
+            page={currentPage}
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            disabled={isLoading}
+            onPageChange={goToPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setStorePageSize(size);
+            }}
+          />
         </>
       )}
     </div>

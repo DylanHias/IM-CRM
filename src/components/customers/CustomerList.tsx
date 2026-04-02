@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Building2, ChevronRight, MapPin, User } from 'lucide-react';
+import { Bookmark, Building2, ChevronRight, MapPin, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCustomerStore } from '@/store/customerStore';
 import { formatRelative } from '@/lib/utils/dateUtils';
@@ -121,7 +121,7 @@ interface CustomerListProps {
 
 export function CustomerList({ customers }: CustomerListProps) {
   const router = useRouter();
-  const { setSelectedCustomerId } = useCustomerStore();
+  const { setSelectedCustomerId, favoriteIds, toggleFavorite } = useCustomerStore();
 
   const handleClick = (customer: Customer) => {
     setSelectedCustomerId(customer.id);
@@ -147,9 +147,20 @@ export function CustomerList({ customers }: CustomerListProps) {
       >
         {customers.map((customer) => {
           const iconColor = getIconColor(customer.name);
+          const isFavorite = favoriteIds.has(customer.id);
           return (
           <motion.div key={customer.id} variants={itemVariants}>
             <Row onClick={() => handleClick(customer)}>
+              <button
+                className="mr-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(customer.id);
+                }}
+                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
+              </button>
               <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
                 <Building2 size={16} />
               </Icon>

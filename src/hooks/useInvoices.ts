@@ -7,13 +7,15 @@ import type { InvoiceSearchParams } from '@/types/invoice';
 
 const adapter = getInvoiceAdapter();
 
-export function useInvoices(resellerId: string | null, countryCode: string) {
+export function useInvoices(resellerId: string | null, countryCode: string, externalPageSize?: number) {
   const {
     invoices, selectedDetail, isLoading, isLoadingDetail,
-    totalRecords, currentPage, pageSize, searchFilters, error,
+    totalRecords, currentPage, pageSize: storePageSize, searchFilters, error,
     setInvoices, setDetail, setLoading, setLoadingDetail,
-    setPage, setFilters, setError, reset,
+    setPage, setFilters, setError, reset, setPageSize,
   } = useInvoiceStore();
+
+  const pageSize = externalPageSize ?? storePageSize;
 
   const loadInvoices = useCallback(async (page?: number, filters?: InvoiceSearchParams) => {
     if (!resellerId) return;
@@ -71,6 +73,6 @@ export function useInvoices(resellerId: string | null, countryCode: string) {
     invoices, selectedDetail, isLoading, isLoadingDetail,
     totalRecords, currentPage, pageSize, error,
     loadInvoices, loadInvoiceDetail, goToPage, applyFilters,
-    closeDetail: () => setDetail(null),
+    closeDetail: () => setDetail(null), setPageSize,
   };
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useCustomerStore } from '@/store/customerStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
-import { queryAllCustomers } from '@/lib/db/queries/customers';
+import { queryAllCustomers, queryFavoriteCustomerIds } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -14,7 +14,7 @@ import { useD365UserId } from '@/hooks/useD365UserId';
 export function useCustomers() {
   const {
     customers, allContacts, isLoading,
-    setCustomers, setAllContacts, setLoading, getFilteredCustomers, setFilterOwnerId,
+    setCustomers, setAllContacts, setLoading, getFilteredCustomers, setFilterOwnerId, setFavoriteIds,
   } = useCustomerStore();
   const { account } = useAuthStore();
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
@@ -32,15 +32,19 @@ export function useCustomers() {
     }
   }, [account, d365UserId, setFilterOwnerId]);
 
-  // Load customers (re-runs after sync completes when list is still empty)
+  // Load customers and favorites (re-runs after sync completes when list is still empty)
   useEffect(() => {
     if (customers.length > 0) return;
     setLoading(true);
     const load = async () => {
       try {
         if (isTauriApp()) {
-          const data = await queryAllCustomers();
+          const [data, favIds] = await Promise.all([
+            queryAllCustomers(),
+            queryFavoriteCustomerIds(),
+          ]);
           setCustomers(data);
+          setFavoriteIds(favIds);
         } else {
           setCustomers([]);
         }
@@ -52,7 +56,7 @@ export function useCustomers() {
       }
     };
     load();
-  }, [customers.length, lastD365SyncAt, setCustomers, setLoading]);
+  }, [customers.length, lastD365SyncAt, setCustomers, setFavoriteIds, setLoading]);
 
   // Load contacts for search (re-runs after sync completes when list is still empty)
   useEffect(() => {

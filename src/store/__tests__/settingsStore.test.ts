@@ -18,7 +18,7 @@ describe('settingsStore', () => {
     expect(store().defaultActivityType).toBe('meeting');
     expect(store().defaultCustomerSort).toBe('lastActivity');
     expect(store().defaultCustomerFilterOwner).toBe(false);
-    expect(store().itemsPerPage).toBe(50);
+
     expect(store().noRecentActivityDays).toBe(90);
     expect(store().followUpReminderDays).toBe(1);
     expect(store().overdueAlertsOnLaunch).toBe(true);
@@ -57,13 +57,12 @@ describe('settingsStore', () => {
     });
 
     it('does not affect other sections', () => {
-      store().updateSetting('itemsPerPage', 100);
+
       store().updateSetting('syncIntervalMinutes', 60);
       store().updateSetting('followUpReminderDays', 7);
 
       store().resetSection('appearance');
 
-      expect(store().itemsPerPage).toBe(100);
       expect(store().syncIntervalMinutes).toBe(60);
       expect(store().followUpReminderDays).toBe(7);
     });
@@ -74,7 +73,7 @@ describe('settingsStore', () => {
       store().updateSetting('defaultActivityType', 'call');
       store().updateSetting('defaultCustomerSort', 'name');
       store().updateSetting('defaultCustomerFilterOwner', true);
-      store().updateSetting('itemsPerPage', 100);
+
       store().updateSetting('noRecentActivityDays', 30);
 
       store().resetSection('dataDefaults');
@@ -82,7 +81,7 @@ describe('settingsStore', () => {
       expect(store().defaultActivityType).toBe('meeting');
       expect(store().defaultCustomerSort).toBe('lastActivity');
       expect(store().defaultCustomerFilterOwner).toBe(false);
-      expect(store().itemsPerPage).toBe(50);
+  
       expect(store().noRecentActivityDays).toBe(90);
     });
 
@@ -120,12 +119,11 @@ describe('settingsStore', () => {
 
     it('does not affect other sections', () => {
       store().updateSetting('theme', 'dark');
-      store().updateSetting('itemsPerPage', 100);
+
 
       store().resetSection('notifications');
 
       expect(store().theme).toBe('dark');
-      expect(store().itemsPerPage).toBe(100);
     });
   });
 
@@ -178,7 +176,7 @@ describe('settingsStore', () => {
       store().updateSetting('accentColor', 'red');
       store().updateSetting('compactMode', true);
       store().updateSetting('defaultActivityType', 'call');
-      store().updateSetting('itemsPerPage', 100);
+
       store().updateSetting('followUpReminderDays', 7);
       store().updateSetting('overdueAlertsOnLaunch', false);
       store().updateSetting('showSyncToasts', false);
@@ -195,7 +193,7 @@ describe('settingsStore', () => {
       expect(store().compactMode).toBe(false);
       // Data & Defaults
       expect(store().defaultActivityType).toBe('meeting');
-      expect(store().itemsPerPage).toBe(50);
+  
       // Notifications
       expect(store().followUpReminderDays).toBe(1);
       expect(store().overdueAlertsOnLaunch).toBe(true);

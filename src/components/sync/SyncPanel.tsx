@@ -1,11 +1,12 @@
 'use client';
 
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { useSync } from '@/hooks/useSync';
 import { useSyncStore } from '@/store/syncStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
 import type { SyncRecord } from '@/types/sync';
 
@@ -79,11 +80,11 @@ export function SyncPanel({ records }: SyncPanelProps) {
 
 function SyncHistory({ records }: { records: SyncRecord[] }) {
   const { historyPage, setHistoryPage } = useSyncStore();
-  const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('syncHistory');
 
-  const totalPages = Math.max(1, Math.ceil(records.length / itemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(records.length / pageSize));
   const safePage = Math.min(historyPage, totalPages);
-  const pagedRecords = records.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const pagedRecords = records.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div>
@@ -113,36 +114,14 @@ function SyncHistory({ records }: { records: SyncRecord[] }) {
           );
         })}
       </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-3">
-          <p className="text-xs text-muted-foreground">
-            {(safePage - 1) * itemsPerPage + 1}&ndash;{Math.min(safePage * itemsPerPage, records.length)} of {records.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={safePage <= 1}
-              onClick={() => setHistoryPage(safePage - 1)}
-            >
-              <ChevronLeft size={14} />
-            </Button>
-            <span className="text-xs text-muted-foreground px-2">
-              {safePage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={safePage >= totalPages}
-              onClick={() => setHistoryPage(safePage + 1)}
-            >
-              <ChevronRight size={14} />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        totalItems={records.length}
+        page={safePage}
+        pageSize={pageSize}
+        pageSizeOptions={pageSizeOptions}
+        onPageChange={setHistoryPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }
