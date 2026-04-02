@@ -10,7 +10,7 @@ interface AppUpdaterState {
   install: () => void;
 }
 
-const POLL_INTERVAL = 30 * 60 * 1000;
+const POLL_INTERVAL = 15 * 60 * 1000;
 
 export function useAppUpdater(): AppUpdaterState {
   const [updateAvailable, setUpdateAvailable] = useState(false);
