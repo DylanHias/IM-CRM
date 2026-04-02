@@ -114,15 +114,15 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
     return false;
   }
 
-  // Skip if contact doesn't exist locally (inactive or filtered out)
-  if (activity.contactId) {
+  // Null out contact reference if it doesn't exist locally (inactive or filtered out)
+  let contactId = activity.contactId;
+  if (contactId) {
     const contactExists = await db.select<{ id: string }[]>(
       `SELECT id FROM contacts WHERE id = $1`,
-      [activity.contactId]
+      [contactId]
     );
     if (contactExists.length === 0) {
-      console.log(`[sync] Skipped activity ${activity.remoteId}: contact ${activity.contactId} not found locally`);
-      return false;
+      contactId = null;
     }
   }
 
@@ -134,7 +134,7 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
        sync_status='synced', source='d365', updated_at=$10
        WHERE remote_id=$11`,
       [
-        activity.customerId, activity.contactId, activity.type,
+        activity.customerId, contactId, activity.type,
         activity.subject, activity.description, activity.occurredAt, activity.startTime,
         activity.createdById, activity.createdByName, activity.updatedAt, activity.remoteId,
       ]
@@ -147,7 +147,7 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
         created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [
-        activity.id, activity.customerId, activity.contactId, activity.type,
+        activity.id, activity.customerId, contactId, activity.type,
         activity.subject, activity.description, activity.occurredAt, activity.startTime,
         activity.createdById, activity.createdByName, 'synced',
         activity.remoteId, 'd365', activity.createdAt, activity.updatedAt,
