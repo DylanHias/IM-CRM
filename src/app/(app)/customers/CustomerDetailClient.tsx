@@ -747,17 +747,17 @@ function DetailRow({ label, value }: DetailRowProps) {
   };
 
   return (
-    <div className="group flex items-start px-5 py-3">
-      <span className="text-[13px] text-muted-foreground w-[120px] flex-shrink-0 pt-0.5">{label}</span>
+    <div className="group flex items-center px-5 py-3">
+      <span className="text-[13px] text-muted-foreground w-[120px] flex-shrink-0">{label}</span>
+      <span className="text-[13px] font-medium text-foreground flex-1 min-w-0 truncate">{value}</span>
       <button
         onClick={handleCopy}
-        className="flex items-center gap-1.5 text-[13px] font-medium text-foreground text-left hover:text-primary transition-colors"
+        className="flex-shrink-0 ml-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-primary transition-all"
         title={`Copy ${label}`}
       >
-        {value}
         {copied
-          ? <Check size={12} className="text-emerald-500 flex-shrink-0" />
-          : <Copy size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity" />}
+          ? <Check size={12} className="text-emerald-500" />
+          : <Copy size={12} />}
       </button>
     </div>
   );
