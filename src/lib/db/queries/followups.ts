@@ -88,9 +88,23 @@ export async function queryOverdueFollowUpCount(userId?: string, altUserId?: str
   return rows[0]?.count ?? 0;
 }
 
-export async function queryDueTodayFollowUpCount(): Promise<number> {
+export async function queryDueTodayFollowUpCount(userId?: string, altUserId?: string): Promise<number> {
   const db = await getDb();
   const today = new Date().toISOString().split('T')[0];
+  if (userId && altUserId && altUserId !== userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date = $1 AND created_by_id IN ($2, $3)`,
+      [today, userId, altUserId]
+    );
+    return rows[0]?.count ?? 0;
+  }
+  if (userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date = $1 AND created_by_id = $2`,
+      [today, userId]
+    );
+    return rows[0]?.count ?? 0;
+  }
   const rows = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date = $1`,
     [today]
@@ -98,10 +112,24 @@ export async function queryDueTodayFollowUpCount(): Promise<number> {
   return rows[0]?.count ?? 0;
 }
 
-export async function queryUpcomingFollowUpCount(withinDays: number): Promise<number> {
+export async function queryUpcomingFollowUpCount(withinDays: number, userId?: string, altUserId?: string): Promise<number> {
   const db = await getDb();
   const today = new Date().toISOString().split('T')[0];
   const future = new Date(Date.now() + withinDays * 86400000).toISOString().split('T')[0];
+  if (userId && altUserId && altUserId !== userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date > $1 AND due_date <= $2 AND created_by_id IN ($3, $4)`,
+      [today, future, userId, altUserId]
+    );
+    return rows[0]?.count ?? 0;
+  }
+  if (userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date > $1 AND due_date <= $2 AND created_by_id = $3`,
+      [today, future, userId]
+    );
+    return rows[0]?.count ?? 0;
+  }
   const rows = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date > $1 AND due_date <= $2`,
     [today, future]

@@ -35,7 +35,7 @@ export function useFollowUps(customerId: string) {
           const data = await queryFollowUpsByCustomer(customerId);
           console.log(`[followup] Loaded ${data.length} follow-ups for customer ${customerId}`);
           setFollowUps(data, customerId);
-          const overdue = await queryOverdueFollowUpCount();
+          const overdue = await queryOverdueFollowUpCount(d365UserId ?? account?.localAccountId ?? undefined, account?.localAccountId ?? undefined);
           setOverdueCount(overdue);
         } else {
           setFollowUps([], customerId);
@@ -48,7 +48,7 @@ export function useFollowUps(customerId: string) {
       }
     };
     load();
-  }, [customerId, currentCustomerId, setFollowUps, setLoading, setOverdueCount]);
+  }, [customerId, currentCustomerId, setFollowUps, setLoading, setOverdueCount, d365UserId, account?.localAccountId]);
 
   const createFollowUp = useCallback(
     async (input: Omit<FollowUp, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'source' | 'createdAt' | 'updatedAt' | 'completed' | 'completedAt'>) => {

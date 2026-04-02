@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
+import { useD365UserId } from '@/hooks/useD365UserId';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { toast } from 'sonner';
 
@@ -13,6 +15,8 @@ export function useLaunchAlerts() {
   const overdueAlertsOnLaunch = useSettingsStore((s) => s.overdueAlertsOnLaunch);
   const dueTodayAlertsOnLaunch = useSettingsStore((s) => s.dueTodayAlertsOnLaunch);
   const opportunityStaleReminderDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
+  const { account } = useAuthStore();
+  const d365UserId = useD365UserId();
   useEffect(() => {
     if (didRun) return;
     didRun = true;
@@ -24,10 +28,12 @@ export function useLaunchAlerts() {
         '@/lib/db/queries/followups'
       );
 
-      const overdueCount = await queryOverdueFollowUpCount();
-      const dueTodayCount = await queryDueTodayFollowUpCount();
+      const userId = d365UserId ?? account?.localAccountId ?? undefined;
+      const altUserId = account?.localAccountId ?? undefined;
+      const overdueCount = await queryOverdueFollowUpCount(userId, altUserId);
+      const dueTodayCount = await queryDueTodayFollowUpCount(userId, altUserId);
       const upcomingCount = followUpReminderDays > 0
-        ? await queryUpcomingFollowUpCount(followUpReminderDays)
+        ? await queryUpcomingFollowUpCount(followUpReminderDays, userId, altUserId)
         : 0;
 
       // Overdue follow-up alerts
@@ -75,5 +81,5 @@ export function useLaunchAlerts() {
     // Delay alerts slightly so the UI settles first
     const timer = setTimeout(run, 2000);
     return () => clearTimeout(timer);
-  }, [followUpReminderDays, overdueAlertsOnLaunch, dueTodayAlertsOnLaunch, opportunityStaleReminderDays]);
+  }, [followUpReminderDays, overdueAlertsOnLaunch, dueTodayAlertsOnLaunch, opportunityStaleReminderDays, d365UserId, account?.localAccountId]);
 }
