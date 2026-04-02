@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
-  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft,
+  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle,
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
@@ -125,6 +125,18 @@ export function CommandPalette() {
             })}
           </CommandGroup>
         ))}
+        <CommandGroup heading="Other">
+          <CommandItem
+            value="Help"
+            onSelect={() => {
+              setOpen(false);
+              router.push('/help');
+            }}
+          >
+            <HelpCircle className="mr-2 h-4 w-4 opacity-60" />
+            <span className="flex-1">Help</span>
+          </CommandItem>
+        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );

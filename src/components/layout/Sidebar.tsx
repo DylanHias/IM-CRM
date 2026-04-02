@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
-  Settings, Keyboard, LogOut, Shield, Bug, Building2, X,
+  Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
   ChevronRight, LayoutDashboard, Clock, User, Bell, Crosshair,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
@@ -310,6 +310,10 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => useUIStore.getState().setShortcutsGuideOpen(true)}>
                   <Keyboard size={14} />
                   Keyboard shortcuts
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/help')}>
+                  <HelpCircle size={14} />
+                  Help
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
