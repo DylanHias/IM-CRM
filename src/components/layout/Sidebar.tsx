@@ -100,7 +100,7 @@ export function AppSidebar() {
 
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
 
-  const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count' }> = {
+  const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
     '/sync': {
       href: '/sync',
@@ -118,7 +118,7 @@ export function AppSidebar() {
       badgeStyle: 'count',
     },
     '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
-    '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText },
+    '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
     '/arr-overview': { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
   };
 
@@ -135,11 +135,24 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle }) => {
-                const isActive = pathname.startsWith(href);
+              {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle, disabled, disabledTooltip }) => {
+                const isActive = !disabled && pathname.startsWith(href);
+                if (disabled) {
+                  return (
+                    <SidebarMenuItem key={href}>
+                      <SidebarMenuButton
+                        disabled
+                        tooltip={disabledTooltip ?? label}
+                        className="opacity-40 cursor-not-allowed"
+                      >
+                        <Icon />
+                        <span>{label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
                 return (
                   <SidebarMenuItem key={href}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
@@ -237,14 +250,6 @@ export function AppSidebar() {
             </SidebarMenuItem>
           </SidebarMenu>
         )}
-
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <CollapseButton />
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <SidebarSeparator />
 
         <SidebarMenu>
           <SidebarMenuItem>
