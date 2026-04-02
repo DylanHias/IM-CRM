@@ -329,7 +329,11 @@ class RealD365Adapter implements ID365Adapter {
       'objecttypecode', '_ownerid_value', 'createdon', 'modifiedon',
     ].join(',');
 
-    let filter = "objecttypecode eq 'account'";
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const minDate = oneYearAgo.toISOString();
+
+    let filter = `objecttypecode eq 'account' and createdon gt ${minDate}`;
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/annotations?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
