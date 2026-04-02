@@ -212,13 +212,13 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     load();
   }, [customerId]);
 
-  const profileTabs: { key: ProfileTab; label: string; icon: typeof Settings; count?: number }[] = useMemo(() => [
+  const profileTabs: { key: ProfileTab; label: string; icon: typeof Settings; count?: number; disabled?: boolean }[] = useMemo(() => [
     { key: 'overview', label: 'Overview', icon: Settings },
     { key: 'activities', label: 'Activities', icon: Clock, count: activities.length },
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities', label: 'Opportunities', icon: Target, count: customerOpportunities.length },
-    { key: 'invoices', label: 'Invoices', icon: FileText },
+    { key: 'invoices', label: 'Invoices', icon: FileText, disabled: true },
   ], [activities.length, contacts.length, followUps.length, customerOpportunities.length]);
 
 
@@ -373,15 +373,18 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
             <div>
               {/* Tab Switcher */}
               <div className="flex items-center gap-0 border-b border-border/60 mb-5">
-                {profileTabs.map(({ key, label, icon: TabIcon, count }) => (
+                {profileTabs.map(({ key, label, icon: TabIcon, count, disabled }) => (
                   <button
                     key={key}
                     className={`px-3 py-2.5 text-[13px] font-medium transition-colors relative whitespace-nowrap ${
-                      activeTab === key
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
+                      disabled
+                        ? 'opacity-40 cursor-not-allowed'
+                        : activeTab === key
+                          ? 'text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
                     }`}
-                    onClick={() => setActiveTab(key)}
+                    onClick={() => !disabled && setActiveTab(key)}
+                    title={disabled ? 'Coming soon' : undefined}
                   >
                     <span className="flex items-center gap-1.5">
                       <TabIcon size={14} />
