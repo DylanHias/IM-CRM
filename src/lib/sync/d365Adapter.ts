@@ -279,7 +279,7 @@ class RealD365Adapter implements ID365Adapter {
       'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
     ].join(',');
 
-    let filter = '_parentcustomerid_value ne null';
+    let filter = 'statecode eq 0 and _parentcustomerid_value ne null';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
@@ -296,7 +296,7 @@ class RealD365Adapter implements ID365Adapter {
       'actualend', 'createdon', 'statecode', 'modifiedon',
     ].join(',');
 
-    let filter = '_im360_account_value ne null';
+    let filter = 'statecode eq 0 and _im360_account_value ne null';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/phonecalls?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
@@ -313,7 +313,7 @@ class RealD365Adapter implements ID365Adapter {
       'scheduledstart', 'scheduledend', 'statecode', 'createdon', 'modifiedon',
     ].join(',');
 
-    let filter = '_im360_account_value ne null and im360_appointmenttype ne 1';
+    let filter = 'statecode eq 0 and _im360_account_value ne null and im360_appointmenttype ne 1';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/appointments?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
@@ -346,7 +346,7 @@ class RealD365Adapter implements ID365Adapter {
       'im360_completedon', 'createdon', 'modifiedon',
     ].join(',');
 
-    let filter = '_regardingobjectid_value ne null';
+    let filter = 'statecode eq 0 and _regardingobjectid_value ne null';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/tasks?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
