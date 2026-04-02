@@ -54,6 +54,15 @@ async function syncD365(token: string): Promise<void> {
   let errors = 0;
 
   try {
+    const isInitialSync = useSyncStore.getState().initialSyncProgress !== null;
+    let processed = 0;
+    let total = 0;
+
+    const emitProgress = (phase: string) => {
+      if (!isInitialSync) return;
+      useSyncStore.getState().setInitialSyncProgress({ phase, processed, total });
+    };
+
     const adapter = getD365Adapter();
 
     // Delta sync: only fetch records modified since last sync
@@ -62,12 +71,16 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] D365 delta sync — last sync: ${lastSyncTs ?? 'never'}`);
 
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
+    total += customers.length;
+    emitProgress('Syncing customers...');
     let customersChanged = 0;
     for (const customer of customers) {
       try {
         const changed = await upsertCustomerBulk(customer);
         if (changed) customersChanged++;
         pulled++;
+        processed++;
+        emitProgress('Syncing customers...');
       } catch (err) {
         errors++;
         console.error(`[sync] Failed to upsert customer ${customer.name} (${customer.id}):`, err instanceof Error ? err.message : err);
@@ -80,6 +93,8 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] ${localCustomerIds.size} local customers — filtering child entities to this scope`);
 
     const contacts = await adapter.fetchContacts(token, localCustomerIds, lastSyncTs);
+    total += contacts.length;
+    emitProgress('Syncing contacts...');
     let contactsChanged = 0;
     let contactErrors = 0;
     for (const contact of contacts) {
@@ -87,6 +102,8 @@ async function syncD365(token: string): Promise<void> {
         const changed = await upsertContactBulk(contact);
         if (changed) contactsChanged++;
         pulled++;
+        processed++;
+        emitProgress('Syncing contacts...');
       } catch (err) {
         contactErrors++;
         console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err);
@@ -99,12 +116,14 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching phone calls from D365...');
       const phoneCalls = await adapter.fetchPhoneCalls(token, localCustomerIds, lastSyncTs);
+      total += phoneCalls.length;
+      emitProgress('Syncing calls...');
       let phoneCallsUpserted = 0;
       let phoneCallsSkipped = 0;
       for (const activity of phoneCalls) {
         try {
           const upserted = await upsertPulledActivity(activity);
-          if (upserted) { phoneCallsUpserted++; pulled++; } else { phoneCallsSkipped++; }
+          if (upserted) { phoneCallsUpserted++; pulled++; processed++; emitProgress('Syncing calls...'); } else { phoneCallsSkipped++; }
         } catch (err) {
           errors++;
           console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err);
@@ -118,12 +137,14 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching appointments from D365...');
       const appointments = await adapter.fetchAppointments(token, localCustomerIds, lastSyncTs);
+      total += appointments.length;
+      emitProgress('Syncing appointments...');
       let appointmentsUpserted = 0;
       let appointmentsSkipped = 0;
       for (const activity of appointments) {
         try {
           const upserted = await upsertPulledActivity(activity);
-          if (upserted) { appointmentsUpserted++; pulled++; } else { appointmentsSkipped++; }
+          if (upserted) { appointmentsUpserted++; pulled++; processed++; emitProgress('Syncing appointments...'); } else { appointmentsSkipped++; }
         } catch (err) {
           errors++;
           console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err);
@@ -137,12 +158,14 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching annotations from D365...');
       const annotations = await adapter.fetchAnnotations(token, localCustomerIds, lastSyncTs);
+      total += annotations.length;
+      emitProgress('Syncing notes...');
       let annotationsUpserted = 0;
       let annotationsSkipped = 0;
       for (const activity of annotations) {
         try {
           const upserted = await upsertPulledActivity(activity);
-          if (upserted) { annotationsUpserted++; pulled++; } else { annotationsSkipped++; }
+          if (upserted) { annotationsUpserted++; pulled++; processed++; emitProgress('Syncing notes...'); } else { annotationsSkipped++; }
         } catch (err) {
           errors++;
           console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err);
@@ -157,12 +180,14 @@ async function syncD365(token: string): Promise<void> {
     try {
       console.log('[sync] Fetching tasks from D365...');
       const tasks = await adapter.fetchTasks(token, localCustomerIds, lastSyncTs);
+      total += tasks.length;
+      emitProgress('Syncing tasks...');
       let tasksUpserted = 0;
       let tasksSkipped = 0;
       for (const followUp of tasks) {
         try {
           const upserted = await upsertPulledFollowUp(followUp);
-          if (upserted) { tasksUpserted++; pulled++; } else { tasksSkipped++; }
+          if (upserted) { tasksUpserted++; pulled++; processed++; emitProgress('Syncing tasks...'); } else { tasksSkipped++; }
         } catch (err) {
           errors++;
           console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err);
@@ -174,6 +199,7 @@ async function syncD365(token: string): Promise<void> {
     }
 
     // Recompute last activity dates from actual activities + contact changes
+    emitProgress('Finishing up...');
     await recomputeLastActivityDates();
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);
