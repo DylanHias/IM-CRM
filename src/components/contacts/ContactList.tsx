@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Smartphone, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { ContactForm } from '@/components/contacts/ContactForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -19,9 +20,28 @@ interface ContactListProps {
   onContactDeleted: (id: string) => void;
 }
 
+const PAGE_SIZE = 10;
+
 export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted }: ContactListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) return contacts;
+    const q = searchQuery.toLowerCase();
+    return contacts.filter((c) =>
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(q)
+    );
+  }, [contacts, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredContacts.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedContacts = useMemo(
+    () => filteredContacts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filteredContacts, safePage],
+  );
 
   useEffect(() => {
     if (triggerAdd && triggerAdd > 0) {
@@ -61,7 +81,16 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <div className="relative">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search contacts..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="h-8 w-52 pl-8 text-xs"
+          />
+        </div>
         <Button size="sm" className="gap-1.5" onClick={openAdd}>
           <Plus size={13} />
           Add Contact
@@ -76,13 +105,15 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
         initialData={editingContact}
       />
 
-      {contacts.length === 0 ? (
+      {filteredContacts.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-sm text-muted-foreground">No contacts found for this customer.</p>
+          <p className="text-sm text-muted-foreground">
+            {searchQuery.trim() ? 'No contacts match your search.' : 'No contacts found for this customer.'}
+          </p>
         </div>
       ) : (
         <div className="grid gap-3">
-          {contacts.map((contact, i) => (
+          {pagedContacts.map((contact, i) => (
             <motion.div
               key={contact.id}
               className="bg-card border rounded-lg p-4 group"
@@ -150,6 +181,37 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
               )}
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-xs text-muted-foreground">
+            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredContacts.length)} of {filteredContacts.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              disabled={safePage <= 1}
+              onClick={() => setPage(safePage - 1)}
+            >
+              <ChevronLeft size={14} />
+            </Button>
+            <span className="text-xs text-muted-foreground px-2">
+              {safePage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage(safePage + 1)}
+            >
+              <ChevronRight size={14} />
+            </Button>
+          </div>
         </div>
       )}
     </div>

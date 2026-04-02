@@ -11,6 +11,7 @@ import { getAppSetting } from '@/lib/db/queries/sync';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { cn } from '@/lib/utils';
+import { emitDataEvent } from '@/lib/dataEvents';
 
 export function InitialSyncDialog() {
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
@@ -87,7 +88,11 @@ export function InitialSyncDialog() {
                 <p className="text-sm text-muted-foreground mb-8">
                   Your workspace is ready
                 </p>
-                <Button onClick={() => setDismissed(true)} size="lg">
+                <Button onClick={() => {
+                  emitDataEvent('followup', 'updated');
+                  emitDataEvent('activity', 'updated');
+                  setDismissed(true);
+                }} size="lg">
                   Get started
                 </Button>
               </>

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useCustomerStore } from '@/store/customerStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSyncStore } from '@/store/syncStore';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -15,6 +16,7 @@ export function useCustomers() {
     setCustomers, setAllContacts, setLoading, getFilteredCustomers, setFilterOwnerId,
   } = useCustomerStore();
   const { account } = useAuthStore();
+  const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
   const appliedOwnerFilter = useRef(false);
 
   // Apply "show my customers first" default filter once on mount
@@ -27,7 +29,7 @@ export function useCustomers() {
     }
   }, [account, setFilterOwnerId]);
 
-  // Load customers
+  // Load customers (re-runs after sync completes when list is still empty)
   useEffect(() => {
     if (customers.length > 0) return;
     setLoading(true);
@@ -47,9 +49,9 @@ export function useCustomers() {
       }
     };
     load();
-  }, [customers.length, setCustomers, setLoading]);
+  }, [customers.length, lastD365SyncAt, setCustomers, setLoading]);
 
-  // Load contacts for search
+  // Load contacts for search (re-runs after sync completes when list is still empty)
   useEffect(() => {
     if (allContacts.length > 0) return;
     const load = async () => {
@@ -66,7 +68,7 @@ export function useCustomers() {
       }
     };
     load();
-  }, [allContacts.length, setAllContacts]);
+  }, [allContacts.length, lastD365SyncAt, setAllContacts]);
 
   // Subscribe to trigger re-render when this setting changes (used inside getFilteredCustomers)
   useSettingsStore((s) => s.noRecentActivityDays);

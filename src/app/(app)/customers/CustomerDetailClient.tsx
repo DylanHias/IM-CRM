@@ -244,7 +244,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
               >
                 <Building2 size={28} className="text-primary" />
               </motion.div>
-              <h1 className="text-4xl font-bold text-foreground tracking-tight">{customer.name}</h1>
+              <h1 className="text-4xl font-bold text-foreground tracking-tight">
+                {customer.name}
+                <Badge variant={customer.status === 'active' ? 'success' : 'secondary'} className="ml-3 align-top text-xs relative -top-1">
+                  {customer.status}
+                </Badge>
+              </h1>
             </div>
 
             {/* Contact Info Cards */}
@@ -415,17 +420,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                                 <p className="text-lg font-bold text-foreground">{card.value}</p>
                               </motion.div>
                             ))}
-                            <motion.div
-                              className="bg-card border border-border/70 rounded-xl p-4 shadow-sm"
-                              initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              transition={{ duration: 0.15, delay: statCards.length * 0.03, ease: 'easeOut' }}
-                            >
-                              <p className="text-xs text-muted-foreground mb-1">Status</p>
-                              <Badge variant={customer.status === 'active' ? 'success' : 'secondary'} className="mt-1">
-                                {customer.status}
-                              </Badge>
-                            </motion.div>
                           </>
                         );
                       })()}
@@ -438,8 +432,9 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     >
                       <h3 className="text-base font-semibold text-foreground mb-3">Recent Activity</h3>
                       <Timeline
-                        activities={activities.slice(0, 5)}
-                        followUps={followUps.slice(0, 3)}
+                        activities={activities}
+                        followUps={followUps}
+                        paginate
                       />
                     </motion.div>
                   </motion.div>
@@ -467,6 +462,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     <Timeline
                       activities={activities}
                       followUps={[]}
+                      paginate
                       onEditActivity={openEditActivity}
                       onDeleteActivity={handleDeleteActivity}
                     />
