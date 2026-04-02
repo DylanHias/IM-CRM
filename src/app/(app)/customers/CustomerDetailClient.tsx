@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, FileText, Target, ArrowLeft,
+  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -736,11 +736,29 @@ interface DetailRowProps {
 }
 
 function DetailRow({ label, value }: DetailRowProps) {
+  const [copied, setCopied] = useState(false);
+
   if (!value) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <div className="flex items-start px-5 py-3">
+    <div className="group flex items-start px-5 py-3">
       <span className="text-[13px] text-muted-foreground w-[120px] flex-shrink-0 pt-0.5">{label}</span>
-      <span className="text-[13px] font-medium text-foreground">{value}</span>
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-1.5 text-[13px] font-medium text-foreground text-left hover:text-primary transition-colors"
+        title={`Copy ${label}`}
+      >
+        {value}
+        {copied
+          ? <Check size={12} className="text-emerald-500 flex-shrink-0" />
+          : <Copy size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity" />}
+      </button>
     </div>
   );
 }

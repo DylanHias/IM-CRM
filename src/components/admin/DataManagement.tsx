@@ -11,7 +11,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 export function DataManagement() {
   const { tableStats, isLoading, loadDataManagement } = useAdminStore();
   const exportFormat = useSettingsStore((s) => s.defaultExportFormat);
-  const [auditPurgeDays, setAuditPurgeDays] = useState(180);
   const [syncPurgeDays, setSyncPurgeDays] = useState(90);
 
   useEffect(() => {
@@ -50,20 +49,6 @@ export function DataManagement() {
       });
     } catch (err) {
       console.error('[data] Export failed:', err);
-    }
-  };
-
-  const handlePurgeAudit = async () => {
-    if (!isTauriApp()) return;
-    try {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - auditPurgeDays);
-      const { purgeAuditLogBefore } = await import('@/lib/db/queries/auditLog');
-      const deleted = await purgeAuditLogBefore(cutoff.toISOString());
-      alert(`Purged ${deleted} audit log entries.`);
-      await loadDataManagement();
-    } catch (err) {
-      console.error('[audit] Purge audit log failed:', err);
     }
   };
 
@@ -121,19 +106,6 @@ export function DataManagement() {
       <div>
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Purge Old Data</h3>
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Trash2 size={14} className="text-muted-foreground" />
-            <span className="text-sm">Audit log older than</span>
-            <input
-              type="number"
-              value={auditPurgeDays}
-              onChange={(e) => setAuditPurgeDays(Number(e.target.value))}
-              className="w-16 h-8 rounded-md border border-input bg-card px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              min={1}
-            />
-            <span className="text-sm">days</span>
-            <Button variant="outline" size="sm" onClick={handlePurgeAudit}>Purge</Button>
-          </div>
           <div className="flex items-center gap-3">
             <Trash2 size={14} className="text-muted-foreground" />
             <span className="text-sm">Sync records older than</span>

@@ -12,22 +12,6 @@ export interface CrmUser {
   updatedAt: string;
 }
 
-export type AuditAction = 'create' | 'update' | 'delete';
-
-export type AuditEntityType = 'customer' | 'contact' | 'activity' | 'follow_up' | 'opportunity';
-
-export interface AuditLogEntry {
-  id: number;
-  entityType: AuditEntityType;
-  entityId: string;
-  action: AuditAction;
-  changedById: string;
-  changedByName: string;
-  oldValues: Record<string, unknown> | null;
-  newValues: Record<string, unknown> | null;
-  changedAt: string;
-}
-
 export interface SyncHealthMetrics {
   totalSyncs: number;
   successCount: number;
@@ -70,12 +54,3 @@ export interface PipelineStats {
   totalRevenue: number;
 }
 
-export interface AuditLogFilters {
-  entityType?: AuditEntityType;
-  action?: AuditAction;
-  changedById?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  limit: number;
-  offset: number;
-}

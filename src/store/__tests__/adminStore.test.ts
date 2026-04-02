@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAdminStore } from '../adminStore';
-import { createCrmUser, createAuditLogEntry, createSyncRecord } from '@/__tests__/mocks/factories';
+import { createCrmUser, createSyncRecord } from '@/__tests__/mocks/factories';
 
 vi.mock('@/lib/db/queries/users', () => ({
   queryAllUsers: vi.fn().mockResolvedValue([
@@ -24,9 +24,6 @@ describe('adminStore', () => {
   beforeEach(() => {
     useAdminStore.setState({
       users: [],
-      auditEntries: [],
-      auditTotalCount: 0,
-      auditFilters: { limit: 25, offset: 0 },
       syncHealth: null,
       syncErrors: [],
       dataQuality: null,
@@ -45,19 +42,6 @@ describe('adminStore', () => {
     const users = [createCrmUser()];
     store().setUsers(users);
     expect(store().users).toEqual(users);
-  });
-
-  it('setAuditEntries', () => {
-    const entries = [createAuditLogEntry()];
-    store().setAuditEntries(entries, 42);
-    expect(store().auditEntries).toEqual(entries);
-    expect(store().auditTotalCount).toBe(42);
-  });
-
-  it('setAuditFilters merges partial', () => {
-    store().setAuditFilters({ entityType: 'activity' });
-    expect(store().auditFilters.entityType).toBe('activity');
-    expect(store().auditFilters.limit).toBe(25); // original preserved
   });
 
   it('setSyncHealth', () => {

@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Contact } from '@/types/entities';
 import type { ContactRow } from '@/types/db';
-import { logAudit } from '@/lib/db/auditHelper';
+
 
 function rowToContact(row: ContactRow): Contact {
   return {
@@ -53,7 +53,7 @@ export async function upsertContact(contact: Contact): Promise<void> {
       contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
-  logAudit('contact', contact.id, 'create', 'system', 'System', null, { firstName: contact.firstName, lastName: contact.lastName });
+
 }
 
 /** Returns true if the record was actually inserted or updated, false if skipped. */
@@ -88,21 +88,13 @@ export async function upsertContactBulk(contact: Contact): Promise<boolean> {
 
 export async function deleteContact(id: string): Promise<void> {
   const db = await getDb();
-  const rows = await db.select<ContactRow[]>(`SELECT * FROM contacts WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM contacts WHERE id=$1`, [id]);
-  if (rows[0]) {
-    logAudit('contact', id, 'delete', 'system', 'System', { name: `${rows[0].first_name} ${rows[0].last_name}` }, null);
-  }
 }
 
 export async function updateContactNotes(contactId: string, notes: string): Promise<void> {
   const db = await getDb();
-  const rows = await db.select<ContactRow[]>(`SELECT * FROM contacts WHERE id = $1`, [contactId]);
   await db.execute(
     `UPDATE contacts SET notes = $1, updated_at = $2 WHERE id = $3`,
     [notes, new Date().toISOString(), contactId]
   );
-  if (rows[0]) {
-    logAudit('contact', contactId, 'update', 'system', 'System', { notes: rows[0].notes }, { notes });
-  }
 }

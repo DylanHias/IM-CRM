@@ -5,7 +5,7 @@ import { mockActivities } from '@/lib/mock/activities';
 import { mockFollowUps } from '@/lib/mock/followups';
 import { MOCK_INVOICE_ITEMS, MOCK_RESELLER_INVOICE_MAP, MOCK_INVOICE_DETAILS } from '@/lib/mock/invoices';
 import { mockOpportunities } from '@/lib/mock/opportunities';
-import { mockUsers, mockAuditEntries, mockSyncRecords } from '@/lib/mock/admin';
+import { mockUsers, mockSyncRecords } from '@/lib/mock/admin';
 
 async function seedCustomers(db: Database): Promise<void> {
   for (const c of mockCustomers) {
@@ -87,15 +87,6 @@ async function seedUsers(db: Database): Promise<void> {
   }
 }
 
-async function seedAuditLog(db: Database): Promise<void> {
-  for (const a of mockAuditEntries) {
-    await db.execute(
-      `INSERT OR IGNORE INTO audit_log (id,entity_type,entity_id,action,changed_by_id,changed_by_name,old_values,new_values,changed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [a.id,a.entityType,a.entityId,a.action,a.changedById,a.changedByName,a.oldValues ? JSON.stringify(a.oldValues) : null,a.newValues ? JSON.stringify(a.newValues) : null,a.changedAt]
-    );
-  }
-}
-
 async function seedSyncRecords(db: Database): Promise<void> {
   for (const s of mockSyncRecords) {
     await db.execute(
@@ -113,7 +104,6 @@ const TABLE_SEEDERS: Record<string, (db: Database) => Promise<void>> = {
   invoices: seedInvoices,
   opportunities: seedOpportunities,
   users: seedUsers,
-  audit_log: seedAuditLog,
   sync_records: seedSyncRecords,
 };
 

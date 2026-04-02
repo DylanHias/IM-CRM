@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Customer } from '@/types/entities';
 import type { CustomerRow } from '@/types/db';
-import { logAudit } from '@/lib/db/auditHelper';
+
 
 function rowToCustomer(row: CustomerRow): Customer {
   return {
@@ -56,9 +56,6 @@ export async function queryCustomerById(id: string): Promise<Customer | null> {
 
 export async function upsertCustomer(customer: Customer): Promise<void> {
   const db = await getDb();
-  const existing = await db.select<CustomerRow[]>(`SELECT * FROM customers WHERE id = $1`, [customer.id]);
-  const isUpdate = existing.length > 0;
-
   await db.execute(
     `INSERT INTO customers (
       id, name, account_number, industry, segment, owner_id, owner_name,
@@ -87,21 +84,6 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
     ]
   );
 
-  if (isUpdate) {
-    const old = rowToCustomer(existing[0]);
-    const changes: Record<string, unknown> = {};
-    const oldVals: Record<string, unknown> = {};
-    if (old.name !== customer.name) { oldVals.name = old.name; changes.name = customer.name; }
-    if (old.phone !== customer.phone) { oldVals.phone = old.phone; changes.phone = customer.phone; }
-    if (old.email !== customer.email) { oldVals.email = old.email; changes.email = customer.email; }
-    if (old.industry !== customer.industry) { oldVals.industry = old.industry; changes.industry = customer.industry; }
-    if (old.arr !== customer.arr) { oldVals.arr = old.arr; changes.arr = customer.arr; }
-    if (Object.keys(changes).length > 0) {
-      logAudit('customer', customer.id, 'update', 'system', 'System (sync)', oldVals, changes);
-    }
-  } else {
-    logAudit('customer', customer.id, 'create', 'system', 'System (sync)', null, { name: customer.name });
-  }
 }
 
 /** Returns true if the record was actually inserted or updated, false if skipped (unchanged). */

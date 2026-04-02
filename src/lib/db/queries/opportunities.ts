@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Opportunity } from '@/types/entities';
 import type { OpportunityRow } from '@/types/db';
-import { logAudit } from '@/lib/db/auditHelper';
+
 
 function rowToOpportunity(row: OpportunityRow): Opportunity {
   return {
@@ -69,7 +69,7 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       opp.createdByName, opp.createdAt, opp.updatedAt,
     ]
   );
-  logAudit('opportunity', opp.id, 'create', opp.createdById, opp.createdByName, null, { subject: opp.subject, stage: opp.stage });
+
 }
 
 export async function updateOpportunity(opp: Opportunity): Promise<void> {
@@ -90,7 +90,7 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
       opp.customerNeed, new Date().toISOString(), opp.id,
     ]
   );
-  logAudit('opportunity', opp.id, 'update', opp.createdById, opp.createdByName, null, { subject: opp.subject, stage: opp.stage, status: opp.status });
+
 }
 
 export async function queryUniqueVendors(): Promise<string[]> {
@@ -103,9 +103,5 @@ export async function queryUniqueVendors(): Promise<string[]> {
 
 export async function deleteOpportunity(id: string): Promise<void> {
   const db = await getDb();
-  const rows = await db.select<OpportunityRow[]>(`SELECT * FROM opportunities WHERE id=$1`, [id]);
   await db.execute(`DELETE FROM opportunities WHERE id=$1`, [id]);
-  if (rows[0]) {
-    logAudit('opportunity', id, 'delete', rows[0].created_by_id, rows[0].created_by_name, { subject: rows[0].subject }, null);
-  }
 }

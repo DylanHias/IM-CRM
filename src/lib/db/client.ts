@@ -277,23 +277,6 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS audit_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      entity_type TEXT NOT NULL,
-      entity_id TEXT NOT NULL,
-      action TEXT NOT NULL CHECK(action IN ('create','update','delete')),
-      changed_by_id TEXT NOT NULL,
-      changed_by_name TEXT NOT NULL,
-      old_values TEXT,
-      new_values TEXT,
-      changed_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_at ON audit_log(changed_at DESC)`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_by ON audit_log(changed_by_id)`);
-
-  await db.execute(`
     CREATE TABLE IF NOT EXISTS option_sets (
       entity_name    TEXT NOT NULL,
       attribute_name TEXT NOT NULL,
@@ -408,23 +391,6 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       )
     `);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS audit_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        entity_type TEXT NOT NULL,
-        entity_id TEXT NOT NULL,
-        action TEXT NOT NULL CHECK(action IN ('create','update','delete')),
-        changed_by_id TEXT NOT NULL,
-        changed_by_name TEXT NOT NULL,
-        old_values TEXT,
-        new_values TEXT,
-        changed_at TEXT NOT NULL DEFAULT (datetime('now'))
-      )
-    `);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_at ON audit_log(changed_at DESC)`);
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_audit_changed_by ON audit_log(changed_by_id)`);
 
     // Backfill users from existing data — first user becomes admin
     const ownerRows = await db.select<{ id: string; name: string }[]>(`

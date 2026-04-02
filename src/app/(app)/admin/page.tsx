@@ -1,17 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, ScrollText, BarChart3, HardDrive } from 'lucide-react';
+import { Users, BarChart3, HardDrive } from 'lucide-react';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { UserManagement } from '@/components/admin/UserManagement';
-import { AuditLog } from '@/components/admin/AuditLog';
 import { AnalyticsReports } from '@/components/admin/AnalyticsReports';
 import { DataManagement } from '@/components/admin/DataManagement';
 import styled from 'styled-components';
 
 const TABS = [
   { id: 'users', label: 'Users', icon: Users },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'data', label: 'Data', icon: HardDrive },
 ] as const;
@@ -80,7 +78,6 @@ export default function AdminPage() {
           </TabList>
           <Panel>
             {activeTab === 'users' && <UserManagement />}
-            {activeTab === 'audit' && <AuditLog />}
             {activeTab === 'analytics' && <AnalyticsReports />}
             {activeTab === 'data' && <DataManagement />}
           </Panel>

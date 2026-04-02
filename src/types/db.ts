@@ -129,14 +129,3 @@ export interface UserRow {
   updated_at: string;
 }
 
-export interface AuditLogRow {
-  id: number;
-  entity_type: string;
-  entity_id: string;
-  action: string;
-  changed_by_id: string;
-  changed_by_name: string;
-  old_values: string | null;
-  new_values: string | null;
-  changed_at: string;
-}

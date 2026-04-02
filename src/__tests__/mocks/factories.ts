@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Contact, Activity, FollowUp, Opportunity } from '@/types/entities';
 import type { SyncRecord, SyncError } from '@/types/sync';
-import type { CrmUser, AuditLogEntry } from '@/types/admin';
+import type { CrmUser } from '@/types/admin';
 import type { InvoiceSearchItem, InvoiceDetail } from '@/types/invoice';
 
 const NOW = '2026-03-25T12:00:00.000Z';
@@ -163,21 +163,6 @@ export function createCrmUser(overrides?: Partial<CrmUser>): CrmUser {
     lastActiveAt: NOW,
     createdAt: NOW,
     updatedAt: NOW,
-    ...overrides,
-  };
-}
-
-export function createAuditLogEntry(overrides?: Partial<AuditLogEntry>): AuditLogEntry {
-  return {
-    id: 1,
-    entityType: 'activity',
-    entityId: uuidv4(),
-    action: 'create',
-    changedById: 'user-1',
-    changedByName: 'Dylan',
-    oldValues: null,
-    newValues: { subject: 'Test' },
-    changedAt: NOW,
     ...overrides,
   };
 }

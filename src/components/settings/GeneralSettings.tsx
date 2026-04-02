@@ -114,7 +114,7 @@ export function GeneralSettings() {
       const tables = [
         'invoice_lines', 'invoices', 'activities', 'follow_ups',
         'contacts', 'opportunities', 'option_sets', 'sync_records',
-        'audit_log', 'customers',
+        'customers',
       ];
       for (const table of tables) {
         await db.execute(`DELETE FROM ${table}`);

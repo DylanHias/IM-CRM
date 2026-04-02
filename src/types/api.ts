@@ -113,14 +113,4 @@ export interface D365SystemUser {
   modifiedon: string;
 }
 
-export interface D365AuditRecord {
-  auditid: string;
-  createdon: string;
-  '_userid_value': string;
-  '_userid_value@OData.Community.Display.V1.FormattedValue'?: string;
-  '_objectid_value': string;
-  objecttypecode: string;
-  operation: number; // 1=Create, 2=Update, 3=Delete
-  changedata: string | null;
-}
 

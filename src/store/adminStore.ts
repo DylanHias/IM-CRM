@@ -3,8 +3,6 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type {
   CrmUser,
   UserRole,
-  AuditLogEntry,
-  AuditLogFilters,
   SyncHealthMetrics,
   DataQualityMetrics,
   ActivityTimelinePoint,
@@ -15,9 +13,6 @@ import type { SyncRecord } from '@/types/sync';
 
 interface AdminState {
   users: CrmUser[];
-  auditEntries: AuditLogEntry[];
-  auditTotalCount: number;
-  auditFilters: AuditLogFilters;
   syncHealth: SyncHealthMetrics | null;
   syncErrors: SyncRecord[];
   dataQuality: DataQualityMetrics | null;
@@ -29,8 +24,6 @@ interface AdminState {
   isLoading: boolean;
 
   setUsers: (users: CrmUser[]) => void;
-  setAuditEntries: (entries: AuditLogEntry[], totalCount: number) => void;
-  setAuditFilters: (filters: Partial<AuditLogFilters>) => void;
   setSyncHealth: (health: SyncHealthMetrics) => void;
   setSyncErrors: (errors: SyncRecord[]) => void;
   setDataQuality: (quality: DataQualityMetrics) => void;
@@ -43,7 +36,6 @@ interface AdminState {
 
   loadUsers: () => Promise<void>;
   refreshUsersFromD365: (token: string) => Promise<void>;
-  loadAuditLog: () => Promise<void>;
   loadSyncAdmin: () => Promise<void>;
   loadAnalytics: () => Promise<void>;
   loadDataManagement: () => Promise<void>;
@@ -52,9 +44,6 @@ interface AdminState {
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
-  auditEntries: [],
-  auditTotalCount: 0,
-  auditFilters: { limit: 25, offset: 0 },
   syncHealth: null,
   syncErrors: [],
   dataQuality: null,
@@ -66,8 +55,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   isLoading: false,
 
   setUsers: (users) => set({ users }),
-  setAuditEntries: (auditEntries, auditTotalCount) => set({ auditEntries, auditTotalCount }),
-  setAuditFilters: (filters) => set((s) => ({ auditFilters: { ...s.auditFilters, ...filters } })),
   setSyncHealth: (syncHealth) => set({ syncHealth }),
   setSyncErrors: (syncErrors) => set({ syncErrors }),
   setDataQuality: (dataQuality) => set({ dataQuality }),
@@ -103,23 +90,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       set({ users });
     } catch (e) {
       console.error('[admin] refreshUsersFromD365 failed:', e);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  loadAuditLog: async () => {
-    set({ isLoading: true });
-    try {
-      const { queryAuditLog, queryAuditLogCount } = await import('@/lib/db/queries/auditLog');
-      const filters = get().auditFilters;
-      const [entries, totalCount] = await Promise.all([
-        queryAuditLog(filters),
-        queryAuditLogCount(filters),
-      ]);
-      set({ auditEntries: entries, auditTotalCount: totalCount });
-    } catch (e) {
-      console.error('[admin] loadAuditLog failed:', e);
     } finally {
       set({ isLoading: false });
     }
