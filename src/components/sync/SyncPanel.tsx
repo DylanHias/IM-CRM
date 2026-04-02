@@ -115,6 +115,7 @@ function SyncHistory({ records }: { records: SyncRecord[] }) {
         })}
       </div>
       <TablePagination
+        className="mt-4"
         totalItems={records.length}
         page={safePage}
         pageSize={pageSize}

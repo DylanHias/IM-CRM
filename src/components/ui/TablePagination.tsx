@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -10,6 +11,7 @@ interface TablePaginationProps {
   pageSize: number;
   pageSizeOptions?: number[];
   disabled?: boolean;
+  className?: string;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
@@ -20,6 +22,7 @@ export function TablePagination({
   pageSize,
   pageSizeOptions = [10, 25, 50, 100],
   disabled,
+  className,
   onPageChange,
   onPageSizeChange,
 }: TablePaginationProps) {
@@ -29,7 +32,7 @@ export function TablePagination({
   if (totalItems <= 25) return null;
 
   return (
-    <div className="flex items-center justify-between">
+    <div className={cn('flex items-center justify-between', className)}>
       <span className="text-sm text-muted-foreground">
         Page {safePage} of {totalPages}
       </span>
