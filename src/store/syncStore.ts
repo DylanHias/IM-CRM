@@ -10,8 +10,14 @@ interface SyncState {
   pendingActivityCount: number;
   pendingFollowUpCount: number;
   historyPage: number;
+  initialSyncProgress: {
+    phase: string;
+    processed: number;
+    total: number;
+  } | null;
 
   setSyncing: (syncing: boolean) => void;
+  setInitialSyncProgress: (progress: { phase: string; processed: number; total: number } | null) => void;
   setLastD365Sync: (at: string) => void;
   addSyncError: (error: SyncError) => void;
   clearSyncErrors: () => void;
@@ -30,6 +36,7 @@ export const useSyncStore = create<SyncState>()(
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
       historyPage: 1,
+      initialSyncProgress: null,
 
       setSyncing: (isSyncing) => set({ isSyncing }),
       setLastD365Sync: (at) => set({ lastD365SyncAt: at }),
@@ -39,6 +46,7 @@ export const useSyncStore = create<SyncState>()(
       setHistoryPage: (historyPage) => set({ historyPage }),
       setPendingCounts: (activities, followUps) =>
         set({ pendingActivityCount: activities, pendingFollowUpCount: followUps }),
+      setInitialSyncProgress: (initialSyncProgress) => set({ initialSyncProgress }),
     }),
     {
       name: 'crm-sync-store',

@@ -11,6 +11,7 @@ describe('syncStore', () => {
       recentRecords: [],
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
+      initialSyncProgress: null,
     });
   });
 
@@ -65,5 +66,20 @@ describe('syncStore', () => {
     expect(store().lastD365SyncAt).toBeNull();
     expect(store().syncErrors).toHaveLength(0);
     expect(store().pendingActivityCount).toBe(0);
+  });
+
+  it('initialSyncProgress defaults to null', () => {
+    expect(store().initialSyncProgress).toBeNull();
+  });
+
+  it('setInitialSyncProgress sets progress', () => {
+    store().setInitialSyncProgress({ phase: 'Syncing customers...', processed: 10, total: 100 });
+    expect(store().initialSyncProgress).toEqual({ phase: 'Syncing customers...', processed: 10, total: 100 });
+  });
+
+  it('setInitialSyncProgress clears with null', () => {
+    store().setInitialSyncProgress({ phase: 'Syncing customers...', processed: 10, total: 100 });
+    store().setInitialSyncProgress(null);
+    expect(store().initialSyncProgress).toBeNull();
   });
 });
