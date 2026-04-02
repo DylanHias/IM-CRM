@@ -53,6 +53,9 @@ interface SettingsState {
   defaultExportFormat: ExportFormat;
   mockDataEnabled: boolean;
 
+  // Table Columns
+  tableColumns: Record<string, { order: string[]; hidden: string[] }>;
+
   // Keybindings
   customKeybindings: Record<string, CustomKeybinding>;
 
@@ -63,7 +66,7 @@ interface SettingsState {
   hydrateFromDb: () => Promise<void>;
 }
 
-type SettingsSection = 'appearance' | 'dataDefaults' | 'notifications' | 'sync' | 'dataManagement' | 'keybindings';
+type SettingsSection = 'appearance' | 'dataDefaults' | 'notifications' | 'sync' | 'dataManagement' | 'tableColumns' | 'keybindings';
 
 const APPEARANCE_DEFAULTS = {
   theme: 'light' as Theme,
@@ -101,6 +104,10 @@ const DATA_MANAGEMENT_DEFAULTS = {
   mockDataEnabled: false,
 };
 
+const TABLE_COLUMNS_DEFAULTS = {
+  tableColumns: {} as Record<string, { order: string[]; hidden: string[] }>,
+};
+
 const KEYBINDINGS_DEFAULTS = {
   customKeybindings: {} as Record<string, CustomKeybinding>,
 };
@@ -111,6 +118,7 @@ const SECTION_DEFAULTS: Record<SettingsSection, Record<string, unknown>> = {
   notifications: NOTIFICATION_DEFAULTS,
   sync: SYNC_DEFAULTS,
   dataManagement: DATA_MANAGEMENT_DEFAULTS,
+  tableColumns: TABLE_COLUMNS_DEFAULTS,
   keybindings: KEYBINDINGS_DEFAULTS,
 };
 
@@ -120,6 +128,7 @@ const ALL_DEFAULTS = {
   ...NOTIFICATION_DEFAULTS,
   ...SYNC_DEFAULTS,
   ...DATA_MANAGEMENT_DEFAULTS,
+  ...TABLE_COLUMNS_DEFAULTS,
   ...KEYBINDINGS_DEFAULTS,
 };
 

@@ -5,17 +5,50 @@ import { FileText, Loader2, ChevronLeft, ChevronRight, Search, AlertTriangle, Ar
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
+import type { ColumnDef } from '@/components/ui/ColumnPicker';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 import { InvoiceDetailPanel } from './InvoiceDetailPanel';
 import { useInvoices } from '@/hooks/useInvoices';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import type { InvoiceSearchParams } from '@/types/invoice';
+import type { InvoiceSearchItem } from '@/types/invoice';
 
 type InvoiceSortField = 'invoiceNumber' | 'invoiceDate' | 'invoiceDueDate' | 'invoiceStatus' | 'invoiceAmountInclTax' | 'customerOrderNumber';
 
+const INVOICE_COLUMNS: (ColumnDef & { field: InvoiceSortField; align: string })[] = [
+  { id: 'invoiceNumber', field: 'invoiceNumber', label: 'Invoice #', align: 'text-left' },
+  { id: 'invoiceDate', field: 'invoiceDate', label: 'Date', align: 'text-left' },
+  { id: 'invoiceDueDate', field: 'invoiceDueDate', label: 'Due Date', align: 'text-left' },
+  { id: 'invoiceStatus', field: 'invoiceStatus', label: 'Status', align: 'text-left' },
+  { id: 'invoiceAmountInclTax', field: 'invoiceAmountInclTax', label: 'Amount', align: 'text-right' },
+  { id: 'customerOrderNumber', field: 'customerOrderNumber', label: 'Order #', align: 'text-left' },
+];
+
+const COLUMN_MAP = new Map(INVOICE_COLUMNS.map((c) => [c.id, c]));
+
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(amount);
+}
+
+function renderInvoiceCell(inv: InvoiceSearchItem, columnId: string) {
+  switch (columnId) {
+    case 'invoiceNumber':
+      return <span className="font-medium text-primary hover:underline">{inv.invoiceNumber}</span>;
+    case 'invoiceDate':
+      return <span className="text-foreground">{formatDate(inv.invoiceDate)}</span>;
+    case 'invoiceDueDate':
+      return <span className="text-foreground">{formatDate(inv.invoiceDueDate)}</span>;
+    case 'invoiceStatus':
+      return <InvoiceStatusBadge status={inv.invoiceStatus} />;
+    case 'invoiceAmountInclTax':
+      return <span className="font-medium text-foreground">{formatCurrency(inv.invoiceAmountInclTax)}</span>;
+    case 'customerOrderNumber':
+      return <span className="text-muted-foreground">{inv.customerOrderNumber ?? '—'}</span>;
+    default:
+      return null;
+  }
 }
 
 interface InvoiceListProps {
@@ -34,6 +67,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortField, setSortField] = useState<InvoiceSortField | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const { visibleColumns } = useColumnConfig('invoices', INVOICE_COLUMNS);
 
   function toggleSort(field: InvoiceSortField) {
     if (sortField === field) {
@@ -113,6 +147,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
             <SelectItem value="Past Due">Past Due</SelectItem>
           </SelectContent>
         </Select>
+        <ColumnPicker tableKey="invoices" columns={INVOICE_COLUMNS} />
       </div>
 
       {/* Error */}
@@ -141,31 +176,28 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
           )}>
             <div className="overflow-x-auto">
               <table className="w-full text-[13px]">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-card">
                   <tr className="border-b border-border/50 bg-muted/30">
-                    {([
-                      { field: 'invoiceNumber' as InvoiceSortField, label: 'Invoice #', align: 'text-left' },
-                      { field: 'invoiceDate' as InvoiceSortField, label: 'Date', align: 'text-left' },
-                      { field: 'invoiceDueDate' as InvoiceSortField, label: 'Due Date', align: 'text-left' },
-                      { field: 'invoiceStatus' as InvoiceSortField, label: 'Status', align: 'text-left' },
-                      { field: 'invoiceAmountInclTax' as InvoiceSortField, label: 'Amount', align: 'text-right' },
-                      { field: 'customerOrderNumber' as InvoiceSortField, label: 'Order #', align: 'text-left' },
-                    ] as const).map(({ field, label, align }) => (
-                      <th
-                        key={field}
-                        className={cn(
-                          align, 'px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors'
-                        )}
-                        onClick={() => toggleSort(field)}
-                      >
-                        <span className={cn('inline-flex items-center gap-1', align === 'text-right' && 'justify-end')}>
-                          {label}
-                          {sortField === field && (
-                            sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                    {visibleColumns.map((id) => {
+                      const col = COLUMN_MAP.get(id);
+                      if (!col) return null;
+                      return (
+                        <th
+                          key={id}
+                          className={cn(
+                            col.align, 'px-4 py-2.5 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors'
                           )}
-                        </span>
-                      </th>
-                    ))}
+                          onClick={() => toggleSort(col.field)}
+                        >
+                          <span className={cn('inline-flex items-center gap-1', col.align === 'text-right' && 'justify-end')}>
+                            {col.label}
+                            {sortField === col.field && (
+                              sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                            )}
+                          </span>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
@@ -175,14 +207,15 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
                       className="hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => loadInvoiceDetail(inv.invoiceNumber)}
                     >
-                      <td className="px-4 py-3">
-                        <span className="font-medium text-primary hover:underline">{inv.invoiceNumber}</span>
-                      </td>
-                      <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDate)}</td>
-                      <td className="px-4 py-3 text-foreground">{formatDate(inv.invoiceDueDate)}</td>
-                      <td className="px-4 py-3"><InvoiceStatusBadge status={inv.invoiceStatus} /></td>
-                      <td className="px-4 py-3 text-right font-medium text-foreground">{formatCurrency(inv.invoiceAmountInclTax)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{inv.customerOrderNumber ?? '—'}</td>
+                      {visibleColumns.map((id) => {
+                        const col = COLUMN_MAP.get(id);
+                        if (!col) return null;
+                        return (
+                          <td key={id} className={cn('px-4 py-3', col.align)}>
+                            {renderInvoiceCell(inv, id)}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

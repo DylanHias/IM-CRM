@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
+import type { ColumnDef } from '@/components/ui/ColumnPicker';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -49,6 +51,63 @@ function getContactLabel(customer: Customer, contacts: Contact[]): { name: strin
   return { name: customer.name, isCompany: true };
 }
 
+const ARR_COLUMNS: (ColumnDef & { field: SortField | null; align: string })[] = [
+  { id: 'name', field: 'name', label: 'Customer Name', align: 'text-left' },
+  { id: 'contact', field: null, label: 'Contact', align: 'text-left' },
+  { id: 'phone', field: null, label: 'Phone', align: 'text-left' },
+  { id: 'email', field: null, label: 'Email', align: 'text-left' },
+  { id: 'cloudCustomer', field: 'cloudCustomer', label: 'Cloud Customer', align: 'text-center' },
+  { id: 'language', field: 'language', label: 'Language', align: 'text-left' },
+  { id: 'arr', field: 'arr', label: 'ARR', align: 'text-right' },
+];
+
+const ARR_COLUMN_MAP = new Map(ARR_COLUMNS.map((c) => [c.id, c]));
+
+function renderArrCell(customer: Customer, columnId: string, contacts: Contact[], router: ReturnType<typeof useRouter>) {
+  switch (columnId) {
+    case 'name':
+      return (
+        <button
+          onClick={() => router.push(`/customers?id=${customer.id}`)}
+          className="font-medium text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
+        >
+          {customer.name}
+        </button>
+      );
+    case 'contact': {
+      const label = getContactLabel(customer, contacts);
+      return (
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          {label.isCompany ? (
+            <Building2 size={12} className="text-warning shrink-0" />
+          ) : (
+            <User size={12} className="text-primary shrink-0" />
+          )}
+          {label.name}
+        </span>
+      );
+    }
+    case 'phone':
+      return <span className="text-muted-foreground">{getPhone(customer, contacts)}</span>;
+    case 'email':
+      return <span className="text-muted-foreground">{getEmail(customer, contacts)}</span>;
+    case 'cloudCustomer':
+      return customer.cloudCustomer === true ? (
+        <Badge variant="default" className="text-xs">Yes</Badge>
+      ) : customer.cloudCustomer === false ? (
+        <Badge variant="secondary" className="text-xs">No</Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    case 'language':
+      return <span className="text-muted-foreground">{customer.language ?? '—'}</span>;
+    case 'arr':
+      return <span className="font-semibold tabular-nums">{formatArr(customer.arr)}</span>;
+    default:
+      return null;
+  }
+}
+
 export default function ArrOverviewPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +120,7 @@ export default function ArrOverviewPage() {
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
   const itemsPerPage = useSettingsStore((s) => s.itemsPerPage);
+  const { visibleColumns } = useColumnConfig('arrOverview', ARR_COLUMNS);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
@@ -249,6 +309,8 @@ export default function ArrOverviewPage() {
               </Button>
             )}
 
+            <ColumnPicker tableKey="arrOverview" columns={ARR_COLUMNS} />
+
             <button
               onClick={handleExport}
               className={cn(
@@ -356,40 +418,36 @@ export default function ArrOverviewPage() {
           <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-card">
                   <tr className="border-b border-border/70 bg-muted/30">
                     <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">#</th>
-                    {([
-                      { field: 'name' as SortField, label: 'Customer Name', align: 'text-left' },
-                      { field: null, label: 'Contact', align: 'text-left' },
-                      { field: null, label: 'Phone', align: 'text-left' },
-                      { field: null, label: 'Email', align: 'text-left' },
-                      { field: 'cloudCustomer' as SortField, label: 'Cloud Customer', align: 'text-center' },
-                      { field: 'language' as SortField, label: 'Language', align: 'text-left' },
-                      { field: 'arr' as SortField, label: 'ARR', align: 'text-right' },
-                    ] as const).map(({ field, label, align }) => (
-                      <th
-                        key={label}
-                        className={cn(
-                          align, 'px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap',
-                          field && 'cursor-pointer select-none hover:text-foreground transition-colors'
-                        )}
-                        onClick={field ? () => toggleSort(field) : undefined}
-                      >
-                        <span className={cn('inline-flex items-center gap-1', align === 'text-right' && 'justify-end')}>
-                          {label}
-                          {field && sortBy === field && (
-                            sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
+                    {visibleColumns.map((id) => {
+                      const col = ARR_COLUMN_MAP.get(id);
+                      if (!col) return null;
+                      return (
+                        <th
+                          key={id}
+                          className={cn(
+                            col.align, 'px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap',
+                            col.field && 'cursor-pointer select-none hover:text-foreground transition-colors'
                           )}
-                        </span>
-                      </th>
-                    ))}
+                          onClick={col.field ? () => toggleSort(col.field!) : undefined}
+                        >
+                          <span className={cn('inline-flex items-center gap-1', col.align === 'text-right' && 'justify-end')}>
+                            {col.label}
+                            {col.field && sortBy === col.field && (
+                              sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
+                            )}
+                          </span>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {pagedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                      <td colSpan={visibleColumns.length + 1} className="px-4 py-10 text-center text-sm text-muted-foreground">
                         No customers match your search.
                       </td>
                     </tr>
@@ -400,48 +458,15 @@ export default function ArrOverviewPage() {
                         className="hover:bg-muted/30 transition-colors"
                       >
                         <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * itemsPerPage + index + 1}</td>
-                        <td className="px-4 py-3 font-medium">
-                          <button
-                            onClick={() => router.push(`/customers?id=${customer.id}`)}
-                            className="text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
-                          >
-                            {customer.name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {(() => {
-                            const label = getContactLabel(customer, allContacts);
-                            return (
-                              <span className="flex items-center gap-1.5">
-                                {label.isCompany ? (
-                                  <Building2 size={12} className="text-warning shrink-0" />
-                                ) : (
-                                  <User size={12} className="text-primary shrink-0" />
-                                )}
-                                {label.name}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {getPhone(customer, allContacts)}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {getEmail(customer, allContacts)}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {customer.cloudCustomer === true ? (
-                            <Badge variant="default" className="text-xs">Yes</Badge>
-                          ) : customer.cloudCustomer === false ? (
-                            <Badge variant="secondary" className="text-xs">No</Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{customer.language ?? '—'}</td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums">
-                          {formatArr(customer.arr)}
-                        </td>
+                        {visibleColumns.map((id) => {
+                          const col = ARR_COLUMN_MAP.get(id);
+                          if (!col) return null;
+                          return (
+                            <td key={id} className={cn('px-4 py-3', col.align)}>
+                              {renderArrCell(customer, id, allContacts, router)}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))
                   )}
