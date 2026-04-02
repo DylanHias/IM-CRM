@@ -6,7 +6,9 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Crosshair,
 } from 'lucide-react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
@@ -32,6 +34,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuBadge,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -203,14 +208,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {recentCustomers.map((c) => (
-                  <SidebarMenuItem key={c.id}>
-                    <SidebarMenuButton asChild>
-                      <Link href={`/customers?id=${c.id}`}>
-                        <Building2 />
-                        <span>{c.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <RecentCustomerItem key={c.id} customer={c} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -327,6 +325,53 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+const customerSubNav = [
+  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { key: 'activities', label: 'Activities', icon: Clock },
+  { key: 'contacts', label: 'Contacts', icon: User },
+  { key: 'followups', label: 'Follow-Ups', icon: Bell },
+  { key: 'opportunities', label: 'Opportunities', icon: Crosshair },
+] as const;
+
+function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible.Root asChild open={open} onOpenChange={setOpen}>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild>
+          <Link href={`/customers?id=${customer.id}`}>
+            <Building2 />
+            <span>{customer.name}</span>
+          </Link>
+        </SidebarMenuButton>
+        <Collapsible.Trigger asChild>
+          <button
+            className="absolute right-1 top-1.5 flex h-5 w-5 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-transform group-data-[collapsible=icon]:hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
+          </button>
+        </Collapsible.Trigger>
+        <Collapsible.Content>
+          <SidebarMenuSub>
+            {customerSubNav.map(({ key, label, icon: Icon }) => (
+              <SidebarMenuSubItem key={key}>
+                <SidebarMenuSubButton asChild size="sm">
+                  <Link href={`/customers?id=${customer.id}&tab=${key}`}>
+                    <Icon className="size-3.5" />
+                    <span>{label}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </Collapsible.Content>
+      </SidebarMenuItem>
+    </Collapsible.Root>
   );
 }
 

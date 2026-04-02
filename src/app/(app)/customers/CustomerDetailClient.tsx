@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
@@ -42,8 +42,11 @@ interface CustomerDetailProps {
   customerId: string;
 }
 
+const validTabs: ProfileTab[] = ['overview', 'activities', 'contacts', 'followups', 'opportunities', 'invoices'];
+
 export default function CustomerDetailClient({ customerId }: CustomerDetailProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
@@ -59,7 +62,15 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   }, [customerId, customer]);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+  const tabParam = searchParams.get('tab') as ProfileTab | null;
+  const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'overview';
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
+
+  useEffect(() => {
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editType, setEditType] = useState<Activity['type']>('meeting');
