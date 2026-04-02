@@ -142,7 +142,7 @@ export async function querySyncHealthMetrics(): Promise<SyncHealthMetrics> {
 export async function querySyncErrors(limit = 20): Promise<SyncRecord[]> {
   const db = await getDb();
   const rows = await db.select<SyncRecordRow[]>(
-    `SELECT * FROM sync_records WHERE status = 'error' ORDER BY created_at DESC LIMIT $1`,
+    `SELECT * FROM sync_records WHERE status IN ('error', 'partial') ORDER BY created_at DESC LIMIT $1`,
     [limit]
   );
   return rows.map(rowToSyncRecord);

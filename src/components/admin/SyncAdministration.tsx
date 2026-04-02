@@ -270,7 +270,14 @@ export function SyncAdministration() {
               <tbody className="divide-y divide-border/40">
                 {displayed.map((err) => (
                   <tr key={err.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-3">{err.syncType}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {err.syncType}
+                        <Badge variant={err.status === 'error' ? 'destructive' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                          {err.status}
+                        </Badge>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-destructive">{err.errorMessage}</td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(err.createdAt).toLocaleString()}</td>
                   </tr>

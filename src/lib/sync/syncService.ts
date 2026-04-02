@@ -258,8 +258,9 @@ async function pushPendingActivities(token: string): Promise<void> {
     }
   }
 
+  const activityErrors = pending.length - pushed;
   console.log(`[sync] Pushed ${pushed}/${pending.length} activities`);
-  await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, null);
+  await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, activityErrors > 0 ? `${activityErrors} push errors` : null);
   store.setPendingCounts(pending.length - pushed, store.pendingFollowUpCount);
 }
 
@@ -290,8 +291,9 @@ async function pushPendingFollowUps(token: string): Promise<void> {
     }
   }
 
+  const followUpErrors = pending.length - pushed;
   console.log(`[sync] Pushed ${pushed}/${pending.length} follow-ups`);
-  await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, null);
+  await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, followUpErrors > 0 ? `${followUpErrors} push errors` : null);
   store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
 }
 
