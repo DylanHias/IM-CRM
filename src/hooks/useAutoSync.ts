@@ -19,6 +19,8 @@ export function useAutoSync() {
   // Auto-sync on launch (once)
   useEffect(() => {
     if (didAutoSync || !autoSyncOnLaunch || !isOnline) return;
+    // Skip if InitialSyncDialog is handling the first sync
+    if (useSyncStore.getState().initialSyncProgress !== null) return;
     didAutoSync = true;
 
     const run = async () => {
