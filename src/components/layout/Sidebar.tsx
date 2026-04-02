@@ -260,6 +260,14 @@ export function AppSidebar() {
 
         <SidebarMenu>
           <SidebarMenuItem>
+            <CollapseButton />
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        <SidebarSeparator />
+
+        <SidebarMenu>
+          <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
@@ -313,14 +321,6 @@ export function AppSidebar() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        <SidebarSeparator />
-
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <CollapseButton />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
