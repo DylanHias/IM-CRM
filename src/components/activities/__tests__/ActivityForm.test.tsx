@@ -156,7 +156,7 @@ describe('ActivityForm', () => {
 
   it('date input defaults to today', () => {
     render(<ActivityForm {...defaultProps} />);
-    const dateInput = screen.getByLabelText(/date/i);
-    expect(dateInput).toHaveValue('2026-03-25');
+    const dateButton = screen.getByLabelText(/date/i);
+    expect(dateButton).toHaveTextContent('25 Mar 2026');
   });
 });

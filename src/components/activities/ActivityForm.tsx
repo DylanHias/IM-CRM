@@ -158,6 +158,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         <div className="space-y-1">
           <Label htmlFor="occurredAt">Date *</Label>
           <DatePicker
+            id="occurredAt"
             value={occurredAt}
             onChange={setOccurredAt}
             maxDate={new Date()}

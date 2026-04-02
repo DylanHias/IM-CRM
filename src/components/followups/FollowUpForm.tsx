@@ -101,6 +101,7 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
       <div className="space-y-1">
         <Label htmlFor="dueDate">Due Date *</Label>
         <DatePicker
+          id="dueDate"
           value={dueDate}
           onChange={setDueDate}
           minDate={new Date()}

@@ -16,6 +16,18 @@ vi.mock('@/lib/utils/dateUtils', () => ({
   todayISO: () => '2026-03-25',
 }));
 
+vi.mock('@/components/ui/DatePicker', () => ({
+  DatePicker: ({ id, value, onChange, placeholder }: { id?: string; value: string; onChange: (v: string) => void; placeholder?: string }) => (
+    <input
+      id={id}
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  ),
+}));
+
 const defaultProps = {
   customerId: 'cust-1',
   customerName: 'Acme Corp',
