@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { useFollowUps } from '@/hooks/useFollowUps';
-import { todayISO } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 
 interface FollowUpFormProps {
@@ -100,13 +100,11 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
 
       <div className="space-y-1">
         <Label htmlFor="dueDate">Due Date *</Label>
-        <Input
-          id="dueDate"
-          type="date"
+        <DatePicker
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          min={todayISO()}
-          required
+          onChange={setDueDate}
+          minDate={new Date()}
+          placeholder="Select due date"
         />
       </div>
 

@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ActivityItem } from './ActivityItem';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { useActivities } from '@/hooks/useActivities';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
 import type { Activity, Contact } from '@/types/entities';
@@ -163,17 +165,17 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>Start *</Label>
-                  <Input type="datetime-local" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} required />
+                  <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
                 </div>
                 <div className="space-y-1">
                   <Label>End *</Label>
-                  <Input type="datetime-local" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} required />
+                  <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
                 <Label>Date *</Label>
-                <Input type="date" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} max={todayISO()} required />
+                <DatePicker value={editOccurredAt} onChange={setEditOccurredAt} maxDate={new Date()} />
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">

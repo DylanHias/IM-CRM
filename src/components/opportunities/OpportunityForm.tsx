@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { stageToProbability } from '@/hooks/useOpportunities';
 import { useOptionSet } from '@/hooks/useOptionSet';
 import { queryUniqueVendors } from '@/lib/db/queries/opportunities';
@@ -183,7 +184,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
         </div>
         <div className="space-y-1">
           <Label>Expiration Date</Label>
-          <Input type="date" value={expirationDate} onChange={(e) => setExpirationDate(e.target.value)} />
+          <DatePicker value={expirationDate} onChange={setExpirationDate} placeholder="Select date" />
         </div>
       </div>
 

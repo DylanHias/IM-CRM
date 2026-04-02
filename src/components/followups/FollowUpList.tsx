@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FollowUpItem } from './FollowUpItem';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { useFollowUps } from '@/hooks/useFollowUps';
-import { todayISO } from '@/lib/utils/dateUtils';
 import type { FollowUp } from '@/types/entities';
 
 interface FollowUpListProps {
@@ -157,7 +157,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
             </div>
             <div className="space-y-1">
               <Label>Due Date *</Label>
-              <Input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} required />
+              <DatePicker value={editDueDate} onChange={setEditDueDate} placeholder="Select due date" />
             </div>
             <div className="flex gap-3 pt-1">
               <Button type="button" variant="outline" onClick={() => setEditing(null)} className="flex-1">Cancel</Button>

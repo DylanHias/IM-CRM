@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { useActivities } from '@/hooks/useActivities';
 import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO, nowDatetimeLocal } from '@/lib/utils/dateUtils';
@@ -145,35 +147,20 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="startTime">Start *</Label>
-            <Input
-              id="startTime"
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
+            <DateTimePicker value={startTime} onChange={setStartTime} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="occurredAt">End *</Label>
-            <Input
-              id="occurredAt"
-              type="datetime-local"
-              value={occurredAt}
-              onChange={(e) => setOccurredAt(e.target.value)}
-              required
-            />
+            <DateTimePicker value={occurredAt} onChange={setOccurredAt} />
           </div>
         </div>
       ) : (
         <div className="space-y-1">
           <Label htmlFor="occurredAt">Date *</Label>
-          <Input
-            id="occurredAt"
-            type="date"
+          <DatePicker
             value={occurredAt}
-            onChange={(e) => setOccurredAt(e.target.value)}
-            max={todayISO()}
-            required
+            onChange={setOccurredAt}
+            maxDate={new Date()}
           />
         </div>
       )}

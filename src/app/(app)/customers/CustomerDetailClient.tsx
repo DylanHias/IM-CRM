@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { ContactList } from '@/components/contacts/ContactList';
 import { OpportunityList } from '@/components/opportunities/OpportunityList';
 
@@ -578,17 +580,17 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label>Start *</Label>
-                          <Input type="datetime-local" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} required />
+                          <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
                         </div>
                         <div className="space-y-1">
                           <Label>End *</Label>
-                          <Input type="datetime-local" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} required />
+                          <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-1">
                         <Label>Date *</Label>
-                        <Input type="date" value={editOccurredAt} onChange={(e) => setEditOccurredAt(e.target.value)} max={todayISO()} required />
+                        <DatePicker value={editOccurredAt} onChange={setEditOccurredAt} maxDate={new Date()} />
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
@@ -656,17 +658,17 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label>Start *</Label>
-                          <Input type="datetime-local" value={newActStartTime} onChange={(e) => setNewActStartTime(e.target.value)} required />
+                          <DateTimePicker value={newActStartTime} onChange={setNewActStartTime} />
                         </div>
                         <div className="space-y-1">
                           <Label>End *</Label>
-                          <Input type="datetime-local" value={newActDate} onChange={(e) => setNewActDate(e.target.value)} required />
+                          <DateTimePicker value={newActDate} onChange={setNewActDate} />
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-1">
                         <Label>Date *</Label>
-                        <Input type="date" value={newActDate} onChange={(e) => setNewActDate(e.target.value)} max={todayISO()} required />
+                        <DatePicker value={newActDate} onChange={setNewActDate} maxDate={new Date()} />
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
@@ -710,7 +712,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     </div>
                     <div className="space-y-1">
                       <Label>Due Date *</Label>
-                      <Input type="date" value={newFuDueDate} onChange={(e) => setNewFuDueDate(e.target.value)} required />
+                      <DatePicker value={newFuDueDate} onChange={setNewFuDueDate} placeholder="Select due date" />
                     </div>
                     <div className="flex gap-3 pt-1">
                       <Button type="button" variant="outline" onClick={() => setAddFollowUpOpen(false)} className="flex-1">Cancel</Button>
