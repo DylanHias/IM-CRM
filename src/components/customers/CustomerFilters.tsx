@@ -196,7 +196,7 @@ export function CustomerFilters() {
             </div>
           )}
 
-          <div className="space-y-1 flex flex-col">
+          <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Activity</label>
             <Button
               variant={filterNoRecentActivity ? 'default' : 'outline'}

@@ -74,6 +74,12 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 - DB: singleton init (`src/lib/db/client.ts`); `async/await` only
 - Async in `useEffect`: `const load = async () => { ... }; load();`
 
+## Help Docs
+
+- When adding/changing/removing user-facing features, update the relevant `docs/help/*.md` file(s)
+- If a new top-level feature is added, also wire it into `src/app/(app)/help/page.tsx` (TABS + CONTENT + import)
+- Current docs: getting-started, customers, activities, follow-ups, contacts, opportunities, arr-overview, sync, settings, shortcuts
+
 ## Subagents
 
 - Use for parallel/isolated tasks; work inline for simple/sequential ones
