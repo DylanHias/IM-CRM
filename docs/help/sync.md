@@ -1,6 +1,6 @@
 # Sync
 
-IM-CRM syncs your data with Microsoft Dynamics 365 so your local data stays up to date with the company CRM.
+Ingram Micro CRM syncs your data with Microsoft Dynamics 365 so your local data stays up to date with the company CRM.
 
 ## How Sync Works
 

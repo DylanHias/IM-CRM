@@ -1,10 +1,6 @@
 # Getting Started
 
-Welcome to IM-CRM! This guide will help you get up and running quickly.
-
-## What is IM-CRM?
-
-IM-CRM is a simplified customer relationship management tool built for Ingram Micro colleagues. It helps you manage your customers, track interactions, follow up on tasks, and monitor sales opportunities — all in one place.
+Welcome to the Ingram Micro CRM! This guide will help you get up and running quickly.
 
 ## First Launch
 
@@ -44,7 +40,7 @@ Click your avatar at the bottom of the sidebar to access:
 
 ## Working Offline
 
-IM-CRM works even when you're not connected to the internet. Any changes you make while offline are saved locally and will sync automatically when you're back online. You'll see badges in the sidebar indicating how many items are waiting to sync.
+Ingram Micro CRM works even when you're not connected to the internet. Any changes you make while offline are saved locally and will sync automatically when you're back online. You'll see badges in the sidebar indicating how many items are waiting to sync.
 
 ## Next Steps
 
