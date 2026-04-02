@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -30,8 +30,10 @@ interface SyncPanelProps {
 export function SyncPanel({ records }: SyncPanelProps) {
   const {
     isSyncing, isOnline, lastD365SyncAt,
-    pendingActivityCount, pendingFollowUpCount, triggerSync,
+    pendingActivityCount, pendingFollowUpCount, triggerSync, triggerPushPending,
   } = useSync();
+
+  const hasPending = pendingActivityCount > 0 || pendingFollowUpCount > 0;
 
   return (
     <div className="space-y-5">
@@ -53,7 +55,7 @@ export function SyncPanel({ records }: SyncPanelProps) {
         </div>
       </div>
 
-      {/* Sync button */}
+      {/* Sync buttons */}
       <div className="flex items-center gap-3">
         <Button
           onClick={triggerSync}
@@ -62,6 +64,15 @@ export function SyncPanel({ records }: SyncPanelProps) {
         >
           <RefreshCw size={15} className={isSyncing ? 'animate-spin' : ''} />
           {isSyncing ? 'Syncing...' : 'Run Full Sync'}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={triggerPushPending}
+          disabled={isSyncing || !isOnline || !hasPending}
+          className="gap-2"
+        >
+          <Upload size={15} />
+          Sync Pending
         </Button>
         {!isOnline && (
           <p className="text-sm text-muted-foreground">

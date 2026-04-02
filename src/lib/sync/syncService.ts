@@ -17,6 +17,33 @@ export async function resetSyncWatermark(): Promise<void> {
   console.log('[sync] Watermark reset — next sync will fetch all records from D365');
 }
 
+export async function pushPendingChanges(token: string): Promise<void> {
+  if (!isTauriApp()) {
+    console.warn('[sync] Not in Tauri — skipping push');
+    return;
+  }
+
+  const store = useSyncStore.getState();
+  store.setSyncing(true);
+  store.clearSyncErrors();
+  console.log('[sync] Pushing pending changes');
+
+  try {
+    await pushPendingActivities(token);
+    await pushPendingFollowUps(token);
+    await pushPendingDeletes(token);
+
+    const records = await queryRecentSyncRecords(20);
+    store.setRecentRecords(records);
+    console.log('[sync] Pending push complete');
+  } catch (err) {
+    console.error('[sync] Pending push failed:', err instanceof Error ? err.message : err);
+    throw err;
+  } finally {
+    store.setSyncing(false);
+  }
+}
+
 export async function runFullSync(token: string): Promise<void> {
   if (!isTauriApp()) {
     console.warn('[sync] Not in Tauri — skipping sync');

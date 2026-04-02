@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { useSyncStore } from '@/store/syncStore';
-import { runFullSync } from '@/lib/sync/syncService';
+import { runFullSync, pushPendingChanges } from '@/lib/sync/syncService';
 import { useAuthStore } from '@/store/authStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { d365Request } from '@/lib/auth/msalConfig';
@@ -14,17 +14,24 @@ export function useSync() {
   const { isAuthenticated } = useAuthStore();
   const isOnline = useOnlineStatus();
 
-  const triggerSync = useCallback(async () => {
-    if (!isAuthenticated || !isOnline || isSyncing) return;
-
+  const getToken = useCallback(async () => {
+    if (!isAuthenticated || !isOnline || isSyncing) return null;
     const token = await getAccessToken(d365Request.scopes);
-    if (!token) {
-      console.warn('[useSync] No token available');
-      return;
-    }
-
-    await runFullSync(token);
+    if (!token) console.warn('[useSync] No token available');
+    return token;
   }, [isAuthenticated, isOnline, isSyncing]);
+
+  const triggerSync = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+    await runFullSync(token);
+  }, [getToken]);
+
+  const triggerPushPending = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+    await pushPendingChanges(token);
+  }, [getToken]);
 
   return {
     isSyncing,
@@ -34,5 +41,6 @@ export function useSync() {
     pendingActivityCount,
     pendingFollowUpCount,
     triggerSync,
+    triggerPushPending,
   };
 }
