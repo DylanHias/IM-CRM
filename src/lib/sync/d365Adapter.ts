@@ -279,8 +279,7 @@ class RealD365Adapter implements ID365Adapter {
       'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
     ].join(',');
 
-    const benelux = "(parentcustomerid_account/address1_country eq 'Belgium' or parentcustomerid_account/address1_country eq 'Netherlands' or parentcustomerid_account/address1_country eq 'Luxembourg')";
-    let filter = `_parentcustomerid_value ne null and ${benelux}`;
+    let filter = '_parentcustomerid_value ne null';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/contacts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
