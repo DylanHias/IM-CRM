@@ -424,19 +424,23 @@ class RealD365Adapter implements ID365Adapter {
 
     if (activity.type === 'call') {
       entitySet = 'phonecalls';
-      const callBody: Record<string, unknown> = {
+      const parties: Record<string, unknown>[] = [
+        { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 1 },
+      ];
+      if (activity.contactId) {
+        parties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 });
+      }
+      body = {
         subject: activity.subject,
         description: activity.description ?? '',
+        actualend: activity.occurredAt,
         scheduledend: activity.occurredAt,
+        directioncode: true,
+        statecode: 1,
+        statuscode: 2,
         'regardingobjectid_account@odata.bind': accountBind,
+        phonecall_activity_parties: parties,
       };
-      if (activity.contactId) {
-        callBody.phonecall_activity_parties = [
-          { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 1 },
-          { 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 },
-        ];
-      }
-      body = callBody;
     } else if (activity.type === 'note') {
       entitySet = 'annotations';
       body = {
@@ -447,18 +451,23 @@ class RealD365Adapter implements ID365Adapter {
     } else {
       // 'meeting' and 'visit' both map to appointment
       entitySet = 'appointments';
-      const apptBody: Record<string, unknown> = {
+      const apptParties: Record<string, unknown>[] = [
+        { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 7 },
+      ];
+      if (activity.contactId) {
+        apptParties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 5 });
+      }
+      body = {
         subject: activity.subject,
         description: activity.description || activity.subject,
         scheduledstart: activity.startTime ?? activity.occurredAt,
         scheduledend: activity.occurredAt,
         im360_appointmenttype: activity.type === 'visit' ? 2 : 0,
+        statecode: 1,
+        statuscode: 3,
         'regardingobjectid_account@odata.bind': accountBind,
+        appointment_activity_parties: apptParties,
       };
-      if (activity.contactId) {
-        apptBody['regardingobjectid_contact@odata.bind'] = `/contacts(${activity.contactId})`;
-      }
-      body = apptBody;
     }
 
     const endpoint = isUpdate
