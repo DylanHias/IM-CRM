@@ -278,8 +278,16 @@ const ToggleButton = styled.button`
   }
 `;
 
+function formatDisplayName(name: string): string {
+  if (name.includes(',')) {
+    const [last, first] = name.split(',').map((s) => s.trim());
+    return `${first} ${last}`;
+  }
+  return name;
+}
+
 function getInitials(name: string): string {
-  return name
+  return formatDisplayName(name)
     .split(' ')
     .map((n) => n[0])
     .slice(0, 2)
@@ -427,14 +435,14 @@ export function Sidebar() {
       <AccountSection>
         <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
           <PopoverTrigger asChild>
-            <AccountTrigger title={account?.name ?? 'Account'}>
+            <AccountTrigger title={account?.name ? formatDisplayName(account.name) : 'Account'}>
               <Avatar className="h-7 w-7 flex-shrink-0">
                 <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
                   {account?.name ? getInitials(account.name) : 'U'}
                 </AvatarFallback>
               </Avatar>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <AccountName>{account?.name ?? 'User'}</AccountName>
+                <AccountName>{account?.name ? formatDisplayName(account.name) : 'User'}</AccountName>
                 {account?.username && <AccountEmail>{account.username}</AccountEmail>}
               </div>
             </AccountTrigger>
