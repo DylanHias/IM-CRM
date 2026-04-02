@@ -13,6 +13,7 @@ export interface D365Customer {
   address1_city: string | null;
   address1_country: string | null;
   websiteurl: string | null;
+  im360_bcn: string | null;
   im360_cloudpurchaser: boolean | null;
   im360_mainsegmentation: number | null;
   'im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'?: string;

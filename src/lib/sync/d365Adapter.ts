@@ -76,7 +76,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     id: d365.accountid,
     name: d365.name,
     accountNumber: d365.accountnumber,
-    bcn: d365.accountid,
+    bcn: d365.im360_bcn,
     resellerId: null,
     industry: d365.industrycode != null
       ? (d365['industrycode@OData.Community.Display.V1.FormattedValue'] ?? INDUSTRY_CODE_MAP[d365.industrycode] ?? String(d365.industrycode))
@@ -257,7 +257,7 @@ class RealD365Adapter implements ID365Adapter {
 
   async fetchCustomers(token: string, lastSync?: string): Promise<Customer[]> {
     const select = [
-      'accountid', 'name', 'accountnumber', 'industrycode',
+      'accountid', 'name', 'accountnumber', 'im360_bcn', 'industrycode',
       '_ownerid_value',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
