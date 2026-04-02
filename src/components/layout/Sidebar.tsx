@@ -346,19 +346,12 @@ function RecentCustomerItem({ customer }: { customer: { id: string; name: string
   return (
     <Collapsible.Root asChild open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild>
-          <Link href={`/customers?id=${customer.id}`}>
+        <Collapsible.Trigger asChild>
+          <SidebarMenuButton tooltip={customer.name}>
             <Building2 />
             <span>{customer.name}</span>
-          </Link>
-        </SidebarMenuButton>
-        <Collapsible.Trigger asChild>
-          <button
-            className="absolute right-1 top-1.5 flex h-5 w-5 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-transform group-data-[collapsible=icon]:hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
-          </button>
+            <ChevronRight className={cn('ml-auto size-3.5 transition-transform', open && 'rotate-90')} />
+          </SidebarMenuButton>
         </Collapsible.Trigger>
         <Collapsible.Content>
           <SidebarMenuSub>
