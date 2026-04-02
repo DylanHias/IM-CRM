@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
+import { InitialSyncDialog } from './InitialSyncDialog';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -73,6 +74,7 @@ export function AppShell({ children }: AppShellProps) {
         </Main>
       </Body>
       <ChangelogDialog />
+      <InitialSyncDialog />
       <CommandPalette />
       <ShortcutsGuide />
     </Shell>
