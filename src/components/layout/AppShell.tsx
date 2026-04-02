@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Sidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
@@ -61,7 +62,9 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <Shell className={cn(compactMode && 'compact')}>
-      <TitleBar />
+      <Suspense>
+        <TitleBar />
+      </Suspense>
       <Body>
         <Sidebar />
         <Main>
