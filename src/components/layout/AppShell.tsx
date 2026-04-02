@@ -1,53 +1,21 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Sidebar } from './Sidebar';
+import { AppSidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
 import { ChangelogDialog } from './ChangelogDialog';
 import { InitialSyncDialog } from './InitialSyncDialog';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useUIStore } from '@/store/uiStore';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
 import { useShortcuts } from '@/hooks/useShortcuts';
 import { cn } from '@/lib/utils';
-import styled from 'styled-components';
-
-const Shell = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-  background-color: hsl(var(--background));
-  transition: background-color 0.2s ease;
-`;
-
-const Body = styled.div`
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-`;
-
-const Main = styled.main`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background-color: hsl(var(--background));
-`;
-
-const Content = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px 28px;
-
-  .compact & {
-    padding: 16px 20px;
-  }
-`;
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -55,31 +23,32 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const compactMode = useSettingsStore((s) => s.compactMode);
+  const { sidebarOpen, setSidebarOpen } = useUIStore();
   useAutoSync();
   useLaunchAlerts();
   useConnectivityToasts();
   useShortcuts();
 
   return (
-    <Shell className={cn(compactMode && 'compact')}>
+    <div className={cn('flex flex-col h-screen overflow-hidden bg-background transition-colors', compactMode && 'compact')}>
       <Suspense>
         <TitleBar />
       </Suspense>
-      <Body>
-        <Sidebar />
-        <Main>
-          <Content>
+      <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <AppSidebar />
+        <main className="flex-1 flex flex-col overflow-hidden bg-background">
+          <div className={cn('flex-1 overflow-y-auto', compactMode ? 'px-5 py-4' : 'px-7 py-6')}>
             <PageMotion>
               {children}
               <div className="h-12" />
             </PageMotion>
-          </Content>
-        </Main>
-      </Body>
+          </div>
+        </main>
+      </SidebarProvider>
       <ChangelogDialog />
       <InitialSyncDialog />
       <CommandPalette />
       <ShortcutsGuide />
-    </Shell>
+    </div>
   );
 }

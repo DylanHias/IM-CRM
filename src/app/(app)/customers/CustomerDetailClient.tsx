@@ -24,6 +24,7 @@ import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
+import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useActivities } from '@/hooks/useActivities';
@@ -50,6 +51,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
   const { followUps, createFollowUp, completeFollowUp } = useFollowUps(customerId);
   const { opportunities: customerOpportunities } = useOpportunities(customerId);
+
+  useEffect(() => {
+    if (customer) {
+      useUIStore.getState().addRecentCustomer(customerId);
+    }
+  }, [customerId, customer]);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
