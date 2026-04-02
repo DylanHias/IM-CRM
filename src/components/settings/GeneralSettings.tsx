@@ -10,6 +10,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { SettingRow } from './SettingRow';
 import { storeChangelog } from '@/components/layout/ChangelogDialog';
 import { useSettingsStore } from '@/store/settingsStore';
+import { emitDataEvent } from '@/lib/dataEvents';
 import { toast } from 'sonner';
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev';
@@ -120,6 +121,11 @@ export function GeneralSettings() {
       }
       const { resetSyncWatermark } = await import('@/lib/sync/syncService');
       await resetSyncWatermark();
+      emitDataEvent('customer', 'updated');
+      emitDataEvent('contact', 'updated');
+      emitDataEvent('opportunity', 'updated');
+      emitDataEvent('activity', 'updated');
+      emitDataEvent('followup', 'updated');
       toast.success('Local database cleared');
     } catch (error) {
       console.error('[db] Failed to clear local database:', error);
