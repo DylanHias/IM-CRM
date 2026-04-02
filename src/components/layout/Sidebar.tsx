@@ -7,6 +7,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
@@ -277,14 +278,6 @@ const ToggleButton = styled.button`
     color: hsl(var(--foreground));
   }
 `;
-
-function formatDisplayName(name: string): string {
-  if (name.includes(',')) {
-    const [last, first] = name.split(',').map((s) => s.trim());
-    return `${first} ${last}`;
-  }
-  return name;
-}
 
 function getInitials(name: string): string {
   return formatDisplayName(name)

@@ -8,6 +8,7 @@ import { useSyncStore } from '@/store/syncStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSync } from '@/hooks/useSync';
 import { getAppSetting } from '@/lib/db/queries/sync';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +55,7 @@ export function InitialSyncDialog() {
 
   if (!needsInitialSync || dismissed) return null;
 
-  const firstName = account?.name?.split(' ')[0] ?? 'there';
+  const firstName = account?.name ? formatDisplayName(account.name).split(' ')[0] : 'there';
   const progress = initialSyncProgress;
   const percent = progress && progress.total > 0
     ? Math.round((progress.processed / progress.total) * 100)
