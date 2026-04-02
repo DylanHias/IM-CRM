@@ -106,6 +106,7 @@ export interface D365SystemUser {
   systemuserid: string;
   fullname: string;
   internalemailaddress: string | null;
+  jobtitle: string | null;
   isdisabled: boolean;
   '_businessunitid_value': string | null;
   '_businessunitid_value@OData.Community.Display.V1.FormattedValue'?: string;

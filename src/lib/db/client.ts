@@ -268,6 +268,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('admin','user')),
       business_unit TEXT,
+      title TEXT,
       last_active_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -331,7 +332,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '10')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '12')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -524,6 +525,15 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     }
     await db.execute(
       `UPDATE app_settings SET value = '11', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 12) {
+    try { await db.execute(`ALTER TABLE users ADD COLUMN title TEXT`); } catch {
+      // Column already exists — expected on fresh installs
+    }
+    await db.execute(
+      `UPDATE app_settings SET value = '12', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

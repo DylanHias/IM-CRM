@@ -10,11 +10,13 @@ import { emitDataEvent } from '@/lib/dataEvents';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
+import { useD365UserId } from '@/hooks/useD365UserId';
 
 export function useActivities(customerId: string) {
   const { activities, currentCustomerId, isLoading, setActivities, addActivity, updateActivity, removeActivity, setLoading, setPendingCount } =
     useActivityStore();
   const { account } = useAuthStore();
+  const d365UserId = useD365UserId();
 
   useEffect(() => {
     if (currentCustomerId === customerId) return;
@@ -46,7 +48,7 @@ export function useActivities(customerId: string) {
       const activity: Activity = {
         ...input,
         id: uuidv4(),
-        createdById: account?.localAccountId ?? 'unknown',
+        createdById: d365UserId ?? account?.localAccountId ?? 'unknown',
         createdByName: account?.name ?? 'Unknown User',
         syncStatus: 'pending',
         remoteId: null,
@@ -63,7 +65,7 @@ export function useActivities(customerId: string) {
       emitDataEvent('activity', 'created', customerId);
       return activity;
     },
-    [account, customerId, addActivity]
+    [account, d365UserId, customerId, addActivity]
   );
 
   const editActivity = useCallback(

@@ -14,6 +14,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
+import { useD365UserId } from '@/hooks/useD365UserId';
 import { signOut } from '@/lib/auth/authHelpers';
 import { onDataEvent } from '@/lib/dataEvents';
 import { motion } from 'framer-motion';
@@ -296,22 +297,23 @@ export function Sidebar() {
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
   const { account, isAdmin } = useAuthStore();
+  const d365UserId = useD365UserId();
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   const refreshCounts = useCallback(async () => {
-    if (isTauriApp() && account?.localAccountId) {
+    if (isTauriApp()) {
       const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
       const { countPendingActivities } = await import('@/lib/db/queries/activities');
       const { countPendingFollowUps } = await import('@/lib/db/queries/followups');
       const [overdue, pendingAct, pendingFu] = await Promise.all([
-        queryOverdueFollowUpCount(account.localAccountId),
+        queryOverdueFollowUpCount(d365UserId ?? account?.localAccountId ?? undefined, account?.localAccountId ?? undefined),
         countPendingActivities(),
         countPendingFollowUps(),
       ]);
       setOverdueCount(overdue);
       useSyncStore.getState().setPendingCounts(pendingAct, pendingFu);
     }
-  }, [setOverdueCount, account?.localAccountId]);
+  }, [setOverdueCount, d365UserId, account?.localAccountId]);
 
   useEffect(() => {
     refreshCounts();

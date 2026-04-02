@@ -11,19 +11,23 @@ import { onDataEvent } from '@/lib/dataEvents';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useAuthStore } from '@/store/authStore';
+import { useD365UserId } from '@/hooks/useD365UserId';
 
 export default function FollowUpsPage() {
   const router = useRouter();
   const { markComplete, setOverdueCount } = useFollowUpStore();
   const account = useAuthStore((s) => s.account);
+  const d365UserId = useD365UserId();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
 
+  const userId = d365UserId ?? account?.localAccountId;
+
   const loadData = useCallback(async () => {
     try {
-      if (isTauriApp() && account?.localAccountId) {
+      if (isTauriApp() && userId) {
         const [fups, customers] = await Promise.all([
-          queryFollowUpsByUser(account.localAccountId),
+          queryFollowUpsByUser(userId, account?.localAccountId ?? undefined),
           queryAllCustomers(),
         ]);
         setFollowUps(fups);
@@ -37,7 +41,7 @@ export default function FollowUpsPage() {
       setFollowUps([]);
       setCustomerMap(new Map());
     }
-  }, [account?.localAccountId]);
+  }, [userId, account?.localAccountId]);
 
   useEffect(() => {
     loadData();

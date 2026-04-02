@@ -9,6 +9,7 @@ import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
+import { useD365UserId } from '@/hooks/useD365UserId';
 
 const STAGE_PROBABILITY: Record<string, number> = {
   'Prospecting': 5,
@@ -29,6 +30,7 @@ export function useOpportunities(customerId: string) {
   const { opportunities, currentCustomerId, isLoading, setOpportunities, addOpportunity, updateOpportunity, removeOpportunity, setLoading } =
     useOpportunityStore();
   const { account } = useAuthStore();
+  const d365UserId = useD365UserId();
 
   useEffect(() => {
     if (currentCustomerId === customerId) return;
@@ -58,7 +60,7 @@ export function useOpportunities(customerId: string) {
       const opportunity: Opportunity = {
         ...input,
         id: uuidv4(),
-        createdById: account?.localAccountId ?? 'unknown',
+        createdById: d365UserId ?? account?.localAccountId ?? 'unknown',
         createdByName: account?.name ?? 'Unknown User',
         syncStatus: 'pending',
         remoteId: null,
@@ -78,7 +80,7 @@ export function useOpportunities(customerId: string) {
       emitDataEvent('opportunity', 'created', customerId);
       return opportunity;
     },
-    [account, customerId, addOpportunity]
+    [account, d365UserId, customerId, addOpportunity]
   );
 
   const editOpportunity = useCallback(

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, FileText, Target,
+  Mail, Phone, Globe, FileText, Target, ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -227,6 +227,15 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   return (
     <div className="max-w-6xl mx-auto">
+          {/* ── Back Link ── */}
+          <button
+            onClick={() => router.push('/customers')}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          >
+            <ArrowLeft size={14} />
+            All customers
+          </button>
+
           {/* ── Company Header ── */}
           <motion.div
             className="mb-6"

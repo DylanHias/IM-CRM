@@ -10,21 +10,21 @@ const ago = (days: number, hours = 10) =>
 // ── Users ──────────────────────────────────────────────────────────────
 
 export const mockUsers: CrmUser[] = [
-  { id: 'owner-1', email: 'jan.devries@ingrammicro.com', name: 'Jan De Vries', role: 'admin', businessUnit: 'Cloud & Datacenter', lastActiveAt: ago(0, 2), createdAt: ago(90), updatedAt: ago(0, 2) },
-  { id: 'owner-2', email: 'sophie.martens@ingrammicro.com', name: 'Sophie Martens', role: 'user', businessUnit: 'Cloud & Datacenter', lastActiveAt: ago(0, 5), createdAt: ago(85), updatedAt: ago(0, 5) },
-  { id: 'owner-3', email: 'pieter.claes@ingrammicro.com', name: 'Pieter Claes', role: 'user', businessUnit: 'Networking & Security', lastActiveAt: ago(1), createdAt: ago(80), updatedAt: ago(1) },
-  { id: 'owner-4', email: 'lotte.vandenberghe@ingrammicro.com', name: 'Lotte Van den Berghe', role: 'user', businessUnit: 'Lifecycle Management', lastActiveAt: ago(3), createdAt: ago(60), updatedAt: ago(3) },
-  { id: 'owner-5', email: 'thomas.willems@ingrammicro.com', name: 'Thomas Willems', role: 'user', businessUnit: 'Cloud & Datacenter', lastActiveAt: ago(7), createdAt: ago(45), updatedAt: ago(7) },
-  { id: 'owner-6', email: 'noor.bakker@ingrammicro.com', name: 'Noor Bakker', role: 'user', businessUnit: 'Software & Services', lastActiveAt: ago(0, 8), createdAt: ago(75), updatedAt: ago(0, 8) },
-  { id: 'owner-7', email: 'wouter.janssens@ingrammicro.com', name: 'Wouter Janssens', role: 'admin', businessUnit: 'Advanced Solutions', lastActiveAt: ago(1, 3), createdAt: ago(88), updatedAt: ago(1, 3) },
-  { id: 'owner-8', email: 'eline.declercq@ingrammicro.com', name: 'Eline De Clercq', role: 'user', businessUnit: 'Networking & Security', lastActiveAt: ago(2), createdAt: ago(70), updatedAt: ago(2) },
-  { id: 'owner-9', email: 'bram.peeters@ingrammicro.com', name: 'Bram Peeters', role: 'user', businessUnit: 'Lifecycle Management', lastActiveAt: ago(0, 12), createdAt: ago(55), updatedAt: ago(0, 12) },
-  { id: 'owner-10', email: 'lies.vanhoeck@ingrammicro.com', name: 'Lies Van Hoeck', role: 'user', businessUnit: 'Cloud & Datacenter', lastActiveAt: ago(4), createdAt: ago(50), updatedAt: ago(4) },
-  { id: 'owner-11', email: 'stijn.hermans@ingrammicro.com', name: 'Stijn Hermans', role: 'user', businessUnit: 'Software & Services', lastActiveAt: ago(1, 7), createdAt: ago(65), updatedAt: ago(1, 7) },
-  { id: 'owner-12', email: 'anke.mertens@ingrammicro.com', name: 'Anke Mertens', role: 'admin', businessUnit: 'Advanced Solutions', lastActiveAt: ago(0, 4), createdAt: ago(82), updatedAt: ago(0, 4) },
-  { id: 'owner-13', email: 'robbe.devos@ingrammicro.com', name: 'Robbe De Vos', role: 'user', businessUnit: 'Networking & Security', lastActiveAt: ago(5), createdAt: ago(40), updatedAt: ago(5) },
-  { id: 'owner-14', email: 'fien.goossens@ingrammicro.com', name: 'Fien Goossens', role: 'user', businessUnit: 'Lifecycle Management', lastActiveAt: ago(2, 6), createdAt: ago(35), updatedAt: ago(2, 6) },
-  { id: 'owner-15', email: 'dries.vandam@ingrammicro.com', name: 'Dries Van Dam', role: 'user', businessUnit: 'Cloud & Datacenter', lastActiveAt: ago(6), createdAt: ago(30), updatedAt: ago(6) },
+  { id: 'owner-1', email: 'jan.devries@ingrammicro.com', name: 'Jan De Vries', role: 'admin', businessUnit: 'Cloud & Datacenter', title: 'Technical Account Manager', lastActiveAt: ago(0, 2), createdAt: ago(90), updatedAt: ago(0, 2) },
+  { id: 'owner-2', email: 'sophie.martens@ingrammicro.com', name: 'Sophie Martens', role: 'user', businessUnit: 'Cloud & Datacenter', title: 'Cloud Solutions Specialist', lastActiveAt: ago(0, 5), createdAt: ago(85), updatedAt: ago(0, 5) },
+  { id: 'owner-3', email: 'pieter.claes@ingrammicro.com', name: 'Pieter Claes', role: 'user', businessUnit: 'Networking & Security', title: 'Security Consultant', lastActiveAt: ago(1), createdAt: ago(80), updatedAt: ago(1) },
+  { id: 'owner-4', email: 'lotte.vandenberghe@ingrammicro.com', name: 'Lotte Van den Berghe', role: 'user', businessUnit: 'Lifecycle Management', title: 'Account Manager', lastActiveAt: ago(3), createdAt: ago(60), updatedAt: ago(3) },
+  { id: 'owner-5', email: 'thomas.willems@ingrammicro.com', name: 'Thomas Willems', role: 'user', businessUnit: 'Cloud & Datacenter', title: 'Technical Account Manager', lastActiveAt: ago(7), createdAt: ago(45), updatedAt: ago(7) },
+  { id: 'owner-6', email: 'noor.bakker@ingrammicro.com', name: 'Noor Bakker', role: 'user', businessUnit: 'Software & Services', title: 'Software Licensing Specialist', lastActiveAt: ago(0, 8), createdAt: ago(75), updatedAt: ago(0, 8) },
+  { id: 'owner-7', email: 'wouter.janssens@ingrammicro.com', name: 'Wouter Janssens', role: 'admin', businessUnit: 'Advanced Solutions', title: 'Team Lead Cloud', lastActiveAt: ago(1, 3), createdAt: ago(88), updatedAt: ago(1, 3) },
+  { id: 'owner-8', email: 'eline.declercq@ingrammicro.com', name: 'Eline De Clercq', role: 'user', businessUnit: 'Networking & Security', title: 'Network Engineer', lastActiveAt: ago(2), createdAt: ago(70), updatedAt: ago(2) },
+  { id: 'owner-9', email: 'bram.peeters@ingrammicro.com', name: 'Bram Peeters', role: 'user', businessUnit: 'Lifecycle Management', title: 'Account Manager', lastActiveAt: ago(0, 12), createdAt: ago(55), updatedAt: ago(0, 12) },
+  { id: 'owner-10', email: 'lies.vanhoeck@ingrammicro.com', name: 'Lies Van Hoeck', role: 'user', businessUnit: 'Cloud & Datacenter', title: 'Cloud Solutions Specialist', lastActiveAt: ago(4), createdAt: ago(50), updatedAt: ago(4) },
+  { id: 'owner-11', email: 'stijn.hermans@ingrammicro.com', name: 'Stijn Hermans', role: 'user', businessUnit: 'Software & Services', title: 'Software Licensing Specialist', lastActiveAt: ago(1, 7), createdAt: ago(65), updatedAt: ago(1, 7) },
+  { id: 'owner-12', email: 'anke.mertens@ingrammicro.com', name: 'Anke Mertens', role: 'admin', businessUnit: 'Advanced Solutions', title: 'Solutions Architect', lastActiveAt: ago(0, 4), createdAt: ago(82), updatedAt: ago(0, 4) },
+  { id: 'owner-13', email: 'robbe.devos@ingrammicro.com', name: 'Robbe De Vos', role: 'user', businessUnit: 'Networking & Security', title: 'Security Consultant', lastActiveAt: ago(5), createdAt: ago(40), updatedAt: ago(5) },
+  { id: 'owner-14', email: 'fien.goossens@ingrammicro.com', name: 'Fien Goossens', role: 'user', businessUnit: 'Lifecycle Management', title: 'Account Manager', lastActiveAt: ago(2, 6), createdAt: ago(35), updatedAt: ago(2, 6) },
+  { id: 'owner-15', email: 'dries.vandam@ingrammicro.com', name: 'Dries Van Dam', role: 'user', businessUnit: 'Cloud & Datacenter', title: 'Technical Account Manager', lastActiveAt: ago(6), createdAt: ago(30), updatedAt: ago(6) },
 ];
 
 // ── Audit Log ──────────────────────────────────────────────────────────

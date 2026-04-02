@@ -6,6 +6,7 @@ export interface CrmUser {
   name: string;
   role: UserRole;
   businessUnit: string | null;
+  title: string | null;
   lastActiveAt: string | null;
   createdAt: string;
   updatedAt: string;

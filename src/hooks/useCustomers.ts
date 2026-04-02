@@ -8,6 +8,7 @@ import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryAllContacts } from '@/lib/db/queries/contacts';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useD365UserId } from '@/hooks/useD365UserId';
 
 
 export function useCustomers() {
@@ -17,17 +18,19 @@ export function useCustomers() {
   } = useCustomerStore();
   const { account } = useAuthStore();
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
+  const d365UserId = useD365UserId();
   const appliedOwnerFilter = useRef(false);
 
   // Apply "show my customers first" default filter once on mount
   useEffect(() => {
     if (appliedOwnerFilter.current) return;
     const { defaultCustomerFilterOwner } = useSettingsStore.getState();
-    if (defaultCustomerFilterOwner && account?.localAccountId) {
-      setFilterOwnerId(account.localAccountId);
+    const ownerId = d365UserId ?? account?.localAccountId;
+    if (defaultCustomerFilterOwner && ownerId) {
+      setFilterOwnerId(ownerId);
       appliedOwnerFilter.current = true;
     }
-  }, [account, setFilterOwnerId]);
+  }, [account, d365UserId, setFilterOwnerId]);
 
   // Load customers (re-runs after sync completes when list is still empty)
   useEffect(() => {

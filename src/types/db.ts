@@ -123,6 +123,7 @@ export interface UserRow {
   name: string;
   role: string;
   business_unit: string | null;
+  title: string | null;
   last_active_at: string | null;
   created_at: string;
   updated_at: string;

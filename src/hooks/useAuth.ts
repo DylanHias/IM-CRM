@@ -77,6 +77,7 @@ async function syncUserToDb(
       name: account.name ?? 'Unknown',
       role,
       businessUnit: null,
+      title: null,
       lastActiveAt: now,
       createdAt: now,
       updatedAt: now,
