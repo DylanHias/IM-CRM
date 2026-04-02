@@ -99,8 +99,11 @@ export function InitialSyncDialog() {
                 <h2 className="text-lg font-semibold text-foreground mb-2">
                   Setting up your workspace
                 </h2>
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="text-sm text-muted-foreground mb-1">
                   {progress?.phase ?? 'Preparing...'}
+                </p>
+                <p className="text-xs text-muted-foreground/70 mb-6">
+                  This usually takes around 10 minutes
                 </p>
                 <div className="w-full">
                   <div className="h-2 w-full rounded-full bg-secondary overflow-hidden mb-3">
