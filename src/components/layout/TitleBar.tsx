@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Wifi, WifiOff, ArrowLeft } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { WindowFrame } from './WindowFrame';
@@ -58,7 +58,8 @@ const StatusPill = styled.div<{ $online: boolean }>`
 
 function useBackLink(): { label: string; href: string } | undefined {
   const pathname = usePathname();
-  if (/^\/customers\/[^/]+\/?$/.test(pathname))
+  const searchParams = useSearchParams();
+  if (pathname === '/customers' && searchParams.get('id'))
     return { label: 'All customers', href: '/customers' };
   return undefined;
 }
