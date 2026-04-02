@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
@@ -81,15 +81,23 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-end gap-2">
-        <div className="relative">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search contacts..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-            className="h-8 w-52 pl-8 text-xs"
+            className="h-9 w-full pl-8 pr-8 text-xs"
           />
+          {searchQuery && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => { setSearchQuery(''); setPage(1); }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
         <Button size="sm" className="gap-1.5" onClick={openAdd}>
           <Plus size={13} />
