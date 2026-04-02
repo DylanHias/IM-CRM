@@ -33,6 +33,7 @@ export function useFollowUps(customerId: string) {
       try {
         if (isTauriApp()) {
           const data = await queryFollowUpsByCustomer(customerId);
+          console.log(`[followup] Loaded ${data.length} follow-ups for customer ${customerId}`);
           setFollowUps(data, customerId);
           const overdue = await queryOverdueFollowUpCount();
           setOverdueCount(overdue);

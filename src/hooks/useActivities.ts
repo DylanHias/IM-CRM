@@ -26,6 +26,7 @@ export function useActivities(customerId: string) {
       try {
         if (isTauriApp()) {
           const data = await queryActivitiesByCustomer(customerId);
+          console.log(`[activity] Loaded ${data.length} activities for customer ${customerId}`);
           setActivities(data, customerId);
           const pending = await countPendingActivities();
           setPendingCount(pending);
