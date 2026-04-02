@@ -135,6 +135,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle, disabled, disabledTooltip }) => {
@@ -306,6 +307,14 @@ export function AppSidebar() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        <SidebarSeparator />
+
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <CollapseButton />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
