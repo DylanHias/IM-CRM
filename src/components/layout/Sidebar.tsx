@@ -299,19 +299,19 @@ export function Sidebar() {
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   const refreshCounts = useCallback(async () => {
-    if (isTauriApp()) {
+    if (isTauriApp() && account?.localAccountId) {
       const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
       const { countPendingActivities } = await import('@/lib/db/queries/activities');
       const { countPendingFollowUps } = await import('@/lib/db/queries/followups');
       const [overdue, pendingAct, pendingFu] = await Promise.all([
-        queryOverdueFollowUpCount(),
+        queryOverdueFollowUpCount(account.localAccountId),
         countPendingActivities(),
         countPendingFollowUps(),
       ]);
       setOverdueCount(overdue);
       useSyncStore.getState().setPendingCounts(pendingAct, pendingFu);
     }
-  }, [setOverdueCount]);
+  }, [setOverdueCount, account?.localAccountId]);
 
   useEffect(() => {
     refreshCounts();

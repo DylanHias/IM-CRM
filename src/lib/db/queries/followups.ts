@@ -31,6 +31,15 @@ export async function queryAllFollowUps(): Promise<FollowUp[]> {
   return rows.map(rowToFollowUp);
 }
 
+export async function queryFollowUpsByUser(userId: string): Promise<FollowUp[]> {
+  const db = await getDb();
+  const rows = await db.select<FollowUpRow[]>(
+    `SELECT * FROM follow_ups WHERE created_by_id = $1 ORDER BY completed ASC, due_date ASC`,
+    [userId]
+  );
+  return rows.map(rowToFollowUp);
+}
+
 export async function queryFollowUpsByCustomer(customerId: string): Promise<FollowUp[]> {
   const db = await getDb();
   const rows = await db.select<FollowUpRow[]>(
@@ -48,9 +57,16 @@ export async function queryPendingFollowUps(): Promise<FollowUp[]> {
   return rows.map(rowToFollowUp);
 }
 
-export async function queryOverdueFollowUpCount(): Promise<number> {
+export async function queryOverdueFollowUpCount(userId?: string): Promise<number> {
   const db = await getDb();
   const today = new Date().toISOString().split('T')[0];
+  if (userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date < $1 AND created_by_id = $2`,
+      [today, userId]
+    );
+    return rows[0]?.count ?? 0;
+  }
   const rows = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM follow_ups WHERE completed = 0 AND due_date < $1`,
     [today]

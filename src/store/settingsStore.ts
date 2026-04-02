@@ -92,7 +92,7 @@ const NOTIFICATION_DEFAULTS = {
 };
 
 const SYNC_DEFAULTS = {
-  autoSyncOnLaunch: true,
+  autoSyncOnLaunch: false,
   syncIntervalMinutes: 15,
 };
 

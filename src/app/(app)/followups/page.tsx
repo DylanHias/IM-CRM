@@ -5,23 +5,25 @@ import { useRouter } from 'next/navigation';
 import { FollowUpItem } from '@/components/followups/FollowUpItem';
 import { Badge } from '@/components/ui/badge';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { queryAllFollowUps, completeFollowUp } from '@/lib/db/queries/followups';
+import { queryFollowUpsByUser, completeFollowUp } from '@/lib/db/queries/followups';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { onDataEvent } from '@/lib/dataEvents';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function FollowUpsPage() {
   const router = useRouter();
   const { markComplete, setOverdueCount } = useFollowUpStore();
+  const account = useAuthStore((s) => s.account);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
 
   const loadData = useCallback(async () => {
     try {
-      if (isTauriApp()) {
+      if (isTauriApp() && account?.localAccountId) {
         const [fups, customers] = await Promise.all([
-          queryAllFollowUps(),
+          queryFollowUpsByUser(account.localAccountId),
           queryAllCustomers(),
         ]);
         setFollowUps(fups);
@@ -35,7 +37,7 @@ export default function FollowUpsPage() {
       setFollowUps([]);
       setCustomerMap(new Map());
     }
-  }, []);
+  }, [account?.localAccountId]);
 
   useEffect(() => {
     loadData();
@@ -83,9 +85,9 @@ export default function FollowUpsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">All Follow-Ups</h2>
+            <h2 className="text-xl font-semibold text-foreground">Your Follow-Ups</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Track open tasks and next actions across all customers.
+              Track your open tasks and next actions across all customers.
             </p>
           </div>
 
