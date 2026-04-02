@@ -144,7 +144,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       </div>
 
       {isAppointmentType ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3">
           <div className="space-y-1">
             <Label htmlFor="startTime">Start *</Label>
             <DateTimePicker value={startTime} onChange={setStartTime} />

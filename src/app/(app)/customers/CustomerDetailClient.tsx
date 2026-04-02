@@ -655,7 +655,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <Textarea value={newActDescription} onChange={(e) => setNewActDescription(e.target.value)} rows={3} />
                     </div>
                     {((newActType ?? defaultActivityType) === 'meeting' || (newActType ?? defaultActivityType) === 'visit') ? (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-3">
                         <div className="space-y-1">
                           <Label>Start *</Label>
                           <DateTimePicker value={newActStartTime} onChange={setNewActStartTime} />

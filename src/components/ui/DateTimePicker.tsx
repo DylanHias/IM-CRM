@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import { format, parseISO } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DateTimePickerProps {
   value: string;
@@ -17,6 +17,9 @@ interface DateTimePickerProps {
   className?: string;
 }
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
 export function DateTimePicker({
   value,
   onChange,
@@ -24,13 +27,23 @@ export function DateTimePicker({
   disabled,
   className,
 }: DateTimePickerProps) {
-  const [open, setOpen] = React.useState(false);
+  const [dateOpen, setDateOpen] = React.useState(false);
+  const [timeOpen, setTimeOpen] = React.useState(false);
 
-  // value format: "YYYY-MM-DDThh:mm"
   const datePart = value ? value.split('T')[0] : '';
   const timePart = value ? value.split('T')[1] ?? '00:00' : '00:00';
+  const [hour, minute] = timePart.split(':');
 
   const selected = datePart ? parseISO(datePart) : undefined;
+
+  const getOrTodayDate = () => {
+    if (datePart) return datePart;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -39,26 +52,20 @@ export function DateTimePicker({
       const day = String(date.getDate()).padStart(2, '0');
       onChange(`${year}-${month}-${day}T${timePart}`);
     }
-    setOpen(false);
+    setDateOpen(false);
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    if (datePart) {
-      onChange(`${datePart}T${newTime}`);
-    } else {
-      // If no date selected yet, use today
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      onChange(`${year}-${month}-${day}T${newTime}`);
-    }
+  const handleHourSelect = (h: string) => {
+    onChange(`${getOrTodayDate()}T${h}:${minute}`);
+  };
+
+  const handleMinuteSelect = (m: string) => {
+    onChange(`${getOrTodayDate()}T${hour}:${m}`);
   };
 
   return (
     <div className={cn('flex gap-2', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={dateOpen} onOpenChange={setDateOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -84,13 +91,60 @@ export function DateTimePicker({
           />
         </PopoverContent>
       </Popover>
-      <Input
-        type="time"
-        value={timePart}
-        onChange={handleTimeChange}
-        disabled={disabled}
-        className="w-[110px]"
-      />
+
+      <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            disabled={disabled}
+            className="w-[110px] justify-start text-left font-normal"
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            {hour}:{minute}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2" align="start">
+          <div className="flex gap-1">
+            <ScrollArea className="h-48 w-14">
+              <div className="flex flex-col">
+                {HOURS.map((h) => (
+                  <Button
+                    key={h}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      'w-full justify-center text-sm',
+                      h === hour && 'bg-accent text-accent-foreground font-medium'
+                    )}
+                    onClick={() => handleHourSelect(h)}
+                  >
+                    {h}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+            <div className="flex items-center px-1 text-muted-foreground font-medium">:</div>
+            <ScrollArea className="h-48 w-14">
+              <div className="flex flex-col">
+                {MINUTES.map((m) => (
+                  <Button
+                    key={m}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      'w-full justify-center text-sm',
+                      m === minute && 'bg-accent text-accent-foreground font-medium'
+                    )}
+                    onClick={() => handleMinuteSelect(m)}
+                  >
+                    {m}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
