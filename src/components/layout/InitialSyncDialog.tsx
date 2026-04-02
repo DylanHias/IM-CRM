@@ -108,7 +108,7 @@ export function InitialSyncDialog() {
                   {progress?.phase ?? 'Preparing...'}
                 </p>
                 <p className="text-xs text-muted-foreground/70 mb-6">
-                  This usually takes around 10 minutes
+                  This usually takes around 15 minutes
                 </p>
                 <div className="w-full">
                   <div className="h-2 w-full rounded-full bg-secondary overflow-hidden mb-3">
