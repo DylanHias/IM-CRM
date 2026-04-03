@@ -30,7 +30,7 @@ export interface D365Contact {
   _parentcustomerid_value: string;
   firstname: string | null;
   lastname: string | null;
-  jobtitle: string | null;
+  jobfunction: string | null;
   emailaddress1: string | null;
   telephone1: string | null;
   mobilephone: string | null;

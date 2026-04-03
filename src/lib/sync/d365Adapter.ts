@@ -91,7 +91,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     addressCity: d365.address1_city,
     addressCountry: d365.address1_country,
     website: d365.websiteurl,
-    cloudCustomer: d365.im360_cloudpurchaser ?? null,
+    cloudCustomer: null, // derived from contacts after sync (see recomputeCloudCustomerStatus)
     language: null, // preferredlanguagecode not available on D365 contact entity in this org
     arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
@@ -283,7 +283,7 @@ class RealD365Adapter implements ID365Adapter {
       '_ownerid_value',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
-      'im360_cloudpurchaser', 'im360_mainsegmentation',
+      'im360_mainsegmentation',
       'statecode', 'modifiedon',
     ].join(',');
 
@@ -298,7 +298,7 @@ class RealD365Adapter implements ID365Adapter {
   async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
-      'jobfunction', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
+      'jobfunction', 'emailaddress1', 'telephone1', 'mobilephone', 'new_contacttype', 'modifiedon',
     ].join(',');
 
     let filter = 'statecode eq 0 and _parentcustomerid_value ne null';

@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Crosshair,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Crosshair, Bookmark,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -72,6 +72,7 @@ export function AppSidebar() {
   const recentCustomerIds = useUIStore((s) => s.recentCustomerIds);
   const clearRecentCustomers = useUIStore((s) => s.clearRecentCustomers);
   const customers = useCustomerStore((s) => s.customers);
+  const favoriteIds = useCustomerStore((s) => s.favoriteIds);
 
   const refreshCounts = useCallback(async () => {
     if (isTauriApp()) {
@@ -137,6 +138,10 @@ export function AppSidebar() {
     })
     .filter(Boolean) as { id: string; name: string }[];
 
+  const favoriteCustomers = customers
+    .filter((c) => favoriteIds.has(c.id))
+    .map((c) => ({ id: c.id, name: c.name }));
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -194,6 +199,22 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {favoriteCustomers.length > 0 && (
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>
+              <Bookmark className="size-3 mr-1" />
+              Favorites
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {favoriteCustomers.map((c) => (
+                  <RecentCustomerItem key={c.id} customer={c} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {recentCustomers.length > 0 && (
           <SidebarGroup className="group/recent group-data-[collapsible=icon]:hidden">

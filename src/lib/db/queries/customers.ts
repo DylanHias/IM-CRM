@@ -71,7 +71,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      cloud_customer=excluded.cloud_customer, language=excluded.language, arr=excluded.arr,
+      language=excluded.language, arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       updated_at=excluded.updated_at`,
     [
@@ -79,7 +79,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
       customer.email, customer.addressStreet, customer.addressCity,
       customer.addressCountry, customer.website, customer.resellerId, customer.bcn,
-      customer.cloudCustomer ? 1 : 0, customer.language, customer.arr, customer.status,
+      null, customer.language, customer.arr, customer.status,
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );
@@ -104,7 +104,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      cloud_customer=excluded.cloud_customer, language=excluded.language, arr=excluded.arr,
+      language=excluded.language, arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
       updated_at=excluded.updated_at
@@ -115,7 +115,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
       customer.email, customer.addressStreet, customer.addressCity,
       customer.addressCountry, customer.website, customer.resellerId, customer.bcn,
-      customer.cloudCustomer ? 1 : 0, customer.language, customer.arr, customer.status,
+      null, customer.language, customer.arr, customer.status,
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );
@@ -128,6 +128,20 @@ export async function updateCustomerLastActivity(customerId: string, at: string)
     `UPDATE customers SET last_activity_at = $1, updated_at = $2 WHERE id = $3`,
     [at, new Date().toISOString(), customerId]
   );
+}
+
+/** Derive cloud_customer from contacts: true if any contact has contact_type = 'Cloud Contact'. */
+export async function recomputeCloudCustomerStatus(): Promise<void> {
+  const db = await getDb();
+  await db.execute(`
+    UPDATE customers SET cloud_customer = (
+      SELECT CASE WHEN EXISTS (
+        SELECT 1 FROM contacts
+        WHERE contacts.customer_id = customers.id
+          AND contacts.contact_type = 'Cloud Contact'
+      ) THEN 1 ELSE 0 END
+    )
+  `);
 }
 
 /** Recompute last_activity_at for all customers based on actual activities and contact changes. */

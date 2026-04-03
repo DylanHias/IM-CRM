@@ -1,5 +1,5 @@
 import { getD365Adapter } from './d365Adapter';
-import { upsertCustomerBulk, recomputeLastActivityDates, queryAllCustomerIds } from '@/lib/db/queries/customers';
+import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { upsertContactBulk } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
@@ -231,8 +231,9 @@ async function syncD365(token: string): Promise<void> {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }
 
-    // Recompute last activity dates from actual activities + contact changes
+    // Derive cloud customer status from contact types + recompute last activity dates
     emitProgress('Finishing up...');
+    await recomputeCloudCustomerStatus();
     await recomputeLastActivityDates();
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);
