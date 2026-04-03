@@ -44,6 +44,14 @@ export function nowDatetimeLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Returns a datetime-local string offset by the given number of hours from the input */
+export function addHoursLocal(datetimeLocal: string, hours: number): string {
+  const d = new Date(datetimeLocal);
+  d.setHours(d.getHours() + hours);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /** Converts an ISO string to "YYYY-MM-DDThh:mm" format for datetime-local inputs */
 export function isoToDatetimeLocal(iso: string): string {
   const d = new Date(iso);

@@ -748,8 +748,6 @@ export function KanbanBoardCard({
           DATA_TRANSFER_TYPES.CARD,
           JSON.stringify(data),
         );
-        // Remove outline from the card when dragging.
-        event.currentTarget.blur();
 
         onDragStart(data.id);
       }}
@@ -860,6 +858,8 @@ export function KanbanBoardCardButtonGroup({
         !disabled && 'group-focus-within:flex group-hover:flex',
         className,
       )}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       {...props}
     />
   );

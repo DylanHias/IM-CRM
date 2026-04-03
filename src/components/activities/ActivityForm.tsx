@@ -11,7 +11,7 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { useActivities } from '@/hooks/useActivities';
 import { useSettingsStore } from '@/store/settingsStore';
-import { todayISO, nowDatetimeLocal } from '@/lib/utils/dateUtils';
+import { todayISO, nowDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { Contact, ActivityStatus } from '@/types/entities';
 
@@ -48,7 +48,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [description, setDescription] = useState('');
   const isAppointmentType = type === 'meeting' || type === 'visit';
   const [startTime, setStartTime] = useState(nowDatetimeLocal());
-  const [occurredAt, setOccurredAt] = useState(isAppointmentType ? nowDatetimeLocal() : todayISO());
+  const [occurredAt, setOccurredAt] = useState(isAppointmentType ? addHoursLocal(nowDatetimeLocal(), 1) : todayISO());
   const [activityStatus, setActivityStatus] = useState<ActivityStatus>('open');
   const [direction, setDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [contactId, setContactId] = useState<string>('none');
@@ -56,9 +56,26 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleStartTimeChange = (newStart: string) => {
+    setStartTime(newStart);
+    if (new Date(newStart) >= new Date(occurredAt)) {
+      setOccurredAt(addHoursLocal(newStart, 1));
+    }
+  };
+
+  const handleEndTimeChange = (newEnd: string) => {
+    if (new Date(newEnd) < new Date(startTime)) return;
+    setOccurredAt(newEnd);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim()) return;
+
+    if (isAppointmentType && new Date(startTime) > new Date(occurredAt)) {
+      setError('Start time must be before or equal to end time.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -117,8 +134,9 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           const wasAppointment = type === 'meeting' || type === 'visit';
           const isNowAppointment = newType === 'meeting' || newType === 'visit';
           if (wasAppointment !== isNowAppointment) {
-            setOccurredAt(isNowAppointment ? nowDatetimeLocal() : todayISO());
-            setStartTime(nowDatetimeLocal());
+            const now = nowDatetimeLocal();
+            setStartTime(now);
+            setOccurredAt(isNowAppointment ? addHoursLocal(now, 1) : todayISO());
           }
         }}>
           <SelectTrigger>
@@ -174,11 +192,11 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         <>
           <div className="col-span-2 space-y-1">
             <Label htmlFor="startTime">Start *</Label>
-            <DateTimePicker value={startTime} onChange={setStartTime} />
+            <DateTimePicker value={startTime} onChange={handleStartTimeChange} />
           </div>
           <div className="col-span-2 space-y-1">
             <Label htmlFor="occurredAt">End *</Label>
-            <DateTimePicker value={occurredAt} onChange={setOccurredAt} />
+            <DateTimePicker value={occurredAt} onChange={handleEndTimeChange} />
           </div>
         </>
       ) : (

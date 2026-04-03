@@ -14,9 +14,17 @@ vi.mock('@/hooks/useActivities', () => ({
   }),
 }));
 
+const mockNowDatetimeLocal = vi.fn(() => '2026-03-25T10:00');
+
 vi.mock('@/lib/utils/dateUtils', () => ({
   todayISO: () => '2026-03-25',
-  nowDatetimeLocal: () => '2026-03-25T10:00',
+  nowDatetimeLocal: (...args: unknown[]) => mockNowDatetimeLocal(...args),
+  addHoursLocal: (dt: string, hours: number) => {
+    const d = new Date(dt);
+    d.setHours(d.getHours() + hours);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  },
   isoToDatetimeLocal: (iso: string) => iso ? iso.slice(0, 16) : '2026-03-25T10:00',
 }));
 
@@ -158,5 +166,16 @@ describe('ActivityForm', () => {
     render(<ActivityForm {...defaultProps} />);
     const dateButton = screen.getByLabelText(/date/i);
     expect(dateButton).toHaveTextContent('25 Mar 2026');
+  });
+
+  it('meeting end time defaults to one hour after start', () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'meeting');
+    render(<ActivityForm {...defaultProps} />);
+    // Start defaults to 10:00, end should default to 11:00
+    const buttons = screen.getAllByRole('button');
+    const timeButtons = buttons.filter((b) => /^\d{2}:\d{2}$/.test(b.textContent ?? ''));
+    // First time button = start time, second = end time
+    expect(timeButtons[0]).toHaveTextContent('10:00');
+    expect(timeButtons[1]).toHaveTextContent('11:00');
   });
 });
