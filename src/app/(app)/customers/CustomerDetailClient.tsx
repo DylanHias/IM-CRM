@@ -19,7 +19,7 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { ContactList } from '@/components/contacts/ContactList';
 import { OpportunityList } from '@/components/opportunities/OpportunityList';
-
+import { ActivitiesTabContent } from '@/components/activities/ActivitiesTabContent';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
@@ -34,7 +34,7 @@ import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
-import type { Activity, Contact } from '@/types/entities';
+import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 
 type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'invoices';
 
@@ -154,6 +154,14 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   const handleDeleteActivity = async (activity: Activity) => {
     await deleteActivity(activity.id);
+  };
+
+  const handleStatusChange = async (activity: Activity, newStatus: ActivityStatus) => {
+    await editActivity({
+      ...activity,
+      activityStatus: newStatus,
+      updatedAt: new Date().toISOString(),
+    });
   };
 
   const handleCreateActivity = async (e: React.FormEvent) => {
@@ -482,22 +490,13 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
-                    <div className="flex justify-end mb-3">
-                      <Button
-                        size="sm"
-                        className="gap-1.5"
-                        onClick={() => setAddActivityOpen(true)}
-                      >
-                        <Plus size={13} />
-                        Add Activity
-                      </Button>
-                    </div>
-                    <Timeline
+                    <ActivitiesTabContent
                       activities={activities}
-                      followUps={[]}
-                      paginate
+                      contacts={contacts}
+                      onAddActivity={() => setAddActivityOpen(true)}
                       onEditActivity={openEditActivity}
                       onDeleteActivity={handleDeleteActivity}
+                      onStatusChange={handleStatusChange}
                     />
                   </motion.div>
                 )}

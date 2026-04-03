@@ -201,7 +201,7 @@ export function CustomerFilters() {
             <Button
               variant={filterNoRecentActivity ? 'default' : 'outline'}
               size="sm"
-              className="h-8 text-xs justify-start"
+              className="h-8 w-full text-xs justify-start"
               onClick={toggleNoRecentActivityFilter}
             >
               No activity ({noRecentActivityDays}d+)

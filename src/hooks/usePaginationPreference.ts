@@ -8,10 +8,10 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const memoryCache = new Map<string, number>();
 
-export function usePaginationPreference(tableKey: string) {
+export function usePaginationPreference(tableKey: string, defaultPageSize = DEFAULT_PAGE_SIZE) {
   const cacheKey = `pagination.${tableKey}.pageSize`;
   const [pageSize, setPageSizeState] = useState(
-    () => memoryCache.get(cacheKey) ?? DEFAULT_PAGE_SIZE,
+    () => memoryCache.get(cacheKey) ?? defaultPageSize,
   );
 
   useEffect(() => {

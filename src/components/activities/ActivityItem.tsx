@@ -8,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDate } from '@/lib/utils/dateUtils';
 import type { Activity, ActivityStatus } from '@/types/entities';
 
-const ACTIVITY_ICONS = {
+export const ACTIVITY_ICONS = {
   meeting: { icon: Users, colorClass: 'text-activity-meeting', bgClass: 'bg-activity-meeting-bg', label: 'Meeting' },
   visit: { icon: MapPin, colorClass: 'text-activity-visit', bgClass: 'bg-activity-visit-bg', label: 'Visit' },
   call: { icon: Phone, colorClass: 'text-activity-call', bgClass: 'bg-activity-call-bg', label: 'Call' },
   note: { icon: FileText, colorClass: 'text-activity-note', bgClass: 'bg-activity-note-bg', label: 'Note' },
 };
 
-const STATUS_CONFIG: Record<ActivityStatus, { icon: typeof CheckCircle2; label: string; className: string }> = {
+export const STATUS_CONFIG: Record<ActivityStatus, { icon: typeof CheckCircle2; label: string; className: string }> = {
   open: { icon: Clock, label: 'Open', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
   completed: { icon: CheckCircle2, label: 'Completed', className: 'bg-success/10 text-success border-success/20' },
   rejected: { icon: XCircle, label: 'Rejected', className: 'bg-destructive/10 text-destructive border-destructive/20' },

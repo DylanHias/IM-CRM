@@ -29,7 +29,7 @@ export function TablePagination({
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
 
-  if (totalItems <= 25) return null;
+  if (totalItems <= pageSize) return null;
 
   return (
     <div className={cn('flex items-center justify-between', className)}>
