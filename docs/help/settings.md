@@ -37,7 +37,8 @@ Access Settings from the user menu at the bottom of the sidebar, or press the sh
 ## Sync
 
 - **Auto-sync on launch** — Automatically sync data when the app starts
-- **Sync interval** — How often background sync runs (every 5–120 minutes)
+- **Sync interval** — How often a full background sync runs (every 5–120 minutes)
+- **Sync pending interval** — How often pending changes are pushed to D365 (every 5–120 minutes)
 
 ## Keybindings
 

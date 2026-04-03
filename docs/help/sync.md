@@ -14,7 +14,8 @@ Sync is a two-way process:
 By default, the app syncs automatically in the background at regular intervals. You can configure:
 
 - **Auto-sync on launch** — Whether to sync immediately when the app starts (in **Settings > Sync**)
-- **Sync interval** — How often background sync runs, from every 5 to 120 minutes (in **Settings > Sync**)
+- **Sync interval** — How often a full background sync runs, from every 5 to 120 minutes (in **Settings > Sync**)
+- **Sync pending interval** — How often pending local changes are pushed to D365, from every 5 to 120 minutes (in **Settings > Sync**)
 
 ## Manual Sync
 

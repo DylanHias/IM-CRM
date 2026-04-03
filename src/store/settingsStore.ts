@@ -46,6 +46,7 @@ interface SettingsState {
   // Sync
   autoSyncOnLaunch: boolean;
   syncIntervalMinutes: number;
+  syncPendingIntervalMinutes: number;
   showSyncToasts: boolean;
 
   // Data Management
@@ -94,7 +95,8 @@ const NOTIFICATION_DEFAULTS = {
 
 const SYNC_DEFAULTS = {
   autoSyncOnLaunch: false,
-  syncIntervalMinutes: 15,
+  syncIntervalMinutes: 30,
+  syncPendingIntervalMinutes: 15,
 };
 
 const DATA_MANAGEMENT_DEFAULTS = {

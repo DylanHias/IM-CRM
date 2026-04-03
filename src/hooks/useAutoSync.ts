@@ -9,11 +9,13 @@ import { useSyncStore } from '@/store/syncStore';
 let didAutoSync = false;
 
 export function useAutoSync() {
-  const { triggerSync, isOnline } = useSync();
+  const { triggerSync, triggerPushPending, isOnline } = useSync();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const autoSyncOnLaunch = useSettingsStore((s) => s.autoSyncOnLaunch);
   const syncIntervalMinutes = useSettingsStore((s) => s.syncIntervalMinutes);
+  const syncPendingIntervalMinutes = useSettingsStore((s) => s.syncPendingIntervalMinutes);
   const showSyncToasts = useSettingsStore((s) => s.showSyncToasts);
 
   // Auto-sync on launch (once)
@@ -71,4 +73,31 @@ export function useAutoSync() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [syncIntervalMinutes, triggerSync]);
+
+  // Periodic push-pending interval
+  useEffect(() => {
+    if (pendingIntervalRef.current) {
+      clearInterval(pendingIntervalRef.current);
+      pendingIntervalRef.current = null;
+    }
+
+    const ms = syncPendingIntervalMinutes * 60_000;
+    pendingIntervalRef.current = setInterval(async () => {
+      if (useSyncStore.getState().isSyncing) return;
+      const { pendingActivityCount, pendingFollowUpCount } = useSyncStore.getState();
+      if (pendingActivityCount === 0 && pendingFollowUpCount === 0) return;
+      try {
+        await triggerPushPending();
+        const showToasts = useSettingsStore.getState().showSyncToasts;
+        if (showToasts) toast.success('Pending changes synced');
+      } catch (err) {
+        console.error('[sync] Push pending failed:', err);
+        toast.error('Push pending failed', { description: 'Will retry at next interval' });
+      }
+    }, ms);
+
+    return () => {
+      if (pendingIntervalRef.current) clearInterval(pendingIntervalRef.current);
+    };
+  }, [syncPendingIntervalMinutes, triggerPushPending]);
 }

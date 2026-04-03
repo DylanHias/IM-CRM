@@ -10,7 +10,7 @@ import { RotateCcw } from 'lucide-react';
 
 export function SyncSettings() {
   const {
-    autoSyncOnLaunch, syncIntervalMinutes,
+    autoSyncOnLaunch, syncIntervalMinutes, syncPendingIntervalMinutes,
     updateSetting, resetSection,
   } = useSettingsStore();
 
@@ -34,7 +34,7 @@ export function SyncSettings() {
           />
         </SettingRow>
 
-        <SettingRow label="Sync interval" description="Minutes between automatic background syncs">
+        <SettingRow label="Sync interval" description="Minutes between full background syncs">
           <div className="flex items-center gap-1.5">
             <Input
               type="number"
@@ -45,6 +45,24 @@ export function SyncSettings() {
               onChange={(e) => {
                 const val = parseInt(e.target.value, 10);
                 if (val >= 5 && val <= 120) updateSetting('syncIntervalMinutes', val);
+              }}
+              className="w-[64px] h-8 text-xs text-center"
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </div>
+        </SettingRow>
+
+        <SettingRow label="Sync pending interval" description="Minutes between automatic pushes of pending changes">
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="number"
+              min={5}
+              max={120}
+              step={5}
+              value={syncPendingIntervalMinutes}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (val >= 5 && val <= 120) updateSetting('syncPendingIntervalMinutes', val);
               }}
               className="w-[64px] h-8 text-xs text-center"
             />
