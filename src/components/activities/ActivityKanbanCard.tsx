@@ -51,7 +51,9 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${config.bgClass}`}>
           <Icon size={11} className={config.colorClass} />
         </div>
-        <Badge variant="outline" className="text-xs capitalize">{config.label}</Badge>
+        <Badge variant="outline" className="text-xs capitalize">
+          {activity.type === 'call' && activity.direction ? `${activity.direction} ${config.label}` : config.label}
+        </Badge>
         {activity.syncStatus === 'pending' && (
           <Badge variant="warning" className="text-xs gap-1">
             <Clock size={10} />
@@ -73,9 +75,9 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
       )}
 
       {contactName && (
-        <p className="mt-1 text-xs text-muted-foreground truncate">
+        <Badge variant="secondary" className="mt-1 text-xs font-normal truncate max-w-full">
           {contactName}
-        </p>
+        </Badge>
       )}
 
       <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">

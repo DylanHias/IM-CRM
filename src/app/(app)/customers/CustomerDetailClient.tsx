@@ -78,6 +78,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   const [editDescription, setEditDescription] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editOccurredAt, setEditOccurredAt] = useState('');
+  const [editDirection, setEditDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [editContactId, setEditContactId] = useState('none');
   const [isSavingActivity, setIsSavingActivity] = useState(false);
 
@@ -89,6 +90,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   const [newActDescription, setNewActDescription] = useState('');
   const [newActStartTime, setNewActStartTime] = useState(nowDatetimeLocal());
   const [newActDate, setNewActDate] = useState(todayISO());
+  const [newActDirection, setNewActDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [newActContactId, setNewActContactId] = useState('none');
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
 
@@ -127,6 +129,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     const isAppt = activity.type === 'meeting' || activity.type === 'visit';
     setEditStartTime(activity.startTime ? isoToDatetimeLocal(activity.startTime) : nowDatetimeLocal());
     setEditOccurredAt(isAppt ? isoToDatetimeLocal(activity.occurredAt) : activity.occurredAt.split('T')[0]);
+    setEditDirection(activity.direction ?? 'outgoing');
     setEditContactId(activity.contactId ?? 'none');
   };
 
@@ -144,6 +147,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         occurredAt: new Date(editOccurredAt).toISOString(),
         startTime: isAppt ? new Date(editStartTime).toISOString() : null,
         contactId: editContactId === 'none' ? null : editContactId,
+        direction: editType === 'call' ? editDirection : null,
         updatedAt: new Date().toISOString(),
       });
       setEditingActivity(null);
@@ -180,6 +184,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         occurredAt: new Date(newActDate).toISOString(),
         startTime: isAppt ? new Date(newActStartTime).toISOString() : null,
         activityStatus: 'open',
+        direction: actType === 'call' ? newActDirection : null,
       });
       setAddActivityOpen(false);
       setNewActType(null);
@@ -187,6 +192,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
       setNewActDescription('');
       setNewActStartTime(nowDatetimeLocal());
       setNewActDate(todayISO());
+      setNewActDirection('outgoing');
       setNewActContactId('none');
     } finally {
       setIsCreatingActivity(false);
@@ -589,6 +595,18 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         </SelectContent>
                       </Select>
                     </div>
+                    {editType === 'call' && (
+                      <div className="space-y-1">
+                        <Label>Direction</Label>
+                        <Select value={editDirection} onValueChange={(v) => setEditDirection(v as 'outgoing' | 'incoming')}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="outgoing">Outgoing</SelectItem>
+                            <SelectItem value="incoming">Incoming</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="space-y-1">
                       <Label>Subject *</Label>
                       <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} required />
@@ -667,6 +685,18 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         </SelectContent>
                       </Select>
                     </div>
+                    {(newActType ?? defaultActivityType) === 'call' && (
+                      <div className="space-y-1">
+                        <Label>Direction</Label>
+                        <Select value={newActDirection} onValueChange={(v) => setNewActDirection(v as 'outgoing' | 'incoming')}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="outgoing">Outgoing</SelectItem>
+                            <SelectItem value="incoming">Incoming</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="space-y-1">
                       <Label>Subject *</Label>
                       <Input value={newActSubject} onChange={(e) => setNewActSubject(e.target.value)} required />

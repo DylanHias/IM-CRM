@@ -518,5 +518,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       `UPDATE app_settings SET value = '15', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
+
+  if (currentVersion < 16) {
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN direction TEXT`); } catch {
+      // Column already exists
+    }
+    await db.execute(
+      `UPDATE app_settings SET value = '16', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
 }
 

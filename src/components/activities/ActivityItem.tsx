@@ -48,7 +48,9 @@ export function ActivityItem({ activity, contactName, onEdit, onDelete, onStatus
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-foreground">{activity.subject}</span>
-              <Badge variant="outline" className="text-xs capitalize">{config.label}</Badge>
+              <Badge variant="outline" className="text-xs capitalize">
+                {activity.type === 'call' && activity.direction ? `${activity.direction} ${config.label}` : config.label}
+              </Badge>
               {activity.syncStatus === 'pending' && (
                 <Badge variant="warning" className="text-xs gap-1">
                   <Clock size={10} />

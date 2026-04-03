@@ -56,6 +56,7 @@ export interface Activity {
   occurredAt: string;
   startTime: string | null;
   activityStatus: ActivityStatus;
+  direction: 'outgoing' | 'incoming' | null;
   createdById: string;
   createdByName: string;
   syncStatus: 'pending' | 'synced' | 'error';

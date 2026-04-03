@@ -50,6 +50,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [startTime, setStartTime] = useState(nowDatetimeLocal());
   const [occurredAt, setOccurredAt] = useState(isAppointmentType ? nowDatetimeLocal() : todayISO());
   const [activityStatus, setActivityStatus] = useState<ActivityStatus>('open');
+  const [direction, setDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [contactId, setContactId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -71,6 +72,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         occurredAt: new Date(occurredAt).toISOString(),
         startTime: isAppointmentType ? new Date(startTime).toISOString() : null,
         activityStatus: type === 'note' ? 'completed' : activityStatus,
+        direction: type === 'call' ? direction : null,
       });
       setSuccess(true);
       setTimeout(() => router.back(), 1200);
@@ -129,6 +131,21 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           </SelectContent>
         </Select>
       </div>
+
+      {type === 'call' && (
+        <div className="space-y-1">
+          <Label>Direction</Label>
+          <Select value={direction} onValueChange={(v) => setDirection(v as 'outgoing' | 'incoming')}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="outgoing">Outgoing</SelectItem>
+              <SelectItem value="incoming">Incoming</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="col-span-2 space-y-1">
         <Label htmlFor="subject">Subject *</Label>

@@ -51,6 +51,7 @@ export interface ActivityRow {
   occurred_at: string;
   start_time: string | null;
   activity_status: string;
+  direction: string | null;
   created_by_id: string;
   created_by_name: string;
   sync_status: string;

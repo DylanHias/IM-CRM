@@ -65,6 +65,7 @@ export function createActivity(overrides?: Partial<Activity>): Activity {
     occurredAt: NOW,
     startTime: null,
     activityStatus: 'open',
+    direction: null,
     createdById: 'user-1',
     createdByName: 'Dylan',
     syncStatus: 'pending',

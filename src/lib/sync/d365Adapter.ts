@@ -161,6 +161,7 @@ function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity 
     occurredAt: d365.actualend ?? d365.createdon,
     startTime: null,
     activityStatus: mapD365StateToActivityStatus(d365.statecode),
+    direction: d365.directioncode === true ? 'outgoing' : d365.directioncode === false ? 'incoming' : null,
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -186,6 +187,7 @@ function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activ
     occurredAt: d365.scheduledend ?? d365.createdon,
     startTime: d365.scheduledstart ?? null,
     activityStatus: mapD365StateToActivityStatus(d365.statecode),
+    direction: null,
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -207,6 +209,7 @@ function mapD365AnnotationToActivity(d365: D365Annotation, now: string): Activit
     occurredAt: d365.createdon,
     startTime: null,
     activityStatus: 'completed',
+    direction: null,
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -315,7 +318,7 @@ class RealD365Adapter implements ID365Adapter {
     const select = [
       'activityid', 'subject', 'description', 'im360_internalcomments',
       '_im360_account_value', '_im360_contact_value', '_ownerid_value',
-      'actualend', 'createdon', 'statecode', 'modifiedon',
+      'directioncode', 'actualend', 'createdon', 'statecode', 'modifiedon',
     ].join(',');
 
     let filter = 'statecode ne 2 and _im360_account_value ne null';
@@ -456,7 +459,7 @@ class RealD365Adapter implements ID365Adapter {
         description: activity.description ?? '',
         actualend: activity.occurredAt,
         scheduledend: activity.occurredAt,
-        directioncode: true,
+        directioncode: activity.direction !== 'incoming',
         'regardingobjectid_account@odata.bind': accountBind,
         phonecall_activity_parties: parties,
       };

@@ -52,6 +52,7 @@ export interface D365PhoneCall {
   _im360_contact_value: string | null;
   _ownerid_value: string | null;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  directioncode: boolean | null;
   actualend: string | null;
   createdon: string;
   statecode: number;
