@@ -279,6 +279,46 @@ async function fetchAllPages<T>(
 
 class RealD365Adapter implements ID365Adapter {
   private baseUrl = (process.env.NEXT_PUBLIC_D365_BASE_URL ?? '').replace(/\/+$/, '');
+  private navPropertyCache = new Map<string, string | null>();
+
+  /** Resolve the correct navigation property name for a custom lookup via D365 metadata. */
+  private async resolveNavProperty(
+    token: string,
+    entityLogicalName: string,
+    attributeLogicalName: string,
+  ): Promise<string | null> {
+    const cacheKey = `${entityLogicalName}.${attributeLogicalName}`;
+    if (this.navPropertyCache.has(cacheKey)) return this.navPropertyCache.get(cacheKey)!;
+
+    try {
+      const url =
+        `${this.baseUrl}/api/data/v9.2/EntityDefinitions(LogicalName='${entityLogicalName}')` +
+        `/ManyToOneRelationships?$filter=ReferencingAttribute eq '${attributeLogicalName}'` +
+        `&$select=ReferencingEntityNavigationPropertyName`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          Accept: 'application/json',
+        },
+      });
+      if (!res.ok) {
+        console.error(`[sync] Failed to resolve nav property for ${cacheKey}: ${res.status}`);
+        this.navPropertyCache.set(cacheKey, null);
+        return null;
+      }
+      const data = (await res.json()) as { value: Array<{ ReferencingEntityNavigationPropertyName: string }> };
+      const navName = data.value[0]?.ReferencingEntityNavigationPropertyName ?? null;
+      console.log(`[sync] Resolved nav property for ${cacheKey}: ${navName}`);
+      this.navPropertyCache.set(cacheKey, navName);
+      return navName;
+    } catch (err) {
+      console.error(`[sync] Error resolving nav property for ${cacheKey}:`, err);
+      this.navPropertyCache.set(cacheKey, null);
+      return null;
+    }
+  }
 
   async fetchCustomers(token: string, lastSync?: string): Promise<Customer[]> {
     const select = [
@@ -446,6 +486,21 @@ class RealD365Adapter implements ID365Adapter {
     let entitySet: string;
     let body: Record<string, unknown>;
 
+    // Resolve custom lookup nav property names (cached after first call)
+    const entityLogical = activity.type === 'call' ? 'phonecall'
+      : activity.type === 'note' ? 'annotation' : 'appointment';
+    const [accountNav, contactNav] = await Promise.all([
+      this.resolveNavProperty(token, entityLogical, 'im360_account'),
+      activity.contactId ? this.resolveNavProperty(token, entityLogical, 'im360_contact') : Promise.resolve(null),
+    ]);
+
+    // Build custom lookup bindings using the resolved navigation property names
+    const customBindings: Record<string, string> = {};
+    if (accountNav) customBindings[`${accountNav}@odata.bind`] = accountBind;
+    if (contactNav && activity.contactId) {
+      customBindings[`${contactNav}@odata.bind`] = `/contacts(${activity.contactId})`;
+    }
+
     if (activity.type === 'call') {
       entitySet = 'phonecalls';
       const parties: Record<string, unknown>[] = [
@@ -461,6 +516,7 @@ class RealD365Adapter implements ID365Adapter {
         scheduledend: activity.occurredAt,
         directioncode: activity.direction !== 'incoming',
         'regardingobjectid_account@odata.bind': accountBind,
+        ...customBindings,
         phonecall_activity_parties: parties,
       };
     } else if (activity.type === 'note') {
@@ -469,6 +525,7 @@ class RealD365Adapter implements ID365Adapter {
         subject: activity.subject,
         notetext: activity.description ?? '',
         'objectid_account@odata.bind': accountBind,
+        ...customBindings,
       };
     } else {
       // 'meeting' and 'visit' both map to appointment
@@ -486,6 +543,7 @@ class RealD365Adapter implements ID365Adapter {
         scheduledend: activity.occurredAt,
         im360_appointmenttype: activity.type === 'visit' ? 2 : 0,
         'regardingobjectid_account@odata.bind': accountBind,
+        ...customBindings,
         appointment_activity_parties: apptParties,
       };
     }
