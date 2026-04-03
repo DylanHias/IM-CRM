@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KanbanBoardProvider,
   KanbanBoard,
@@ -25,6 +25,8 @@ interface ActivityKanbanBoardProps {
 const COLUMNS: ActivityStatus[] = ['open', 'completed', 'rejected', 'expired'];
 
 export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, onStatusChange }: ActivityKanbanBoardProps) {
+  const [manualExpanded, setManualExpanded] = useState<Set<ActivityStatus>>(new Set());
+
   const grouped = useMemo(() => {
     const map: Record<ActivityStatus, Activity[]> = { open: [], completed: [], rejected: [], expired: [] };
     for (const a of activities) {
@@ -61,13 +63,39 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
           const config = STATUS_CONFIG[status];
           const StatusIcon = config.icon;
           const items = grouped[status];
+          const isEmpty = items.length === 0;
+          const isCollapsed = isEmpty && !manualExpanded.has(status);
+
+          if (isCollapsed) {
+            return (
+              <KanbanBoardColumn
+                key={status}
+                columnId={status}
+                onDropOverColumn={(data) => {
+                  setManualExpanded((prev) => new Set(prev).add(status));
+                  handleDrop(status)(data);
+                }}
+                className="w-10 min-w-[40px] flex-shrink-0 flex-grow-0 cursor-pointer"
+                onClick={() => setManualExpanded((prev) => new Set(prev).add(status))}
+              >
+                <div className="flex flex-col items-center gap-2 py-2">
+                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold ${config.className}`}>
+                    0
+                  </span>
+                  <span className="text-[11px] text-muted-foreground [writing-mode:vertical-rl] [text-orientation:mixed]">
+                    {config.label}
+                  </span>
+                </div>
+              </KanbanBoardColumn>
+            );
+          }
 
           return (
             <KanbanBoardColumn
               key={status}
               columnId={status}
               onDropOverColumn={handleDrop(status)}
-              className="min-w-[220px] flex-1"
+              className="min-w-[180px] flex-1"
             >
               <KanbanBoardColumnHeader>
                 <KanbanBoardColumnTitle columnId={status}>
