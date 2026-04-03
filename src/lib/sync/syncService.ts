@@ -6,10 +6,46 @@ import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from 
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
+import { getDb } from '@/lib/db/client';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
+
+const SYNC_BATCH_SIZE = 500;
+
+interface BatchResult {
+  successes: number;
+  errors: number;
+}
+
+async function batchedUpsert<T>(
+  items: T[],
+  fn: (item: T) => Promise<boolean>,
+  onSuccess: () => void,
+  onError: (item: T, err: unknown) => void,
+): Promise<BatchResult> {
+  const db = await getDb();
+  let successes = 0;
+  let errors = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    if (i % SYNC_BATCH_SIZE === 0) await db.execute('BEGIN');
+    try {
+      const result = await fn(items[i]);
+      if (result) successes++;
+      onSuccess();
+    } catch (err) {
+      errors++;
+      onError(items[i], err);
+    }
+    if (i % SYNC_BATCH_SIZE === SYNC_BATCH_SIZE - 1 || i === items.length - 1) {
+      await db.execute('COMMIT');
+    }
+  }
+
+  return { successes, errors };
+}
 
 export async function resetSyncWatermark(): Promise<void> {
   await setAppSetting('last_d365_sync', '');
@@ -100,20 +136,14 @@ async function syncD365(token: string): Promise<void> {
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
     total += customers.length;
     emitProgress('Syncing customers...');
-    let customersChanged = 0;
-    for (const customer of customers) {
-      try {
-        const changed = await upsertCustomerBulk(customer);
-        if (changed) customersChanged++;
-        pulled++;
-        processed++;
-        emitProgress('Syncing customers...');
-      } catch (err) {
-        errors++;
-        console.error(`[sync] Failed to upsert customer ${customer.name} (${customer.id}):`, err instanceof Error ? err.message : err);
-      }
-    }
-    console.log(`[sync] Customers: ${customers.length} fetched, ${customersChanged} changed, ${customers.length - customersChanged - errors} unchanged, ${errors} errors`);
+    const customerResult = await batchedUpsert(
+      customers,
+      (customer) => upsertCustomerBulk(customer),
+      () => { pulled++; processed++; emitProgress('Syncing customers...'); },
+      (customer, err) => console.error(`[sync] Failed to upsert customer ${customer.name} (${customer.id}):`, err instanceof Error ? err.message : err),
+    );
+    errors += customerResult.errors;
+    console.log(`[sync] Customers: ${customers.length} fetched, ${customerResult.successes} changed, ${customers.length - customerResult.successes - customerResult.errors} unchanged, ${customerResult.errors} errors`);
 
     // Build set of local customer IDs so child entities are scoped to Benelux customers only
     const localCustomerIds = await queryAllCustomerIds();
@@ -122,22 +152,14 @@ async function syncD365(token: string): Promise<void> {
     const contacts = await adapter.fetchContacts(token, localCustomerIds, lastSyncTs);
     total += contacts.length;
     emitProgress('Syncing contacts...');
-    let contactsChanged = 0;
-    let contactErrors = 0;
-    for (const contact of contacts) {
-      try {
-        const changed = await upsertContactBulk(contact);
-        if (changed) contactsChanged++;
-        pulled++;
-        processed++;
-        emitProgress('Syncing contacts...');
-      } catch (err) {
-        contactErrors++;
-        console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err);
-      }
-    }
-    console.log(`[sync] Contacts: ${contacts.length} scoped, ${contactsChanged} changed, ${contactErrors} errors`);
-    errors += contactErrors;
+    const contactResult = await batchedUpsert(
+      contacts,
+      (contact) => upsertContactBulk(contact),
+      () => { pulled++; processed++; emitProgress('Syncing contacts...'); },
+      (contact, err) => console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err),
+    );
+    console.log(`[sync] Contacts: ${contacts.length} scoped, ${contactResult.successes} changed, ${contactResult.errors} errors`);
+    errors += contactResult.errors;
 
     // Pull activities from D365 (filtered to local customers)
     try {
@@ -145,20 +167,14 @@ async function syncD365(token: string): Promise<void> {
       const phoneCalls = await adapter.fetchPhoneCalls(token, localCustomerIds, lastSyncTs);
       total += phoneCalls.length;
       emitProgress('Syncing calls...');
-      let phoneCallsUpserted = 0;
-      let phoneCallsSkipped = 0;
-      let phoneCallErrors = 0;
-      for (const activity of phoneCalls) {
-        try {
-          const upserted = await upsertPulledActivity(activity);
-          if (upserted) { phoneCallsUpserted++; pulled++; processed++; emitProgress('Syncing calls...'); } else { phoneCallsSkipped++; }
-        } catch (err) {
-          phoneCallErrors++;
-          errors++;
-          console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err);
-        }
-      }
-      console.log(`[sync] Phone calls: ${phoneCalls.length} scoped, ${phoneCallsUpserted} upserted, ${phoneCallsSkipped} skipped, ${phoneCallErrors} errors`);
+      const phoneResult = await batchedUpsert(
+        phoneCalls,
+        (activity) => upsertPulledActivity(activity),
+        () => { pulled++; processed++; emitProgress('Syncing calls...'); },
+        (activity, err) => console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err),
+      );
+      errors += phoneResult.errors;
+      console.log(`[sync] Phone calls: ${phoneCalls.length} scoped, ${phoneResult.successes} upserted, ${phoneCalls.length - phoneResult.successes - phoneResult.errors} skipped, ${phoneResult.errors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
     }
@@ -168,20 +184,14 @@ async function syncD365(token: string): Promise<void> {
       const appointments = await adapter.fetchAppointments(token, localCustomerIds, lastSyncTs);
       total += appointments.length;
       emitProgress('Syncing appointments...');
-      let appointmentsUpserted = 0;
-      let appointmentsSkipped = 0;
-      let appointmentErrors = 0;
-      for (const activity of appointments) {
-        try {
-          const upserted = await upsertPulledActivity(activity);
-          if (upserted) { appointmentsUpserted++; pulled++; processed++; emitProgress('Syncing appointments...'); } else { appointmentsSkipped++; }
-        } catch (err) {
-          appointmentErrors++;
-          errors++;
-          console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err);
-        }
-      }
-      console.log(`[sync] Appointments: ${appointments.length} scoped, ${appointmentsUpserted} upserted, ${appointmentsSkipped} skipped, ${appointmentErrors} errors`);
+      const appointmentResult = await batchedUpsert(
+        appointments,
+        (activity) => upsertPulledActivity(activity),
+        () => { pulled++; processed++; emitProgress('Syncing appointments...'); },
+        (activity, err) => console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err),
+      );
+      errors += appointmentResult.errors;
+      console.log(`[sync] Appointments: ${appointments.length} scoped, ${appointmentResult.successes} upserted, ${appointments.length - appointmentResult.successes - appointmentResult.errors} skipped, ${appointmentResult.errors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
     }
@@ -191,20 +201,14 @@ async function syncD365(token: string): Promise<void> {
       const annotations = await adapter.fetchAnnotations(token, localCustomerIds, lastSyncTs);
       total += annotations.length;
       emitProgress('Syncing notes...');
-      let annotationsUpserted = 0;
-      let annotationsSkipped = 0;
-      let annotationErrors = 0;
-      for (const activity of annotations) {
-        try {
-          const upserted = await upsertPulledActivity(activity);
-          if (upserted) { annotationsUpserted++; pulled++; processed++; emitProgress('Syncing notes...'); } else { annotationsSkipped++; }
-        } catch (err) {
-          annotationErrors++;
-          errors++;
-          console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err);
-        }
-      }
-      console.log(`[sync] Annotations: ${annotations.length} scoped, ${annotationsUpserted} upserted, ${annotationsSkipped} skipped, ${annotationErrors} errors`);
+      const annotationResult = await batchedUpsert(
+        annotations,
+        (activity) => upsertPulledActivity(activity),
+        () => { pulled++; processed++; emitProgress('Syncing notes...'); },
+        (activity, err) => console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err),
+      );
+      errors += annotationResult.errors;
+      console.log(`[sync] Annotations: ${annotations.length} scoped, ${annotationResult.successes} upserted, ${annotations.length - annotationResult.successes - annotationResult.errors} skipped, ${annotationResult.errors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
     }
@@ -215,20 +219,14 @@ async function syncD365(token: string): Promise<void> {
       const tasks = await adapter.fetchTasks(token, localCustomerIds, lastSyncTs);
       total += tasks.length;
       emitProgress('Syncing tasks...');
-      let tasksUpserted = 0;
-      let tasksSkipped = 0;
-      let taskErrors = 0;
-      for (const followUp of tasks) {
-        try {
-          const upserted = await upsertPulledFollowUp(followUp);
-          if (upserted) { tasksUpserted++; pulled++; processed++; emitProgress('Syncing tasks...'); } else { tasksSkipped++; }
-        } catch (err) {
-          taskErrors++;
-          errors++;
-          console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err);
-        }
-      }
-      console.log(`[sync] Tasks: ${tasks.length} scoped, ${tasksUpserted} upserted, ${tasksSkipped} skipped, ${taskErrors} errors`);
+      const taskResult = await batchedUpsert(
+        tasks,
+        (followUp) => upsertPulledFollowUp(followUp),
+        () => { pulled++; processed++; emitProgress('Syncing tasks...'); },
+        (followUp, err) => console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err),
+      );
+      errors += taskResult.errors;
+      console.log(`[sync] Tasks: ${tasks.length} scoped, ${taskResult.successes} upserted, ${tasks.length - taskResult.successes - taskResult.errors} skipped, ${taskResult.errors} errors`);
     } catch (err) {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }
