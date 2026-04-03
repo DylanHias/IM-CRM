@@ -171,6 +171,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         description: newActDescription.trim() || null,
         occurredAt: new Date(newActDate).toISOString(),
         startTime: isAppt ? new Date(newActStartTime).toISOString() : null,
+        activityStatus: 'open',
       });
       setAddActivityOpen(false);
       setNewActType(null);

@@ -108,7 +108,7 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     customerId: d365._parentcustomerid_value,
     firstName: d365.firstname ?? '',
     lastName: d365.lastname ?? '',
-    jobTitle: d365.jobtitle,
+    jobTitle: d365.jobfunction,
     email: d365.emailaddress1,
     phone: d365.telephone1,
     mobile: d365.mobilephone,
@@ -132,6 +132,24 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+function activityStatusToD365State(
+  status: Activity['activityStatus'],
+  type: Activity['type'],
+): { statecode: number; statuscode: number } {
+  if (status === 'rejected') {
+    // Cancelled state — phonecall: 3, appointment: 4
+    return type === 'call' ? { statecode: 2, statuscode: 3 } : { statecode: 2, statuscode: 4 };
+  }
+  // completed + expired both map to Completed — phonecall: 2 (Made), appointment: 3
+  return type === 'call' ? { statecode: 1, statuscode: 2 } : { statecode: 1, statuscode: 3 };
+}
+
+function mapD365StateToActivityStatus(statecode: number): Activity['activityStatus'] {
+  if (statecode === 0) return 'open';
+  if (statecode === 2) return 'rejected';
+  return 'completed';
+}
+
 function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity {
   return {
     id: uuidv4(),
@@ -142,6 +160,7 @@ function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity 
     description: d365.description ?? d365.im360_internalcomments ?? null,
     occurredAt: d365.actualend ?? d365.createdon,
     startTime: null,
+    activityStatus: mapD365StateToActivityStatus(d365.statecode),
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -166,6 +185,7 @@ function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activ
     description: description || null,
     occurredAt: d365.scheduledend ?? d365.createdon,
     startTime: d365.scheduledstart ?? null,
+    activityStatus: mapD365StateToActivityStatus(d365.statecode),
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -186,6 +206,7 @@ function mapD365AnnotationToActivity(d365: D365Annotation, now: string): Activit
     description: d365.notetext ?? null,
     occurredAt: d365.createdon,
     startTime: null,
+    activityStatus: 'completed',
     createdById: d365._ownerid_value ?? '',
     createdByName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     syncStatus: 'synced',
@@ -277,7 +298,7 @@ class RealD365Adapter implements ID365Adapter {
   async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
-      'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
+      'jobfunction', 'emailaddress1', 'telephone1', 'mobilephone', 'modifiedon',
     ].join(',');
 
     let filter = 'statecode eq 0 and _parentcustomerid_value ne null';
@@ -487,21 +508,20 @@ class RealD365Adapter implements ID365Adapter {
       throw new Error(`D365 push activity failed ${res.status}: ${text}`);
     }
 
-    if (isUpdate) {
-      return activity.remoteId!;
-    }
-    // D365 returns the new entity URI in OData-EntityId header for POST
-    const entityId = res.headers.get('OData-EntityId') ?? '';
-    const match = entityId.match(/\(([^)]+)\)$/);
-    const newId = match ? match[1] : entityId;
+    const resolvedId = isUpdate
+      ? activity.remoteId!
+      : (() => {
+          const entityId = res.headers.get('OData-EntityId') ?? '';
+          const match = entityId.match(/\(([^)]+)\)$/);
+          return match ? match[1] : entityId;
+        })();
 
-    // D365 won't accept statecode/statuscode on POST — mark as completed via separate PATCH
-    if (activity.type === 'call' || activity.type === 'meeting' || activity.type === 'visit') {
-      const closeCode = activity.type === 'call'
-        ? { statecode: 1, statuscode: 2 }
-        : { statecode: 1, statuscode: 3 };
+    // D365 won't accept statecode/statuscode in the main body — set state via separate PATCH
+    // Skip if open — D365 creates records as Open by default
+    if ((activity.type === 'call' || activity.type === 'meeting' || activity.type === 'visit') && activity.activityStatus !== 'open') {
+      const stateBody = activityStatusToD365State(activity.activityStatus, activity.type);
       const closeRes = await fetch(
-        `${this.baseUrl}/api/data/v9.2/${entitySet}(${newId})`,
+        `${this.baseUrl}/api/data/v9.2/${entitySet}(${resolvedId})`,
         {
           method: 'PATCH',
           headers: {
@@ -510,15 +530,15 @@ class RealD365Adapter implements ID365Adapter {
             'OData-Version': '4.0',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(closeCode),
+          body: JSON.stringify(stateBody),
         },
       );
       if (!closeRes.ok) {
-        console.error(`[sync] Failed to mark ${activity.type} as completed (${newId}):`, await closeRes.text());
+        console.error(`[sync] Failed to set ${activity.type} status to ${activity.activityStatus} (${resolvedId}):`, await closeRes.text());
       }
     }
 
-    return newId;
+    return resolvedId;
   }
 
   async pushFollowUp(token: string, followUp: FollowUp): Promise<string> {

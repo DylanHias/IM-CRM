@@ -142,6 +142,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       description     TEXT,
       occurred_at     TEXT NOT NULL,
       start_time      TEXT,
+      activity_status TEXT NOT NULL DEFAULT 'open',
       created_by_id   TEXT NOT NULL,
       created_by_name TEXT NOT NULL,
       sync_status     TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
@@ -519,6 +520,15 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     `);
     await db.execute(
       `UPDATE app_settings SET value = '13', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 14) {
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN activity_status TEXT NOT NULL DEFAULT 'open'`); } catch {
+      // Column already exists
+    }
+    await db.execute(
+      `UPDATE app_settings SET value = '14', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

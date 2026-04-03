@@ -44,6 +44,8 @@ export type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 
 export type ActivitySource = 'local' | 'd365';
 
+export type ActivityStatus = 'open' | 'completed' | 'rejected' | 'expired';
+
 export interface Activity {
   id: string;
   customerId: string;
@@ -53,6 +55,7 @@ export interface Activity {
   description: string | null;
   occurredAt: string;
   startTime: string | null;
+  activityStatus: ActivityStatus;
   createdById: string;
   createdByName: string;
   syncStatus: 'pending' | 'synced' | 'error';

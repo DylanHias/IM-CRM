@@ -13,7 +13,7 @@ import { useActivities } from '@/hooks/useActivities';
 import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO, nowDatetimeLocal } from '@/lib/utils/dateUtils';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import type { Contact } from '@/types/entities';
+import type { Contact, ActivityStatus } from '@/types/entities';
 
 interface ActivityFormProps {
   customerId: string;
@@ -26,6 +26,13 @@ const ACTIVITY_TYPES = [
   { value: 'visit', label: 'Visit' },
   { value: 'call', label: 'Call' },
   { value: 'note', label: 'Note' },
+] as const;
+
+const ACTIVITY_STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'expired', label: 'Expired' },
 ] as const;
 
 export function ActivityForm({ customerId, customerName, contacts }: ActivityFormProps) {
@@ -42,6 +49,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const isAppointmentType = type === 'meeting' || type === 'visit';
   const [startTime, setStartTime] = useState(nowDatetimeLocal());
   const [occurredAt, setOccurredAt] = useState(isAppointmentType ? nowDatetimeLocal() : todayISO());
+  const [activityStatus, setActivityStatus] = useState<ActivityStatus>('open');
   const [contactId, setContactId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -62,6 +70,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         description: description.trim() || null,
         occurredAt: new Date(occurredAt).toISOString(),
         startTime: isAppointmentType ? new Date(startTime).toISOString() : null,
+        activityStatus: type === 'note' ? 'completed' : activityStatus,
       });
       setSuccess(true);
       setTimeout(() => router.back(), 1200);
@@ -167,6 +176,21 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       )}
 
       <div className="grid grid-cols-2 gap-4">
+        {type !== 'note' && (
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select value={activityStatus} onValueChange={(v) => setActivityStatus(v as ActivityStatus)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTIVITY_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="space-y-1">
           <Label>Contact (optional)</Label>
           <Select value={contactId} onValueChange={setContactId}>

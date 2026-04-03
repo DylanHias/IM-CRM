@@ -13,6 +13,7 @@ function rowToActivity(row: ActivityRow): Activity {
     description: row.description,
     occurredAt: row.occurred_at,
     startTime: row.start_time,
+    activityStatus: (row.activity_status ?? 'open') as Activity['activityStatus'],
     createdById: row.created_by_id,
     createdByName: row.created_by_name,
     syncStatus: row.sync_status as Activity['syncStatus'],
@@ -45,12 +46,12 @@ export async function insertActivity(activity: Activity): Promise<void> {
   await db.execute(
     `INSERT INTO activities (
       id, customer_id, contact_id, type, subject, description, occurred_at, start_time,
-      created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      activity_status, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
     [
       activity.id, activity.customerId, activity.contactId, activity.type,
       activity.subject, activity.description, activity.occurredAt, activity.startTime,
-      activity.createdById, activity.createdByName, activity.syncStatus,
+      activity.activityStatus, activity.createdById, activity.createdByName, activity.syncStatus,
       activity.remoteId, activity.source ?? 'local', activity.createdAt, activity.updatedAt,
     ]
   );
@@ -60,8 +61,8 @@ export async function insertActivity(activity: Activity): Promise<void> {
 export async function updateActivity(activity: Activity): Promise<void> {
   const db = await getDb();
   await db.execute(
-    `UPDATE activities SET type=$1, subject=$2, description=$3, occurred_at=$4, start_time=$5, contact_id=$6, sync_status='pending', updated_at=$7 WHERE id=$8`,
-    [activity.type, activity.subject, activity.description, activity.occurredAt, activity.startTime, activity.contactId, new Date().toISOString(), activity.id]
+    `UPDATE activities SET type=$1, subject=$2, description=$3, occurred_at=$4, start_time=$5, contact_id=$6, activity_status=$7, sync_status='pending', updated_at=$8 WHERE id=$9`,
+    [activity.type, activity.subject, activity.description, activity.occurredAt, activity.startTime, activity.contactId, activity.activityStatus, new Date().toISOString(), activity.id]
   );
 
 }
@@ -129,13 +130,13 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
     // Update existing record
     await db.execute(
       `UPDATE activities SET customer_id=$1, contact_id=$2, type=$3, subject=$4, description=$5,
-       occurred_at=$6, start_time=$7, created_by_id=$8, created_by_name=$9,
-       sync_status='synced', source='d365', updated_at=$10
-       WHERE remote_id=$11`,
+       occurred_at=$6, start_time=$7, activity_status=$8, created_by_id=$9, created_by_name=$10,
+       sync_status='synced', source='d365', updated_at=$11
+       WHERE remote_id=$12`,
       [
         activity.customerId, contactId, activity.type,
         activity.subject, activity.description, activity.occurredAt, activity.startTime,
-        activity.createdById, activity.createdByName, activity.updatedAt, activity.remoteId,
+        activity.activityStatus, activity.createdById, activity.createdByName, activity.updatedAt, activity.remoteId,
       ]
     );
   } else {
@@ -143,12 +144,12 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
     await db.execute(
       `INSERT INTO activities (
         id, customer_id, contact_id, type, subject, description, occurred_at, start_time,
-        created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+        activity_status, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
       [
         activity.id, activity.customerId, contactId, activity.type,
         activity.subject, activity.description, activity.occurredAt, activity.startTime,
-        activity.createdById, activity.createdByName, 'synced',
+        activity.activityStatus, activity.createdById, activity.createdByName, 'synced',
         activity.remoteId, 'd365', activity.createdAt, activity.updatedAt,
       ]
     );

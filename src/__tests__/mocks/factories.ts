@@ -64,6 +64,7 @@ export function createActivity(overrides?: Partial<Activity>): Activity {
     description: 'Discussed roadmap',
     occurredAt: NOW,
     startTime: null,
+    activityStatus: 'open',
     createdById: 'user-1',
     createdByName: 'Dylan',
     syncStatus: 'pending',

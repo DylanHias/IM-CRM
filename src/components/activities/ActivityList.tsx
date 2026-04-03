@@ -13,7 +13,7 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { useActivities } from '@/hooks/useActivities';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
-import type { Activity, Contact } from '@/types/entities';
+import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 import { useRouter } from 'next/navigation';
 
 interface ActivityListProps {
@@ -29,6 +29,13 @@ const ACTIVITY_TYPES = [
   { value: 'note', label: 'Note' },
 ] as const;
 
+const ACTIVITY_STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'expired', label: 'Expired' },
+] as const;
+
 export function ActivityList({ activities, contacts, customerId }: ActivityListProps) {
   const router = useRouter();
   const { editActivity, deleteActivity } = useActivities(customerId);
@@ -41,6 +48,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
   const [editStartTime, setEditStartTime] = useState('');
   const [editOccurredAt, setEditOccurredAt] = useState('');
   const [editContactId, setEditContactId] = useState('none');
+  const [editStatus, setEditStatus] = useState<ActivityStatus>('completed');
   const [isSaving, setIsSaving] = useState(false);
 
   const openEdit = (activity: Activity) => {
@@ -52,6 +60,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
     setEditStartTime(activity.startTime ? isoToDatetimeLocal(activity.startTime) : nowDatetimeLocal());
     setEditOccurredAt(isAppt ? isoToDatetimeLocal(activity.occurredAt) : activity.occurredAt.split('T')[0]);
     setEditContactId(activity.contactId ?? 'none');
+    setEditStatus(activity.activityStatus);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -68,6 +77,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
         occurredAt: new Date(editOccurredAt).toISOString(),
         startTime: isAppt ? new Date(editStartTime).toISOString() : null,
         contactId: editContactId === 'none' ? null : editContactId,
+        activityStatus: editType === 'note' ? 'completed' : editStatus,
         updatedAt: new Date().toISOString(),
       });
       setEditing(null);
@@ -122,6 +132,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
               contactName={getContactName(a.contactId)}
               onEdit={() => openEdit(a)}
               onDelete={() => handleDelete(a)}
+              onStatusChange={(status) => editActivity({ ...a, activityStatus: status, updatedAt: new Date().toISOString() })}
             />
           ))}
         </div>
@@ -179,6 +190,19 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
+              {editType !== 'note' && (
+                <div className="space-y-1">
+                  <Label>Status</Label>
+                  <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ActivityStatus)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ACTIVITY_STATUSES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-1">
                 <Label>Contact</Label>
                 <Select value={editContactId} onValueChange={setEditContactId}>
