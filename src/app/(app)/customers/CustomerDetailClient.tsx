@@ -255,7 +255,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
           {/* ── Back Link ── */}
           <button
             onClick={() => router.push('/customers')}
@@ -327,7 +327,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
           </motion.div>
 
           {/* ── Two Column Layout ── */}
-          <div className="grid grid-cols-[340px_1fr] gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
             {/* ── Left Column: Details ── */}
             <motion.div
               className="space-y-4"
