@@ -29,16 +29,9 @@ export function ActivitiesTabContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Notes</h3>
-        <Button size="sm" className="gap-1.5" onClick={onAddActivity}>
-          <Plus size={13} />
-          Add Activity
-        </Button>
-      </div>
-
       {notes.length > 0 && (
         <div>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Notes</h3>
           <NotesTable
             notes={notes}
             contacts={contacts}
@@ -49,7 +42,13 @@ export function ActivitiesTabContent({
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-2">Activities</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-foreground">Activities</h3>
+          <Button size="sm" className="gap-1.5" onClick={onAddActivity}>
+            <Plus size={13} />
+            Add Activity
+          </Button>
+        </div>
         <ActivityKanbanBoard
           activities={kanbanActivities}
           contacts={contacts}
