@@ -27,44 +27,6 @@ export async function getDb(): Promise<Database> {
   return initPromise;
 }
 
-let txActive = false;
-
-export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
-  // Skip nesting — if a transaction is already active, just run the function
-  if (txActive) return fn();
-
-  const db = await getDb();
-  txActive = true;
-  await db.execute('BEGIN');
-  try {
-    const result = await fn();
-    await db.execute('COMMIT');
-    return result;
-  } catch (err) {
-    console.error('[db] Transaction failed, rolling back:', err instanceof Error ? err.message : err);
-    try { await db.execute('ROLLBACK'); } catch { /* may already be rolled back */ }
-    throw err;
-  } finally {
-    txActive = false;
-  }
-}
-
-const BATCH_SIZE = 500;
-
-export async function withBatchedTransactions<T>(
-  items: T[],
-  fn: (item: T) => Promise<void>,
-): Promise<void> {
-  for (let i = 0; i < items.length; i += BATCH_SIZE) {
-    const chunk = items.slice(i, i + BATCH_SIZE);
-    await withTransaction(async () => {
-      for (const item of chunk) {
-        await fn(item);
-      }
-    });
-  }
-}
-
 export async function initDb(): Promise<void> {
   if (!isTauriApp()) {
     console.warn('[db] Not running in Tauri — SQLite unavailable');

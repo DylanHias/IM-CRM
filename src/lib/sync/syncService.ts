@@ -6,47 +6,41 @@ import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from 
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
-import { getDb } from '@/lib/db/client';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
-
-const SYNC_BATCH_SIZE = 500;
 
 interface BatchResult {
   successes: number;
   errors: number;
 }
 
+/**
+ * Process items sequentially with individual auto-committed writes.
+ * Manual BEGIN/COMMIT is intentionally avoided — the Tauri SQL plugin uses
+ * a sqlx connection pool, so consecutive execute() calls can land on different
+ * connections. A BEGIN on connection A followed by an INSERT on connection B
+ * causes "database is locked" because A still holds an open transaction.
+ * Auto-commit per statement avoids this entirely.
+ */
 async function batchedUpsert<T>(
   items: T[],
   fn: (item: T) => Promise<boolean>,
   onSuccess: () => void,
   onError: (item: T, err: unknown) => void,
 ): Promise<BatchResult> {
-  const db = await getDb();
   let successes = 0;
   let errors = 0;
 
-  for (let i = 0; i < items.length; i += SYNC_BATCH_SIZE) {
-    const batch = items.slice(i, i + SYNC_BATCH_SIZE);
-    await db.execute('BEGIN IMMEDIATE');
+  for (const item of items) {
     try {
-      for (const item of batch) {
-        try {
-          const result = await fn(item);
-          if (result) successes++;
-          onSuccess();
-        } catch (err) {
-          errors++;
-          onError(item, err);
-        }
-      }
-      await db.execute('COMMIT');
+      const result = await fn(item);
+      if (result) successes++;
+      onSuccess();
     } catch (err) {
-      console.error('[sync] Batch transaction failed, rolling back:', err instanceof Error ? err.message : err);
-      try { await db.execute('ROLLBACK'); } catch { /* already rolled back */ }
+      errors++;
+      onError(item, err);
     }
   }
 
