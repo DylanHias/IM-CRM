@@ -49,7 +49,6 @@ export function ActivitiesTabContent({
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-2">Activities</h3>
         <ActivityKanbanBoard
           activities={kanbanActivities}
           contacts={contacts}

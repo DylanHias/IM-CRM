@@ -640,20 +640,23 @@ export function KanbanBoardColumnListItem({
       }}
       onDragOver={event => {
         if (event.dataTransfer.types.includes(DATA_TRANSFER_TYPES.CARD)) {
-          event.preventDefault();
-          event.stopPropagation();
-          const rect = event.currentTarget.getBoundingClientRect();
-          const midpoint = (rect.top + rect.bottom) / 2;
-          setDropDirection(event.clientY <= midpoint ? 'top' : 'bottom');
-          onDragOver('', cardId);
+          if (onDropOverListItem) {
+            event.preventDefault();
+            event.stopPropagation();
+            const rect = event.currentTarget.getBoundingClientRect();
+            const midpoint = (rect.top + rect.bottom) / 2;
+            setDropDirection(event.clientY <= midpoint ? 'top' : 'bottom');
+            onDragOver('', cardId);
+          }
         }
       }}
       onDrop={event => {
-        event.stopPropagation();
-        const data = event.dataTransfer.getData(DATA_TRANSFER_TYPES.CARD);
-        onDropOverListItem?.(data, dropDirection);
-
-        onDragEnd(JSON.parse(data).id as string, cardId);
+        if (onDropOverListItem) {
+          event.stopPropagation();
+          const data = event.dataTransfer.getData(DATA_TRANSFER_TYPES.CARD);
+          onDropOverListItem(data, dropDirection);
+          onDragEnd(JSON.parse(data).id as string, cardId);
+        }
         setDropDirection('none');
       }}
       ref={ref}
@@ -853,7 +856,7 @@ export function KanbanBoardCardButtonGroup({
     <div
       ref={ref}
       className={cn(
-        'bg-background absolute top-2.5 right-2.5 z-40 hidden items-center',
+        'bg-background absolute top-2.5 right-2.5 z-40 hidden items-center gap-0.5',
         !disabled && 'group-focus-within:flex group-hover:flex',
         className,
       )}

@@ -39,7 +39,6 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         </KanbanBoardCardButton>
         <ConfirmPopover message={`Delete "${activity.subject}"?`} confirmLabel="Delete" onConfirm={onDelete}>
           <KanbanBoardCardButton
-            tooltip="Delete"
             className="text-destructive hover:text-destructive"
             onClick={(e) => e.stopPropagation()}
           >
@@ -73,9 +72,15 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         </KanbanBoardCardDescription>
       )}
 
-      <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
-        <span>{formatDate(activity.occurredAt)}</span>
-        {contactName && <span>· {contactName}</span>}
+      {contactName && (
+        <p className="mt-1 text-xs text-muted-foreground truncate">
+          {contactName}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
+        <span className="truncate">{activity.createdByName}</span>
+        <span className="flex-shrink-0">{formatDate(activity.occurredAt)}</span>
       </div>
     </KanbanBoardCard>
   );
