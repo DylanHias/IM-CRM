@@ -52,6 +52,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   const customer = customers.find((c) => c.id === customerId);
 
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
+  const [filteredActivityCount, setFilteredActivityCount] = useState<number | null>(null);
   const { followUps, createFollowUp, completeFollowUp } = useFollowUps(customerId);
   const { opportunities: customerOpportunities } = useOpportunities(customerId);
 
@@ -240,12 +241,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   const profileTabs: { key: ProfileTab; label: string; icon: typeof Settings; count?: number; disabled?: boolean }[] = useMemo(() => [
     { key: 'overview', label: 'Overview', icon: Settings },
-    { key: 'activities', label: 'Activities', icon: Clock, count: activities.length },
+    { key: 'activities', label: 'Activities', icon: Clock, count: filteredActivityCount ?? activities.length },
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities', label: 'Opportunities', icon: Target, count: customerOpportunities.length },
     { key: 'invoices', label: 'Invoices', icon: FileText, disabled: true },
-  ], [activities.length, contacts.length, followUps.length, customerOpportunities.length]);
+  ], [activities.length, filteredActivityCount, contacts.length, followUps.length, customerOpportunities.length]);
 
 
   if (!customer) {
@@ -503,6 +504,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       onEditActivity={openEditActivity}
                       onDeleteActivity={handleDeleteActivity}
                       onStatusChange={handleStatusChange}
+                      onFilteredCountChange={setFilteredActivityCount}
                     />
                   </motion.div>
                 )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotesTable } from './NotesTable';
@@ -20,6 +20,7 @@ interface ActivitiesTabContentProps {
   onEditActivity: (activity: Activity) => void;
   onDeleteActivity: (activity: Activity) => void;
   onStatusChange: (activity: Activity, newStatus: ActivityStatus) => void;
+  onFilteredCountChange?: (count: number) => void;
 }
 
 export function ActivitiesTabContent({
@@ -29,6 +30,7 @@ export function ActivitiesTabContent({
   onEditActivity,
   onDeleteActivity,
   onStatusChange,
+  onFilteredCountChange,
 }: ActivitiesTabContentProps) {
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
@@ -43,6 +45,10 @@ export function ActivitiesTabContent({
     if (!dateRange) return nonNotes;
     return nonNotes.filter((a) => a.occurredAt >= dateRange.from && a.occurredAt <= dateRange.to);
   }, [activities, dateRange]);
+
+  useEffect(() => {
+    onFilteredCountChange?.(kanbanActivities.length + notes.length);
+  }, [kanbanActivities.length, notes.length, onFilteredCountChange]);
 
   return (
     <div className="space-y-6">
