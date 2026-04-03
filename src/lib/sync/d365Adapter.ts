@@ -436,8 +436,6 @@ class RealD365Adapter implements ID365Adapter {
         actualend: activity.occurredAt,
         scheduledend: activity.occurredAt,
         directioncode: true,
-        statecode: 1,
-        statuscode: 2,
         'regardingobjectid_account@odata.bind': accountBind,
         phonecall_activity_parties: parties,
       };
@@ -463,8 +461,6 @@ class RealD365Adapter implements ID365Adapter {
         scheduledstart: activity.startTime ?? activity.occurredAt,
         scheduledend: activity.occurredAt,
         im360_appointmenttype: activity.type === 'visit' ? 2 : 0,
-        statecode: 1,
-        statuscode: 3,
         'regardingobjectid_account@odata.bind': accountBind,
         appointment_activity_parties: apptParties,
       };
@@ -497,7 +493,32 @@ class RealD365Adapter implements ID365Adapter {
     // D365 returns the new entity URI in OData-EntityId header for POST
     const entityId = res.headers.get('OData-EntityId') ?? '';
     const match = entityId.match(/\(([^)]+)\)$/);
-    return match ? match[1] : entityId;
+    const newId = match ? match[1] : entityId;
+
+    // D365 won't accept statecode/statuscode on POST — mark as completed via separate PATCH
+    if (activity.type === 'call' || activity.type === 'meeting' || activity.type === 'visit') {
+      const closeCode = activity.type === 'call'
+        ? { statecode: 1, statuscode: 2 }
+        : { statecode: 1, statuscode: 3 };
+      const closeRes = await fetch(
+        `${this.baseUrl}/api/data/v9.2/${entitySet}(${newId})`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(closeCode),
+        },
+      );
+      if (!closeRes.ok) {
+        console.error(`[sync] Failed to mark ${activity.type} as completed (${newId}):`, await closeRes.text());
+      }
+    }
+
+    return newId;
   }
 
   async pushFollowUp(token: string, followUp: FollowUp): Promise<string> {
