@@ -35,8 +35,6 @@ export interface D365Contact {
   telephone1: string | null;
   mobilephone: string | null;
   modifiedon: string;
-  // Custom field — update schema name to match your D365 org (e.g. new_contacttype)
-  'new_contacttype@OData.Community.Display.V1.FormattedValue'?: string;
 }
 
 export interface D365ODataResponse<T> {
