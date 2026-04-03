@@ -267,6 +267,16 @@ async function ensureTablesExist(db: Database): Promise<void> {
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS saved_queries (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT NOT NULL,
+      sql        TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 async function runSchema(db: Database): Promise<void> {
@@ -285,7 +295,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '13')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '15')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -491,6 +501,21 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     }
     await db.execute(
       `UPDATE app_settings SET value = '14', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 15) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS saved_queries (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        sql        TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(
+      `UPDATE app_settings SET value = '15', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

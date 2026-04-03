@@ -35,6 +35,14 @@ export interface TableStats {
   rowCount: number;
 }
 
+export interface SavedQuery {
+  id: number;
+  name: string;
+  sql: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ActivityBreakdown {
   type: string;
   count: number;
