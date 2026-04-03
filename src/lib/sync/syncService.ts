@@ -29,18 +29,24 @@ async function batchedUpsert<T>(
   let successes = 0;
   let errors = 0;
 
-  for (let i = 0; i < items.length; i++) {
-    if (i % SYNC_BATCH_SIZE === 0) await db.execute('BEGIN');
+  for (let i = 0; i < items.length; i += SYNC_BATCH_SIZE) {
+    const batch = items.slice(i, i + SYNC_BATCH_SIZE);
+    await db.execute('BEGIN IMMEDIATE');
     try {
-      const result = await fn(items[i]);
-      if (result) successes++;
-      onSuccess();
-    } catch (err) {
-      errors++;
-      onError(items[i], err);
-    }
-    if (i % SYNC_BATCH_SIZE === SYNC_BATCH_SIZE - 1 || i === items.length - 1) {
+      for (const item of batch) {
+        try {
+          const result = await fn(item);
+          if (result) successes++;
+          onSuccess();
+        } catch (err) {
+          errors++;
+          onError(item, err);
+        }
+      }
       await db.execute('COMMIT');
+    } catch (err) {
+      console.error('[sync] Batch transaction failed, rolling back:', err instanceof Error ? err.message : err);
+      try { await db.execute('ROLLBACK'); } catch { /* already rolled back */ }
     }
   }
 
