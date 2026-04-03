@@ -14,6 +14,8 @@ interface ConfirmPopoverProps {
   side?: 'top' | 'bottom' | 'left' | 'right';
   align?: 'start' | 'center' | 'end';
   variant?: 'destructive' | 'default';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ConfirmPopover({
@@ -24,8 +26,12 @@ export function ConfirmPopover({
   side = 'bottom',
   align = 'end',
   variant = 'destructive',
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: ConfirmPopoverProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = controlledOnOpenChange ?? setUncontrolledOpen;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
@@ -22,6 +23,7 @@ interface ActivityKanbanCardProps {
 }
 
 export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: ActivityKanbanCardProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const config = ACTIVITY_ICONS[activity.type];
   const Icon = config.icon;
 
@@ -37,10 +39,19 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         >
           <Pencil size={12} />
         </KanbanBoardCardButton>
-        <ConfirmPopover message={`Delete "${activity.subject}"?`} confirmLabel="Delete" onConfirm={onDelete}>
+        <ConfirmPopover
+          message={`Delete "${activity.subject}"?`}
+          confirmLabel="Delete"
+          onConfirm={onDelete}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+        >
           <KanbanBoardCardButton
             className="text-destructive hover:text-destructive"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteOpen(true);
+            }}
           >
             <Trash2 size={12} />
           </KanbanBoardCardButton>
