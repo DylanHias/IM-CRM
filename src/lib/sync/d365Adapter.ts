@@ -108,7 +108,7 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     customerId: d365._parentcustomerid_value,
     firstName: d365.firstname ?? '',
     lastName: d365.lastname ?? '',
-    jobTitle: d365.jobfunction,
+    jobTitle: d365.jobtitle,
     email: d365.emailaddress1,
     phone: d365.telephone1,
     mobile: d365.mobilephone,
@@ -298,7 +298,7 @@ class RealD365Adapter implements ID365Adapter {
   async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
-      'jobfunction', 'emailaddress1', 'telephone1', 'mobilephone', 'new_contacttype', 'modifiedon',
+      'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'new_contacttype', 'modifiedon',
     ].join(',');
 
     let filter = 'statecode eq 0 and _parentcustomerid_value ne null';
