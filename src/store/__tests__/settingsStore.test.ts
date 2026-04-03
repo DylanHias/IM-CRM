@@ -28,7 +28,7 @@ describe('settingsStore', () => {
     expect(store().showUpdateToasts).toBe(true);
     expect(store().opportunityStaleReminderDays).toBe(30);
     expect(store().autoSyncOnLaunch).toBe(false);
-    expect(store().syncIntervalMinutes).toBe(15);
+    expect(store().syncIntervalMinutes).toBe(30);
     expect(store().defaultExportFormat).toBe('xlsx');
     expect(store().mockDataEnabled).toBe(false);
   });
@@ -135,7 +135,7 @@ describe('settingsStore', () => {
       store().resetSection('sync');
 
       expect(store().autoSyncOnLaunch).toBe(false);
-      expect(store().syncIntervalMinutes).toBe(15);
+      expect(store().syncIntervalMinutes).toBe(30);
     });
 
     it('does not affect other sections', () => {
@@ -200,7 +200,7 @@ describe('settingsStore', () => {
       expect(store().showSyncToasts).toBe(true);
       // Sync
       expect(store().autoSyncOnLaunch).toBe(false);
-      expect(store().syncIntervalMinutes).toBe(15);
+      expect(store().syncIntervalMinutes).toBe(30);
       // Data Management
       expect(store().defaultExportFormat).toBe('xlsx');
       expect(store().mockDataEnabled).toBe(false);
