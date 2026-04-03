@@ -1,7 +1,29 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { useRef, type ReactNode } from 'react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { KanbanBoardContext } from '@/components/kanban';
 import { ActivityKanbanCard } from '../ActivityKanbanCard';
 import type { Activity } from '@/types/entities';
+
+function DndWrapper({ children }: { children: ReactNode }) {
+  const activeIdRef = useRef('');
+  return (
+    <TooltipProvider>
+      <KanbanBoardContext.Provider
+        value={{
+          activeIdRef,
+          draggableDescribedById: 'test-dnd',
+          registerMonitor: vi.fn(),
+          unregisterMonitor: vi.fn(),
+          triggerEvent: vi.fn(),
+        }}
+      >
+        {children}
+      </KanbanBoardContext.Provider>
+    </TooltipProvider>
+  );
+}
 
 function makeActivity(overrides: Partial<Activity> = {}): Activity {
   return {
@@ -38,13 +60,14 @@ describe('ActivityKanbanCard', () => {
         activity={makeActivity()}
         contactName="Karim Elouch"
         {...defaultProps}
-      />
+      />,
+      { wrapper: DndWrapper },
     );
 
     const contactEl = screen.getByText('Karim Elouch');
     const header = contactEl.closest('[data-testid="activity-card-header"]');
     expect(header).not.toBeNull();
-    expect(header).toHaveTextContent('Outgoing Call');
+    expect(header).toHaveTextContent('outgoing Call');
     expect(header).toHaveTextContent('Karim Elouch');
   });
 
@@ -53,19 +76,21 @@ describe('ActivityKanbanCard', () => {
       <ActivityKanbanCard
         activity={makeActivity()}
         {...defaultProps}
-      />
+      />,
+      { wrapper: DndWrapper },
     );
 
     expect(screen.queryByText('·')).toBeNull();
   });
 
   it('renders contact name with activity-type color class', () => {
-    const { container } = render(
+    render(
       <ActivityKanbanCard
         activity={makeActivity({ type: 'meeting', direction: null })}
         contactName="Sophie Van Damme"
         {...defaultProps}
-      />
+      />,
+      { wrapper: DndWrapper },
     );
 
     const contactEl = screen.getByText('Sophie Van Damme');
@@ -78,7 +103,8 @@ describe('ActivityKanbanCard', () => {
         activity={makeActivity()}
         contactName="Karim Elouch"
         {...defaultProps}
-      />
+      />,
+      { wrapper: DndWrapper },
     );
 
     const badges = container.querySelectorAll('[data-slot="badge"]');
