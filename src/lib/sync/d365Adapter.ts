@@ -458,6 +458,8 @@ class RealD365Adapter implements ID365Adapter {
         scheduledend: activity.occurredAt,
         directioncode: true,
         'regardingobjectid_account@odata.bind': accountBind,
+        'im360_Account@odata.bind': accountBind,
+        ...(activity.contactId && { 'im360_Contact@odata.bind': `/contacts(${activity.contactId})` }),
         phonecall_activity_parties: parties,
       };
     } else if (activity.type === 'note') {
@@ -483,6 +485,8 @@ class RealD365Adapter implements ID365Adapter {
         scheduledend: activity.occurredAt,
         im360_appointmenttype: activity.type === 'visit' ? 2 : 0,
         'regardingobjectid_account@odata.bind': accountBind,
+        'im360_Account@odata.bind': accountBind,
+        ...(activity.contactId && { 'im360_Contact@odata.bind': `/contacts(${activity.contactId})` }),
         appointment_activity_parties: apptParties,
       };
     }
