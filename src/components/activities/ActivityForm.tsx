@@ -93,9 +93,9 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-x-5 gap-y-4">
       {error && (
-        <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+        <div className="col-span-2 flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {error}
         </div>
@@ -130,7 +130,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="col-span-2 space-y-1">
         <Label htmlFor="subject">Subject *</Label>
         <Input
           id="subject"
@@ -141,28 +141,29 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         />
       </div>
 
-      <div className="space-y-1">
+      <div className="col-span-2 space-y-1">
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           placeholder="What was discussed? Key outcomes, next steps..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          rows={4}
+          rows={6}
+          className="min-h-[160px] resize-y"
         />
       </div>
 
       {isAppointmentType ? (
-        <div className="space-y-3">
-          <div className="space-y-1">
+        <>
+          <div className="col-span-2 space-y-1">
             <Label htmlFor="startTime">Start *</Label>
             <DateTimePicker value={startTime} onChange={setStartTime} />
           </div>
-          <div className="space-y-1">
+          <div className="col-span-2 space-y-1">
             <Label htmlFor="occurredAt">End *</Label>
             <DateTimePicker value={occurredAt} onChange={setOccurredAt} />
           </div>
-        </div>
+        </>
       ) : (
         <div className="space-y-1">
           <Label htmlFor="occurredAt">Date *</Label>
@@ -175,42 +176,40 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        {type !== 'note' && (
-          <div className="space-y-1">
-            <Label>Status</Label>
-            <Select value={activityStatus} onValueChange={(v) => setActivityStatus(v as ActivityStatus)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ACTIVITY_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+      {type !== 'note' && (
         <div className="space-y-1">
-          <Label>Contact (optional)</Label>
-          <Select value={contactId} onValueChange={setContactId}>
+          <Label>Status</Label>
+          <Select value={activityStatus} onValueChange={(v) => setActivityStatus(v as ActivityStatus)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select contact" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">No specific contact</SelectItem>
-              {contacts.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.firstName} {c.lastName}
-                  {c.jobTitle ? ` — ${c.jobTitle}` : ''}
-                </SelectItem>
+              {ACTIVITY_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+      )}
+      <div className="space-y-1">
+        <Label>Contact (optional)</Label>
+        <Select value={contactId} onValueChange={setContactId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select contact" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No specific contact</SelectItem>
+            {contacts.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.firstName} {c.lastName}
+                {c.jobTitle ? ` — ${c.jobTitle}` : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="flex gap-3 pt-2">
+      <div className="col-span-2 flex gap-3 pt-2">
         <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
           Cancel
         </Button>

@@ -139,11 +139,11 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
       )}
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Activity</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
+          <form onSubmit={handleSave} className="grid grid-cols-2 gap-x-5 gap-y-4">
             <div className="space-y-1">
               <Label>Type</Label>
               <Select value={editType} onValueChange={(v) => {
@@ -168,55 +168,53 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
               <Label>Subject *</Label>
               <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} required />
             </div>
-            <div className="space-y-1">
+            <div className="col-span-2 space-y-1">
               <Label>Description</Label>
-              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
+              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={6} className="min-h-[160px] resize-y" />
             </div>
             {(editType === 'meeting' || editType === 'visit') ? (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
+              <>
+                <div className="col-span-2 space-y-1">
                   <Label>Start *</Label>
                   <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
                 </div>
-                <div className="space-y-1">
+                <div className="col-span-2 space-y-1">
                   <Label>End *</Label>
                   <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
                 </div>
-              </div>
+              </>
             ) : (
               <div className="space-y-1">
                 <Label>Date *</Label>
                 <DatePicker value={editOccurredAt} onChange={setEditOccurredAt} maxDate={new Date()} />
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              {editType !== 'note' && (
-                <div className="space-y-1">
-                  <Label>Status</Label>
-                  <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ActivityStatus)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ACTIVITY_STATUSES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            {editType !== 'note' && (
               <div className="space-y-1">
-                <Label>Contact</Label>
-                <Select value={editContactId} onValueChange={setEditContactId}>
+                <Label>Status</Label>
+                <Select value={editStatus} onValueChange={(v) => setEditStatus(v as ActivityStatus)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No contact</SelectItem>
-                    {contacts.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                    {ACTIVITY_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            )}
+            <div className="space-y-1">
+              <Label>Contact</Label>
+              <Select value={editContactId} onValueChange={setEditContactId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No contact</SelectItem>
+                  {contacts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex gap-3 pt-1">
+            <div className="col-span-2 flex gap-3 pt-1">
               <Button type="button" variant="outline" onClick={() => setEditing(null)} className="flex-1">Cancel</Button>
               <Button type="submit" disabled={isSaving || !editSubject.trim()} className="flex-1">
                 {isSaving ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Save Changes'}
