@@ -23,7 +23,7 @@ export interface ID365Adapter {
   fetchTasks(token: string, customerIds: Set<string>, lastSync?: string): Promise<FollowUp[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
   whoAmI(token: string): Promise<string>;
-  pushActivity(token: string, activity: Activity, callerD365Id?: string): Promise<string>;
+  pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
@@ -479,7 +479,7 @@ class RealD365Adapter implements ID365Adapter {
     return data.UserId;
   }
 
-  async pushActivity(token: string, activity: Activity, callerD365Id?: string): Promise<string> {
+  async pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null): Promise<string> {
     const isUpdate = !!activity.remoteId;
     const accountBind = `/accounts(${activity.customerId})`;
     const systemUserId = callerD365Id ?? activity.createdById;
@@ -515,6 +515,7 @@ class RealD365Adapter implements ID365Adapter {
         actualend: activity.occurredAt,
         scheduledend: activity.occurredAt,
         directioncode: activity.direction !== 'incoming',
+        ...(contactPhone && { phonenumber: contactPhone }),
         'regardingobjectid_account@odata.bind': accountBind,
         ...customBindings,
         phonecall_activity_parties: parties,
@@ -731,7 +732,7 @@ class MockD365Adapter implements ID365Adapter {
     return 'mock-system-user-id';
   }
 
-  async pushActivity(_token: string, activity: Activity, _callerD365Id?: string): Promise<string> {
+  async pushActivity(_token: string, activity: Activity, _callerD365Id?: string, _contactPhone?: string | null): Promise<string> {
     await delay(200);
     return `D365-ACT-${activity.id.slice(0, 8).toUpperCase()}`;
   }

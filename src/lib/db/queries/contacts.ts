@@ -36,6 +36,16 @@ export async function queryContactsByCustomer(customerId: string): Promise<Conta
   return rows.map(rowToContact);
 }
 
+export async function queryContactPhone(contactId: string): Promise<string | null> {
+  const db = await getDb();
+  const rows = await db.select<{ phone: string | null; mobile: string | null }[]>(
+    `SELECT phone, mobile FROM contacts WHERE id = $1`,
+    [contactId],
+  );
+  if (rows.length === 0) return null;
+  return rows[0].phone || rows[0].mobile || null;
+}
+
 export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(

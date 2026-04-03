@@ -1,6 +1,6 @@
 import { getD365Adapter } from './d365Adapter';
 import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
-import { upsertContactBulk } from '@/lib/db/queries/contacts';
+import { upsertContactBulk, queryContactPhone } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
@@ -276,7 +276,8 @@ async function pushPendingActivities(token: string): Promise<void> {
   }
   for (const activity of pending) {
     try {
-      const remoteId = await adapter.pushActivity(token, activity, callerD365Id);
+      const contactPhone = activity.contactId ? await queryContactPhone(activity.contactId) : null;
+      const remoteId = await adapter.pushActivity(token, activity, callerD365Id, contactPhone);
       await markActivitySynced(activity.id, remoteId);
       pushed++;
     } catch (err) {
