@@ -7,6 +7,7 @@ import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
+import { directPushActivity, directDeleteActivity } from '@/lib/sync/directPushService';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -61,23 +62,29 @@ export function useActivities(customerId: string) {
       if (isTauriApp()) {
         await insertActivity(activity);
         await updateCustomerLastActivity(customerId, activity.occurredAt);
+        directPushActivity(activity, d365UserId).then((result) => {
+          if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+        });
       }
       addActivity(activity);
       emitDataEvent('activity', 'created', customerId);
       return activity;
     },
-    [account, d365UserId, customerId, addActivity]
+    [account, d365UserId, customerId, addActivity, updateActivity]
   );
 
   const editActivity = useCallback(
     async (activity: Activity) => {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
+        directPushActivity(activity, d365UserId).then((result) => {
+          if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+        });
       }
       updateActivity({ ...activity, syncStatus: 'pending' });
       emitDataEvent('activity', 'updated', customerId);
     },
-    [customerId, updateActivity]
+    [customerId, d365UserId, updateActivity]
   );
 
   const removeAct = useCallback(
@@ -86,7 +93,11 @@ export function useActivities(customerId: string) {
         const deleted = await dbDeleteActivity(id);
         if (deleted?.remoteId) {
           const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
-          await insertPendingDelete(entityType, deleted.remoteId);
+          const d365Type = deleted.type === 'call' ? 'call' : deleted.type === 'note' ? 'note' : 'meeting';
+          const directDeleted = await directDeleteActivity(deleted.remoteId, d365Type);
+          if (!directDeleted) {
+            await insertPendingDelete(entityType, deleted.remoteId);
+          }
         }
       }
       removeActivity(id);

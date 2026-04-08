@@ -1,5 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
+
+vi.mock('@/lib/sync/directPushService', () => ({
+  directPushActivity: vi.fn().mockResolvedValue(null),
+  directDeleteActivity: vi.fn().mockResolvedValue(false),
+}));
+
 import { useActivities } from '@/hooks/useActivities';
 import { useActivityStore } from '@/store/activityStore';
 import { useAuthStore } from '@/store/authStore';

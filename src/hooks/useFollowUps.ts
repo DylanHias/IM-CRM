@@ -14,6 +14,7 @@ import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
+import { directPushFollowUp, directDeleteFollowUp } from '@/lib/sync/directPushService';
 import type { FollowUp } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -70,29 +71,41 @@ export function useFollowUps(customerId: string) {
       if (isTauriApp()) {
         await insertFollowUp(followUp);
         await updateCustomerLastActivity(customerId, now);
+        directPushFollowUp(followUp).then((result) => {
+          if (result) updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+        });
       }
       addFollowUp(followUp);
       emitDataEvent('followup', 'created', customerId);
       return followUp;
     },
-    [account, d365UserId, customerId, addFollowUp]
+    [account, d365UserId, customerId, addFollowUp, updateFollowUp]
   );
 
   const complete = useCallback(
     async (id: string) => {
       if (isTauriApp()) {
         await completeFollowUp(id);
+        const completed = followUps.find((f) => f.id === id);
+        if (completed) {
+          directPushFollowUp({ ...completed, completed: true, completedAt: new Date().toISOString(), syncStatus: 'pending' }).then((result) => {
+            if (result) updateFollowUp({ ...completed, completed: true, completedAt: completed.completedAt, syncStatus: 'synced', remoteId: result.remoteId });
+          });
+        }
       }
       markComplete(id);
       emitDataEvent('followup', 'completed', customerId);
     },
-    [customerId, markComplete]
+    [customerId, followUps, markComplete, updateFollowUp]
   );
 
   const editFollowUp = useCallback(
     async (followUp: FollowUp) => {
       if (isTauriApp()) {
         await dbUpdateFollowUp(followUp);
+        directPushFollowUp(followUp).then((result) => {
+          if (result) updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+        });
       }
       updateFollowUp(followUp);
       emitDataEvent('followup', 'updated', customerId);
@@ -105,7 +118,10 @@ export function useFollowUps(customerId: string) {
       if (isTauriApp()) {
         const deleted = await dbDeleteFollowUp(id);
         if (deleted?.remoteId) {
-          await insertPendingDelete('task', deleted.remoteId);
+          const directDeleted = await directDeleteFollowUp(deleted.remoteId);
+          if (!directDeleted) {
+            await insertPendingDelete('task', deleted.remoteId);
+          }
         }
       }
       removeFollowUp(id);
