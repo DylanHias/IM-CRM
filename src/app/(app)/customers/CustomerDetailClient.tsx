@@ -618,7 +618,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
                     </div>
                     {(editType === 'meeting' || editType === 'visit') ? (
-                      <div className="grid grid-cols-2 gap-3">
+                      <>
                         <div className="space-y-1">
                           <Label>Start *</Label>
                           <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
@@ -627,7 +627,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                           <Label>End *</Label>
                           <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <div className="space-y-1">
                         <Label>Date *</Label>
