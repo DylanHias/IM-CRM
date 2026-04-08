@@ -41,7 +41,7 @@ export function ActivitiesTabContent({
   const kanbanActivities = useMemo(() => {
     const nonNotes = activities.filter((a) => a.type !== 'note');
     if (!dateRange) return nonNotes;
-    return nonNotes.filter((a) => a.occurredAt >= dateRange.from && a.occurredAt <= dateRange.to);
+    return nonNotes.filter((a) => a.occurredAt >= dateRange.from);
   }, [activities, dateRange]);
 
   useEffect(() => {
