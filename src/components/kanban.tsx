@@ -390,7 +390,7 @@ Constants
  * @see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
  */
 const DATA_TRANSFER_TYPES = {
-  CARD: 'kanban-board-card',
+  CARD: 'text/plain',
 };
 
 const KANBAN_BOARD_CIRCLE_COLORS_MAP = {
@@ -489,6 +489,7 @@ export function KanbanBoardColumn({
       onDragOver={event => {
         if (event.dataTransfer.types.includes(DATA_TRANSFER_TYPES.CARD)) {
           event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
           setIsDropTarget(true);
           onDragOver('', columnId);
         }
@@ -643,6 +644,7 @@ export function KanbanBoardColumnListItem({
           if (onDropOverListItem) {
             event.preventDefault();
             event.stopPropagation();
+            event.dataTransfer.dropEffect = 'move';
             const rect = event.currentTarget.getBoundingClientRect();
             const midpoint = (rect.top + rect.bottom) / 2;
             setDropDirection(event.clientY <= midpoint ? 'top' : 'bottom');

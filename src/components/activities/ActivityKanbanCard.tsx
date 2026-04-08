@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Clock, AlertCircle, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   KanbanBoardCard,
   KanbanBoardCardTitle,
@@ -11,6 +12,7 @@ import {
   KanbanBoardCardButtonGroup,
   KanbanBoardCardButton,
 } from '@/components/kanban';
+import { cn } from '@/lib/utils';
 import { ACTIVITY_ICONS } from './ActivityItem';
 import { formatDate } from '@/lib/utils/dateUtils';
 import type { Activity } from '@/types/entities';
@@ -39,20 +41,44 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         >
           <Pencil size={12} />
         </KanbanBoardCardButton>
-        <ConfirmPopover
-          message={`Delete "${activity.subject}"?`}
-          confirmLabel="Delete"
-          onConfirm={onDelete}
-          open={confirmOpen}
-          onOpenChange={setConfirmOpen}
-        >
-          <KanbanBoardCardButton
-            className="text-destructive hover:text-destructive"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Trash2 size={12} />
-          </KanbanBoardCardButton>
-        </ConfirmPopover>
+        <Popover open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <PopoverTrigger asChild>
+            <div
+              role="button"
+              tabIndex={-1}
+              className={cn(
+                buttonVariants({ size: 'icon', variant: 'ghost' }),
+                'border-border size-5 border hover:cursor-default [&_svg]:size-3.5 text-destructive hover:text-destructive',
+              )}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Trash2 size={12} />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="end" className="w-64">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
+              <p className="text-[13px] leading-snug">Delete &ldquo;{activity.subject}&rdquo;?</p>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1 h-8 text-xs"
+                onClick={() => {
+                  setConfirmOpen(false);
+                  onDelete();
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </KanbanBoardCardButtonGroup>
 
       <div className="flex flex-col flex-1">
