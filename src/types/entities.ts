@@ -35,6 +35,7 @@ export interface Contact {
   mobile: string | null;
   notes: string | null;
   contactType: string | null;
+  cloudContact: boolean | null;
   syncedAt: string;
   createdAt: string;
   updatedAt: string;

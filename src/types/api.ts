@@ -34,6 +34,7 @@ export interface D365Contact {
   telephone1: string | null;
   mobilephone: string | null;
   im360_contacttype: number | null;
+  im360_cloudcontact: boolean | null;
   modifiedon: string;
   'im360_contacttype@OData.Community.Display.V1.FormattedValue'?: string;
 }

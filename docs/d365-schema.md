@@ -48,6 +48,7 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `telephone1` | Phone |
 | `mobilephone` | Mobile |
 | `im360_contacttype` | Contact type (custom option set) |
+| `im360_cloudcontact` | Cloud Contact flag (custom boolean) |
 | `modifiedon` | Last modified |
 
 ### Push: N/A (read-only)

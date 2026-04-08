@@ -87,6 +87,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       mobile        TEXT,
       notes         TEXT,
       contact_type  TEXT,
+      cloud_contact INTEGER,
       synced_at     TEXT NOT NULL,
       created_at    TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -525,6 +526,13 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     }
     await db.execute(
       `UPDATE app_settings SET value = '16', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 17) {
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN cloud_contact INTEGER`); } catch { /* column may already exist */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '17', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

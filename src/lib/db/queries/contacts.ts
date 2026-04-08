@@ -15,6 +15,7 @@ function rowToContact(row: ContactRow): Contact {
     mobile: row.mobile,
     notes: row.notes,
     contactType: row.contact_type,
+    cloudContact: row.cloud_contact === 1 ? true : row.cloud_contact === 0 ? false : null,
     syncedAt: row.synced_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -50,17 +51,20 @@ export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      cloud_contact=excluded.cloud_contact,
       synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
-      contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
+      contact.notes, contact.contactType,
+      contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
+      contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
 
@@ -78,19 +82,22 @@ export async function upsertContactBulk(contact: Contact): Promise<boolean> {
 
   const result = await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      cloud_contact=excluded.cloud_contact,
       synced_at=excluded.synced_at, updated_at=excluded.updated_at
     WHERE excluded.updated_at > contacts.updated_at
        OR contacts.updated_at IS NULL`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
-      contact.notes, contact.contactType, contact.syncedAt, contact.createdAt, contact.updatedAt,
+      contact.notes, contact.contactType,
+      contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
+      contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
   return result.rowsAffected > 0;

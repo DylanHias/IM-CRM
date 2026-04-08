@@ -72,6 +72,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       mobile: mobile.trim() || null,
       notes: notes.trim() || null,
       contactType: initialData?.contactType ?? null,
+      cloudContact: initialData?.cloudContact ?? null,
       syncedAt: now,
       createdAt: initialData?.createdAt ?? now,
       updatedAt: now,
