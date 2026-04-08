@@ -1,7 +1,7 @@
-import type { Customer, Contact, Activity, FollowUp, ActivityType } from '@/types/entities';
+import type { Customer, Contact, Activity, FollowUp, ActivityType, Opportunity, OpportunityStatus } from '@/types/entities';
 import type {
   D365Customer, D365Contact, D365ODataResponse,
-  D365PhoneCall, D365Appointment, D365Annotation, D365Task,
+  D365PhoneCall, D365Appointment, D365Annotation, D365Task, D365Opportunity,
 } from '@/types/api';
 import { v4 as uuidv4 } from 'uuid';
 import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
@@ -12,6 +12,14 @@ interface OptionSetData {
   entityName: string;
   attributeName: string;
   options: Array<{ value: number; label: string; displayOrder: number }>;
+}
+
+export interface OpportunityOptionValues {
+  stage: number | null;
+  sellType: number | null;
+  opportunityType: number | null;
+  recordType: number | null;
+  source: number | null;
 }
 
 export interface ID365Adapter {
@@ -27,6 +35,9 @@ export interface ID365Adapter {
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
+  fetchOpportunities(token: string, customerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
+  pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string>;
+  deleteOpportunity(token: string, remoteId: string): Promise<void>;
 }
 
 // D365 standard industry code → label mapping
@@ -277,6 +288,37 @@ async function fetchAllPages<T>(
   return results;
 }
 
+function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Opportunity {
+  const statusMap: Record<number, OpportunityStatus> = { 0: 'Open', 1: 'Won', 2: 'Lost' };
+  return {
+    id: uuidv4(),
+    customerId: r._parentaccountid_value ?? '',
+    contactId: r._contactid_value ?? null,
+    status: statusMap[r.statecode] ?? 'Open',
+    subject: r.name ?? '',
+    bcn: r.im360_bcn ?? null,
+    multiVendorOpportunity: r.im360_multivendoropportunity ?? false,
+    sellType: r['im360_opptype@OData.Community.Display.V1.FormattedValue'] ?? '',
+    primaryVendor: r.im360_primaryvendorname ?? null,
+    opportunityType: r['im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    stage: r['im360_oppstage@OData.Community.Display.V1.FormattedValue'] ?? 'Prospecting',
+    probability: r.closeprobability ?? 5,
+    expirationDate: r.estimatedclosedate ? r.estimatedclosedate.split('T')[0] : null,
+    estimatedRevenue: r.estimatedvalue ?? null,
+    currency: 'EUR',
+    country: 'Belgium',
+    source: r['im360_source@OData.Community.Display.V1.FormattedValue'] ?? 'cloud',
+    recordType: r['im360_recordtype@OData.Community.Display.V1.FormattedValue'] ?? 'Sales',
+    customerNeed: r.customerneed ?? null,
+    syncStatus: 'synced',
+    remoteId: r.opportunityid,
+    createdById: r._ownerid_value ?? '',
+    createdByName: r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
+    createdAt: r.createdon ?? now,
+    updatedAt: r.modifiedon ?? now,
+  };
+}
+
 class RealD365Adapter implements ID365Adapter {
   private baseUrl = (process.env.NEXT_PUBLIC_D365_BASE_URL ?? '').replace(/\/+$/, '');
   private navPropertyCache = new Map<string, string | null>();
@@ -423,6 +465,26 @@ class RealD365Adapter implements ID365Adapter {
     return records
       .map((r) => mapD365TaskToFollowUp(r, now))
       .filter((t) => customerIds.has(t.customerId));
+  }
+
+  async fetchOpportunities(token: string, customerIds: Set<string>, lastSync?: string): Promise<Opportunity[]> {
+    const select = [
+      'opportunityid', 'name', 'statecode', 'estimatedvalue', 'estimatedclosedate',
+      'closeprobability', 'customerneed', 'im360_bcn', 'im360_multivendoropportunity',
+      'im360_oppstage', 'im360_opptype', 'im360_drpboxopptype', 'im360_recordtype',
+      'im360_source', 'im360_primaryvendorname',
+      '_parentaccountid_value', '_contactid_value', '_ownerid_value',
+      'createdon', 'modifiedon',
+    ].join(',');
+
+    let filter = 'statecode ne 3 and _parentaccountid_value ne null';
+    if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
+    const url = `${this.baseUrl}/api/data/v9.2/opportunities?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const now = new Date().toISOString();
+    const records = await fetchAllPages<D365Opportunity>(url, token, 'Opportunities');
+    return records
+      .map((r) => mapD365OpportunityToOpportunity(r, now))
+      .filter((o) => o.customerId && customerIds.has(o.customerId));
   }
 
   async fetchOptionSets(token: string): Promise<OptionSetData[]> {
@@ -679,6 +741,84 @@ class RealD365Adapter implements ID365Adapter {
     return resolvedId;
   }
 
+  async pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string> {
+    const isUpdate = !!opportunity.remoteId;
+
+    const body: Record<string, unknown> = {
+      name: opportunity.subject,
+      closeprobability: opportunity.probability,
+      im360_multivendoropportunity: opportunity.multiVendorOpportunity,
+      'parentaccountid@odata.bind': `/accounts(${opportunity.customerId})`,
+    };
+
+    if (opportunity.estimatedRevenue != null) body.estimatedvalue = opportunity.estimatedRevenue;
+    if (opportunity.expirationDate) body.estimatedclosedate = opportunity.expirationDate;
+    if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
+    if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
+    if (opportunity.primaryVendor) body.im360_primaryvendorname = opportunity.primaryVendor;
+    if (opportunity.contactId) body['contactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
+    if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
+    if (optionValues.sellType != null) body.im360_opptype = optionValues.sellType;
+    if (optionValues.opportunityType != null) body.im360_drpboxopptype = optionValues.opportunityType;
+    if (optionValues.recordType != null) body.im360_recordtype = optionValues.recordType;
+    if (optionValues.source != null) body.im360_source = optionValues.source;
+
+    const endpoint = isUpdate
+      ? `${this.baseUrl}/api/data/v9.2/opportunities(${opportunity.remoteId})`
+      : `${this.baseUrl}/api/data/v9.2/opportunities`;
+
+    const res = await fetch(endpoint, {
+      method: isUpdate ? 'PATCH' : 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 push opportunity failed ${res.status}: ${text}`);
+    }
+
+    const resolvedId = isUpdate
+      ? opportunity.remoteId!
+      : (() => {
+          const entityId = res.headers.get('OData-EntityId') ?? '';
+          const match = entityId.match(/\(([^)]+)\)$/);
+          return match ? match[1] : entityId;
+        })();
+
+    // D365 won't accept statecode in the main body for opportunities — set via separate PATCH
+    // Open is the default; only patch if Won or Lost
+    if (opportunity.status !== 'Open') {
+      const stateBody = opportunity.status === 'Won'
+        ? { statecode: 1, statuscode: 3 }
+        : { statecode: 2, statuscode: 4 };
+      const stateRes = await fetch(
+        `${this.baseUrl}/api/data/v9.2/opportunities(${resolvedId})`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(stateBody),
+        },
+      );
+      if (!stateRes.ok) {
+        console.error(`[opportunity] Failed to set opportunity status to ${opportunity.status} (${resolvedId}):`, await stateRes.text());
+      }
+    }
+
+    return resolvedId;
+  }
+
   async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
     let entitySet: string;
     if (type === 'call') entitySet = 'phonecalls';
@@ -713,6 +853,21 @@ class RealD365Adapter implements ID365Adapter {
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`D365 delete follow-up failed ${res.status}: ${text}`);
+    }
+  }
+
+  async deleteOpportunity(token: string, remoteId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/opportunities(${remoteId})`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+      },
+    });
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new Error(`D365 delete opportunity failed ${res.status}: ${text}`);
     }
   }
 }
@@ -780,6 +935,20 @@ class MockD365Adapter implements ID365Adapter {
   }
 
   async deleteFollowUp(_token: string, _remoteId: string): Promise<void> {
+    await delay(200);
+  }
+
+  async fetchOpportunities(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<Opportunity[]> {
+    await delay(200);
+    return [];
+  }
+
+  async pushOpportunity(_token: string, opportunity: Opportunity, _optionValues: OpportunityOptionValues): Promise<string> {
+    await delay(200);
+    return `D365-OPP-${opportunity.id.slice(0, 8).toUpperCase()}`;
+  }
+
+  async deleteOpportunity(_token: string, _remoteId: string): Promise<void> {
     await delay(200);
   }
 }

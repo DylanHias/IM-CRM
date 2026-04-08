@@ -110,4 +110,33 @@ export interface D365SystemUser {
   modifiedon: string;
 }
 
+export interface D365Opportunity {
+  opportunityid: string;
+  name: string | null;
+  statecode: number;
+  estimatedvalue: number | null;
+  estimatedclosedate: string | null;
+  closeprobability: number | null;
+  customerneed: string | null;
+  im360_bcn: string | null;
+  im360_multivendoropportunity: boolean | null;
+  im360_oppstage: number | null;
+  im360_opptype: number | null;
+  im360_drpboxopptype: number | null;
+  im360_recordtype: number | null;
+  im360_source: number | null;
+  im360_primaryvendorname: string | null;
+  _parentaccountid_value: string | null;
+  _contactid_value: string | null;
+  _ownerid_value: string | null;
+  'im360_oppstage@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_opptype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_recordtype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_source@OData.Community.Display.V1.FormattedValue'?: string;
+  '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  createdon: string;
+  modifiedon: string;
+}
+
 
