@@ -14,7 +14,6 @@ export interface D365Customer {
   address1_country: string | null;
   websiteurl: string | null;
   im360_bcn: string | null;
-  im360_cloudpurchaser: boolean | null;
   im360_mainsegmentation: number | null;
   'im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'?: string;
   primarycontactid?: {
@@ -34,6 +33,7 @@ export interface D365Contact {
   emailaddress1: string | null;
   telephone1: string | null;
   mobilephone: string | null;
+  im360_contacttype: number | null;
   modifiedon: string;
   'im360_contacttype@OData.Community.Display.V1.FormattedValue'?: string;
 }
