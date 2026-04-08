@@ -7,11 +7,7 @@ import { NotesTable } from './NotesTable';
 import { ActivityKanbanBoard } from './ActivityKanbanBoard';
 import { ActivityDateFilter } from './ActivityDateFilter';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
-
-interface DateRange {
-  from: string;
-  to: string;
-}
+import type { ActivityDateRange } from './ActivityDateFilter';
 
 interface ActivitiesTabContentProps {
   activities: Activity[];
@@ -32,10 +28,12 @@ export function ActivitiesTabContent({
   onStatusChange,
   onFilteredCountChange,
 }: ActivitiesTabContentProps) {
-  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [dateRange, setDateRange] = useState<ActivityDateRange | null>(null);
+  const [rangeLabel, setRangeLabel] = useState<string | null>(null);
 
-  const handleDateChange = useCallback((range: DateRange | null) => {
+  const handleDateChange = useCallback((range: ActivityDateRange | null, label: string | null) => {
     setDateRange(range);
+    setRangeLabel(label);
   }, []);
 
   const notes = useMemo(() => activities.filter((a) => a.type === 'note'), [activities]);
@@ -66,7 +64,12 @@ export function ActivitiesTabContent({
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-foreground">Activities</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Activities</h3>
+            {rangeLabel && (
+              <span className="text-xs text-muted-foreground">{rangeLabel}</span>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <ActivityDateFilter onChange={handleDateChange} />
             <Button size="sm" className="gap-1.5" onClick={onAddActivity}>
