@@ -91,6 +91,8 @@ export function useActivities(customerId: string) {
 
   const removeAct = useCallback(
     async (id: string) => {
+      removeActivity(id);
+      emitDataEvent('activity', 'deleted', customerId);
       if (isTauriApp()) {
         const deleted = await dbDeleteActivity(id);
         if (deleted?.remoteId) {
@@ -108,8 +110,6 @@ export function useActivities(customerId: string) {
           console.log(`[activity] No remoteId for activity ${id}, skipping D365 delete (type=${deleted?.type})`);
         }
       }
-      removeActivity(id);
-      emitDataEvent('activity', 'deleted', customerId);
     },
     [customerId, removeActivity]
   );
