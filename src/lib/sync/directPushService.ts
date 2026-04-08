@@ -48,11 +48,10 @@ async function getCallerD365Id(token: string): Promise<string | undefined> {
 
 export async function directPushActivity(
   activity: Activity,
-  callerD365Id?: string | null,
 ): Promise<{ remoteId: string } | null> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
-    const d365Id = callerD365Id ?? await getCallerD365Id(token);
+    const d365Id = await getCallerD365Id(token);
     const contactPhone = activity.contactId ? await queryContactPhone(activity.contactId) : null;
     return adapter.pushActivity(token, activity, d365Id, contactPhone);
   });

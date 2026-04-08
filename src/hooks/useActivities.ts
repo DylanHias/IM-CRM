@@ -64,7 +64,7 @@ export function useActivities(customerId: string) {
         if (activity.occurredAt <= now) {
           await updateCustomerLastActivity(customerId, activity.occurredAt);
         }
-        directPushActivity(activity, d365UserId).then((result) => {
+        directPushActivity(activity).then((result) => {
           if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
         });
       }
@@ -79,14 +79,14 @@ export function useActivities(customerId: string) {
     async (activity: Activity) => {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
-        directPushActivity(activity, d365UserId).then((result) => {
+        directPushActivity(activity).then((result) => {
           if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
         });
       }
       updateActivity({ ...activity, syncStatus: 'pending' });
       emitDataEvent('activity', 'updated', customerId);
     },
-    [customerId, d365UserId, updateActivity]
+    [customerId, updateActivity]
   );
 
   const removeAct = useCallback(
