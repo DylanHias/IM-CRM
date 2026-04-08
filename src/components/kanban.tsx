@@ -725,12 +725,14 @@ export function KanbanBoardCard({
   isActive = false,
   ref,
   ...props
-}: ComponentProps<'button'> & KanbanBoardCardProps) {
+}: ComponentProps<'div'> & KanbanBoardCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { draggableDescribedById, onDragStart } = useDndEvents();
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       aria-describedby={draggableDescribedById}
       aria-roledescription="draggable"
       className={cn(
