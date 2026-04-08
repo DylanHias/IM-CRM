@@ -14,10 +14,15 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 
 ## TypeScript & Naming
 
-- Strict mode — no `any`, no `!` without justification
+- Strict mode — no `any`, no `!` without justification; check ref/prop types carefully before building
+- Radix UI components have specific composition patterns — verify props and slot usage against the actual API
 - Imports: `@/` alias (maps to `src/`)
 - Union literals over enums; `interface` for objects, `type` for unions/intersections
 - PascalCase: components, types, component files (`.tsx`) | camelCase: functions, hooks, other files (`.ts`) | SCREAMING_SNAKE_CASE: constants
+
+## UI Changes
+
+- Only modify the specific elements requested — do not remove, reorder, or alter adjacent elements unless explicitly asked
 
 ## Components & JSX
 
@@ -60,6 +65,8 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 - Semver: patch = fixes, minor = features, major = breaking
 - Changelog: `.changelog/v{version}.md` — plain language, zero tech terms, explain what the user sees
 - Releases: manual via `workflow_dispatch`
+- Always run `pnpm build` before committing and pushing — never push without a successful build
+- Only stage files related to the current task (`git add <specific-files>`) — never `git add .` or `git add -A`
 
 ## Error Handling & Logging
 
@@ -83,6 +90,12 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 ## Subagents
 
 - Use for parallel/isolated tasks; work inline for simple/sequential ones
+
+## D365 Integration
+
+- When fixing sync errors, always check exact field/navigation property names against D365 metadata (`docs/d365-schema.md`) before making changes
+- Never remove fields — find the correct name instead
+- Custom fields use `im360_` prefix; custom lookups resolve dynamically via `resolveNavProperty()`
 
 ## Self-Improvement
 
