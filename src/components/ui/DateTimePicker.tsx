@@ -15,6 +15,7 @@ interface DateTimePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  minValue?: string; // "YYYY-MM-DDTHH:MM" — restricts selectable dates/times
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -26,6 +27,7 @@ export function DateTimePicker({
   placeholder = 'Select date',
   disabled,
   className,
+  minValue,
 }: DateTimePickerProps) {
   const [dateOpen, setDateOpen] = React.useState(false);
   const [timeOpen, setTimeOpen] = React.useState(false);
@@ -35,6 +37,27 @@ export function DateTimePicker({
   const [hour, minute] = timePart.split(':');
 
   const selected = datePart ? parseISO(datePart) : undefined;
+
+  const minDatePart = minValue ? minValue.split('T')[0] : '';
+  const minTimePart = minValue ? minValue.split('T')[1] ?? '00:00' : '';
+  const [minHour, minMinute] = minTimePart ? minTimePart.split(':') : ['', ''];
+  const minSelected = minDatePart ? parseISO(minDatePart) : undefined;
+
+  const isHourDisabled = (h: string) => {
+    if (!minValue || !datePart) return false;
+    if (datePart > minDatePart) return false;
+    if (datePart < minDatePart) return true;
+    return h < minHour;
+  };
+
+  const isMinuteDisabled = (m: string) => {
+    if (!minValue || !datePart) return false;
+    if (datePart > minDatePart) return false;
+    if (datePart < minDatePart) return true;
+    if (hour > minHour) return false;
+    if (hour < minHour) return true;
+    return m < minMinute;
+  };
 
   const getOrTodayDate = () => {
     if (datePart) return datePart;
@@ -88,6 +111,7 @@ export function DateTimePicker({
             defaultMonth={selected}
             startMonth={new Date(2000, 0)}
             endMonth={new Date(2060, 11)}
+            disabled={minSelected ? (date) => date < minSelected : undefined}
           />
         </PopoverContent>
       </Popover>
@@ -112,6 +136,7 @@ export function DateTimePicker({
                     key={h}
                     variant="ghost"
                     size="sm"
+                    disabled={isHourDisabled(h)}
                     className={cn(
                       'w-full justify-center text-sm',
                       h === hour && 'bg-accent text-accent-foreground font-medium'
@@ -131,6 +156,7 @@ export function DateTimePicker({
                     key={m}
                     variant="ghost"
                     size="sm"
+                    disabled={isMinuteDisabled(m)}
                     className={cn(
                       'w-full justify-center text-sm',
                       m === minute && 'bg-accent text-accent-foreground font-medium'

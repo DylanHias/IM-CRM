@@ -1,10 +1,21 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ActivityForm } from '@/components/activities/ActivityForm';
 import { useSettingsStore } from '@/store/settingsStore';
 import { mockRouter } from '@/__tests__/setup';
 import type { Contact } from '@/types/entities';
+
+vi.mock('@/components/ui/DateTimePicker', () => ({
+  DateTimePicker: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <input
+      data-testid="datetime-picker"
+      type="datetime-local"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
+}));
 
 const mockCreateActivity = vi.fn();
 
@@ -171,11 +182,35 @@ describe('ActivityForm', () => {
   it('meeting end time defaults to one hour after start', () => {
     useSettingsStore.getState().updateSetting('defaultActivityType', 'meeting');
     render(<ActivityForm {...defaultProps} />);
-    // Start defaults to 10:00, end should default to 11:00
-    const buttons = screen.getAllByRole('button');
-    const timeButtons = buttons.filter((b) => /^\d{2}:\d{2}$/.test(b.textContent ?? ''));
-    // First time button = start time, second = end time
-    expect(timeButtons[0]).toHaveTextContent('10:00');
-    expect(timeButtons[1]).toHaveTextContent('11:00');
+    const pickers = screen.getAllByTestId('datetime-picker');
+    expect(pickers[0]).toHaveValue('2026-03-25T10:00');
+    expect(pickers[1]).toHaveValue('2026-03-25T11:00');
+  });
+
+  it('moving start past end bumps end to start + 1h', () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'meeting');
+    render(<ActivityForm {...defaultProps} />);
+    const pickers = screen.getAllByTestId('datetime-picker');
+    // Start: 10:00, End: 11:00 — move start to 12:00 (past end)
+    fireEvent.change(pickers[0], { target: { value: '2026-03-25T12:00' } });
+    expect(pickers[1]).toHaveValue('2026-03-25T13:00');
+  });
+
+  it('moving start earlier than end leaves end unchanged', () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'meeting');
+    render(<ActivityForm {...defaultProps} />);
+    const pickers = screen.getAllByTestId('datetime-picker');
+    // Start: 10:00, End: 11:00 — move start to 09:00 (before end)
+    fireEvent.change(pickers[0], { target: { value: '2026-03-25T09:00' } });
+    expect(pickers[1]).toHaveValue('2026-03-25T11:00');
+  });
+
+  it('cannot set end time before start time', () => {
+    useSettingsStore.getState().updateSetting('defaultActivityType', 'meeting');
+    render(<ActivityForm {...defaultProps} />);
+    const pickers = screen.getAllByTestId('datetime-picker');
+    // Start: 10:00, End: 11:00 — try to move end to 09:00
+    fireEvent.change(pickers[1], { target: { value: '2026-03-25T09:00' } });
+    expect(pickers[1]).toHaveValue('2026-03-25T11:00');
   });
 });

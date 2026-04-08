@@ -196,7 +196,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           </div>
           <div className="col-span-2 space-y-1">
             <Label htmlFor="occurredAt">End *</Label>
-            <DateTimePicker value={occurredAt} onChange={handleEndTimeChange} />
+            <DateTimePicker value={occurredAt} onChange={handleEndTimeChange} minValue={startTime} />
           </div>
         </>
       ) : (
