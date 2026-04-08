@@ -65,7 +65,7 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 - Semver: patch = fixes, minor = features, major = breaking
 - Changelog: `.changelog/v{version}.md` — plain language, zero tech terms, explain what the user sees
 - Releases: manual via `workflow_dispatch`
-- Always run `pnpm build` before committing and pushing — never push without a successful build
+- Build runs automatically via pre-commit hook — do NOT run `pnpm build` manually before commits
 - Only stage files related to the current task (`git add <specific-files>`) — never `git add .` or `git add -A`
 
 ## Error Handling & Logging
@@ -89,13 +89,25 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 
 ## Subagents
 
-- Use for parallel/isolated tasks; work inline for simple/sequential ones
+- Use parallel subagents for any 2+ independent tasks — dispatch in a single message
+- Common patterns that MUST use parallel subagents:
+  - Version bump + changelog + help doc update after a feature lands
+  - Multiple independent file edits (e.g. fixing same bug in different modules)
+  - Research (reading docs/codebase) + implementation in separate agents
+  - D365 schema lookup + writing the fix
+- Work inline for strictly sequential tasks (each step depends on previous output)
 
 ## D365 Integration
 
 - When fixing sync errors, always check exact field/navigation property names against D365 metadata (`docs/d365-schema.md`) before making changes
 - Never remove fields — find the correct name instead
 - Custom fields use `im360_` prefix; custom lookups resolve dynamically via `resolveNavProperty()`
+
+## Library Docs (context7)
+
+- Always use context7 MCP (`resolve-library-id` → `query-docs`) for library/API questions instead of guessing from training data
+- Required for: Tauri APIs, Radix UI props/slots, Next.js config, D365 SDK, Zustand patterns
+- Especially important for Radix UI — composition patterns and slot usage change and training data is often wrong
 
 ## Self-Improvement
 
