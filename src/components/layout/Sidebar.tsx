@@ -126,7 +126,7 @@ export function AppSidebar() {
     },
     '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
     '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
-    '/arr-overview': { href: '/arr-overview', label: 'ARR Overview', icon: BarChart2 },
+    '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
   };
 
   const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);

@@ -31,7 +31,7 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/followups': 'Go to Follow-Ups',
     '/opportunities': 'Go to Opportunities',
     '/invoices': 'Go to Invoices',
-    '/arr-overview': 'Go to ARR Overview',
+    '/revenue-overview': 'Go to Revenue Overview',
   };
 
   return sidebarOrder.map((tab, i) => ({

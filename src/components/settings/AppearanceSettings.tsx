@@ -46,7 +46,7 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
   '/followups': { label: 'Follow-Ups', icon: CheckSquare },
   '/opportunities': { label: 'Opportunities', icon: Target },
   '/invoices': { label: 'Invoices', icon: FileText },
-  '/arr-overview': { label: 'ARR Overview', icon: BarChart2 },
+  '/revenue-overview': { label: 'Revenue Overview', icon: BarChart2 },
 };
 
 export function AppearanceSettings() {

@@ -1,6 +1,6 @@
-# ARR Overview
+# Revenue Overview
 
-The ARR (Annual Recurring Revenue) Overview is a financial dashboard that shows revenue data for all your customers. It's useful for pipeline reviews, quota management, and reporting.
+The Revenue Overview is a financial dashboard that shows ARR (Annual Recurring Revenue) data for all your customers. It's useful for pipeline reviews, quota management, and reporting.
 
 ## What You'll See
 

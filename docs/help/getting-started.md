@@ -14,7 +14,7 @@ The **sidebar** on the left is your main navigation. It gives you quick access t
 - **Sync** — Manage data synchronization with Dynamics 365
 - **Follow-Ups** — All your pending tasks and reminders
 - **Opportunities** — Sales pipeline and deals
-- **ARR Overview** — Annual Recurring Revenue dashboard
+- **Revenue Overview** — Annual Recurring Revenue dashboard
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.
 

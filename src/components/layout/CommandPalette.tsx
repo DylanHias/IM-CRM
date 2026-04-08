@@ -24,7 +24,7 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/followups': CheckSquare,
   '/opportunities': Target,
   '/invoices': FileText,
-  '/arr-overview': BarChart2,
+  '/revenue-overview': BarChart2,
 };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {

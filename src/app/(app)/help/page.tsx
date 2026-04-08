@@ -23,7 +23,7 @@ import activities from '../../../../docs/help/activities.md';
 import followUps from '../../../../docs/help/follow-ups.md';
 import contacts from '../../../../docs/help/contacts.md';
 import opportunities from '../../../../docs/help/opportunities.md';
-import arrOverview from '../../../../docs/help/arr-overview.md';
+import revenueOverview from '../../../../docs/help/revenue-overview.md';
 import sync from '../../../../docs/help/sync.md';
 import settings from '../../../../docs/help/settings.md';
 import shortcuts from '../../../../docs/help/shortcuts.md';
@@ -35,7 +35,7 @@ const TABS = [
   { id: 'follow-ups', label: 'Follow-Ups', icon: CheckSquare },
   { id: 'contacts', label: 'Contacts', icon: Contact },
   { id: 'opportunities', label: 'Opportunities', icon: Target },
-  { id: 'arr-overview', label: 'ARR Overview', icon: BarChart2 },
+  { id: 'revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'settings', label: 'Settings', icon: Settings2 },
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
@@ -50,7 +50,7 @@ const CONTENT: Record<TabId, string> = {
   'follow-ups': followUps,
   contacts,
   opportunities,
-  'arr-overview': arrOverview,
+  'revenue-overview': revenueOverview,
   sync,
   settings,
   shortcuts,

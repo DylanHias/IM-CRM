@@ -19,7 +19,7 @@ A local-first desktop CRM built for Ingram Micro. Replaces the cluttered existin
 | **Activity Logging** | Log meetings, visits, calls, and notes against customers |
 | **Follow-Up Tracking** | Create tasks with due dates, track overdue/upcoming/completed |
 | **Invoice Lookup** | Search customer invoices from Xvantage CLS |
-| **ARR Overview** | Sortable/filterable customer table with Excel export |
+| **Revenue Overview** | Sortable/filterable customer table with Excel export |
 | **Contact Management** | Linked contacts with priority contact resolution |
 | **Trainings** | Track and manage training records linked to customers |
 | **Timeline** | Unified chronological view of all activities per customer |
@@ -67,7 +67,7 @@ pnpm lint
 
 ```
 src/
-├── app/                 Routes (customers, followups, invoices, arr-overview, sync, login)
+├── app/                 Routes (customers, followups, invoices, revenue-overview, sync, login)
 ├── components/          React components organized by feature
 │   ├── ui/              Radix-based design system primitives
 │   ├── customers/       Customer list, detail, filters

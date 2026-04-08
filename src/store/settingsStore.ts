@@ -10,7 +10,7 @@ type ExportFormat = 'xlsx' | 'csv';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
-export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/arr-overview';
+export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/revenue-overview';
 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/customers',
@@ -18,7 +18,7 @@ export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/followups',
   '/opportunities',
   '/invoices',
-  '/arr-overview',
+  '/revenue-overview',
 ];
 
 interface SettingsState {

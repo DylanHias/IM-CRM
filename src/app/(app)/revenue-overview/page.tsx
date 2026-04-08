@@ -105,7 +105,7 @@ function renderArrCell(customer: Customer, columnId: string, contacts: Contact[]
   }
 }
 
-export default function ArrOverviewPage() {
+export default function RevenueOverviewPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -115,8 +115,8 @@ export default function ArrOverviewPage() {
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
-  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('arrOverview');
-  const { visibleColumns } = useColumnConfig('arrOverview', ARR_COLUMNS);
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('revenueOverview');
+  const { visibleColumns } = useColumnConfig('revenueOverview', ARR_COLUMNS);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
@@ -189,18 +189,18 @@ export default function ArrOverviewPage() {
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'ARR Overview');
+      XLSX.utils.book_append_sheet(wb, ws, 'Revenue Overview');
 
       const date = new Date().toISOString().split('T')[0];
       const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
       await exportFile({
-        defaultName: `arr-overview-${date}.xlsx`,
+        defaultName: `revenue-overview-${date}.xlsx`,
         filterLabel: 'Excel Spreadsheet',
         extensions: ['xlsx'],
         data: buffer,
       });
     } catch (err) {
-      console.error('[data] ARR export failed:', err);
+      console.error('[data] Revenue Overview export failed:', err);
     }
   }
 
@@ -220,7 +220,7 @@ export default function ArrOverviewPage() {
     <div className="space-y-3">
           {/* Title */}
           <div>
-            <h2 className="text-xl font-semibold text-foreground">ARR Overview</h2>
+            <h2 className="text-xl font-semibold text-foreground">Revenue Overview</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {filtered.length} customer{filtered.length !== 1 ? 's' : ''} · sorted by {sortLabel} ({dirLabel})
             </p>
@@ -292,7 +292,7 @@ export default function ArrOverviewPage() {
               </Button>
             )}
 
-            <ColumnPicker tableKey="arrOverview" columns={ARR_COLUMNS} />
+            <ColumnPicker tableKey="revenueOverview" columns={ARR_COLUMNS} />
 
             <button
               onClick={handleExport}
