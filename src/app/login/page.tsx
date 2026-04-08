@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMsal } from '@azure/msal-react';
 import { signIn } from '@/lib/auth/authHelpers';
+import { loadProfilePhoto } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { Button } from '@/components/ui/button';
@@ -217,6 +218,7 @@ export default function LoginPage() {
           } catch (dbErr) {
             console.error('[login] DB user sync failed (non-fatal):', dbErr);
           }
+          await loadProfilePhoto(result.account.localAccountId);
         }
 
         router.replace('/customers');

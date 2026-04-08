@@ -67,7 +67,7 @@ export function useAuth() {
   return { isAuthenticated, account, inProgress };
 }
 
-async function loadProfilePhoto(userId: string): Promise<void> {
+export async function loadProfilePhoto(userId: string): Promise<void> {
   try {
     const { getProfilePhoto, saveProfilePhoto } = await import('@/lib/db/queries/users');
 
