@@ -156,6 +156,7 @@ export function AppearanceSettings() {
 function SortableTabItem({ id }: { id: SidebarTab }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const meta = SIDEBAR_TAB_META[id];
+  if (!meta) return null;
   const Icon = meta.icon;
 
   const style = {

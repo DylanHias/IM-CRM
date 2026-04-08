@@ -181,6 +181,12 @@ export const useSettingsStore = create<SettingsState>()(
               }
             }
           }
+          if (patch.sidebarOrder) {
+            const raw = patch.sidebarOrder as SidebarTab[];
+            const valid = raw.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
+            const missing = DEFAULT_SIDEBAR_ORDER.filter((t) => !valid.includes(t));
+            patch.sidebarOrder = [...valid, ...missing];
+          }
           if (Object.keys(patch).length > 0) {
             set(patch as Partial<SettingsState>);
           }
@@ -197,6 +203,16 @@ export const useSettingsStore = create<SettingsState>()(
           persisted[key] = state[key];
         }
         return persisted;
+      },
+      merge: (persisted, current) => {
+        const merged = { ...current, ...(persisted as Partial<SettingsState>) };
+        const raw = (persisted as Partial<SettingsState>).sidebarOrder;
+        if (raw) {
+          const valid = raw.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
+          const missing = DEFAULT_SIDEBAR_ORDER.filter((t) => !valid.includes(t));
+          merged.sidebarOrder = [...valid, ...missing];
+        }
+        return merged;
       },
     }
   )
