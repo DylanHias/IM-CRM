@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { subMonths, subYears, format, startOfMonth } from 'date-fns';
+import { subMonths, subYears, format, startOfMonth, endOfMonth } from 'date-fns';
 
 export interface ActivityDateRange {
   from: string;
@@ -31,14 +31,14 @@ const PRESETS: { value: Preset; label: string }[] = [
 
 function getRange(preset: Preset): ActivityDateRange | null {
   if (preset === 'all') return null;
-  const now = new Date();
-  const to = now.toISOString();
+  const monthStart = startOfMonth(new Date());
+  const to = endOfMonth(new Date()).toISOString();
   const from =
     preset === '3m'
-      ? startOfMonth(subMonths(now, 3)).toISOString()
+      ? subMonths(monthStart, 3).toISOString()
       : preset === '6m'
-        ? startOfMonth(subMonths(now, 6)).toISOString()
-        : startOfMonth(subYears(now, 1)).toISOString();
+        ? subMonths(monthStart, 6).toISOString()
+        : subYears(monthStart, 1).toISOString();
   return { from, to };
 }
 

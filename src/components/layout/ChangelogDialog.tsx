@@ -31,17 +31,21 @@ function parseChangelog(body: string): ChangelogSection[] {
     const line = raw.trim();
     if (!line || line.startsWith('**Full Changelog')) continue;
 
-    // Detect version headers: "## v0.10.0", "**v0.10.0**", etc.
-    const headingMatch = line.match(/^#{1,3}\s+(.+)/) ?? line.match(/^\*\*(v[\d.]+)\*\*$/);
+    // Detect version headers: "# v0.10.0", "## v0.10.0", "**v0.10.0**"
+    const headingMatch =
+      line.match(/^#{1,3}\s+(v[\d.]+)/) ?? line.match(/^\*\*(v[\d.]+)\*\*$/);
     if (headingMatch) {
       if (current.heading !== null || current.items.length > 0) {
         sections.push(current);
       }
-      current = { heading: headingMatch[1].replace(/\*\*/g, ''), items: [] };
+      current = { heading: headingMatch[1], items: [] };
       continue;
     }
 
-    const item = line.replace(/^[-*]\s*/, '').trim();
+    // Skip non-version headings (e.g. "## What's new")
+    if (line.match(/^#{1,3}\s+/)) continue;
+
+    const item = line.replace(/^[-*]\s*/, '').replace(/\*\*(.+?)\*\*/g, '$1').trim();
     if (item) current.items.push(item);
   }
 
