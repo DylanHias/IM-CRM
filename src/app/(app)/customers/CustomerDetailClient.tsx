@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check, Cloud,
+  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -324,12 +324,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 <Badge variant={customer.status === 'active' ? 'success' : 'secondary'} className="ml-3 align-top text-xs relative -top-1">
                   {customer.status}
                 </Badge>
-                {customer.cloudCustomer && (
-                  <Badge variant="outline" className="ml-2 align-top text-xs relative -top-1 gap-1 border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                    <Cloud size={11} />
-                    Cloud
-                  </Badge>
-                )}
               </h1>
             </div>
 
@@ -404,6 +398,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   )}
                   {customer.resellerId && (
                     <DetailRow label="Reseller ID" value={customer.resellerId} />
+                  )}
+                  {customer.cloudCustomer && (
+                    <div className="flex items-center px-5 py-3">
+                      <span className="text-[13px] text-muted-foreground w-[120px] flex-shrink-0">Cloud Customer</span>
+                      <span className="text-[13px] font-medium text-sky-600 dark:text-sky-400">Yes</span>
+                    </div>
                   )}
                 </div>
               </div>
