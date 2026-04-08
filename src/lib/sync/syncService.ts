@@ -272,7 +272,7 @@ async function pushPendingActivities(token: string): Promise<void> {
     callerD365Id = await adapter.whoAmI(token);
     console.log(`[sync] Resolved caller D365 systemuserid: ${callerD365Id}`);
   } catch (err) {
-    console.error('[sync] Failed to resolve caller D365 ID via WhoAmI, falling back to activity.createdById:', err instanceof Error ? err.message : err);
+    console.error('[sync] Failed to resolve caller D365 ID via WhoAmI — call/meeting/visit activities will fail:', err instanceof Error ? err.message : err);
   }
   for (const activity of pending) {
     try {

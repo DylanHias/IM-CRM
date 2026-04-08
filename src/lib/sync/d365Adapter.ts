@@ -482,7 +482,6 @@ class RealD365Adapter implements ID365Adapter {
   async pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null): Promise<string> {
     const isUpdate = !!activity.remoteId;
     const accountBind = `/accounts(${activity.customerId})`;
-    const systemUserId = callerD365Id ?? activity.createdById;
     let entitySet: string;
     let body: Record<string, unknown>;
 
@@ -504,9 +503,10 @@ class RealD365Adapter implements ID365Adapter {
     }
 
     if (activity.type === 'call') {
+      if (!callerD365Id) throw new Error('D365 push activity: callerD365Id required for call');
       entitySet = 'phonecalls';
       const parties: Record<string, unknown>[] = [
-        { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 1 },
+        { 'partyid_systemuser@odata.bind': `/systemusers(${callerD365Id})`, participationtypemask: 1 },
       ];
       if (activity.contactId) {
         parties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 });
@@ -532,9 +532,10 @@ class RealD365Adapter implements ID365Adapter {
       };
     } else {
       // 'meeting' and 'visit' both map to appointment
+      if (!callerD365Id) throw new Error('D365 push activity: callerD365Id required for appointment');
       entitySet = 'appointments';
       const apptParties: Record<string, unknown>[] = [
-        { 'partyid_systemuser@odata.bind': `/systemusers(${systemUserId})`, participationtypemask: 7 },
+        { 'partyid_systemuser@odata.bind': `/systemusers(${callerD365Id})`, participationtypemask: 7 },
       ];
       if (activity.contactId) {
         apptParties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 5 });

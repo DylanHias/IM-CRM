@@ -40,7 +40,8 @@ async function getCallerD365Id(token: string): Promise<string | undefined> {
     const adapter = getD365Adapter();
     cachedCallerD365Id = await adapter.whoAmI(token);
     return cachedCallerD365Id;
-  } catch {
+  } catch (err) {
+    console.error('[sync] getCallerD365Id via WhoAmI failed:', err instanceof Error ? err.message : err);
     return undefined;
   }
 }
