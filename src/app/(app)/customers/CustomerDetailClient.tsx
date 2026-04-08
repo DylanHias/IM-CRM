@@ -386,9 +386,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   <DetailRow label="Country" value={customer.addressCountry} />
                   <DetailRow label="Contact Address" value={customer.addressStreet} />
                   <DetailRow label="Industry" value={customer.industry} />
-                  {customer.language && (
-                    <DetailRow label="Language" value={customer.language} />
-                  )}
                   {customer.segment && (
                     <DetailRow label="Segment" value={customer.segment} />
                   )}

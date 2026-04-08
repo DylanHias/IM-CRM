@@ -21,7 +21,6 @@ function rowToCustomer(row: CustomerRow): Customer {
     addressCountry: row.address_country,
     website: row.website,
     cloudCustomer: row.cloud_customer === 1 ? true : row.cloud_customer === 0 ? false : null,
-    language: row.language,
     arr: row.arr,
     status: (row.status as Customer['status']) ?? 'active',
     lastActivityAt: row.last_activity_at,
@@ -60,9 +59,9 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
     `INSERT INTO customers (
       id, name, account_number, industry, segment, owner_id, owner_name,
       phone, email, address_street, address_city, address_country, website,
-      reseller_id, bcn, cloud_customer, language, arr,
+      reseller_id, bcn, cloud_customer, arr,
       status, last_activity_at, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -71,7 +70,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      language=excluded.language, arr=excluded.arr,
+      arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       updated_at=excluded.updated_at`,
     [
@@ -79,7 +78,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
       customer.email, customer.addressStreet, customer.addressCity,
       customer.addressCountry, customer.website, customer.resellerId, customer.bcn,
-      null, customer.language, customer.arr, customer.status,
+      null, customer.arr, customer.status,
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );
@@ -93,9 +92,9 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
     `INSERT INTO customers (
       id, name, account_number, industry, segment, owner_id, owner_name,
       phone, email, address_street, address_city, address_country, website,
-      reseller_id, bcn, cloud_customer, language, arr,
+      reseller_id, bcn, cloud_customer, arr,
       status, last_activity_at, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -104,7 +103,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      language=excluded.language, arr=excluded.arr,
+      arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
       updated_at=excluded.updated_at
@@ -115,7 +114,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       customer.segment, customer.ownerId, customer.ownerName, customer.phone,
       customer.email, customer.addressStreet, customer.addressCity,
       customer.addressCountry, customer.website, customer.resellerId, customer.bcn,
-      null, customer.language, customer.arr, customer.status,
+      null, customer.arr, customer.status,
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
     ]
   );

@@ -67,7 +67,6 @@ async function ensureTablesExist(db: Database): Promise<void> {
       reseller_id     TEXT,
       bcn             TEXT,
       cloud_customer  INTEGER,
-      language        TEXT,
       arr             REAL,
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -311,7 +310,7 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   if (currentVersion < 3) {
     // Safe to re-run: ALTER TABLE ADD COLUMN is a no-op if column already exists in SQLite
     // but we guard with a try-catch for the reseller_id column added in v2
-    for (const col of ['bcn TEXT', 'cloud_customer INTEGER', 'language TEXT', 'arr REAL']) {
+    for (const col of ['bcn TEXT', 'cloud_customer INTEGER', 'arr REAL']) {
       try { await db.execute(`ALTER TABLE customers ADD COLUMN ${col}`); } catch { /* column may already exist */ }
     }
 

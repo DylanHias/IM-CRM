@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { exportFile } from '@/lib/utils/exportFile';
 import type { Customer, Contact } from '@/types/entities';
 
-type SortField = 'name' | 'cloudCustomer' | 'language' | 'arr';
+type SortField = 'name' | 'cloudCustomer' | 'arr';
 
 function formatArr(value: number | null): string {
   if (value === null) return '—';
@@ -57,7 +57,6 @@ const ARR_COLUMNS: (ColumnDef & { field: SortField | null; align: string })[] = 
   { id: 'phone', field: null, label: 'Phone', align: 'text-left' },
   { id: 'email', field: null, label: 'Email', align: 'text-left' },
   { id: 'cloudCustomer', field: 'cloudCustomer', label: 'Cloud Customer', align: 'text-center' },
-  { id: 'language', field: 'language', label: 'Language', align: 'text-left' },
   { id: 'arr', field: 'arr', label: 'ARR', align: 'text-right' },
 ];
 
@@ -99,8 +98,6 @@ function renderArrCell(customer: Customer, columnId: string, contacts: Contact[]
       ) : (
         <span className="text-muted-foreground">—</span>
       );
-    case 'language':
-      return <span className="text-muted-foreground">{customer.language ?? '—'}</span>;
     case 'arr':
       return <span className="font-semibold tabular-nums">{formatArr(customer.arr)}</span>;
     default:
@@ -115,7 +112,6 @@ export default function ArrOverviewPage() {
   const [sortBy, setSortBy] = useState<SortField>('arr');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
-  const [filterLanguage, setFilterLanguage] = useState('all');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -129,20 +125,13 @@ export default function ArrOverviewPage() {
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
 
-  const languageOptions = useMemo(() => {
-    const langs = new Set(allCustomers.map((c) => c.language).filter(Boolean) as string[]);
-    return Array.from(langs).sort();
-  }, [allCustomers]);
-
   const activeFilterCount =
     (filterCloud !== 'all' ? 1 : 0) +
-    (filterLanguage !== 'all' ? 1 : 0) +
     (arrMin !== '' ? 1 : 0) +
     (arrMax !== '' ? 1 : 0);
 
   function clearFilters() {
     setFilterCloud('all');
-    setFilterLanguage('all');
     setArrMin('');
     setArrMax('');
     setPage(1);
@@ -156,7 +145,6 @@ export default function ArrOverviewPage() {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
-      if (filterLanguage !== 'all' && c.language !== filterLanguage) return false;
       if (min !== null && (c.arr === null || c.arr < min)) return false;
       if (max !== null && (c.arr === null || c.arr > max)) return false;
       return true;
@@ -179,13 +167,10 @@ export default function ArrOverviewPage() {
           cmp = aVal - bVal;
           break;
         }
-        case 'language':
-          cmp = (a.language ?? '').localeCompare(b.language ?? '');
-          break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [allCustomers, searchQuery, filterCloud, filterLanguage, arrMin, arrMax, sortBy, sortDir]);
+  }, [allCustomers, searchQuery, filterCloud, arrMin, arrMax, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -199,7 +184,6 @@ export default function ArrOverviewPage() {
         Phone: getPhone(c, allContacts),
         Email: getEmail(c, allContacts),
         'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-        Language: c.language ?? '',
         'ARR (€)': c.arr ?? '',
       }));
 
@@ -225,11 +209,11 @@ export default function ArrOverviewPage() {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
-      setSortDir(field === 'name' || field === 'language' ? 'asc' : 'desc');
+      setSortDir(field === 'name' ? 'asc' : 'desc');
     }
   }
 
-  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : sortBy === 'cloudCustomer' ? 'cloud' : 'language';
+  const sortLabel = sortBy === 'arr' ? 'ARR' : sortBy === 'name' ? 'name' : 'cloud';
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
@@ -273,7 +257,6 @@ export default function ArrOverviewPage() {
                   <SelectItem value="arr">ARR</SelectItem>
                   <SelectItem value="name">Name</SelectItem>
                   <SelectItem value="cloudCustomer">Cloud</SelectItem>
-                  <SelectItem value="language">Language</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -338,18 +321,6 @@ export default function ArrOverviewPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Language</label>
-                <Select value={filterLanguage} onValueChange={(v) => { setFilterLanguage(v); setPage(1); }}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All languages</SelectItem>
-                    {languageOptions.map((lang) => (
-                      <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">ARR min (€)</label>
                 <Input
                   type="number"
@@ -382,15 +353,6 @@ export default function ArrOverviewPage() {
                   onClick={() => setFilterCloud('all')}
                 >
                   Cloud: {filterCloud} <X size={10} />
-                </Badge>
-              )}
-              {filterLanguage !== 'all' && (
-                <Badge
-                  variant="secondary"
-                  className="gap-1 cursor-pointer hover:bg-secondary"
-                  onClick={() => setFilterLanguage('all')}
-                >
-                  {filterLanguage} <X size={10} />
                 </Badge>
               )}
               {arrMin !== '' && (

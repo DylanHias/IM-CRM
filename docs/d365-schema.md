@@ -28,7 +28,6 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `modifiedon` | Last modified |
 | `_ownerid_value` | Owner system user ID |
 | `primarycontactid` | Navigation → primary contact |
-| `primarycontactid.preferredlanguagecode` | Language from primary contact |
 
 ### Push: N/A (read-only)
 

@@ -15,7 +15,6 @@ export interface Customer {
   addressCountry: string | null;
   website: string | null;
   cloudCustomer: boolean | null;
-  language: string | null;
   arr: number | null;
   status: 'active' | 'inactive';
   lastActivityAt: string | null;

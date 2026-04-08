@@ -16,10 +16,6 @@ export interface D365Customer {
   im360_bcn: string | null;
   im360_mainsegmentation: number | null;
   'im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'?: string;
-  primarycontactid?: {
-    preferredlanguagecode: number | null;
-    'preferredlanguagecode@OData.Community.Display.V1.FormattedValue'?: string;
-  } | null;
   statecode: number;
   modifiedon: string;
 }

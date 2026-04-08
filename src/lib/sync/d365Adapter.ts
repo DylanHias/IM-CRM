@@ -92,8 +92,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     addressCountry: d365.address1_country,
     website: d365.websiteurl,
     cloudCustomer: null, // derived from contacts after sync (see recomputeCloudCustomerStatus)
-    language: null, // preferredlanguagecode not available on D365 contact entity in this org
-    arr: null,
+arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
     lastActivityAt: null,
     syncedAt: now,
