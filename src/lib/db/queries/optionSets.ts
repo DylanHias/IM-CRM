@@ -31,6 +31,19 @@ export async function queryOptionSet(
   return rows.map((r) => ({ value: r.option_value, label: r.option_label }));
 }
 
+export async function queryOptionSetValue(
+  entityName: string,
+  attributeName: string,
+  label: string,
+): Promise<number | null> {
+  const db = await getDb();
+  const rows = await db.select<{ option_value: number }[]>(
+    `SELECT option_value FROM option_sets WHERE entity_name=$1 AND attribute_name=$2 AND option_label=$3 LIMIT 1`,
+    [entityName, attributeName, label],
+  );
+  return rows[0]?.option_value ?? null;
+}
+
 export async function queryAllOptionSets(): Promise<Record<string, OptionSetItem[]>> {
   const db = await getDb();
   const rows = await db.select<OptionSetRow[]>(
