@@ -12,7 +12,7 @@ import { ActivityItem } from './ActivityItem';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { useActivities } from '@/hooks/useActivities';
-import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
+import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 import { useRouter } from 'next/navigation';
 
@@ -57,10 +57,24 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
     setEditSubject(activity.subject);
     setEditDescription(activity.description ?? '');
     const isAppt = activity.type === 'meeting' || activity.type === 'visit';
-    setEditStartTime(activity.startTime ? isoToDatetimeLocal(activity.startTime) : nowDatetimeLocal());
-    setEditOccurredAt(isAppt ? isoToDatetimeLocal(activity.occurredAt) : activity.occurredAt.split('T')[0]);
+    const start = activity.startTime ? isoToDatetimeLocal(activity.startTime) : nowDatetimeLocal();
+    const end = isAppt ? isoToDatetimeLocal(activity.occurredAt) : activity.occurredAt.split('T')[0];
+    setEditStartTime(start);
+    setEditOccurredAt(isAppt && end <= start ? addHoursLocal(start, 1) : end);
     setEditContactId(activity.contactId ?? 'none');
     setEditStatus(activity.activityStatus);
+  };
+
+  const handleEditStartTimeChange = (newStart: string) => {
+    setEditStartTime(newStart);
+    if (newStart >= editOccurredAt) {
+      setEditOccurredAt(addHoursLocal(newStart, 1));
+    }
+  };
+
+  const handleEditEndTimeChange = (newEnd: string) => {
+    if (newEnd < editStartTime) return;
+    setEditOccurredAt(newEnd);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -152,8 +166,9 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
                 const isNowAppt = newType === 'meeting' || newType === 'visit';
                 setEditType(newType);
                 if (wasAppt !== isNowAppt) {
-                  setEditOccurredAt(isNowAppt ? nowDatetimeLocal() : todayISO());
-                  setEditStartTime(nowDatetimeLocal());
+                  const now = nowDatetimeLocal();
+                  setEditStartTime(now);
+                  setEditOccurredAt(isNowAppt ? addHoursLocal(now, 1) : todayISO());
                 }
               }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -176,11 +191,11 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
               <>
                 <div className="col-span-2 space-y-1">
                   <Label>Start *</Label>
-                  <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
+                  <DateTimePicker value={editStartTime} onChange={handleEditStartTimeChange} />
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>End *</Label>
-                  <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
+                  <DateTimePicker value={editOccurredAt} onChange={handleEditEndTimeChange} minValue={editStartTime} />
                 </div>
               </>
             ) : (

@@ -47,8 +47,8 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const isAppointmentType = type === 'meeting' || type === 'visit';
-  const [startTime, setStartTime] = useState(nowDatetimeLocal());
-  const [occurredAt, setOccurredAt] = useState(isAppointmentType ? addHoursLocal(nowDatetimeLocal(), 1) : todayISO());
+  const [startTime, setStartTime] = useState(nowDatetimeLocal);
+  const [occurredAt, setOccurredAt] = useState(() => addHoursLocal(nowDatetimeLocal(), 1));
   const [activityStatus, setActivityStatus] = useState<ActivityStatus>('open');
   const [direction, setDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [contactId, setContactId] = useState<string>('none');
