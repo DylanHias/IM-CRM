@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ACTIVITY_ICONS } from './ActivityItem';
 import { formatDate } from '@/lib/utils/dateUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { Activity } from '@/types/entities';
 
 interface ActivityKanbanCardProps {
@@ -114,7 +115,7 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
         )}
 
         <div className="flex items-center justify-between mt-auto pt-1.5 text-xs text-muted-foreground">
-          <span className="truncate">{activity.createdByName}</span>
+          <span className="truncate">{formatDisplayName(activity.createdByName)}</span>
           <span className="flex-shrink-0">{formatDate(activity.occurredAt)}</span>
         </div>
       </div>

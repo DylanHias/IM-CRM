@@ -4,6 +4,7 @@ import { Phone, Users, MapPin, FileText, CheckSquare, Calendar, MessageCircle, P
 import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { TimelineEvent } from '@/types/entities';
 
 const ACTIVITY_CONFIG = {
@@ -46,7 +47,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemPr
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1">
                   <MessageCircle size={11} />
-                  {event.createdByName}
+                  {formatDisplayName(event.createdByName)}
                 </span>
               </p>
             </div>
@@ -112,7 +113,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemPr
               <p className="text-[13px] text-muted-foreground mt-0.5">{event.description}</p>
             )}
             <p className="text-xs text-muted-foreground mt-1.5">
-              Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${event.createdByName}`}
+              Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${formatDisplayName(event.createdByName)}`}
             </p>
           </div>
           <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">

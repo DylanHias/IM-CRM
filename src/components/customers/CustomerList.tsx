@@ -5,6 +5,7 @@ import { Bookmark, Building2, ChevronRight, MapPin, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCustomerStore } from '@/store/customerStore';
 import { formatRelative } from '@/lib/utils/dateUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { Customer } from '@/types/entities';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
@@ -175,7 +176,7 @@ export function CustomerList({ customers }: CustomerListProps) {
                       <span>·</span>
                       <span className="flex items-center gap-1">
                         <User size={10} />
-                        {customer.ownerName}
+                        {formatDisplayName(customer.ownerName)}
                       </span>
                     </>
                   )}

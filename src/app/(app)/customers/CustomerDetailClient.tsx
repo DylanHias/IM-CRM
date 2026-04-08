@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check,
+  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check, Cloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,7 @@ import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
@@ -323,6 +324,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 <Badge variant={customer.status === 'active' ? 'success' : 'secondary'} className="ml-3 align-top text-xs relative -top-1">
                   {customer.status}
                 </Badge>
+                {customer.cloudCustomer && (
+                  <Badge variant="outline" className="ml-2 align-top text-xs relative -top-1 gap-1 border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                    <Cloud size={11} />
+                    Cloud
+                  </Badge>
+                )}
               </h1>
             </div>
 
@@ -413,9 +420,9 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   <div className="px-5 py-3">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
-                        {customer.ownerName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                        {formatDisplayName(customer.ownerName).split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
                       </div>
-                      <span className="text-[13px] font-medium text-foreground">{customer.ownerName}</span>
+                      <span className="text-[13px] font-medium text-foreground">{formatDisplayName(customer.ownerName)}</span>
                     </div>
                   </div>
                 </div>

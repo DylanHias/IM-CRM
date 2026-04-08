@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { SortBy } from '@/store/customerStore';
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
@@ -38,7 +39,7 @@ export function CustomerFilters() {
 
   const owners = useMemo(() => {
     const map = new Map<string, string>();
-    customers.forEach((c) => { if (c.ownerId && c.ownerName) map.set(c.ownerId, c.ownerName); });
+    customers.forEach((c) => { if (c.ownerId && c.ownerName) map.set(c.ownerId, formatDisplayName(c.ownerName)); });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [customers]);
 
