@@ -1,14 +1,17 @@
 'use client';
 
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useSync } from '@/hooks/useSync';
 import { useSyncStore } from '@/store/syncStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
-import { formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
+import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
 import type { SyncRecord } from '@/types/sync';
+import type { PendingActivitySyncItem } from '@/lib/db/queries/activities';
+import type { PendingFollowUpSyncItem } from '@/lib/db/queries/followups';
 
 const STATUS_CONFIG = {
   running: { icon: RefreshCw, color: 'text-info', variant: 'info' as const, label: 'Running' },
@@ -23,11 +26,20 @@ const SYNC_TYPE_LABELS: Record<string, string> = {
   push_followups: 'Push Follow-Ups',
 };
 
+const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+  meeting: 'Meeting',
+  visit: 'Visit',
+  call: 'Call',
+  note: 'Note',
+};
+
 interface SyncPanelProps {
   records: SyncRecord[];
+  pendingActivities: PendingActivitySyncItem[];
+  pendingFollowUps: PendingFollowUpSyncItem[];
 }
 
-export function SyncPanel({ records }: SyncPanelProps) {
+export function SyncPanel({ records, pendingActivities, pendingFollowUps }: SyncPanelProps) {
   const {
     isSyncing, isOnline, lastD365SyncAt,
     pendingActivityCount, pendingFollowUpCount, triggerSync, triggerPushPending,
@@ -81,9 +93,98 @@ export function SyncPanel({ records }: SyncPanelProps) {
         )}
       </div>
 
+      {/* Pending queue */}
+      {(pendingActivities.length > 0 || pendingFollowUps.length > 0) && (
+        <PendingQueue activities={pendingActivities} followUps={pendingFollowUps} />
+      )}
+
       {/* Sync history */}
       {records.length > 0 && (
         <SyncHistory records={records} />
+      )}
+    </div>
+  );
+}
+
+function PendingQueue({
+  activities,
+  followUps,
+}: {
+  activities: PendingActivitySyncItem[];
+  followUps: PendingFollowUpSyncItem[];
+}) {
+  const [activitiesPage, setActivitiesPage] = useState(1);
+  const [followUpsPage, setFollowUpsPage] = useState(1);
+  const { pageSize: actPageSize, setPageSize: setActPageSize, pageSizeOptions } = usePaginationPreference('pendingActivities');
+  const { pageSize: fuPageSize, setPageSize: setFuPageSize } = usePaginationPreference('pendingFollowUps');
+
+  const pagedActivities = activities.slice((activitiesPage - 1) * actPageSize, activitiesPage * actPageSize);
+  const pagedFollowUps = followUps.slice((followUpsPage - 1) * fuPageSize, followUpsPage * fuPageSize);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Clock size={15} className="text-warning" />
+        <h3 className="text-sm font-semibold text-foreground">Pending Sync</h3>
+      </div>
+
+      {activities.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Activities ({activities.length})</p>
+          <div className="bg-card border rounded-lg divide-y">
+            {pagedActivities.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs shrink-0">
+                      {ACTIVITY_TYPE_LABELS[item.type] ?? item.type}
+                    </Badge>
+                    <span className="text-sm font-medium truncate">{item.subject}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.customerName} · {formatDateTime(item.occurredAt)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <TablePagination
+            className="mt-3"
+            totalItems={activities.length}
+            page={activitiesPage}
+            pageSize={actPageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setActivitiesPage}
+            onPageSizeChange={(size) => { setActPageSize(size); setActivitiesPage(1); }}
+          />
+        </div>
+      )}
+
+      {followUps.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Follow-Ups ({followUps.length})</p>
+          <div className="bg-card border rounded-lg divide-y">
+            {pagedFollowUps.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium truncate block">{item.title}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.customerName} · Due {formatDate(item.dueDate)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <TablePagination
+            className="mt-3"
+            totalItems={followUps.length}
+            page={followUpsPage}
+            pageSize={fuPageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setFollowUpsPage}
+            onPageSizeChange={(size) => { setFuPageSize(size); setFollowUpsPage(1); }}
+          />
+        </div>
       )}
     </div>
   );

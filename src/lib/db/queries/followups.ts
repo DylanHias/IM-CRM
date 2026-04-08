@@ -64,6 +64,25 @@ export async function queryPendingFollowUps(): Promise<FollowUp[]> {
   return rows.map(rowToFollowUp);
 }
 
+export interface PendingFollowUpSyncItem {
+  id: string;
+  customerId: string;
+  customerName: string;
+  title: string;
+  dueDate: string;
+  createdAt: string;
+}
+
+export async function queryPendingFollowUpsForSync(): Promise<PendingFollowUpSyncItem[]> {
+  const db = await getDb();
+  return db.select<PendingFollowUpSyncItem[]>(
+    `SELECT f.id, f.customer_id as customerId, COALESCE(c.name, f.customer_id) as customerName,
+            f.title, f.due_date as dueDate, f.created_at as createdAt
+     FROM follow_ups f LEFT JOIN customers c ON c.id = f.customer_id
+     WHERE f.sync_status = 'pending' ORDER BY f.created_at ASC`
+  );
+}
+
 export async function queryOverdueFollowUpCount(userId?: string, altUserId?: string): Promise<number> {
   const db = await getDb();
   const today = new Date().toISOString().split('T')[0];

@@ -42,6 +42,26 @@ export async function queryPendingActivities(): Promise<Activity[]> {
   return rows.map(rowToActivity);
 }
 
+export interface PendingActivitySyncItem {
+  id: string;
+  customerId: string;
+  customerName: string;
+  type: string;
+  subject: string;
+  occurredAt: string;
+  createdAt: string;
+}
+
+export async function queryPendingActivitiesForSync(): Promise<PendingActivitySyncItem[]> {
+  const db = await getDb();
+  return db.select<PendingActivitySyncItem[]>(
+    `SELECT a.id, a.customer_id as customerId, COALESCE(c.name, a.customer_id) as customerName,
+            a.type, a.subject, a.occurred_at as occurredAt, a.created_at as createdAt
+     FROM activities a LEFT JOIN customers c ON c.id = a.customer_id
+     WHERE a.sync_status = 'pending' ORDER BY a.created_at ASC`
+  );
+}
+
 export async function insertActivity(activity: Activity): Promise<void> {
   const db = await getDb();
   await db.execute(

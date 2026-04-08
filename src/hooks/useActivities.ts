@@ -65,7 +65,10 @@ export function useActivities(customerId: string) {
           await updateCustomerLastActivity(customerId, activity.occurredAt);
         }
         directPushActivity(activity).then((result) => {
-          if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+          if (result) {
+            updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('activity', 'updated', customerId);
+          }
         });
       }
       addActivity(activity);
@@ -80,7 +83,10 @@ export function useActivities(customerId: string) {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
         directPushActivity(activity).then((result) => {
-          if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+          if (result) {
+            updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('activity', 'updated', customerId);
+          }
         });
       }
       updateActivity({ ...activity, syncStatus: 'pending' });
