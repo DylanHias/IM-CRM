@@ -12,7 +12,8 @@ describe('ActivityDateFilter', () => {
     const onChange = vi.fn();
     render(<ActivityDateFilter onChange={onChange} />);
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ from: expect.any(String), to: expect.any(String) })
+      expect.objectContaining({ from: expect.any(String), to: expect.any(String) }),
+      expect.any(String)
     );
   });
 
@@ -21,6 +22,6 @@ describe('ActivityDateFilter', () => {
     render(<ActivityDateFilter onChange={onChange} />);
     fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(screen.getByText('All time'));
-    expect(onChange).toHaveBeenLastCalledWith(null);
+    expect(onChange).toHaveBeenLastCalledWith(null, null);
   });
 });
