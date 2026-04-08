@@ -127,6 +127,7 @@ export interface UserRow {
   business_unit: string | null;
   title: string | null;
   last_active_at: string | null;
+  profile_photo: string | null;
   created_at: string;
   updated_at: string;
 }

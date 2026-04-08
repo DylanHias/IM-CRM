@@ -162,6 +162,7 @@ export function createCrmUser(overrides?: Partial<CrmUser>): CrmUser {
     businessUnit: 'Cloud',
     title: 'Technical Account Manager',
     lastActiveAt: NOW,
+    profilePhoto: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,

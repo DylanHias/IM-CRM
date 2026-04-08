@@ -79,6 +79,7 @@ async function syncUserToDb(
       businessUnit: null,
       title: null,
       lastActiveAt: now,
+      profilePhoto: null,
       createdAt: now,
       updatedAt: now,
     });

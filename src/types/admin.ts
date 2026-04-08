@@ -8,6 +8,7 @@ export interface CrmUser {
   businessUnit: string | null;
   title: string | null;
   lastActiveAt: string | null;
+  profilePhoto: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -170,6 +170,7 @@ export default function LoginPage() {
           businessUnit: null,
           title: null,
           lastActiveAt: now,
+          profilePhoto: null,
           createdAt: now,
           updatedAt: now,
         });
@@ -207,6 +208,7 @@ export default function LoginPage() {
               businessUnit: null,
               title: null,
               lastActiveAt: now,
+              profilePhoto: null,
               createdAt: now,
               updatedAt: now,
             });

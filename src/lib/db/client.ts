@@ -534,5 +534,12 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       `UPDATE app_settings SET value = '17', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
+
+  if (currentVersion < 18) {
+    try { await db.execute(`ALTER TABLE users ADD COLUMN profile_photo TEXT`); } catch { /* column may already exist */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '18', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
 }
 

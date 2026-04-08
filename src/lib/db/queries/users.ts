@@ -11,6 +11,7 @@ function rowToUser(row: UserRow): CrmUser {
     businessUnit: row.business_unit,
     title: row.title ?? null,
     lastActiveAt: row.last_active_at,
+    profilePhoto: row.profile_photo ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -69,4 +70,21 @@ export async function bulkUpsertUsers(users: CrmUser[]): Promise<void> {
   for (const user of users) {
     await upsertUser(user);
   }
+}
+
+export async function saveProfilePhoto(userId: string, base64Photo: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE users SET profile_photo = $1, updated_at = datetime('now') WHERE id = $2`,
+    [base64Photo, userId]
+  );
+}
+
+export async function getProfilePhoto(userId: string): Promise<string | null> {
+  const db = await getDb();
+  const rows = await db.select<{ profile_photo: string | null }[]>(
+    `SELECT profile_photo FROM users WHERE id = $1`,
+    [userId]
+  );
+  return rows[0]?.profile_photo ?? null;
 }

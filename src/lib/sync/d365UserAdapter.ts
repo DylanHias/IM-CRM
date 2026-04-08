@@ -12,6 +12,7 @@ function mapD365UserToCrmUser(d365: D365SystemUser, now: string): CrmUser {
     businessUnit: d365['_businessunitid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     title: d365.jobtitle ?? null,
     lastActiveAt: d365.modifiedon,
+    profilePhoto: null,
     createdAt: now,
     updatedAt: now,
   };
