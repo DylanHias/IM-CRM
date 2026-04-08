@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Clock, AlertCircle, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import {
   KanbanBoardCard,
@@ -34,26 +34,24 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
       <KanbanBoardCardButtonGroup style={confirmOpen ? { display: 'flex' } : undefined}>
         <KanbanBoardCardButton
           tooltip="Edit"
+          className="h-6 w-6 bg-muted/50 text-muted-foreground border-0 hover:bg-primary/10 hover:text-primary hover:cursor-pointer transition-all duration-150 active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
           }}
         >
-          <Pencil size={12} />
+          <Pencil size={11} />
         </KanbanBoardCardButton>
         <Popover open={confirmOpen} onOpenChange={setConfirmOpen}>
           <PopoverTrigger asChild>
             <div
               role="button"
               tabIndex={-1}
-              className={cn(
-                buttonVariants({ size: 'icon', variant: 'ghost' }),
-                'border-border size-5 border hover:cursor-default [&_svg]:size-3.5 text-destructive hover:text-destructive',
-              )}
+              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95 cursor-pointer"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <Trash2 size={12} />
+              <Trash2 size={11} />
             </div>
           </PopoverTrigger>
           <PopoverContent side="bottom" align="end" className="w-64">
