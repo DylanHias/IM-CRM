@@ -25,7 +25,10 @@ export function useAuth() {
             const restored = await restoreSession();
             if (restored) {
               const restoredAccount = useAuthStore.getState().account;
-              if (restoredAccount) await syncUserToDb(restoredAccount, setIsAdmin);
+              if (restoredAccount) {
+                await syncUserToDb(restoredAccount, setIsAdmin);
+                await loadProfilePhoto(restoredAccount.localAccountId!);
+              }
             } else {
               clearAuth();
             }
@@ -46,6 +49,9 @@ export function useAuth() {
           const result = await instance.acquireTokenSilent({ ...loginRequest, account: accounts[0] });
           setAccount(accounts[0], result.accessToken);
           await syncUserToDb(accounts[0], setIsAdmin);
+          if (accounts[0].localAccountId) {
+            await loadProfilePhoto(accounts[0].localAccountId);
+          }
         } catch (err) {
           console.error('[auth] Silent token acquisition failed:', err);
           clearAuth();
@@ -59,6 +65,29 @@ export function useAuth() {
   }, [accounts, inProgress, instance, setAccount, clearAuth, setIsAdmin, isAuthenticated]);
 
   return { isAuthenticated, account, inProgress };
+}
+
+async function loadProfilePhoto(userId: string): Promise<void> {
+  try {
+    const { getProfilePhoto, saveProfilePhoto } = await import('@/lib/db/queries/users');
+
+    // Try cached photo from DB first
+    const cached = await getProfilePhoto(userId);
+    if (cached) {
+      useAuthStore.getState().setProfilePhoto(cached);
+      return;
+    }
+
+    // Fetch from Graph API
+    const { fetchProfilePhoto } = await import('@/lib/auth/graphApi');
+    const photo = await fetchProfilePhoto();
+    if (photo) {
+      await saveProfilePhoto(userId, photo);
+      useAuthStore.getState().setProfilePhoto(photo);
+    }
+  } catch (err) {
+    console.error('[auth] Profile photo load failed:', err);
+  }
 }
 
 async function syncUserToDb(

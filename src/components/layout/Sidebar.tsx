@@ -41,7 +41,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,7 @@ export function AppSidebar() {
 
   const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
-  const { account, isAdmin } = useAuthStore();
+  const { account, isAdmin, profilePhoto } = useAuthStore();
   const d365UserId = useD365UserId();
   const recentCustomerIds = useUIStore((s) => s.recentCustomerIds);
   const clearRecentCustomers = useUIStore((s) => s.clearRecentCustomers);
@@ -297,6 +297,9 @@ export function AppSidebar() {
                   className="data-[state=open]:bg-sidebar-accent"
                 >
                   <Avatar className="h-7 w-7 flex-shrink-0">
+                    {profilePhoto && (
+                      <AvatarImage src={profilePhoto} alt={account?.name ?? 'User'} />
+                    )}
                     <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
                       {account?.name ? getInitials(account.name) : 'U'}
                     </AvatarFallback>
