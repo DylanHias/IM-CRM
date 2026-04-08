@@ -402,7 +402,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   {customer.cloudCustomer && (
                     <div className="flex items-center px-5 py-3">
                       <span className="text-[13px] text-muted-foreground w-[120px] flex-shrink-0">Cloud Customer</span>
-                      <span className="text-[13px] font-medium text-sky-600 dark:text-sky-400">Yes</span>
+                      <span className="text-[13px] font-medium">Yes</span>
                     </div>
                   )}
                 </div>
