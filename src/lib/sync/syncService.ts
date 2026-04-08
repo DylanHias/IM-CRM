@@ -3,6 +3,13 @@ import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerS
 import { upsertContactBulk, queryContactPhone } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
+import {
+  queryPendingOpportunities,
+  markOpportunitySynced,
+  markOpportunitySyncError,
+  upsertPulledOpportunity,
+} from '@/lib/db/queries/opportunities';
+import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
@@ -10,6 +17,8 @@ import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
+import type { Opportunity } from '@/types/entities';
+import type { OpportunityOptionValues } from '@/lib/sync/d365Adapter';
 
 interface BatchResult {
   successes: number;
@@ -47,6 +56,17 @@ async function batchedUpsert<T>(
   return { successes, errors };
 }
 
+async function resolveOpportunityOptionValues(opportunity: Opportunity): Promise<OpportunityOptionValues> {
+  const [stage, sellType, opportunityType, recordType, source] = await Promise.all([
+    opportunity.stage ? queryOptionSetValue('opportunity', 'im360_oppstage', opportunity.stage) : Promise.resolve(null),
+    opportunity.sellType ? queryOptionSetValue('opportunity', 'im360_opptype', opportunity.sellType) : Promise.resolve(null),
+    opportunity.opportunityType ? queryOptionSetValue('opportunity', 'im360_drpboxopptype', opportunity.opportunityType) : Promise.resolve(null),
+    opportunity.recordType ? queryOptionSetValue('opportunity', 'im360_recordtype', opportunity.recordType) : Promise.resolve(null),
+    opportunity.source ? queryOptionSetValue('opportunity', 'im360_source', opportunity.source) : Promise.resolve(null),
+  ]);
+  return { stage, sellType, opportunityType, recordType, source };
+}
+
 export async function resetSyncWatermark(): Promise<void> {
   await setAppSetting('last_d365_sync', '');
   useSyncStore.getState().setLastD365Sync('');
@@ -67,6 +87,7 @@ export async function pushPendingChanges(token: string): Promise<void> {
   try {
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
+    await pushPendingOpportunities(token);
     await pushPendingDeletes(token);
 
     const records = await queryRecentSyncRecords(20);
@@ -96,6 +117,7 @@ export async function runFullSync(token: string): Promise<void> {
     await syncD365(token);
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
+    await pushPendingOpportunities(token);
     await pushPendingDeletes(token);
 
     const records = await queryRecentSyncRecords(20);
@@ -231,6 +253,24 @@ async function syncD365(token: string): Promise<void> {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }
 
+    // Pull opportunities from D365 (filtered to local customers)
+    try {
+      console.log('[sync] Fetching opportunities from D365...');
+      const opportunities = await adapter.fetchOpportunities(token, localCustomerIds, lastSyncTs);
+      total += opportunities.length;
+      emitProgress('Syncing opportunities...');
+      const opportunityResult = await batchedUpsert(
+        opportunities,
+        (opportunity) => upsertPulledOpportunity(opportunity),
+        () => { pulled++; processed++; emitProgress('Syncing opportunities...'); },
+        (opportunity, err) => console.error(`[sync] Failed to upsert opportunity ${opportunity.remoteId}:`, err instanceof Error ? err.message : err),
+      );
+      errors += opportunityResult.errors;
+      console.log(`[sync] Opportunities: ${opportunities.length} scoped, ${opportunityResult.successes} upserted, ${opportunities.length - opportunityResult.successes - opportunityResult.errors} skipped, ${opportunityResult.errors} errors`);
+    } catch (err) {
+      console.error('[sync] Failed to fetch opportunities:', err instanceof Error ? err.message : err);
+    }
+
     // Derive cloud customer status from contact types + recompute last activity dates
     emitProgress('Finishing up...');
     await recomputeCloudCustomerStatus();
@@ -331,6 +371,40 @@ async function pushPendingFollowUps(token: string): Promise<void> {
   store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
 }
 
+async function pushPendingOpportunities(token: string): Promise<void> {
+  const store = useSyncStore.getState();
+  const pending = await queryPendingOpportunities();
+  if (pending.length === 0) return;
+
+  console.log(`[sync] Pushing ${pending.length} pending opportunities to D365`);
+  const startedAt = new Date().toISOString();
+  const recordId = await insertSyncRecord('push_opportunities', 'running', startedAt);
+  let pushed = 0;
+
+  const adapter = getD365Adapter();
+  for (const opportunity of pending) {
+    try {
+      const optionValues = await resolveOpportunityOptionValues(opportunity);
+      const remoteId = await adapter.pushOpportunity(token, opportunity, optionValues);
+      await markOpportunitySynced(opportunity.id, remoteId);
+      pushed++;
+    } catch (err) {
+      console.error(`[sync] Failed to push opportunity "${opportunity.subject}" (${opportunity.id}):`, err instanceof Error ? err.message : err);
+      await markOpportunitySyncError(opportunity.id);
+      store.addSyncError({
+        id: uuidv4(),
+        syncType: 'push_opportunities',
+        message: `Failed to push opportunity: ${opportunity.subject}`,
+        occurredAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  const errors = pending.length - pushed;
+  console.log(`[sync] Pushed ${pushed}/${pending.length} opportunities`);
+  await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, errors > 0 ? `${errors} push errors` : null);
+}
+
 async function pushPendingDeletes(token: string): Promise<void> {
   const pending = await queryPendingDeletes();
   if (pending.length === 0) return;
@@ -341,7 +415,9 @@ async function pushPendingDeletes(token: string): Promise<void> {
 
   for (const item of pending) {
     try {
-      if (item.entityType === 'task') {
+      if (item.entityType === 'opportunity') {
+        await adapter.deleteOpportunity(token, item.remoteId);
+      } else if (item.entityType === 'task') {
         await adapter.deleteFollowUp(token, item.remoteId);
       } else {
         const activityType = item.entityType === 'phonecall' ? 'call' : item.entityType === 'annotation' ? 'note' : 'meeting';
