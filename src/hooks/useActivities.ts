@@ -61,7 +61,9 @@ export function useActivities(customerId: string) {
 
       if (isTauriApp()) {
         await insertActivity(activity);
-        await updateCustomerLastActivity(customerId, activity.occurredAt);
+        if (activity.occurredAt <= now) {
+          await updateCustomerLastActivity(customerId, activity.occurredAt);
+        }
         directPushActivity(activity, d365UserId).then((result) => {
           if (result) updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
         });

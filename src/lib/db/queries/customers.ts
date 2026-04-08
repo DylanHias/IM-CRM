@@ -125,7 +125,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
 export async function updateCustomerLastActivity(customerId: string, at: string): Promise<void> {
   const db = await getDb();
   await db.execute(
-    `UPDATE customers SET last_activity_at = $1, updated_at = $2 WHERE id = $3`,
+    `UPDATE customers SET last_activity_at = MAX(COALESCE(last_activity_at, ''), $1), updated_at = $2 WHERE id = $3`,
     [at, new Date().toISOString(), customerId]
   );
 }
@@ -150,7 +150,7 @@ export async function recomputeLastActivityDates(): Promise<void> {
   await db.execute(`
     UPDATE customers SET last_activity_at = (
       SELECT MAX(dt) FROM (
-        SELECT MAX(occurred_at) AS dt FROM activities WHERE customer_id = customers.id
+        SELECT MAX(occurred_at) AS dt FROM activities WHERE customer_id = customers.id AND occurred_at <= datetime('now')
         UNION ALL
         SELECT MAX(updated_at) AS dt FROM contacts WHERE customer_id = customers.id
       )
