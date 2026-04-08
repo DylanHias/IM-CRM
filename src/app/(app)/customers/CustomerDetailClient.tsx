@@ -31,7 +31,7 @@ import { useActivities } from '@/hooks/useActivities';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { todayISO, nowDatetimeLocal, isoToDatetimeLocal } from '@/lib/utils/dateUtils';
+import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
@@ -89,11 +89,38 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   const [newActType, setNewActType] = useState<Activity['type'] | null>(null);
   const [newActSubject, setNewActSubject] = useState('');
   const [newActDescription, setNewActDescription] = useState('');
-  const [newActStartTime, setNewActStartTime] = useState(nowDatetimeLocal());
-  const [newActDate, setNewActDate] = useState(todayISO());
+  const [newActStartTime, setNewActStartTime] = useState(nowDatetimeLocal);
+  const [newActDate, setNewActDate] = useState(() => {
+    const isAppt = defaultActivityType === 'meeting' || defaultActivityType === 'visit';
+    return isAppt ? addHoursLocal(nowDatetimeLocal(), 1) : todayISO();
+  });
   const [newActDirection, setNewActDirection] = useState<'outgoing' | 'incoming'>('outgoing');
   const [newActContactId, setNewActContactId] = useState('none');
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
+
+  const handleNewActStartChange = (newStart: string) => {
+    setNewActStartTime(newStart);
+    if (new Date(newStart) >= new Date(newActDate)) {
+      setNewActDate(addHoursLocal(newStart, 1));
+    }
+  };
+
+  const handleNewActEndChange = (newEnd: string) => {
+    if (new Date(newEnd) < new Date(newActStartTime)) return;
+    setNewActDate(newEnd);
+  };
+
+  const handleEditStartChange = (newStart: string) => {
+    setEditStartTime(newStart);
+    if (new Date(newStart) >= new Date(editOccurredAt)) {
+      setEditOccurredAt(addHoursLocal(newStart, 1));
+    }
+  };
+
+  const handleEditEndChange = (newEnd: string) => {
+    if (new Date(newEnd) < new Date(editStartTime)) return;
+    setEditOccurredAt(newEnd);
+  };
 
   const [addFollowUpOpen, setAddFollowUpOpen] = useState(false);
 
@@ -191,8 +218,10 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
       setNewActType(null);
       setNewActSubject('');
       setNewActDescription('');
-      setNewActStartTime(nowDatetimeLocal());
-      setNewActDate(todayISO());
+      const now = nowDatetimeLocal();
+      setNewActStartTime(now);
+      const resetIsAppt = defaultActivityType === 'meeting' || defaultActivityType === 'visit';
+      setNewActDate(resetIsAppt ? addHoursLocal(now, 1) : todayISO());
       setNewActDirection('outgoing');
       setNewActContactId('none');
     } finally {
@@ -584,8 +613,9 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         const isNowAppt = newType === 'meeting' || newType === 'visit';
                         setEditType(newType);
                         if (wasAppt !== isNowAppt) {
-                          setEditOccurredAt(isNowAppt ? nowDatetimeLocal() : todayISO());
-                          setEditStartTime(nowDatetimeLocal());
+                          const now = nowDatetimeLocal();
+                          setEditStartTime(now);
+                          setEditOccurredAt(isNowAppt ? addHoursLocal(now, 1) : todayISO());
                         }
                       }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -621,11 +651,11 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <>
                         <div className="space-y-1">
                           <Label>Start *</Label>
-                          <DateTimePicker value={editStartTime} onChange={setEditStartTime} />
+                          <DateTimePicker value={editStartTime} onChange={handleEditStartChange} />
                         </div>
                         <div className="space-y-1">
                           <Label>End *</Label>
-                          <DateTimePicker value={editOccurredAt} onChange={setEditOccurredAt} />
+                          <DateTimePicker value={editOccurredAt} onChange={handleEditEndChange} minValue={editStartTime} />
                         </div>
                       </>
                     ) : (
@@ -674,8 +704,9 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         const isNowAppt = newType === 'meeting' || newType === 'visit';
                         setNewActType(newType);
                         if (wasAppt !== isNowAppt) {
-                          setNewActDate(isNowAppt ? nowDatetimeLocal() : todayISO());
-                          setNewActStartTime(nowDatetimeLocal());
+                          const now = nowDatetimeLocal();
+                          setNewActStartTime(now);
+                          setNewActDate(isNowAppt ? addHoursLocal(now, 1) : todayISO());
                         }
                       }}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -711,11 +742,11 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <div className="space-y-3">
                         <div className="space-y-1">
                           <Label>Start *</Label>
-                          <DateTimePicker value={newActStartTime} onChange={setNewActStartTime} />
+                          <DateTimePicker value={newActStartTime} onChange={handleNewActStartChange} />
                         </div>
                         <div className="space-y-1">
                           <Label>End *</Label>
-                          <DateTimePicker value={newActDate} onChange={setNewActDate} />
+                          <DateTimePicker value={newActDate} onChange={handleNewActEndChange} minValue={newActStartTime} />
                         </div>
                       </div>
                     ) : (
