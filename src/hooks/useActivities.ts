@@ -74,7 +74,7 @@ export function useActivities(customerId: string) {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
       }
-      updateActivity(activity);
+      updateActivity({ ...activity, syncStatus: 'pending' });
       emitDataEvent('activity', 'updated', customerId);
     },
     [customerId, updateActivity]
