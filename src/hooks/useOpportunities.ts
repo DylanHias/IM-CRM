@@ -4,6 +4,8 @@ import { useEffect, useCallback } from 'react';
 import { useOpportunityStore } from '@/store/opportunityStore';
 import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
+import { directPushOpportunity, directDeleteOpportunity } from '@/lib/sync/directPushService';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
@@ -69,30 +71,34 @@ export function useOpportunities(customerId: string) {
       };
 
       if (isTauriApp()) {
-        try {
-          await insertOpportunity(opportunity);
-          await updateCustomerLastActivity(customerId, now);
-        } catch (err) {
-          console.error('[opportunity] DB insert failed, adding to store only:', err);
-        }
+        await insertOpportunity(opportunity);
+        await updateCustomerLastActivity(customerId, now);
+        directPushOpportunity(opportunity).then((result) => {
+          if (result) {
+            updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('opportunity', 'updated', customerId);
+          }
+        });
       }
       addOpportunity(opportunity);
       emitDataEvent('opportunity', 'created', customerId);
       return opportunity;
     },
-    [account, d365UserId, customerId, addOpportunity]
+    [account, d365UserId, customerId, addOpportunity, updateOpportunity]
   );
 
   const editOpportunity = useCallback(
     async (opportunity: Opportunity) => {
       if (isTauriApp()) {
-        try {
-          await dbUpdateOpportunity(opportunity);
-        } catch (err) {
-          console.error('[opportunity] DB update failed:', err);
-        }
+        await dbUpdateOpportunity(opportunity);
+        directPushOpportunity(opportunity).then((result) => {
+          if (result) {
+            updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('opportunity', 'updated', customerId);
+          }
+        });
       }
-      updateOpportunity(opportunity);
+      updateOpportunity({ ...opportunity, syncStatus: 'pending' });
       emitDataEvent('opportunity', 'updated', customerId);
     },
     [customerId, updateOpportunity]
@@ -100,15 +106,21 @@ export function useOpportunities(customerId: string) {
 
   const removeOpp = useCallback(
     async (id: string) => {
-      if (isTauriApp()) {
-        try {
-          await dbDeleteOpportunity(id);
-        } catch (err) {
-          console.error('[opportunity] DB delete failed:', err);
-        }
-      }
       removeOpportunity(id);
       emitDataEvent('opportunity', 'deleted', customerId);
+      if (isTauriApp()) {
+        const deleted = await dbDeleteOpportunity(id);
+        if (deleted?.remoteId) {
+          console.log(`[opportunity] Deleting from D365: remoteId=${deleted.remoteId}`);
+          const directDeleted = await directDeleteOpportunity(deleted.remoteId);
+          if (!directDeleted) {
+            console.log(`[opportunity] Direct D365 delete failed, queuing pending delete: opportunity/${deleted.remoteId}`);
+            await insertPendingDelete('opportunity', deleted.remoteId);
+          } else {
+            console.log(`[opportunity] D365 delete succeeded for ${deleted.remoteId}`);
+          }
+        }
+      }
     },
     [customerId, removeOpportunity]
   );
