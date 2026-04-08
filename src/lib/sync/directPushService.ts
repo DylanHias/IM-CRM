@@ -10,12 +10,20 @@ import type { Activity, FollowUp } from '@/types/entities';
 async function tryDirectPush<T>(
   pushFn: (token: string) => Promise<T>,
 ): Promise<{ success: true; result: T } | { success: false }> {
-  if (!isOnline() || !isTauriApp()) {
+  if (!isOnline()) {
+    console.warn('[sync] Direct push skipped: offline');
+    return { success: false };
+  }
+  if (!isTauriApp()) {
+    console.warn('[sync] Direct push skipped: not Tauri app');
     return { success: false };
   }
   try {
     const token = await getAccessToken(d365Request.scopes);
-    if (!token) return { success: false };
+    if (!token) {
+      console.warn('[sync] Direct push skipped: no access token');
+      return { success: false };
+    }
     const result = await pushFn(token);
     return { success: true, result };
   } catch (err) {

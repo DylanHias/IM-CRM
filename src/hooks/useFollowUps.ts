@@ -118,10 +118,16 @@ export function useFollowUps(customerId: string) {
       if (isTauriApp()) {
         const deleted = await dbDeleteFollowUp(id);
         if (deleted?.remoteId) {
+          console.log(`[followup] Deleting from D365: remoteId=${deleted.remoteId}`);
           const directDeleted = await directDeleteFollowUp(deleted.remoteId);
           if (!directDeleted) {
+            console.log(`[followup] Direct D365 delete failed, queuing pending delete: task/${deleted.remoteId}`);
             await insertPendingDelete('task', deleted.remoteId);
+          } else {
+            console.log(`[followup] D365 delete succeeded for ${deleted.remoteId}`);
           }
+        } else {
+          console.log(`[followup] No remoteId for follow-up ${id}, skipping D365 delete`);
         }
       }
       removeFollowUp(id);

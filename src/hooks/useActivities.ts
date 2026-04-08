@@ -94,10 +94,16 @@ export function useActivities(customerId: string) {
         if (deleted?.remoteId) {
           const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
           const d365Type = deleted.type === 'call' ? 'call' : deleted.type === 'note' ? 'note' : 'meeting';
+          console.log(`[activity] Deleting from D365: remoteId=${deleted.remoteId}, type=${d365Type}`);
           const directDeleted = await directDeleteActivity(deleted.remoteId, d365Type);
           if (!directDeleted) {
+            console.log(`[activity] Direct D365 delete failed, queuing pending delete: ${entityType}/${deleted.remoteId}`);
             await insertPendingDelete(entityType, deleted.remoteId);
+          } else {
+            console.log(`[activity] D365 delete succeeded for ${deleted.remoteId}`);
           }
+        } else {
+          console.log(`[activity] No remoteId for activity ${id}, skipping D365 delete (type=${deleted?.type})`);
         }
       }
       removeActivity(id);
