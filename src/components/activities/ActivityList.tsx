@@ -139,7 +139,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
       )}
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-4xl w-[90vw]">
           <DialogHeader>
             <DialogTitle>Edit Activity</DialogTitle>
           </DialogHeader>
@@ -170,7 +170,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
             </div>
             <div className="col-span-2 space-y-1">
               <Label>Description</Label>
-              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={10} className="min-h-[240px] resize-y" />
+              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={6} className="min-h-[160px] resize-y" />
             </div>
             {(editType === 'meeting' || editType === 'visit') ? (
               <>

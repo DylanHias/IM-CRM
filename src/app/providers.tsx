@@ -58,7 +58,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Restore Tauri session from persisted refresh token
       try {
         const { restoreSession } = await import('@/lib/auth/authHelpers');
-        await restoreSession();
+        const restored = await restoreSession();
+        if (restored) {
+          const account = useAuthStore.getState().account;
+          if (account?.localAccountId) {
+            try {
+              const { isUserAdmin } = await import('@/lib/db/queries/users');
+              const admin = await isUserAdmin(account.localAccountId);
+              useAuthStore.getState().setIsAdmin(admin);
+            } catch (err) {
+              console.error('[auth] Admin check after session restore failed:', err);
+            }
+          }
+        }
       } catch (err) {
         console.error('[auth] Session restore failed:', err);
       }

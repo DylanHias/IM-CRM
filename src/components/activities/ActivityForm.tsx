@@ -183,8 +183,8 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           placeholder="What was discussed? Key outcomes, next steps..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          rows={10}
-          className="min-h-[240px] resize-y"
+          rows={6}
+          className="min-h-[160px] resize-y"
         />
       </div>
 
