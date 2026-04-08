@@ -157,10 +157,9 @@ export async function insertFollowUp(followUp: FollowUp): Promise<void> {
 export async function updateFollowUp(followUp: FollowUp): Promise<void> {
   const db = await getDb();
   await db.execute(
-    `UPDATE follow_ups SET title=$1, description=$2, due_date=$3, sync_status='pending', updated_at=$4 WHERE id=$5`,
-    [followUp.title, followUp.description, followUp.dueDate, new Date().toISOString(), followUp.id]
+    `UPDATE follow_ups SET title=$1, description=$2, due_date=$3, completed=$4, completed_at=$5, sync_status='pending', updated_at=$6 WHERE id=$7`,
+    [followUp.title, followUp.description, followUp.dueDate, followUp.completed ? 1 : 0, followUp.completedAt, new Date().toISOString(), followUp.id]
   );
-
 }
 
 export async function deleteFollowUp(id: string): Promise<{ remoteId: string | null } | null> {

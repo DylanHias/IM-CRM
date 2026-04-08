@@ -181,6 +181,7 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `_regardingobjectid_value` | Related account ID |
 | `_ownerid_value` | Owner system user ID |
 | `scheduledend` | Due date |
+| `_im360_account_value` | Custom account lookup ID |
 | `statecode` | State (0=open, 1=completed) |
 | `actualend` | Actual completion |
 | `im360_completedon` | Custom completion date |
@@ -193,13 +194,14 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `subject` | Subject |
 | `description` | Description |
 | `scheduledend` | Due date |
-| `statecode` | State (1=completed) |
-| `statuscode` | Status code (5=completed) |
+| `statecode` | State: 0=open, 1=completed (separate PATCH) |
+| `statuscode` | Status: 3=open, 5=completed (separate PATCH) |
 
 ### Push OData Bindings
 | Binding | Target |
 |---|---|
 | `regardingobjectid_account@odata.bind` | `/accounts({id})` |
+| `{accountNav}@odata.bind` | Resolved via `resolveNavProperty('task', 'im360_account')` |
 
 ---
 

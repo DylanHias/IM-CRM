@@ -487,11 +487,13 @@ class RealD365Adapter implements ID365Adapter {
     let body: Record<string, unknown>;
 
     // Resolve custom lookup nav property names (cached after first call)
+    // Annotations use the standard polymorphic objectid lookup, not custom im360_* lookups
     const entityLogical = activity.type === 'call' ? 'phonecall'
       : activity.type === 'note' ? 'annotation' : 'appointment';
+    const isAnnotation = entityLogical === 'annotation';
     const [accountNav, contactNav] = await Promise.all([
-      this.resolveNavProperty(token, entityLogical, 'im360_account'),
-      activity.contactId ? this.resolveNavProperty(token, entityLogical, 'im360_contact') : Promise.resolve(null),
+      isAnnotation ? Promise.resolve(null) : this.resolveNavProperty(token, entityLogical, 'im360_account'),
+      !isAnnotation && activity.contactId ? this.resolveNavProperty(token, entityLogical, 'im360_contact') : Promise.resolve(null),
     ]);
 
     // Build custom lookup bindings using the resolved navigation property names
@@ -605,17 +607,18 @@ class RealD365Adapter implements ID365Adapter {
 
   async pushFollowUp(token: string, followUp: FollowUp): Promise<string> {
     const isUpdate = !!followUp.remoteId;
+    const accountBind = `/accounts(${followUp.customerId})`;
+
+    // Resolve custom im360_account lookup (same pattern as phone calls / appointments)
+    const accountNav = await this.resolveNavProperty(token, 'task', 'im360_account');
+
     const body: Record<string, unknown> = {
       subject: followUp.title,
       description: followUp.description ?? '',
       scheduledend: followUp.dueDate,
-      'regardingobjectid_account@odata.bind': `/accounts(${followUp.customerId})`,
+      'regardingobjectid_account@odata.bind': accountBind,
     };
-
-    if (followUp.completed) {
-      body.statecode = 1;
-      body.statuscode = 5;
-    }
+    if (accountNav) body[`${accountNav}@odata.bind`] = accountBind;
 
     const endpoint = isUpdate
       ? `${this.baseUrl}/api/data/v9.2/tasks(${followUp.remoteId})`
@@ -638,12 +641,41 @@ class RealD365Adapter implements ID365Adapter {
       throw new Error(`D365 push follow-up failed ${res.status}: ${text}`);
     }
 
-    if (isUpdate) {
-      return followUp.remoteId!;
+    const resolvedId = isUpdate
+      ? followUp.remoteId!
+      : (() => {
+          const entityId = res.headers.get('OData-EntityId') ?? '';
+          const match = entityId.match(/\(([^)]+)\)$/);
+          return match ? match[1] : entityId;
+        })();
+
+    // D365 won't accept statecode/statuscode in the main body — set state via separate PATCH
+    // Task states: 0=Open/statuscode 3, 1=Completed/statuscode 5
+    const currentlyCompleted = followUp.completed;
+    const needsStateChange = currentlyCompleted || (isUpdate && !currentlyCompleted);
+    if (needsStateChange) {
+      const stateBody = currentlyCompleted
+        ? { statecode: 1, statuscode: 5 }
+        : { statecode: 0, statuscode: 3 };
+      const stateRes = await fetch(
+        `${this.baseUrl}/api/data/v9.2/tasks(${resolvedId})`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'OData-MaxVersion': '4.0',
+            'OData-Version': '4.0',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(stateBody),
+        },
+      );
+      if (!stateRes.ok) {
+        console.error(`[sync] Failed to set task state to ${currentlyCompleted ? 'completed' : 'open'} (${resolvedId}):`, await stateRes.text());
+      }
     }
-    const entityId = res.headers.get('OData-EntityId') ?? '';
-    const match = entityId.match(/\(([^)]+)\)$/);
-    return match ? match[1] : entityId;
+
+    return resolvedId;
   }
 
   async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
