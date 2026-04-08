@@ -46,3 +46,12 @@ If an opportunity has been open for too long without updates, you'll see a **war
 ## Deleting an Opportunity
 
 Click the **trash icon** and confirm to remove an opportunity.
+
+## Sync Status
+
+Opportunities sync to Dynamics 365 automatically. When you create, update, or delete an opportunity while online, the change is pushed to D365 immediately. If you're offline, the change is queued and will sync when you reconnect. You'll see a small badge on opportunities that are:
+
+- **Pending sync** — Waiting to be sent to D365
+- **Sync error** — Failed to sync (will retry on next sync)
+
+Check the **Sync** page for more details on sync status.

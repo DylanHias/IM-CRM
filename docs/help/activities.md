@@ -46,6 +46,21 @@ Click the **pencil icon** on any activity to edit it. You can change the subject
 
 Click the **trash icon** on an activity. You'll be asked to confirm before it's deleted.
 
+## Kanban Board
+
+Meetings, visits, and calls are displayed in a **kanban board** with four columns:
+
+- **Open** — Scheduled or in-progress activities
+- **Completed** — Activities that have been marked done
+- **Rejected** — Cancelled or declined activities
+- **Expired** — Activities that passed without being completed
+
+You can **drag and drop** cards between columns to change their status. Empty columns collapse automatically — click the column header to expand or collapse them manually. Each column header shows the item count.
+
+**Notes** appear separately above the kanban board in a list view.
+
+Use the **date filter** (top right of the Activities section) to narrow down which activities are shown by time range.
+
 ## Sync Status
 
 Activities sync to Dynamics 365 automatically. You'll see a small badge on activities that are:

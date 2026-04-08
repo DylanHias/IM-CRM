@@ -31,7 +31,7 @@ Below the main navigation, you'll find your **Recent Customers** section. This s
 
 ## User Menu
 
-Click your avatar at the bottom of the sidebar to access:
+Your **profile photo** from Microsoft 365 is shown in the sidebar avatar. Click it to access:
 
 - **Account settings** — Customize the app to your preferences
 - **Help** — This documentation

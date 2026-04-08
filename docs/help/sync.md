@@ -7,7 +7,7 @@ Ingram Micro CRM syncs your data with Microsoft Dynamics 365 so your local data 
 Sync is a two-way process:
 
 - **Pull** — Downloads customer, contact, and opportunity data from D365 into the app
-- **Push** — Uploads your locally created activities and follow-ups to D365
+- **Push** — Uploads your locally created or updated activities, follow-ups, and opportunities to D365
 
 ## Automatic Sync
 
@@ -33,7 +33,12 @@ The Sync page shows:
 - **Last sync time** — When the most recent successful sync happened
 - **Pending activities** — How many activities are waiting to be pushed to D365
 - **Pending follow-ups** — How many follow-ups are waiting to be pushed
+- **Pending opportunities** — How many opportunity changes are waiting to be pushed
 - **Online/Offline status** — Whether the app can reach D365
+
+## Pending Queue
+
+The Sync page includes a **Pending Queue** table showing each item waiting to be synced — its type, name, and the action (create, update, or delete). The table is paginated so you can browse through a large backlog. Once an item syncs successfully, it's removed from the queue.
 
 ## Sync History
 

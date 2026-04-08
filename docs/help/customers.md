@@ -53,6 +53,8 @@ When you click a customer, you'll see their detail page with several tabs:
 ### Overview
 The overview shows the customer's profile information including name, status, industry, location, owner, and ARR. You can view and edit contact details like phone, email, and website. There's also a notes section for internal comments.
 
+If the account is flagged as a **Cloud Customer** in D365, you'll see a **Cloud Customer: Yes** indicator in the Company Details card.
+
 ### Activities
 See all logged interactions with this customer. Read more in the **Activities** help section.
 
