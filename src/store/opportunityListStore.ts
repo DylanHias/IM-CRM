@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Opportunity } from '@/types/entities';
+import type { Opportunity, OpportunityStatus } from '@/types/entities';
 
 export type OppSortBy = 'createdAt' | 'subject' | 'estimatedRevenue' | 'expirationDate' | 'stage';
 export type SortDir = 'asc' | 'desc';
+export type ExpiredFilter = 'all' | 'expired' | 'active';
 
 const STAGE_ORDER: Record<string, number> = {
   'Prospecting': 1,
@@ -24,6 +25,8 @@ interface OpportunityListState {
   sortDir: SortDir;
   filterCustomerId: string | null;
   filterStage: string | null;
+  filterStatus: OpportunityStatus | null;
+  filterExpired: ExpiredFilter;
   page: number;
   isLoading: boolean;
 
@@ -34,6 +37,8 @@ interface OpportunityListState {
   setSortDir: (d: SortDir) => void;
   setFilterCustomerId: (id: string | null) => void;
   setFilterStage: (s: string | null) => void;
+  setFilterStatus: (s: OpportunityStatus | null) => void;
+  setFilterExpired: (f: ExpiredFilter) => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -51,6 +56,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       sortDir: 'desc',
       filterCustomerId: null,
       filterStage: null,
+      filterStatus: null,
+      filterExpired: 'all',
       page: 1,
       isLoading: false,
 
@@ -61,22 +68,31 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       setSortDir: (sortDir) => set({ sortDir, page: 1 }),
       setFilterCustomerId: (filterCustomerId) => set({ filterCustomerId, page: 1 }),
       setFilterStage: (filterStage) => set({ filterStage, page: 1 }),
+      setFilterStatus: (filterStatus) => set({ filterStatus, page: 1 }),
+      setFilterExpired: (filterExpired) => set({ filterExpired, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
       clearFilters: () => set({
         filterCustomerId: null,
         filterStage: null,
+        filterStatus: null,
+        filterExpired: 'all',
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterCustomerId, filterStage } = get();
-        return [filterCustomerId, filterStage].filter(Boolean).length;
+        const { filterCustomerId, filterStage, filterStatus, filterExpired } = get();
+        return [
+          filterCustomerId,
+          filterStage,
+          filterStatus,
+          filterExpired !== 'all' ? filterExpired : null,
+        ].filter(Boolean).length;
       },
 
       getFilteredOpportunities: () => {
-        const { opportunities, customerMap, searchQuery, sortBy, sortDir, filterCustomerId, filterStage } = get();
+        const { opportunities, customerMap, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired } = get();
 
         let result = opportunities;
 
@@ -97,6 +113,17 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         }
         if (filterStage) {
           result = result.filter((o) => o.stage === filterStage);
+        }
+        if (filterStatus) {
+          result = result.filter((o) => o.status === filterStatus);
+        }
+        if (filterExpired !== 'all') {
+          const today = new Date().toISOString().slice(0, 10);
+          result = result.filter((o) => {
+            if (!o.expirationDate) return filterExpired === 'active';
+            const isExpired = o.expirationDate.slice(0, 10) < today;
+            return filterExpired === 'expired' ? isExpired : !isExpired;
+          });
         }
 
         result = [...result].sort((a, b) => {
@@ -127,6 +154,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         sortDir: state.sortDir,
         filterCustomerId: state.filterCustomerId,
         filterStage: state.filterStage,
+        filterStatus: state.filterStatus,
+        filterExpired: state.filterExpired,
       }),
     }
   )

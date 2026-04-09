@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
-import type { OppSortBy } from '@/store/opportunityListStore';
+import type { OppSortBy, ExpiredFilter } from '@/store/opportunityListStore';
+import type { OpportunityStatus } from '@/types/entities';
+
+const STATUS_OPTIONS: OpportunityStatus[] = ['Open', 'Won', 'Lost'];
 
 const SORT_OPTIONS: { value: OppSortBy; label: string }[] = [
   { value: 'createdAt', label: 'Created' },
@@ -33,9 +36,9 @@ export function OpportunitiesFilters() {
   const {
     opportunities, customerMap,
     searchQuery, sortBy, sortDir,
-    filterCustomerId, filterStage,
+    filterCustomerId, filterStage, filterStatus, filterExpired,
     setSearchQuery, setSortBy, setSortDir,
-    setFilterCustomerId, setFilterStage,
+    setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired,
     clearFilters, getActiveFilterCount,
   } = useOpportunityListStore();
 
@@ -155,6 +158,29 @@ export function OpportunitiesFilters() {
               </Select>
             </div>
           )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Status</label>
+            <Select value={filterStatus ?? 'all'} onValueChange={(v) => setFilterStatus(v === 'all' ? null : (v as OpportunityStatus))}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {STATUS_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Expiration</label>
+            <Select value={filterExpired} onValueChange={(v) => setFilterExpired(v as ExpiredFilter)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Not expired</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 
@@ -169,6 +195,16 @@ export function OpportunitiesFilters() {
           {filterStage && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterStage(null)}>
               {filterStage} <X size={10} />
+            </Badge>
+          )}
+          {filterStatus && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterStatus(null)}>
+              {filterStatus} <X size={10} />
+            </Badge>
+          )}
+          {filterExpired !== 'all' && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterExpired('all')}>
+              {filterExpired === 'expired' ? 'Expired' : 'Not expired'} <X size={10} />
             </Badge>
           )}
         </div>

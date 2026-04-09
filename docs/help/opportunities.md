@@ -26,6 +26,8 @@ On the global Opportunities page you can:
 - **Sort** by created date, subject, revenue, expiration, or stage (ascending or descending)
 - **Filter by Company** — the dropdown only shows companies that actually have opportunities
 - **Filter by Stage** — narrow the list to a single stage
+- **Filter by Status** — show only Open, Won, or Lost deals
+- **Filter by Expiration** — show only expired or only still-active opportunities
 
 Active filters appear as badges you can click to clear individually, or use **Clear all** to reset everything. Your sort and filter choices are remembered between sessions.
 
