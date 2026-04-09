@@ -299,7 +299,7 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     bcn: r.im360_bcn ?? null,
     multiVendorOpportunity: r.im360_multivendoropportunity ?? false,
     sellType: r['im360_opptype@OData.Community.Display.V1.FormattedValue'] ?? '',
-    primaryVendor: r.im360_primaryvendorname ?? null,
+    primaryVendor: r['_im360_primaryvendor_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     opportunityType: r['im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'] ?? null,
     stage: r['im360_oppstage@OData.Community.Display.V1.FormattedValue'] ?? 'Prospecting',
     probability: r.closeprobability ?? 5,
@@ -472,7 +472,7 @@ class RealD365Adapter implements ID365Adapter {
       'opportunityid', 'name', 'statecode', 'estimatedvalue', 'estimatedclosedate',
       'closeprobability', 'customerneed', 'im360_bcn', 'im360_multivendoropportunity',
       'im360_oppstage', 'im360_opptype', 'im360_drpboxopptype', 'im360_recordtype',
-      'im360_source', 'im360_primaryvendorname',
+      'im360_source', '_im360_primaryvendor_value',
       '_parentaccountid_value', '_contactid_value', '_ownerid_value',
       'createdon', 'modifiedon',
     ].join(',');
@@ -755,7 +755,7 @@ class RealD365Adapter implements ID365Adapter {
     if (opportunity.expirationDate) body.estimatedclosedate = opportunity.expirationDate;
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
     if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
-    if (opportunity.primaryVendor) body.im360_primaryvendorname = opportunity.primaryVendor;
+    // primaryVendor is a D365 lookup to account — read-only from local since we only store the vendor name, not the account GUID
     if (opportunity.contactId) body['contactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
     if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
     if (optionValues.sellType != null) body.im360_opptype = optionValues.sellType;

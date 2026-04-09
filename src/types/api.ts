@@ -125,7 +125,7 @@ export interface D365Opportunity {
   im360_drpboxopptype: number | null;
   im360_recordtype: number | null;
   im360_source: number | null;
-  im360_primaryvendorname: string | null;
+  _im360_primaryvendor_value: string | null;
   _parentaccountid_value: string | null;
   _contactid_value: string | null;
   _ownerid_value: string | null;
@@ -134,6 +134,7 @@ export interface D365Opportunity {
   'im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_recordtype@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_source@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_primaryvendor_value@OData.Community.Display.V1.FormattedValue'?: string;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
   createdon: string;
   modifiedon: string;
