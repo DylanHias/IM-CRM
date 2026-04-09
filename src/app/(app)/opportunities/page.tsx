@@ -1,32 +1,49 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Plus, Target, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
 import type { OpportunityFormData } from '@/components/opportunities/OpportunityForm';
+import { OpportunitiesFilters } from '@/components/opportunities/OpportunitiesFilters';
+import { OpportunitiesTable } from '@/components/opportunities/OpportunitiesTable';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { queryAllOpportunities, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
+import {
+  queryAllOpportunities,
+  insertOpportunity,
+  updateOpportunity as dbUpdateOpportunity,
+  deleteOpportunity as dbDeleteOpportunity,
+} from '@/lib/db/queries/opportunities';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
+import { useOpportunityListStore } from '@/store/opportunityListStore';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OpportunitiesPage() {
-  const router = useRouter();
   const { account } = useAuthStore();
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const {
+    opportunities: allOpportunities,
+    customerMap,
+    page,
+    isLoading,
+    setOpportunities,
+    setCustomerMap,
+    setPage,
+    setLoading,
+    getFilteredOpportunities,
+  } = useOpportunityListStore();
+
+  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('opportunities');
+
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
@@ -36,6 +53,7 @@ export default function OpportunitiesPage() {
   useShortcutListener('new-item', useCallback(() => setAddOpen(true), []));
 
   const loadData = useCallback(async () => {
+    setLoading(true);
     try {
       if (isTauriApp()) {
         const [opps, custs] = await Promise.all([
@@ -55,8 +73,10 @@ export default function OpportunitiesPage() {
       setOpportunities([]);
       setCustomers([]);
       setCustomerMap(new Map());
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [setOpportunities, setCustomerMap, setLoading]);
 
   useEffect(() => {
     loadData();
@@ -107,7 +127,7 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB insert failed:', err);
       }
     }
-    setOpportunities((prev) => [opp, ...prev]);
+    setOpportunities([opp, ...allOpportunities]);
     emitDataEvent('opportunity', 'created', selectedCustomerId);
     setAddOpen(false);
     setSelectedCustomerId(null);
@@ -127,7 +147,7 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB update failed:', err);
       }
     }
-    setOpportunities((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setOpportunities(allOpportunities.map((o) => (o.id === updated.id ? updated : o)));
     emitDataEvent('opportunity', 'updated', editing.customerId);
     setEditing(null);
     setSelectedCustomerId(null);
@@ -141,7 +161,7 @@ export default function OpportunitiesPage() {
         console.error('[opportunity] DB delete failed:', err);
       }
     }
-    setOpportunities((prev) => prev.filter((o) => o.id !== opp.id));
+    setOpportunities(allOpportunities.filter((o) => o.id !== opp.id));
     emitDataEvent('opportunity', 'deleted', opp.customerId);
   };
 
@@ -150,67 +170,23 @@ export default function OpportunitiesPage() {
     setEditing(opp);
   };
 
-  const statusVariant = (status: Opportunity['status']) => {
-    switch (status) {
-      case 'Open': return 'default' as const;
-      case 'Won': return 'success' as const;
-      case 'Lost': return 'destructive' as const;
-    }
-  };
+  const filtered = getFilteredOpportunities();
 
-  const open = opportunities.filter((o) => o.status === 'Open');
-  const won = opportunities.filter((o) => o.status === 'Won');
-  const lost = opportunities.filter((o) => o.status === 'Lost');
-
-  const renderOpportunity = (opp: Opportunity, i: number) => (
-    <motion.div
-      key={opp.id}
-      className="px-5 py-3.5 flex items-start justify-between gap-3 group"
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
-    >
-      <div className="flex-1 min-w-0">
-        <p
-          className="text-xs text-muted-foreground mb-0.5 cursor-pointer hover:underline"
-          onClick={() => router.push(`/customers?id=${opp.customerId}`)}
-        >
-          {customerMap.get(opp.customerId) ?? opp.customerId}
-        </p>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[13px] font-medium text-foreground truncate">{opp.subject}</span>
-          <Badge variant={statusVariant(opp.status)} className="text-[10px] shrink-0">{opp.status}</Badge>
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-          <span>{opp.stage} ({opp.probability}%)</span>
-          {opp.primaryVendor && <span>{opp.primaryVendor}</span>}
-          {opp.opportunityType && <span>{opp.opportunityType}</span>}
-          {opp.estimatedRevenue != null && (
-            <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: opp.currency, maximumFractionDigits: 0 }).format(opp.estimatedRevenue)}</span>
-          )}
-          {opp.expirationDate && <span>Exp: {opp.expirationDate}</span>}
-        </div>
-      </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(opp)}>
-          <Pencil size={13} />
-        </Button>
-        <ConfirmPopover message={`Delete "${opp.subject}"?`} confirmLabel="Delete" onConfirm={() => handleDelete(opp)}>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
-            <Trash2 size={13} />
-          </Button>
-        </ConfirmPopover>
-      </div>
-    </motion.div>
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">All Opportunities</h2>
+          <h2 className="text-xl font-semibold text-foreground">Opportunity Overview</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Track sales opportunities across all customers.
+            {isLoading
+              ? 'Loading...'
+              : filtered.length === allOpportunities.length
+                ? `${filtered.length} opportunit${filtered.length !== 1 ? 'ies' : 'y'}`
+                : `${filtered.length} of ${allOpportunities.length} opportunities`}
           </p>
         </div>
         <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
@@ -219,38 +195,29 @@ export default function OpportunitiesPage() {
         </Button>
       </div>
 
-      {open.length > 0 && (
-        <section>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Open ({open.length})</h3>
-          <div className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border border-border/60">
-            {open.map((o, i) => renderOpportunity(o, i))}
-          </div>
-        </section>
-      )}
+      <OpportunitiesFilters />
 
-      {won.length > 0 && (
-        <section>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Won ({won.length})</h3>
-          <div className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border border-border/60">
-            {won.map((o, i) => renderOpportunity(o, i))}
-          </div>
-        </section>
-      )}
-
-      {lost.length > 0 && (
-        <section>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">Lost ({lost.length})</h3>
-          <div className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border border-border/60">
-            {lost.map((o, i) => renderOpportunity(o, i))}
-          </div>
-        </section>
-      )}
-
-      {opportunities.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Target size={40} className="text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">No opportunities yet</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw size={24} className="text-muted-foreground animate-spin" />
         </div>
+      ) : (
+        <>
+          <OpportunitiesTable
+            opportunities={paged}
+            customerMap={customerMap}
+            onEdit={openEdit}
+            onDelete={handleDelete}
+          />
+          <TablePagination
+            totalItems={filtered.length}
+            page={safePage}
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
       )}
 
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedCustomerId(null); setCustomerSearch(''); } }}>
@@ -312,6 +279,7 @@ export default function OpportunitiesPage() {
             <OpportunityForm
               opportunity={editing}
               contacts={contacts}
+              customer={customers.find((c) => c.id === editing.customerId)}
               onSubmit={handleEdit}
               onCancel={() => { setEditing(null); setSelectedCustomerId(null); }}
             />

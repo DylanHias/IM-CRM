@@ -7,16 +7,31 @@ Opportunities represent sales deals and potential revenue for your customers. Th
 You can view opportunities in two ways:
 
 - **Customer view** — Go to a customer's **Opportunities** tab to see deals for that specific customer
-- **Global view** — Click **Opportunities** in the sidebar to see all your opportunities across customers
+- **Global view** — Click **Opportunities** in the sidebar to see all opportunities across companies in one paginated list
 
-Each opportunity shows:
+Each opportunity row shows:
 
 - **Subject** — The deal name or description
+- **Company** — Which customer the deal belongs to
+- **Stage & Probability** — Where the deal is in the sales process and its likelihood of closing
+- **Primary Vendor** — The main vendor for the deal
 - **Status** — Open (blue), Won (green), or Lost (red)
-- **Stage** — Where the deal is in the sales process
-- **Probability** — Likelihood of closing (calculated from stage)
-- **Estimated Revenue** — The expected deal value
-- **Related Contact** — Who you're working with on this deal
+- **Estimated Revenue & Expiration** — The expected deal value and when it expires
+
+## Searching, Sorting & Filtering
+
+On the global Opportunities page you can:
+
+- **Search** by subject, company name, or vendor
+- **Sort** by created date, subject, revenue, expiration, or stage (ascending or descending)
+- **Filter by Company** — the dropdown only shows companies that actually have opportunities
+- **Filter by Stage** — narrow the list to a single stage
+
+Active filters appear as badges you can click to clear individually, or use **Clear all** to reset everything. Your sort and filter choices are remembered between sessions.
+
+## Pagination
+
+The global Opportunities list is paginated. Use the page controls at the bottom to move between pages, and change the **Rows per page** dropdown to show 10, 25, 50, or 100 opportunities at a time. Your preference is remembered.
 
 ## Creating an Opportunity
 
