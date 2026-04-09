@@ -19,16 +19,20 @@ import {
 } from '@/lib/db/queries/opportunities';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
+import { directPushOpportunity, directDeleteOpportunity } from '@/lib/sync/directPushService';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { useShortcutListener } from '@/hooks/useShortcuts';
+import { useD365UserId } from '@/hooks/useD365UserId';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OpportunitiesPage() {
   const { account } = useAuthStore();
+  const d365UserId = useD365UserId();
   const {
     opportunities: allOpportunities,
     customerMap,
@@ -108,12 +112,13 @@ export default function OpportunitiesPage() {
 
   const handleCreate = async (data: OpportunityFormData) => {
     if (!selectedCustomerId) return;
+    const customerId = selectedCustomerId;
     const now = new Date().toISOString();
     const opp: Opportunity = {
       ...data,
       id: uuidv4(),
-      customerId: selectedCustomerId,
-      createdById: account?.localAccountId ?? 'unknown',
+      customerId,
+      createdById: d365UserId ?? account?.localAccountId ?? 'unknown',
       createdByName: account?.name ?? 'Unknown User',
       syncStatus: 'pending',
       remoteId: null,
@@ -123,12 +128,17 @@ export default function OpportunitiesPage() {
     if (isTauriApp()) {
       try {
         await insertOpportunity(opp);
+        directPushOpportunity(opp).then((result) => {
+          if (result) {
+            emitDataEvent('opportunity', 'updated', customerId);
+          }
+        });
       } catch (err) {
         console.error('[opportunity] DB insert failed:', err);
       }
     }
     setOpportunities([opp, ...allOpportunities]);
-    emitDataEvent('opportunity', 'created', selectedCustomerId);
+    emitDataEvent('opportunity', 'created', customerId);
     setAddOpen(false);
     setSelectedCustomerId(null);
   };
@@ -138,11 +148,17 @@ export default function OpportunitiesPage() {
     const updated: Opportunity = {
       ...editing,
       ...data,
+      syncStatus: 'pending',
       updatedAt: new Date().toISOString(),
     };
     if (isTauriApp()) {
       try {
         await dbUpdateOpportunity(updated);
+        directPushOpportunity(updated).then((result) => {
+          if (result) {
+            emitDataEvent('opportunity', 'updated', updated.customerId);
+          }
+        });
       } catch (err) {
         console.error('[opportunity] DB update failed:', err);
       }
@@ -156,7 +172,17 @@ export default function OpportunitiesPage() {
   const handleDelete = async (opp: Opportunity) => {
     if (isTauriApp()) {
       try {
-        await dbDeleteOpportunity(opp.id);
+        const deleted = await dbDeleteOpportunity(opp.id);
+        if (deleted?.remoteId) {
+          console.log(`[opportunity] Deleting from D365: remoteId=${deleted.remoteId}`);
+          const directDeleted = await directDeleteOpportunity(deleted.remoteId);
+          if (!directDeleted) {
+            console.log(`[opportunity] Direct D365 delete failed, queuing pending delete: opportunity/${deleted.remoteId}`);
+            await insertPendingDelete('opportunity', deleted.remoteId);
+          } else {
+            console.log(`[opportunity] D365 delete succeeded for ${deleted.remoteId}`);
+          }
+        }
       } catch (err) {
         console.error('[opportunity] DB delete failed:', err);
       }
