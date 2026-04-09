@@ -201,7 +201,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       subject                  TEXT NOT NULL,
       bcn                      TEXT,
       multi_vendor_opportunity  INTEGER NOT NULL DEFAULT 0 CHECK(multi_vendor_opportunity IN (0,1)),
-      sell_type                TEXT NOT NULL DEFAULT 'New' CHECK(sell_type IN ('New','Install')),
+      sell_type                TEXT NOT NULL DEFAULT 'New',
       primary_vendor           TEXT,
       opportunity_type         TEXT,
       stage                    TEXT NOT NULL DEFAULT 'Prospecting',
@@ -539,6 +539,48 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     try { await db.execute(`ALTER TABLE users ADD COLUMN profile_photo TEXT`); } catch { /* column may already exist */ }
     await db.execute(
       `UPDATE app_settings SET value = '18', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 19) {
+    // Drop sell_type CHECK constraint on opportunities — D365 returns values beyond 'New'/'Install'
+    // SQLite requires table rebuild to drop a CHECK constraint
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS opportunities_new (
+        id                       TEXT PRIMARY KEY,
+        customer_id              TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        contact_id               TEXT REFERENCES contacts(id) ON DELETE SET NULL,
+        status                   TEXT NOT NULL DEFAULT 'Open' CHECK(status IN ('Open','Won','Lost')),
+        subject                  TEXT NOT NULL,
+        bcn                      TEXT,
+        multi_vendor_opportunity  INTEGER NOT NULL DEFAULT 0 CHECK(multi_vendor_opportunity IN (0,1)),
+        sell_type                TEXT NOT NULL DEFAULT 'New',
+        primary_vendor           TEXT,
+        opportunity_type         TEXT,
+        stage                    TEXT NOT NULL DEFAULT 'Prospecting',
+        probability              INTEGER NOT NULL DEFAULT 5,
+        expiration_date          TEXT,
+        estimated_revenue        REAL,
+        currency                 TEXT NOT NULL DEFAULT 'EUR',
+        country                  TEXT NOT NULL DEFAULT 'Belgium',
+        source                   TEXT NOT NULL DEFAULT 'cloud',
+        record_type              TEXT NOT NULL DEFAULT 'Sales',
+        customer_need            TEXT,
+        sync_status              TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
+        remote_id                TEXT,
+        created_by_id            TEXT NOT NULL,
+        created_by_name          TEXT NOT NULL,
+        created_at               TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`INSERT INTO opportunities_new SELECT * FROM opportunities`);
+    await db.execute(`DROP TABLE opportunities`);
+    await db.execute(`ALTER TABLE opportunities_new RENAME TO opportunities`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_customer ON opportunities(customer_id)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
+    await db.execute(
+      `UPDATE app_settings SET value = '19', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
