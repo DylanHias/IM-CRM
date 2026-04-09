@@ -38,7 +38,7 @@ async function fetchTeamId(baseUrl: string, token: string): Promise<string | nul
   return json.value?.[0]?.teamid ?? null;
 }
 
-export async function fetchD365Users(token: string): Promise<CrmUser[]> {
+async function fetchTeamMembers(token: string): Promise<D365SystemUser[]> {
   const baseUrl = process.env.NEXT_PUBLIC_D365_BASE_URL;
   if (!baseUrl) return [];
 
@@ -76,6 +76,16 @@ export async function fetchD365Users(token: string): Promise<CrmUser[]> {
     url = json['@odata.nextLink'];
   }
 
+  return results;
+}
+
+export async function fetchD365Users(token: string): Promise<CrmUser[]> {
+  const results = await fetchTeamMembers(token);
   const now = new Date().toISOString();
   return results.map((r) => mapD365UserToCrmUser(r, now));
+}
+
+export async function fetchD365TeamUserIds(token: string): Promise<Set<string>> {
+  const results = await fetchTeamMembers(token);
+  return new Set(results.map((r) => r.systemuserid));
 }

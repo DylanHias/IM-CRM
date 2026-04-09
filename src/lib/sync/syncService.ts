@@ -1,4 +1,5 @@
 import { getD365Adapter } from './d365Adapter';
+import { fetchD365TeamUserIds } from './d365UserAdapter';
 import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { upsertContactBulk, queryContactPhone } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
@@ -253,10 +254,12 @@ async function syncD365(token: string): Promise<void> {
       console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
     }
 
-    // Pull opportunities from D365 (filtered to local customers)
+    // Pull opportunities from D365 (filtered to Cloud Users - Belgium team members)
     try {
       console.log('[sync] Fetching opportunities from D365...');
-      const opportunities = await adapter.fetchOpportunities(token, localCustomerIds, lastSyncTs);
+      const teamOwnerIds = await fetchD365TeamUserIds(token);
+      console.log(`[sync] Resolved ${teamOwnerIds.size} team owner ids for opportunity scope`);
+      const opportunities = await adapter.fetchOpportunities(token, localCustomerIds, teamOwnerIds, lastSyncTs);
       total += opportunities.length;
       emitProgress('Syncing opportunities...');
       const opportunityResult = await batchedUpsert(

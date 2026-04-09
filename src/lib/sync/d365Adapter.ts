@@ -35,7 +35,7 @@ export interface ID365Adapter {
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
-  fetchOpportunities(token: string, customerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
+  fetchOpportunities(token: string, customerIds: Set<string>, ownerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
   pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string>;
   deleteOpportunity(token: string, remoteId: string): Promise<void>;
 }
@@ -467,7 +467,12 @@ class RealD365Adapter implements ID365Adapter {
       .filter((t) => customerIds.has(t.customerId));
   }
 
-  async fetchOpportunities(token: string, customerIds: Set<string>, lastSync?: string): Promise<Opportunity[]> {
+  async fetchOpportunities(token: string, customerIds: Set<string>, ownerIds: Set<string>, lastSync?: string): Promise<Opportunity[]> {
+    if (ownerIds.size === 0) {
+      console.warn('[sync] No team owner ids provided — skipping opportunity fetch');
+      return [];
+    }
+
     const select = [
       'opportunityid', 'name', 'statecode', 'estimatedvalue', 'estimatedclosedate',
       'closeprobability', 'customerneed', 'im360_bcn', 'im360_multivendoropportunity',
@@ -477,7 +482,8 @@ class RealD365Adapter implements ID365Adapter {
       'createdon', 'modifiedon',
     ].join(',');
 
-    let filter = 'statecode ne 3 and _parentaccountid_value ne null';
+    const ownerClause = Array.from(ownerIds).map((id) => `_ownerid_value eq ${id}`).join(' or ');
+    let filter = `statecode ne 3 and _parentaccountid_value ne null and (${ownerClause})`;
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/opportunities?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
@@ -938,7 +944,7 @@ class MockD365Adapter implements ID365Adapter {
     await delay(200);
   }
 
-  async fetchOpportunities(_token: string, _customerIds: Set<string>, _lastSync?: string): Promise<Opportunity[]> {
+  async fetchOpportunities(_token: string, _customerIds: Set<string>, _ownerIds: Set<string>, _lastSync?: string): Promise<Opportunity[]> {
     await delay(200);
     return [];
   }
