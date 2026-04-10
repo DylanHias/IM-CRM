@@ -69,6 +69,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
             } catch (err) {
               console.error('[auth] Admin check after session restore failed:', err);
             }
+            const { loadProfilePhoto } = await import('@/hooks/useAuth');
+            await loadProfilePhoto(account.localAccountId);
           }
         }
       } catch (err) {
