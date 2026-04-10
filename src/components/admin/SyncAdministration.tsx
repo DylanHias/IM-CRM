@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
-import { useAuthStore } from '@/store/authStore';
 import { RefreshCw, Trash2, Search, X, ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { runFullSync, resetSyncWatermark } from '@/lib/sync/syncService';
+import { getAccessToken } from '@/lib/auth/authHelpers';
+import { d365Request } from '@/lib/auth/msalConfig';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 type SortField = 'syncType' | 'errorMessage' | 'createdAt';
 
 export function SyncAdministration() {
   const { syncHealth, syncErrors, isLoading, loadSyncAdmin } = useAdminStore();
-  const accessToken = useAuthStore((s) => s.accessToken);
   const [syncing, setSyncing] = useState(false);
   const [purgeDays, setPurgeDays] = useState(90);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,11 +76,13 @@ export function SyncAdministration() {
   }
 
   const handleForceSync = async () => {
-    if (!accessToken || !isTauriApp()) return;
+    if (!isTauriApp()) return;
+    const token = await getAccessToken(d365Request.scopes);
+    if (!token) return;
     setSyncing(true);
     try {
       await resetSyncWatermark();
-      await runFullSync(accessToken);
+      await runFullSync(token);
       await loadSyncAdmin();
     } catch (err) {
       console.error('[sync] Force re-sync failed:', err);

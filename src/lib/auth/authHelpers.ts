@@ -46,6 +46,12 @@ async function getTauriAccessToken(scopes: string[]): Promise<string | null> {
     const { tauriSignIn } = await import('./tauriAuth');
     const signInResult = await tauriSignIn();
     if (signInResult) {
+      // tauriSignIn returns a Graph-scoped token; exchange refresh token for the requested scope
+      const scopedResult = await refreshAccessToken(scopes);
+      if (scopedResult) {
+        useAuthStore.getState().setAccount(scopedResult.account, scopedResult.accessToken);
+        return scopedResult.accessToken;
+      }
       useAuthStore.getState().setAccount(signInResult.account, signInResult.accessToken);
       return signInResult.accessToken;
     }
