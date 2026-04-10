@@ -32,8 +32,7 @@ const ACTIVITY_TYPES = [
 const ACTIVITY_STATUSES = [
   { value: 'open', label: 'Open' },
   { value: 'completed', label: 'Completed' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'expired', label: 'Expired' },
+  { value: 'rejected', label: 'Cancelled' },
 ] as const;
 
 export function ActivityList({ activities, contacts, customerId }: ActivityListProps) {

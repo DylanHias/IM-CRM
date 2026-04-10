@@ -23,16 +23,25 @@ interface ActivityKanbanBoardProps {
   onStatusChange: (activity: Activity, newStatus: ActivityStatus) => void;
 }
 
-const COLUMNS: ActivityStatus[] = ['open', 'completed', 'rejected', 'expired'];
+type KanbanColumn = 'open' | 'completed' | 'cancelled';
+
+const COLUMNS: KanbanColumn[] = ['open', 'completed', 'cancelled'];
+
+const COLUMN_CONFIG: Record<KanbanColumn, (typeof STATUS_CONFIG)[ActivityStatus]> = {
+  open: STATUS_CONFIG.open,
+  completed: STATUS_CONFIG.completed,
+  cancelled: STATUS_CONFIG.rejected,
+};
 
 export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, onStatusChange }: ActivityKanbanBoardProps) {
-  const [manualCollapsed, setManualCollapsed] = useState<Set<ActivityStatus>>(new Set());
-  const [manualExpanded, setManualExpanded] = useState<Set<ActivityStatus>>(new Set());
+  const [manualCollapsed, setManualCollapsed] = useState<Set<KanbanColumn>>(new Set());
+  const [manualExpanded, setManualExpanded] = useState<Set<KanbanColumn>>(new Set());
 
   const grouped = useMemo(() => {
-    const map: Record<ActivityStatus, Activity[]> = { open: [], completed: [], rejected: [], expired: [] };
+    const map: Record<KanbanColumn, Activity[]> = { open: [], completed: [], cancelled: [] };
     for (const a of activities) {
-      map[a.activityStatus].push(a);
+      const col: KanbanColumn = a.activityStatus === 'rejected' || a.activityStatus === 'expired' ? 'cancelled' : a.activityStatus;
+      map[col].push(a);
     }
     for (const status of COLUMNS) {
       map[status].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
@@ -48,13 +57,13 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
     return m;
   }, [contacts]);
 
-  const isCollapsed = (status: ActivityStatus) => {
+  const isCollapsed = (status: KanbanColumn) => {
     if (manualCollapsed.has(status)) return true;
     if (manualExpanded.has(status)) return false;
     return grouped[status].length === 0;
   };
 
-  const toggleCollapse = (status: ActivityStatus) => {
+  const toggleCollapse = (status: KanbanColumn) => {
     if (isCollapsed(status)) {
       setManualExpanded((prev) => new Set(prev).add(status));
       setManualCollapsed((prev) => { const next = new Set(prev); next.delete(status); return next; });
@@ -68,11 +77,12 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
     const parsed = JSON.parse(dataTransferData) as { id: string };
     const activity = activities.find((a) => a.id === parsed.id);
     if (!activity) return;
-    const newStatus = columnId as ActivityStatus;
+    const col = columnId as KanbanColumn;
+    const newStatus: ActivityStatus = col === 'cancelled' ? 'rejected' : col;
     if (activity.activityStatus !== newStatus) {
-      if (isCollapsed(newStatus)) {
-        setManualExpanded((prev) => new Set(prev).add(newStatus));
-        setManualCollapsed((prev) => { const next = new Set(prev); next.delete(newStatus); return next; });
+      if (isCollapsed(col)) {
+        setManualExpanded((prev) => new Set(prev).add(col));
+        setManualCollapsed((prev) => { const next = new Set(prev); next.delete(col); return next; });
       }
       onStatusChange(activity, newStatus);
     }
@@ -82,7 +92,7 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
     <KanbanBoardProvider>
       <KanbanBoard className="pb-2">
         {COLUMNS.map((status) => {
-          const config = STATUS_CONFIG[status];
+          const config = COLUMN_CONFIG[status];
           const StatusIcon = config.icon;
           const items = grouped[status];
           const collapsed = isCollapsed(status);

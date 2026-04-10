@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Users, MapPin, FileText, Clock, AlertCircle, Pencil, Trash2, CheckCircle2, XCircle, Timer } from 'lucide-react';
+import { Phone, Users, MapPin, FileText, Clock, AlertCircle, Pencil, Trash2, CheckCircle2, Ban, XCircle, Timer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
@@ -19,8 +19,8 @@ export const ACTIVITY_ICONS = {
 export const STATUS_CONFIG: Record<ActivityStatus, { icon: typeof CheckCircle2; label: string; className: string }> = {
   open: { icon: Clock, label: 'Open', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
   completed: { icon: CheckCircle2, label: 'Completed', className: 'bg-success/10 text-success border-success/20' },
-  rejected: { icon: XCircle, label: 'Rejected', className: 'bg-destructive/10 text-destructive border-destructive/20' },
-  expired: { icon: Timer, label: 'Expired', className: 'bg-warning/10 text-warning border-warning/20' },
+  rejected: { icon: Ban, label: 'Cancelled', className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  expired: { icon: Ban, label: 'Cancelled', className: 'bg-destructive/10 text-destructive border-destructive/20' },
 };
 
 interface ActivityItemProps {
@@ -66,19 +66,25 @@ export function ActivityItem({ activity, contactName, onEdit, onDelete, onStatus
               )}
               {activity.type !== 'note' && (
                 onStatusChange ? (
-                  <Select value={activity.activityStatus} onValueChange={(v) => onStatusChange(v as ActivityStatus)}>
+                  <Select
+                    value={activity.activityStatus === 'expired' ? 'rejected' : activity.activityStatus}
+                    onValueChange={(v) => onStatusChange(v as ActivityStatus)}
+                  >
                     <SelectTrigger className={`h-5 w-auto gap-1 px-1.5 text-xs border rounded-full font-medium ${statusConfig.className}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.entries(STATUS_CONFIG) as [ActivityStatus, typeof statusConfig][]).map(([value, cfg]) => (
-                        <SelectItem key={value} value={value}>
-                          <span className="flex items-center gap-1.5">
-                            <cfg.icon size={12} />
-                            {cfg.label}
-                          </span>
-                        </SelectItem>
-                      ))}
+                      {(['open', 'completed', 'rejected'] as ActivityStatus[]).map((value) => {
+                        const cfg = STATUS_CONFIG[value];
+                        return (
+                          <SelectItem key={value} value={value}>
+                            <span className="flex items-center gap-1.5">
+                              <cfg.icon size={12} />
+                              {cfg.label}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 ) : (

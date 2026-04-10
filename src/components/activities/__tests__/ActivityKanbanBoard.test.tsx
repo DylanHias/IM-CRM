@@ -51,11 +51,8 @@ describe('ActivityKanbanBoard', () => {
     const completedColumn = getColumnByStatus(container, 'completed');
     expect(completedColumn.className).toContain('w-10');
 
-    const rejectedColumn = getColumnByStatus(container, 'rejected');
-    expect(rejectedColumn.className).toContain('w-10');
-
-    const expiredColumn = getColumnByStatus(container, 'expired');
-    expect(expiredColumn.className).toContain('w-10');
+    const cancelledColumn = getColumnByStatus(container, 'cancelled');
+    expect(cancelledColumn.className).toContain('w-10');
   });
 
   it('expands a collapsed column when clicked', () => {
