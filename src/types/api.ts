@@ -46,6 +46,7 @@ export interface D365PhoneCall {
   description: string | null;
   im360_internalcomments: string | null;
   _im360_account_value: string | null;
+  _regardingobjectid_value: string | null;
   _im360_contact_value: string | null;
   _ownerid_value: string | null;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
@@ -62,6 +63,7 @@ export interface D365Appointment {
   description: string | null;
   im360_appointmenttype: number | null;
   _im360_account_value: string | null;
+  _regardingobjectid_value: string | null;
   _im360_contact_value: string | null;
   _ownerid_value: string | null;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;

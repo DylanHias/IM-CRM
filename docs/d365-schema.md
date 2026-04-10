@@ -63,7 +63,8 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `subject` | Subject |
 | `description` | Description |
 | `im360_internalcomments` | Internal comments (custom) |
-| `_im360_account_value` | Custom account lookup ID |
+| `_im360_account_value` | Custom account lookup ID (preferred) |
+| `_regardingobjectid_value` | Standard D365 regarding account ID (fallback when custom field is null) |
 | `_im360_contact_value` | Custom contact lookup ID |
 | `_ownerid_value` | Owner system user ID |
 | `directioncode` | Direction (`true` = outgoing) |
@@ -108,7 +109,8 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `subject` | Subject |
 | `description` | Description (may contain HTML) |
 | `im360_appointmenttype` | Type: 0=meeting, 2=visit (custom) |
-| `_im360_account_value` | Custom account lookup ID |
+| `_im360_account_value` | Custom account lookup ID (preferred) |
+| `_regardingobjectid_value` | Standard D365 regarding account ID (fallback when custom field is null) |
 | `_im360_contact_value` | Custom contact lookup ID |
 | `_ownerid_value` | Owner system user ID |
 | `scheduledstart` | Scheduled start |

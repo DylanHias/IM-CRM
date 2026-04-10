@@ -164,7 +164,7 @@ function mapD365StateToActivityStatus(statecode: number): Activity['activityStat
 function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity {
   return {
     id: uuidv4(),
-    customerId: d365._im360_account_value ?? '',
+    customerId: d365._im360_account_value ?? d365._regardingobjectid_value ?? '',
     contactId: d365._im360_contact_value ?? null,
     type: 'call' as ActivityType,
     subject: d365.subject ?? 'Phone Call',
@@ -190,7 +190,7 @@ function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activ
 
   return {
     id: uuidv4(),
-    customerId: d365._im360_account_value ?? '',
+    customerId: d365._im360_account_value ?? d365._regardingobjectid_value ?? '',
     contactId: d365._im360_contact_value ?? null,
     type,
     subject: d365.subject ?? 'Appointment',
@@ -399,11 +399,11 @@ class RealD365Adapter implements ID365Adapter {
   async fetchPhoneCalls(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]> {
     const select = [
       'activityid', 'subject', 'description', 'im360_internalcomments',
-      '_im360_account_value', '_im360_contact_value', '_ownerid_value',
+      '_im360_account_value', '_regardingobjectid_value', '_im360_contact_value', '_ownerid_value',
       'directioncode', 'actualend', 'createdon', 'statecode', 'modifiedon',
     ].join(',');
 
-    let filter = 'statecode ne 2 and _im360_account_value ne null';
+    let filter = 'statecode ne 2 and (_im360_account_value ne null or _regardingobjectid_value ne null)';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/phonecalls?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
@@ -416,11 +416,11 @@ class RealD365Adapter implements ID365Adapter {
   async fetchAppointments(token: string, customerIds: Set<string>, lastSync?: string): Promise<Activity[]> {
     const select = [
       'activityid', 'subject', 'description', 'im360_appointmenttype',
-      '_im360_account_value', '_im360_contact_value', '_ownerid_value',
+      '_im360_account_value', '_regardingobjectid_value', '_im360_contact_value', '_ownerid_value',
       'scheduledstart', 'scheduledend', 'statecode', 'createdon', 'modifiedon',
     ].join(',');
 
-    let filter = 'statecode ne 2 and _im360_account_value ne null and im360_appointmenttype ne 1';
+    let filter = 'statecode ne 2 and (_im360_account_value ne null or _regardingobjectid_value ne null) and im360_appointmenttype ne 1';
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/appointments?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
