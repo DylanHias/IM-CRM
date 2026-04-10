@@ -4,10 +4,19 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FollowUpItem } from '@/components/followups/FollowUpItem';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { queryFollowUpsByUser, completeFollowUp } from '@/lib/db/queries/followups';
+import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
-import { onDataEvent } from '@/lib/dataEvents';
+import { onDataEvent, emitDataEvent } from '@/lib/dataEvents';
+import { directPushFollowUp, directDeleteFollowUp } from '@/lib/sync/directPushService';
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useAuthStore } from '@/store/authStore';
@@ -20,6 +29,12 @@ export default function FollowUpsPage() {
   const d365UserId = useD365UserId();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
+
+  const [editing, setEditing] = useState<FollowUp | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const userId = d365UserId ?? account?.localAccountId;
 
@@ -75,6 +90,63 @@ export default function FollowUpsPage() {
     }
   };
 
+  const openEdit = (followUp: FollowUp) => {
+    setEditing(followUp);
+    setEditTitle(followUp.title);
+    setEditDescription(followUp.description ?? '');
+    setEditDueDate(followUp.dueDate);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing || !editTitle.trim() || !editDueDate) return;
+    setIsSaving(true);
+    try {
+      const updated: FollowUp = {
+        ...editing,
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+        dueDate: editDueDate,
+        updatedAt: new Date().toISOString(),
+      };
+      if (isTauriApp()) {
+        await dbUpdateFollowUp(updated);
+        directPushFollowUp(updated).then((result) => {
+          if (result) {
+            setFollowUps((prev) =>
+              prev.map((f) => f.id === updated.id ? { ...updated, syncStatus: 'synced', remoteId: result.remoteId } : f)
+            );
+          }
+        });
+      }
+      setFollowUps((prev) => prev.map((f) => f.id === updated.id ? updated : f));
+      emitDataEvent('followup', 'updated', updated.customerId);
+      setEditing(null);
+    } catch (err) {
+      console.error('[followup] Failed to edit:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (followUp: FollowUp) => {
+    try {
+      if (isTauriApp()) {
+        const deleted = await dbDeleteFollowUp(followUp.id);
+        if (deleted?.remoteId) {
+          const directDeleted = await directDeleteFollowUp(deleted.remoteId);
+          if (!directDeleted) {
+            await insertPendingDelete('task', deleted.remoteId);
+          }
+        }
+      }
+      setFollowUps((prev) => prev.filter((f) => f.id !== followUp.id));
+      emitDataEvent('followup', 'deleted', followUp.customerId);
+    } catch (err) {
+      console.error('[followup] Failed to delete:', err);
+    }
+  };
+
   const today = new Date().toISOString().split('T')[0];
   const overdue = followUps.filter((f) => !f.completed && f.dueDate < today);
   const upcoming = followUps.filter((f) => !f.completed && f.dueDate >= today);
@@ -107,7 +179,7 @@ export default function FollowUpsPage() {
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                       {getCustomerName(f.customerId)}
                     </p>
-                    <FollowUpItem followUp={f} onComplete={handleComplete} />
+                    <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
                   </div>
                 ))}
               </div>
@@ -123,7 +195,7 @@ export default function FollowUpsPage() {
                     <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                       {getCustomerName(f.customerId)}
                     </p>
-                    <FollowUpItem followUp={f} onComplete={handleComplete} />
+                    <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
                   </div>
                 ))}
               </div>
@@ -140,6 +212,34 @@ export default function FollowUpsPage() {
               </div>
             </section>
           )}
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Follow-Up</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1">
+              <Label>Title *</Label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required />
+            </div>
+            <div className="space-y-1">
+              <Label>Description</Label>
+              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1">
+              <Label>Due Date *</Label>
+              <DatePicker value={editDueDate} onChange={setEditDueDate} placeholder="Select due date" />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <Button type="button" variant="outline" onClick={() => setEditing(null)} className="flex-1">Cancel</Button>
+              <Button type="submit" disabled={isSaving || !editTitle.trim() || !editDueDate} className="flex-1">
+                {isSaving ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
