@@ -36,7 +36,7 @@
       "nsis"
     ],
     "publisher": "Dylan Hias",
-    "category": "Sales",
+    "category": "Business",
     "shortDescription": "A streamlined CRM for Ingram Micro colleagues.",
     "longDescription": "Ingram Micro CRM is a lightweight desktop application built for Ingram Micro account managers. It replaces the cluttered Dynamics 365 interface with a focused tool for managing customers, contacts, activities, follow-ups, and opportunities — all synced with D365 in the background.",
     "createUpdaterArtifacts": "v1Compatible",
