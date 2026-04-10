@@ -1,12 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Target, ChevronRight, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Target, ChevronRight, Pencil, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity } from '@/types/entities';
 
@@ -141,10 +140,9 @@ interface OpportunitiesTableProps {
   opportunities: Opportunity[];
   customerMap: Map<string, string>;
   onEdit: (opp: Opportunity) => void;
-  onDelete: (opp: Opportunity) => void;
 }
 
-export function OpportunitiesTable({ opportunities, customerMap, onEdit, onDelete }: OpportunitiesTableProps) {
+export function OpportunitiesTable({ opportunities, customerMap, onEdit }: OpportunitiesTableProps) {
   const router = useRouter();
   const staleDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
 
@@ -207,15 +205,6 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit, onDelet
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(opp)}>
                     <Pencil size={13} />
                   </Button>
-                  <ConfirmPopover
-                    message={`Delete "${opp.subject}"?`}
-                    confirmLabel="Delete"
-                    onConfirm={() => onDelete(opp)}
-                  >
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
-                      <Trash2 size={13} />
-                    </Button>
-                  </ConfirmPopover>
                 </div>
 
                 <Right>

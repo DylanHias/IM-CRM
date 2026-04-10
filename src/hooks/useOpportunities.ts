@@ -2,10 +2,9 @@
 
 import { useEffect, useCallback } from 'react';
 import { useOpportunityStore } from '@/store/opportunityStore';
-import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity, deleteOpportunity as dbDeleteOpportunity } from '@/lib/db/queries/opportunities';
+import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity } from '@/lib/db/queries/opportunities';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
-import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
-import { directPushOpportunity, directDeleteOpportunity } from '@/lib/sync/directPushService';
+import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
@@ -29,7 +28,7 @@ export function stageToProbability(stage: OpportunityStage): number {
 }
 
 export function useOpportunities(customerId: string) {
-  const { opportunities, currentCustomerId, isLoading, setOpportunities, addOpportunity, updateOpportunity, removeOpportunity, setLoading } =
+  const { opportunities, currentCustomerId, isLoading, setOpportunities, addOpportunity, updateOpportunity, setLoading } =
     useOpportunityStore();
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -104,32 +103,10 @@ export function useOpportunities(customerId: string) {
     [customerId, updateOpportunity]
   );
 
-  const removeOpp = useCallback(
-    async (id: string) => {
-      removeOpportunity(id);
-      emitDataEvent('opportunity', 'deleted', customerId);
-      if (isTauriApp()) {
-        const deleted = await dbDeleteOpportunity(id);
-        if (deleted?.remoteId) {
-          console.log(`[opportunity] Deleting from D365: remoteId=${deleted.remoteId}`);
-          const directDeleted = await directDeleteOpportunity(deleted.remoteId);
-          if (!directDeleted) {
-            console.log(`[opportunity] Direct D365 delete failed, queuing pending delete: opportunity/${deleted.remoteId}`);
-            await insertPendingDelete('opportunity', deleted.remoteId);
-          } else {
-            console.log(`[opportunity] D365 delete succeeded for ${deleted.remoteId}`);
-          }
-        }
-      }
-    },
-    [customerId, removeOpportunity]
-  );
-
   return {
     opportunities: opportunities.filter((o) => o.customerId === customerId),
     isLoading,
     createOpportunity,
     editOpportunity,
-    deleteOpportunity: removeOpp,
   };
 }

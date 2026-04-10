@@ -3,7 +3,6 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 
 vi.mock('@/lib/sync/directPushService', () => ({
   directPushOpportunity: vi.fn().mockResolvedValue(null),
-  directDeleteOpportunity: vi.fn().mockResolvedValue(false),
 }));
 
 import { useOpportunities } from '@/hooks/useOpportunities';
@@ -99,20 +98,6 @@ describe('useOpportunities', () => {
 
     const found = result.current.opportunities.find((o) => o.id === original.id);
     expect(found?.subject).toBe('Updated subject');
-  });
-
-  it('deleteOpportunity removes from store', async () => {
-    const { result } = renderHook(() => useOpportunities(CUSTOMER_ID));
-
-    const target = result.current.opportunities[0];
-    const countBefore = result.current.opportunities.length;
-
-    await act(async () => {
-      await result.current.deleteOpportunity(target.id);
-    });
-
-    expect(result.current.opportunities.length).toBe(countBefore - 1);
-    expect(result.current.opportunities.find((o) => o.id === target.id)).toBeUndefined();
   });
 
   it('filters opportunities by customerId in return value', () => {

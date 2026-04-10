@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Target, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Target, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityForm } from './OpportunityForm';
 import type { OpportunityFormData } from './OpportunityForm';
@@ -22,7 +21,7 @@ interface OpportunityListProps {
 }
 
 export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps) {
-  const { opportunities, createOpportunity, editOpportunity, deleteOpportunity } = useOpportunities(customerId);
+  const { opportunities, createOpportunity, editOpportunity } = useOpportunities(customerId);
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
 
@@ -73,14 +72,6 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       setEditing(null);
     } catch (err) {
       console.error('[opportunity] Failed to edit:', err);
-    }
-  };
-
-  const handleDelete = async (opp: Opportunity) => {
-    try {
-      await deleteOpportunity(opp.id);
-    } catch (err) {
-      console.error('[opportunity] Failed to delete:', err);
     }
   };
 
@@ -141,11 +132,6 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(opp)}>
                   <Pencil size={13} />
                 </Button>
-                <ConfirmPopover message={`Delete "${opp.subject}"?`} confirmLabel="Delete" onConfirm={() => handleDelete(opp)}>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
-                    <Trash2 size={13} />
-                  </Button>
-                </ConfirmPopover>
               </div>
             </motion.div>
           ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Plus, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,10 @@ import {
   queryAllOpportunities,
   insertOpportunity,
   updateOpportunity as dbUpdateOpportunity,
-  deleteOpportunity as dbDeleteOpportunity,
 } from '@/lib/db/queries/opportunities';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
-import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
-import { directPushOpportunity, directDeleteOpportunity } from '@/lib/sync/directPushService';
+import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
@@ -53,27 +51,32 @@ export default function OpportunitiesPage() {
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
+  const loadGenRef = useRef(0);
 
   useShortcutListener('new-item', useCallback(() => setAddOpen(true), []));
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    const gen = ++loadGenRef.current;
     try {
       if (isTauriApp()) {
         const [opps, custs] = await Promise.all([
           queryAllOpportunities(),
           queryAllCustomers(),
         ]);
+        if (gen !== loadGenRef.current) return;
         setOpportunities(opps);
         setCustomers(custs);
         setCustomerMap(new Map(custs.map((c) => [c.id, c.name])));
       } else {
+        if (gen !== loadGenRef.current) return;
         setOpportunities([]);
         setCustomers([]);
         setCustomerMap(new Map());
       }
     } catch (err) {
       console.error('[opportunity] Failed to load opportunities:', err);
+      if (gen !== loadGenRef.current) return;
       setOpportunities([]);
       setCustomers([]);
       setCustomerMap(new Map());
@@ -169,28 +172,6 @@ export default function OpportunitiesPage() {
     setSelectedCustomerId(null);
   };
 
-  const handleDelete = async (opp: Opportunity) => {
-    if (isTauriApp()) {
-      try {
-        const deleted = await dbDeleteOpportunity(opp.id);
-        if (deleted?.remoteId) {
-          console.log(`[opportunity] Deleting from D365: remoteId=${deleted.remoteId}`);
-          const directDeleted = await directDeleteOpportunity(deleted.remoteId);
-          if (!directDeleted) {
-            console.log(`[opportunity] Direct D365 delete failed, queuing pending delete: opportunity/${deleted.remoteId}`);
-            await insertPendingDelete('opportunity', deleted.remoteId);
-          } else {
-            console.log(`[opportunity] D365 delete succeeded for ${deleted.remoteId}`);
-          }
-        }
-      } catch (err) {
-        console.error('[opportunity] DB delete failed:', err);
-      }
-    }
-    setOpportunities(allOpportunities.filter((o) => o.id !== opp.id));
-    emitDataEvent('opportunity', 'deleted', opp.customerId);
-  };
-
   const openEdit = (opp: Opportunity) => {
     setSelectedCustomerId(opp.customerId);
     setEditing(opp);
@@ -233,7 +214,6 @@ export default function OpportunitiesPage() {
             opportunities={paged}
             customerMap={customerMap}
             onEdit={openEdit}
-            onDelete={handleDelete}
           />
           <TablePagination
             totalItems={filtered.length}
