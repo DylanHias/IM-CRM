@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import * as XLSX from 'xlsx';
 import {
   Search, Download, Building2, User, X,
   SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
@@ -199,12 +198,13 @@ export default function RevenueOverviewPage() {
         'ARR (€)': c.arr ?? '',
       }));
 
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Revenue Overview');
-
       const date = new Date().toISOString().split('T')[0];
-      const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+      const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const worker = new Worker(new URL('@/lib/utils/exportWorker.ts', import.meta.url));
+        worker.onmessage = (e: MessageEvent<ArrayBuffer>) => { resolve(e.data); worker.terminate(); };
+        worker.onerror = (e) => { reject(new Error(e.message)); worker.terminate(); };
+        worker.postMessage({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });
+      });
       await exportFile({
         defaultName: `revenue-overview-${date}.xlsx`,
         filterLabel: 'Excel Spreadsheet',

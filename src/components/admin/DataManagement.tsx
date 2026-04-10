@@ -34,39 +34,50 @@ export function DataManagement() {
 
     setIsExporting(true);
 
-    // Yield to the browser so the UI updates before the blocking XLSX work starts
-    setTimeout(async () => {
-      try {
-        const { getDb } = await import('@/lib/db/client');
-        const db = await getDb();
-        const { utils, write } = await import('xlsx');
-        const wb = utils.book_new();
+    try {
+      const { getDb } = await import('@/lib/db/client');
+      const db = await getDb();
 
-        const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
-        for (const table of tables) {
+      const tableNames = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
+      const tables: { name: string; rows: Record<string, unknown>[] }[] = [];
+
+      await Promise.all(
+        tableNames.map(async (name) => {
           try {
-            const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${table}`);
-            const ws = utils.json_to_sheet(rows);
-            utils.book_append_sheet(wb, ws, table);
+            const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${name}`);
+            tables.push({ name, rows });
           } catch {
-            // Table might not exist
+            // Table might not exist yet
           }
-        }
+        }),
+      );
 
-        const buffer = write(wb, { bookType, type: 'array' }) as ArrayBuffer;
-        const { writeFile } = await import('@tauri-apps/plugin-fs');
-        await writeFile(path, new Uint8Array(buffer));
+      // Offload blocking XLSX serialization to a worker so the UI stays responsive
+      const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const worker = new Worker(new URL('@/lib/utils/exportWorker.ts', import.meta.url));
+        worker.onmessage = (e: MessageEvent<ArrayBuffer>) => {
+          resolve(e.data);
+          worker.terminate();
+        };
+        worker.onerror = (e) => {
+          reject(new Error(e.message));
+          worker.terminate();
+        };
+        worker.postMessage({ tables, bookType });
+      });
 
-        toast.success('Export complete', { description: path });
-      } catch (err) {
-        console.error('[data] Export failed:', err);
-        toast.error('Export failed', {
-          description: err instanceof Error ? err.message : 'Unknown error',
-        });
-      } finally {
-        setIsExporting(false);
-      }
-    }, 0);
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      await writeFile(path, new Uint8Array(buffer));
+
+      toast.success('Export complete', { description: path });
+    } catch (err) {
+      console.error('[data] Export failed:', err);
+      toast.error('Export failed', {
+        description: err instanceof Error ? err.message : 'Unknown error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handlePurgeSync = async () => {
