@@ -72,7 +72,10 @@ export function useFollowUps(customerId: string) {
         await insertFollowUp(followUp);
         await updateCustomerLastActivity(customerId, now);
         directPushFollowUp(followUp).then((result) => {
-          if (result) updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+          if (result) {
+            updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('followup', 'updated', customerId);
+          }
         });
       }
       addFollowUp(followUp);
@@ -89,7 +92,10 @@ export function useFollowUps(customerId: string) {
         const completed = followUps.find((f) => f.id === id);
         if (completed) {
           directPushFollowUp({ ...completed, completed: true, completedAt: new Date().toISOString(), syncStatus: 'pending' }).then((result) => {
-            if (result) updateFollowUp({ ...completed, completed: true, completedAt: completed.completedAt, syncStatus: 'synced', remoteId: result.remoteId });
+            if (result) {
+              updateFollowUp({ ...completed, completed: true, completedAt: completed.completedAt, syncStatus: 'synced', remoteId: result.remoteId });
+              emitDataEvent('followup', 'updated', customerId);
+            }
           });
         }
       }
@@ -104,7 +110,10 @@ export function useFollowUps(customerId: string) {
       if (isTauriApp()) {
         await dbUpdateFollowUp(followUp);
         directPushFollowUp(followUp).then((result) => {
-          if (result) updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+          if (result) {
+            updateFollowUp({ ...followUp, syncStatus: 'synced', remoteId: result.remoteId });
+            emitDataEvent('followup', 'updated', customerId);
+          }
         });
       }
       updateFollowUp(followUp);
