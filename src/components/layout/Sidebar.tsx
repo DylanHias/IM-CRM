@@ -124,7 +124,7 @@ export function AppSidebar() {
       badgeVariant: 'destructive',
       badgeStyle: 'count',
     },
-    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
+    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target, disabled: true, disabledTooltip: 'Coming soon' },
     '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
   };
