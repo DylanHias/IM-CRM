@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useAdminStore } from '@/store/adminStore';
-import { useAuthStore } from '@/store/authStore';
+import { getAccessToken } from '@/lib/auth/authHelpers';
+import { d365Request } from '@/lib/auth/msalConfig';
 import { RefreshCw, Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,6 @@ type SortField = 'name' | 'email' | 'title' | 'lastActiveAt';
 
 export function UserManagement() {
   const { users, isLoading, loadUsers, refreshUsersFromD365 } = useAdminStore();
-  const accessToken = useAuthStore((s) => s.accessToken);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -72,9 +72,10 @@ export function UserManagement() {
   }
 
   const handleRefresh = async () => {
-    if (!accessToken) return;
     try {
-      await refreshUsersFromD365(accessToken);
+      const token = await getAccessToken(d365Request.scopes);
+      if (!token) return;
+      await refreshUsersFromD365(token);
     } catch (err) {
       console.error('[admin] Refresh users from D365 failed:', err);
     }
