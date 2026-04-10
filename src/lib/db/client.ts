@@ -255,7 +255,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS pending_deletes (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task','opportunity')),
       remote_id  TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     )
@@ -581,6 +581,23 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
     await db.execute(
       `UPDATE app_settings SET value = '19', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 20) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS pending_deletes_new (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task','opportunity')),
+        remote_id  TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`INSERT INTO pending_deletes_new SELECT * FROM pending_deletes`);
+    await db.execute(`DROP TABLE pending_deletes`);
+    await db.execute(`ALTER TABLE pending_deletes_new RENAME TO pending_deletes`);
+    await db.execute(
+      `UPDATE app_settings SET value = '20', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
