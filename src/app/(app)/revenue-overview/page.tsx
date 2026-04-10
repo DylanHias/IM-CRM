@@ -112,6 +112,7 @@ export default function RevenueOverviewPage() {
   const [sortBy, setSortBy] = useState<SortField>('arr');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
+  const [filterCountry, setFilterCountry] = useState('');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -125,13 +126,23 @@ export default function RevenueOverviewPage() {
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
 
+  const countryOptions = useMemo(() => {
+    const codes = new Set<string>();
+    for (const c of allCustomers) {
+      if (c.addressCountry) codes.add(c.addressCountry);
+    }
+    return Array.from(codes).sort();
+  }, [allCustomers]);
+
   const activeFilterCount =
     (filterCloud !== 'all' ? 1 : 0) +
+    (filterCountry !== '' ? 1 : 0) +
     (arrMin !== '' ? 1 : 0) +
     (arrMax !== '' ? 1 : 0);
 
   function clearFilters() {
     setFilterCloud('all');
+    setFilterCountry('');
     setArrMin('');
     setArrMax('');
     setPage(1);
@@ -145,6 +156,7 @@ export default function RevenueOverviewPage() {
       if (q && !c.name.toLowerCase().includes(q)) return false;
       if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
+      if (filterCountry !== '' && c.addressCountry !== filterCountry) return false;
       if (min !== null && (c.arr === null || c.arr < min)) return false;
       if (max !== null && (c.arr === null || c.arr > max)) return false;
       return true;
@@ -170,7 +182,7 @@ export default function RevenueOverviewPage() {
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [allCustomers, searchQuery, filterCloud, arrMin, arrMax, sortBy, sortDir]);
+  }, [allCustomers, searchQuery, filterCloud, filterCountry, arrMin, arrMax, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -311,6 +323,18 @@ export default function RevenueOverviewPage() {
           {showFilters && (
             <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 shadow-sm">
               <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Country</label>
+                <Select value={filterCountry || 'all'} onValueChange={(v) => { setFilterCountry(v === 'all' ? '' : v); setPage(1); }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {countryOptions.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Cloud Customer</label>
                 <Select value={filterCloud} onValueChange={(v) => { setFilterCloud(v as 'all' | 'yes' | 'no'); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -347,6 +371,15 @@ export default function RevenueOverviewPage() {
           {/* Row 3: Active filter chips */}
           {activeFilterCount > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
+              {filterCountry !== '' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
+                  onClick={() => setFilterCountry('')}
+                >
+                  Country: {filterCountry} <X size={10} />
+                </Badge>
+              )}
               {filterCloud !== 'all' && (
                 <Badge
                   variant="secondary"

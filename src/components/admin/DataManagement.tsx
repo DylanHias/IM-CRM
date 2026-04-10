@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
-import { Download, Trash2, Database } from 'lucide-react';
+import { Download, Trash2, Database, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { exportFile } from '@/lib/utils/exportFile';
 import { useSettingsStore } from '@/store/settingsStore';
+import { toast } from 'sonner';
 
 export function DataManagement() {
   const { tableStats, isLoading, loadDataManagement } = useAdminStore();
   const exportFormat = useSettingsStore((s) => s.defaultExportFormat);
   const [syncPurgeDays, setSyncPurgeDays] = useState(90);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     loadDataManagement();
@@ -19,37 +20,53 @@ export function DataManagement() {
 
   const handleExportAll = async () => {
     if (!isTauriApp()) return;
-    try {
-      const { getDb } = await import('@/lib/db/client');
-      const db = await getDb();
-      const { utils, write } = await import('xlsx');
-      const wb = utils.book_new();
+    const datestamp = new Date().toISOString().split('T')[0];
+    const isCsv = exportFormat === 'csv';
+    const bookType = isCsv ? 'csv' : 'xlsx';
 
-      const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
-      for (const table of tables) {
-        try {
-          const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${table}`);
-          const ws = utils.json_to_sheet(rows);
-          utils.book_append_sheet(wb, ws, table);
-        } catch {
-          // Table might not exist
+    // Pick save location first, before any heavy processing
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const path = await save({
+      defaultPath: `im-crm-export-${datestamp}.${bookType}`,
+      filters: [{ name: isCsv ? 'CSV File' : 'Excel Spreadsheet', extensions: [bookType] }],
+    });
+    if (!path) return;
+
+    setIsExporting(true);
+
+    // Yield to the browser so the UI updates before the blocking XLSX work starts
+    setTimeout(async () => {
+      try {
+        const { getDb } = await import('@/lib/db/client');
+        const db = await getDb();
+        const { utils, write } = await import('xlsx');
+        const wb = utils.book_new();
+
+        const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
+        for (const table of tables) {
+          try {
+            const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${table}`);
+            const ws = utils.json_to_sheet(rows);
+            utils.book_append_sheet(wb, ws, table);
+          } catch {
+            // Table might not exist
+          }
         }
+
+        const buffer = write(wb, { bookType, type: 'array' }) as ArrayBuffer;
+        const { writeFile } = await import('@tauri-apps/plugin-fs');
+        await writeFile(path, new Uint8Array(buffer));
+
+        toast.success('Export complete', { description: path });
+      } catch (err) {
+        console.error('[data] Export failed:', err);
+        toast.error('Export failed', {
+          description: err instanceof Error ? err.message : 'Unknown error',
+        });
+      } finally {
+        setIsExporting(false);
       }
-
-      const datestamp = new Date().toISOString().split('T')[0];
-      const isCsv = exportFormat === 'csv';
-      const bookType = isCsv ? 'csv' : 'xlsx';
-      const buffer = write(wb, { bookType, type: 'array' }) as ArrayBuffer;
-
-      await exportFile({
-        defaultName: `im-crm-export-${datestamp}.${bookType}`,
-        filterLabel: isCsv ? 'CSV File' : 'Excel Spreadsheet',
-        extensions: [bookType],
-        data: buffer,
-      });
-    } catch (err) {
-      console.error('[data] Export failed:', err);
-    }
+    }, 0);
   };
 
   const handlePurgeSync = async () => {
@@ -95,9 +112,13 @@ export function DataManagement() {
       <div>
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</h3>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportAll}>
-            <Download size={14} />
-            <span className="ml-1.5">Export All Data ({exportFormat})</span>
+          <Button variant="outline" size="sm" onClick={handleExportAll} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            <span className="ml-1.5">{isExporting ? 'Exporting…' : `Export All Data (${exportFormat})`}</span>
           </Button>
         </div>
       </div>
