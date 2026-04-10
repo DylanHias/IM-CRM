@@ -64,8 +64,9 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   const handleEdit = async (data: OpportunityFormData) => {
     if (!editing) return;
     try {
+      const currentOpp = opportunities.find((o) => o.id === editing.id) ?? editing;
       await editOpportunity({
-        ...editing,
+        ...currentOpp,
         ...data,
         updatedAt: new Date().toISOString(),
       });

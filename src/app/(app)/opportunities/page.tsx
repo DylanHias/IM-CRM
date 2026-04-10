@@ -148,8 +148,9 @@ export default function OpportunitiesPage() {
 
   const handleEdit = async (data: OpportunityFormData) => {
     if (!editing) return;
+    const currentOpp = allOpportunities.find((o) => o.id === editing.id) ?? editing;
     const updated: Opportunity = {
-      ...editing,
+      ...currentOpp,
       ...data,
       syncStatus: 'pending',
       updatedAt: new Date().toISOString(),
