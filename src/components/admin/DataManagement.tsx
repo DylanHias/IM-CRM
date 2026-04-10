@@ -54,7 +54,7 @@ export function DataManagement() {
 
       // Offload blocking XLSX serialization to a worker so the UI stays responsive
       const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const worker = new Worker(new URL('@/lib/utils/exportWorker.ts', import.meta.url));
+        const worker = new Worker(new URL('../../lib/utils/exportWorker.ts', import.meta.url));
         worker.onmessage = (e: MessageEvent<ArrayBuffer>) => {
           resolve(e.data);
           worker.terminate();

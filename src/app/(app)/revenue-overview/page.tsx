@@ -200,7 +200,7 @@ export default function RevenueOverviewPage() {
 
       const date = new Date().toISOString().split('T')[0];
       const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const worker = new Worker(new URL('@/lib/utils/exportWorker.ts', import.meta.url));
+        const worker = new Worker(new URL('../../../lib/utils/exportWorker.ts', import.meta.url));
         worker.onmessage = (e: MessageEvent<ArrayBuffer>) => { resolve(e.data); worker.terminate(); };
         worker.onerror = (e) => { reject(new Error(e.message)); worker.terminate(); };
         worker.postMessage({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });
