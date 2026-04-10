@@ -220,6 +220,56 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 
 ---
 
+## Opportunities (`/api/data/v9.2/opportunities`)
+
+### Pull Fields
+| Field | Description |
+|---|---|
+| `opportunityid` | Primary key |
+| `name` | Subject |
+| `statecode` | Status (0=open, 1=won, 2=lost) |
+| `estimatedvalue` | Estimated revenue |
+| `estimatedclosedate` | Expiration/close date |
+| `closeprobability` | Probability % |
+| `customerneed` | Customer need |
+| `im360_bcn` | BCN (custom) |
+| `im360_multivendoropportunity` | Multi-vendor flag (custom) |
+| `im360_oppstage` | Stage (custom option set) |
+| `im360_opptype` | Sell type (custom option set) |
+| `im360_drpboxopptype` | Opportunity type (custom option set) |
+| `im360_recordtype` | Record type (custom option set) |
+| `im360_source` | Source (custom option set) |
+| `_im360_primaryvendor_value` | Primary vendor account ID (custom) |
+| `_parentaccountid_value` | Parent account ID |
+| `_contactid_value` | Contact ID |
+| `_ownerid_value` | Owner system user ID |
+| `createdon` | Created |
+| `modifiedon` | Last modified |
+
+### Push Fields
+| Field | Description |
+|---|---|
+| `name` | Subject |
+| `closeprobability` | Probability % |
+| `im360_multivendoropportunity` | Multi-vendor flag |
+| `estimatedvalue` | Estimated revenue (if set) |
+| `estimatedclosedate` | Expiration date (if set) |
+| `customerneed` | Customer need (if set) |
+| `im360_bcn` | BCN (if set) |
+| `im360_oppstage` | Stage option value |
+| `im360_opptype` | Sell type option value |
+| `im360_drpboxopptype` | Opportunity type option value |
+| `im360_recordtype` | Record type option value |
+| `im360_source` | Source option value |
+
+### Push OData Bindings
+| Binding | Target |
+|---|---|
+| `parentaccountid@odata.bind` | `/accounts({id})` |
+| `{contactNav}@odata.bind` | Resolved via `resolveNavProperty('opportunity', 'contactid')` — `contactid` is NOT a valid declared nav property on opportunity; dynamic resolution required |
+
+---
+
 ## Option Sets (via metadata API)
 
 Fetched from `EntityDefinitions(LogicalName='{entity}')/Attributes(LogicalName='{attribute}')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata`

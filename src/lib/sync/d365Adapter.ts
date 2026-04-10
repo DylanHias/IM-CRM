@@ -762,7 +762,10 @@ class RealD365Adapter implements ID365Adapter {
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
     if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
     // primaryVendor is a D365 lookup to account — read-only from local since we only store the vendor name, not the account GUID
-    if (opportunity.contactId) body['contactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
+    if (opportunity.contactId) {
+      const contactNav = await this.resolveNavProperty(token, 'opportunity', 'contactid');
+      if (contactNav) body[`${contactNav}@odata.bind`] = `/contacts(${opportunity.contactId})`;
+    }
     if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
     if (optionValues.sellType != null) body.im360_opptype = optionValues.sellType;
     if (optionValues.opportunityType != null) body.im360_drpboxopptype = optionValues.opportunityType;
