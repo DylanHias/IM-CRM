@@ -1,4 +1,4 @@
-type EntityType = 'opportunity' | 'activity' | 'followup' | 'contact' | 'customer';
+type EntityType = 'opportunity' | 'activity' | 'followup' | 'contact' | 'customer' | 'walkthrough';
 type Action = 'created' | 'updated' | 'deleted' | 'completed';
 
 interface DataEvent {

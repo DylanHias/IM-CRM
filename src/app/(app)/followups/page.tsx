@@ -87,7 +87,7 @@ export default function FollowUpsPage() {
     customerMap.get(customerId) ?? customerId;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div data-tour="page-followups" className="max-w-3xl mx-auto space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Your Follow-Ups</h2>
             <p className="text-sm text-muted-foreground mt-0.5">

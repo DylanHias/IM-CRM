@@ -8,6 +8,7 @@ import { ChangelogDialog } from './ChangelogDialog';
 import { InitialSyncDialog } from './InitialSyncDialog';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
+import { Walkthrough } from '@/components/walkthrough/Walkthrough';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -45,6 +46,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </main>
       </SidebarProvider>
+      <Walkthrough />
       <ChangelogDialog />
       <InitialSyncDialog />
       <CommandPalette />

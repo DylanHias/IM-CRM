@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "0.44.12",
+  "version": "0.44.13",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -57,6 +57,7 @@
     "react": "^18.3.1",
     "react-day-picker": "^9.14.0",
     "react-dom": "^18.3.1",
+    "react-joyride": "^3.0.2",
     "react-markdown": "^10.1.0",
     "recharts": "2.15.4",
     "sonner": "^2.0.7",

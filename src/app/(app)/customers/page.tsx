@@ -31,7 +31,7 @@ function CustomerListView() {
   const pagedCustomers = customers.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
+    <div data-tour="page-customers" className="max-w-5xl mx-auto space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Customer Overview</h2>

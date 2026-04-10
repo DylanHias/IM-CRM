@@ -292,7 +292,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   }
 
   return (
-    <div className="w-full">
+    <div data-tour="customer-detail" className="w-full">
           {/* ── Back Link ── */}
           <button
             onClick={() => router.push('/customers')}
@@ -436,6 +436,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {profileTabs.map(({ key, label, icon: TabIcon, count, disabled }) => (
                   <button
                     key={key}
+                    data-tour={`tab-${key}`}
                     className={`px-3 py-2.5 text-[13px] font-medium transition-colors relative whitespace-nowrap ${
                       disabled
                         ? 'opacity-40 cursor-not-allowed'

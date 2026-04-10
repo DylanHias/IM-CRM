@@ -6,6 +6,8 @@ Welcome to the Ingram Micro CRM! This guide will help you get up and running qui
 
 When you open the app for the first time, you'll be asked to sign in with your Microsoft account. After signing in, the app will run an initial sync to pull your customer data from Dynamics 365. This may take a few minutes depending on the amount of data.
 
+Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Opportunities, Revenue Overview, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
+
 ## Navigating the App
 
 The **sidebar** on the left is your main navigation. It gives you quick access to:

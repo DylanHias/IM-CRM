@@ -217,7 +217,7 @@ export default function RevenueOverviewPage() {
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
-    <div className="space-y-3">
+    <div data-tour="page-revenue" className="space-y-3">
           {/* Title */}
           <div>
             <h2 className="text-xl font-semibold text-foreground">Revenue Overview</h2>
@@ -295,6 +295,7 @@ export default function RevenueOverviewPage() {
             <ColumnPicker tableKey="revenueOverview" columns={ARR_COLUMNS} />
 
             <button
+              data-tour="export-button"
               onClick={handleExport}
               className={cn(
                 'ml-auto flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',

@@ -91,6 +91,7 @@ export function InitialSyncDialog() {
                 <Button onClick={() => {
                   emitDataEvent('followup', 'updated');
                   emitDataEvent('activity', 'updated');
+                  emitDataEvent('walkthrough', 'updated');
                   setDismissed(true);
                 }} size="lg">
                   Get started

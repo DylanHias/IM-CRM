@@ -59,6 +59,9 @@ interface SettingsState {
   // Keybindings
   customKeybindings: Record<string, CustomKeybinding>;
 
+  // Onboarding
+  hasCompletedWalkthrough: boolean;
+
   // Actions
   updateSetting: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
   resetSection: (section: SettingsSection) => void;
@@ -130,6 +133,7 @@ const ALL_DEFAULTS = {
   ...DATA_MANAGEMENT_DEFAULTS,
   ...TABLE_COLUMNS_DEFAULTS,
   ...KEYBINDINGS_DEFAULTS,
+  hasCompletedWalkthrough: false,
 };
 
 const SETTINGS_KEYS = Object.keys(ALL_DEFAULTS) as (keyof typeof ALL_DEFAULTS)[];
