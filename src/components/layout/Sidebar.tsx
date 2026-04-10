@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Crosshair, Bookmark,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -361,7 +361,6 @@ const customerSubNav = [
   { key: 'activities', label: 'Activities', icon: Clock },
   { key: 'contacts', label: 'Contacts', icon: User },
   { key: 'followups', label: 'Follow-Ups', icon: Bell },
-  { key: 'opportunities', label: 'Opportunities', icon: Crosshair },
 ] as const;
 
 function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
