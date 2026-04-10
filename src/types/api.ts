@@ -127,7 +127,7 @@ export interface D365Opportunity {
   im360_source: number | null;
   _im360_primaryvendor_value: string | null;
   _parentaccountid_value: string | null;
-  _contactid_value: string | null;
+  _parentcontactid_value: string | null;
   _ownerid_value: string | null;
   'im360_oppstage@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_opptype@OData.Community.Display.V1.FormattedValue'?: string;

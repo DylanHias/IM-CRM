@@ -293,7 +293,7 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
   return {
     id: uuidv4(),
     customerId: r._parentaccountid_value ?? '',
-    contactId: r._contactid_value ?? null,
+    contactId: r._parentcontactid_value ?? null,
     status: statusMap[r.statecode] ?? 'Open',
     subject: r.name ?? '',
     bcn: r.im360_bcn ?? null,
@@ -478,7 +478,7 @@ class RealD365Adapter implements ID365Adapter {
       'closeprobability', 'customerneed', 'im360_bcn', 'im360_multivendoropportunity',
       'im360_oppstage', 'im360_opptype', 'im360_drpboxopptype', 'im360_recordtype',
       'im360_source', '_im360_primaryvendor_value',
-      '_parentaccountid_value', '_contactid_value', '_ownerid_value',
+      '_parentaccountid_value', '_parentcontactid_value', '_ownerid_value',
       'createdon', 'modifiedon',
     ].join(',');
 
@@ -762,10 +762,7 @@ class RealD365Adapter implements ID365Adapter {
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
     if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
     // primaryVendor is a D365 lookup to account — read-only from local since we only store the vendor name, not the account GUID
-    if (opportunity.contactId) {
-      const contactNav = await this.resolveNavProperty(token, 'opportunity', 'contactid');
-      if (contactNav) body[`${contactNav}@odata.bind`] = `/contacts(${opportunity.contactId})`;
-    }
+    if (opportunity.contactId) body['parentcontactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
     if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
     if (optionValues.sellType != null) body.im360_opptype = optionValues.sellType;
     if (optionValues.opportunityType != null) body.im360_drpboxopptype = optionValues.opportunityType;

@@ -241,7 +241,7 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `im360_source` | Source (custom option set) |
 | `_im360_primaryvendor_value` | Primary vendor account ID (custom) |
 | `_parentaccountid_value` | Parent account ID |
-| `_contactid_value` | Contact ID |
+| `_parentcontactid_value` | Contact ID |
 | `_ownerid_value` | Owner system user ID |
 | `createdon` | Created |
 | `modifiedon` | Last modified |
@@ -266,7 +266,7 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | Binding | Target |
 |---|---|
 | `parentaccountid@odata.bind` | `/accounts({id})` |
-| `{contactNav}@odata.bind` | Resolved via `resolveNavProperty('opportunity', 'contactid')` — `contactid` is NOT a valid declared nav property on opportunity; dynamic resolution required |
+| `parentcontactid@odata.bind` | `/contacts({id})` |
 
 ---
 
