@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Download, Loader2, CheckCircle2, Copy, Check } from 'lucide-react';
+import { Download, Loader2, CheckCircle2, Copy, Check, PlayCircle } from 'lucide-react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { SettingRow } from './SettingRow';
 import { storeChangelog } from '@/components/layout/ChangelogDialog';
@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev';
 
 export function GeneralSettings() {
-  const { resetAll } = useSettingsStore();
+  const { resetAll, updateSetting } = useSettingsStore();
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'up-to-date'>('idle');
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const updateRef = useRef<Awaited<ReturnType<typeof import('@tauri-apps/plugin-updater').check>> | null>(null);
@@ -102,6 +102,11 @@ export function GeneralSettings() {
     resetAll();
     toast.success('All settings reset to defaults');
   }, [resetAll]);
+
+  const handleBeginWalkthrough = useCallback(() => {
+    updateSetting('hasCompletedWalkthrough', false);
+    emitDataEvent('walkthrough', 'updated');
+  }, [updateSetting]);
 
   const [clearing, setClearing] = useState(false);
 
@@ -227,6 +232,21 @@ export function GeneralSettings() {
             Reset all
           </Button>
         </ConfirmPopover>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Begin walkthrough</p>
+          <p className="text-xs text-muted-foreground">Restart the onboarding tour</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs"
+          onClick={handleBeginWalkthrough}
+        >
+          <PlayCircle size={13} className="mr-1.5" />Begin tour
+        </Button>
       </div>
 
       <div className="flex items-center justify-between gap-4">

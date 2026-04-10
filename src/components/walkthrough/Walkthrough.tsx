@@ -210,6 +210,11 @@ export function Walkthrough() {
       continuous
       onEvent={handleEvent}
       tooltipComponent={WalkthroughTooltip}
+      floatingOptions={{
+        strategy: 'fixed',
+        shiftOptions: { padding: 12 },
+        flipOptions: { padding: 12 },
+      }}
       options={{
         buttons: ['back', 'close', 'primary', 'skip'],
         overlayClickAction: false,
