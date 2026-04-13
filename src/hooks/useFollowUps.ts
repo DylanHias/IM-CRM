@@ -6,6 +6,7 @@ import {
   queryFollowUpsByCustomer,
   insertFollowUp,
   completeFollowUp,
+  uncompleteFollowUp,
   updateFollowUp as dbUpdateFollowUp,
   deleteFollowUp as dbDeleteFollowUp,
   queryOverdueFollowUpCount,
@@ -21,7 +22,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 
 export function useFollowUps(customerId: string) {
-  const { followUps, currentCustomerId, isLoading, setFollowUps, addFollowUp, updateFollowUp, removeFollowUp, markComplete, setLoading, setOverdueCount } =
+  const { followUps, currentCustomerId, isLoading, setFollowUps, addFollowUp, updateFollowUp, removeFollowUp, markComplete, markUncomplete, setLoading, setOverdueCount } =
     useFollowUpStore();
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -89,11 +90,12 @@ export function useFollowUps(customerId: string) {
     async (id: string) => {
       if (isTauriApp()) {
         await completeFollowUp(id);
-        const completed = followUps.find((f) => f.id === id);
-        if (completed) {
-          directPushFollowUp({ ...completed, completed: true, completedAt: new Date().toISOString(), syncStatus: 'pending' }).then((result) => {
+        const target = followUps.find((f) => f.id === id);
+        if (target) {
+          const now = new Date().toISOString();
+          directPushFollowUp({ ...target, completed: true, completedAt: now, syncStatus: 'pending' }).then((result) => {
             if (result) {
-              updateFollowUp({ ...completed, completed: true, completedAt: completed.completedAt, syncStatus: 'synced', remoteId: result.remoteId });
+              updateFollowUp({ ...target, completed: true, completedAt: now, syncStatus: 'synced', remoteId: result.remoteId });
               emitDataEvent('followup', 'updated', customerId);
             }
           });
@@ -103,6 +105,26 @@ export function useFollowUps(customerId: string) {
       emitDataEvent('followup', 'completed', customerId);
     },
     [customerId, followUps, markComplete, updateFollowUp]
+  );
+
+  const uncomplete = useCallback(
+    async (id: string) => {
+      if (isTauriApp()) {
+        await uncompleteFollowUp(id);
+        const target = followUps.find((f) => f.id === id);
+        if (target) {
+          directPushFollowUp({ ...target, completed: false, completedAt: null, syncStatus: 'pending' }).then((result) => {
+            if (result) {
+              updateFollowUp({ ...target, completed: false, completedAt: null, syncStatus: 'synced', remoteId: result.remoteId });
+              emitDataEvent('followup', 'updated', customerId);
+            }
+          });
+        }
+      }
+      markUncomplete(id);
+      emitDataEvent('followup', 'updated', customerId);
+    },
+    [customerId, followUps, markUncomplete, updateFollowUp]
   );
 
   const editFollowUp = useCallback(
@@ -150,6 +172,7 @@ export function useFollowUps(customerId: string) {
     isLoading,
     createFollowUp,
     completeFollowUp: complete,
+    uncompleteFollowUp: uncomplete,
     editFollowUp,
     deleteFollowUp: removeFU,
   };

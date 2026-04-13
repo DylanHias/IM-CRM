@@ -12,6 +12,7 @@ interface FollowUpState {
   updateFollowUp: (followUp: FollowUp) => void;
   removeFollowUp: (id: string) => void;
   markComplete: (id: string) => void;
+  markUncomplete: (id: string) => void;
   setOverdueCount: (count: number) => void;
   setLoading: (loading: boolean) => void;
 }
@@ -50,6 +51,21 @@ export const useFollowUpStore = create<FollowUpState>((set) => ({
             : f
         ),
         overdueCount: wasOverdue ? Math.max(0, s.overdueCount - 1) : s.overdueCount,
+      };
+    }),
+
+  markUncomplete: (id) =>
+    set((s) => {
+      const today = new Date().toISOString().split('T')[0];
+      const target = s.followUps.find((f) => f.id === id);
+      const becomesOverdue = target && target.completed && target.dueDate < today;
+      return {
+        followUps: s.followUps.map((f) =>
+          f.id === id
+            ? { ...f, completed: false, completedAt: null, syncStatus: 'pending' as const }
+            : f
+        ),
+        overdueCount: becomesOverdue ? s.overdueCount + 1 : s.overdueCount,
       };
     }),
 

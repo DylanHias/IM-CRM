@@ -9,20 +9,22 @@ import type { FollowUp } from '@/types/entities';
 interface FollowUpItemProps {
   followUp: FollowUp;
   onComplete?: (id: string) => void;
+  onUncomplete?: (id: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowUpItemProps) {
+export function FollowUpItem({ followUp, onComplete, onUncomplete, onEdit, onDelete }: FollowUpItemProps) {
   const { label: dueDateLabel, isOverdue } = formatDueDate(followUp.dueDate);
+  const canToggle = followUp.completed ? !!onUncomplete : !!onComplete;
 
   return (
     <div className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''}`}>
       <button
         className="mt-0.5 flex-shrink-0 text-primary hover:text-primary/80 disabled:cursor-not-allowed"
-        onClick={() => !followUp.completed && onComplete?.(followUp.id)}
-        disabled={followUp.completed}
-        title={followUp.completed ? 'Completed' : 'Mark as complete'}
+        onClick={() => followUp.completed ? onUncomplete?.(followUp.id) : onComplete?.(followUp.id)}
+        disabled={!canToggle}
+        title={followUp.completed ? 'Mark as incomplete' : 'Mark as complete'}
       >
         {followUp.completed ? (
           <CheckSquare size={18} className="text-success" />
