@@ -229,9 +229,9 @@ export default function RevenueOverviewPage() {
   const dirLabel = sortDir === 'asc' ? 'low to high' : 'high to low';
 
   return (
-    <div data-tour="page-revenue" className="space-y-3">
+    <div className="space-y-3">
           {/* Title */}
-          <div>
+          <div data-tour="page-revenue">
             <h2 className="text-xl font-semibold text-foreground">Revenue Overview</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {filtered.length} customer{filtered.length !== 1 ? 's' : ''} · sorted by {sortLabel} ({dirLabel})

@@ -218,21 +218,42 @@ export function GeneralSettings() {
 
       <Separator />
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">Reset all settings</p>
-          <p className="text-xs text-muted-foreground">Restore every setting to its default value</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Reset all settings</p>
+            <p className="text-xs text-muted-foreground">Restore every setting to its default value</p>
+          </div>
+          <ConfirmPopover message="Reset all settings to defaults? This cannot be undone." confirmLabel="Reset all" onConfirm={handleResetAll}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+            >
+              Reset all
+            </Button>
+          </ConfirmPopover>
         </div>
-        <ConfirmPopover message="Reset all settings to defaults? This cannot be undone." confirmLabel="Reset all" onConfirm={handleResetAll}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-          >
-            Reset all
-          </Button>
-        </ConfirmPopover>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Clear local database</p>
+            <p className="text-xs text-muted-foreground">Delete all synced data (customers, contacts, activities, etc.)</p>
+          </div>
+          <ConfirmPopover message="Delete all local data? You'll need to re-sync from D365." confirmLabel="Clear" onConfirm={handleClearDatabase}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+              disabled={clearing}
+            >
+              {clearing ? <><Loader2 size={13} className="mr-1.5 animate-spin" />Clearing...</> : 'Clear data'}
+            </Button>
+          </ConfirmPopover>
+        </div>
       </div>
+
+      <Separator />
 
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -247,23 +268,6 @@ export function GeneralSettings() {
         >
           <PlayCircle size={13} className="mr-1.5" />Begin tour
         </Button>
-      </div>
-
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">Clear local database</p>
-          <p className="text-xs text-muted-foreground">Delete all synced data (customers, contacts, activities, etc.)</p>
-        </div>
-        <ConfirmPopover message="Delete all local data? You'll need to re-sync from D365." confirmLabel="Clear" onConfirm={handleClearDatabase}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-            disabled={clearing}
-          >
-            {clearing ? <><Loader2 size={13} className="mr-1.5 animate-spin" />Clearing...</> : 'Clear data'}
-          </Button>
-        </ConfirmPopover>
       </div>
     </div>
   );

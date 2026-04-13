@@ -44,7 +44,7 @@ function buildSteps(firstCustomerId: string | null) {
       target: '[data-tour="customer-detail"]',
       title: 'Customer Detail',
       content: "Click any customer to open their detail page. Everything about this account lives here — activities, contacts, follow-ups and opportunities.",
-      placement: 'top' as const,
+      placement: 'bottom' as const,
       data: { route: base },
     },
     {
@@ -108,6 +108,7 @@ function buildSteps(firstCustomerId: string | null) {
       title: 'Export to Excel',
       content: 'Export the current view to Excel at any time — handy for reporting or sharing with your team.',
       placement: 'left' as const,
+      spotlightClicks: false,
       data: { route: '/revenue-overview' },
     },
     {

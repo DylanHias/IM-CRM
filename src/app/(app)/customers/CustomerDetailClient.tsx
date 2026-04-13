@@ -292,7 +292,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
   }
 
   return (
-    <div data-tour="customer-detail" className="w-full">
+    <div className="w-full">
           {/* ── Back Link ── */}
           <button
             onClick={() => router.push('/customers')}
@@ -304,6 +304,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
           {/* ── Company Header ── */}
           <motion.div
+            data-tour="customer-detail"
             className="mb-6"
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
