@@ -1,6 +1,6 @@
 [package]
 name = "crm-mvp"
-version = "1.0.13"
+version = "1.0.14"
 edition = "2021"
 
 [lib]
@@ -27,3 +27,4 @@ url = "2"
 reqwest = { version = "0.12", features = ["json"] }
 rust_xlsxwriter = "0.79"
 rusqlite = { version = "0.32", features = ["bundled"] }
+tokio = { version = "1", features = ["rt"] }

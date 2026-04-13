@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 struct OAuthState(Mutex<Option<OAuthServer>>);
 
