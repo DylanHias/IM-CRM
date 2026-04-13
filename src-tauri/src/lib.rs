@@ -3,7 +3,7 @@ mod oauth;
 use oauth::OAuthServer;
 use rusqlite::types::Value;
 use rust_xlsxwriter::{Format, Workbook, Worksheet};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -224,6 +224,198 @@ async fn export_db_all(app: tauri::AppHandle, path: String) -> Result<(), String
     .map_err(|e| e.to_string())?
 }
 
+/// Export the revenue overview directly from SQLite, applying filters in Rust.
+/// Accepts only small filter params so no large payload crosses the IPC bridge.
+#[derive(Deserialize)]
+struct RevenueExportParams {
+    path: String,
+    search: String,
+    filter_cloud: String, // "all" | "yes" | "no"
+    filter_country: String,
+    arr_min: Option<f64>,
+    arr_max: Option<f64>,
+    sort_by: String,  // "name" | "cloudCustomer" | "arr"
+    sort_dir: String, // "asc" | "desc"
+}
+
+#[tauri::command]
+async fn export_revenue_overview(
+    app: tauri::AppHandle,
+    params: RevenueExportParams,
+) -> Result<(), String> {
+    let db_path: PathBuf = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("crm.db");
+
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        let conn = rusqlite::Connection::open_with_flags(
+            &db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .map_err(|e| e.to_string())?;
+
+        // Build most-recent contact per customer via a subquery
+        let mut stmt = conn
+            .prepare(
+                "SELECT
+                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr,
+                    c.address_country,
+                    con.first_name, con.last_name, con.phone, con.mobile, con.email
+                 FROM customers c
+                 LEFT JOIN contacts con ON con.id = (
+                     SELECT id FROM contacts
+                     WHERE customer_id = c.id
+                     ORDER BY updated_at DESC
+                     LIMIT 1
+                 )
+                 WHERE c.status = 'active'",
+            )
+            .map_err(|e| e.to_string())?;
+
+        struct Row {
+            name: String,
+            contact_name: String,
+            phone: String,
+            email: String,
+            cloud: Option<i64>,
+            arr: Option<f64>,
+            country: Option<String>,
+        }
+
+        let search_lower = params.search.to_lowercase();
+
+        let mut rows: Vec<Row> = stmt
+            .query_map([], |r| {
+                let cust_name: String = r.get(1)?;
+                let cust_phone: Option<String> = r.get(2)?;
+                let cust_email: Option<String> = r.get(3)?;
+                let cloud: Option<i64> = r.get(4)?;
+                let arr: Option<f64> = r.get(5)?;
+                let country: Option<String> = r.get(6)?;
+                let con_first: Option<String> = r.get(7)?;
+                let con_last: Option<String> = r.get(8)?;
+                let con_phone: Option<String> = r.get(9)?;
+                let con_mobile: Option<String> = r.get(10)?;
+                let con_email: Option<String> = r.get(11)?;
+
+                let contact_name = match (&con_first, &con_last) {
+                    (Some(f), Some(l)) => format!("{} {}", f, l),
+                    _ => cust_name.clone(),
+                };
+                let phone = con_phone
+                    .or(con_mobile)
+                    .or(cust_phone)
+                    .unwrap_or_else(|| "—".to_string());
+                let email = con_email.or(cust_email).unwrap_or_else(|| "—".to_string());
+
+                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, country })
+            })
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+
+        // Apply filters
+        rows.retain(|r| {
+            if !search_lower.is_empty() && !r.name.to_lowercase().contains(&search_lower) {
+                return false;
+            }
+            match params.filter_cloud.as_str() {
+                "yes" => {
+                    if r.cloud != Some(1) {
+                        return false;
+                    }
+                }
+                "no" => {
+                    if r.cloud != Some(0) {
+                        return false;
+                    }
+                }
+                _ => {}
+            }
+            if !params.filter_country.is_empty()
+                && r.country.as_deref() != Some(params.filter_country.as_str())
+            {
+                return false;
+            }
+            if let Some(min) = params.arr_min {
+                if r.arr.map_or(true, |v| v < min) {
+                    return false;
+                }
+            }
+            if let Some(max) = params.arr_max {
+                if r.arr.map_or(true, |v| v > max) {
+                    return false;
+                }
+            }
+            true
+        });
+
+        // Sort
+        let asc = params.sort_dir == "asc";
+        rows.sort_by(|a, b| {
+            let ord = match params.sort_by.as_str() {
+                "name" => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                "cloudCustomer" => a.cloud.cmp(&b.cloud),
+                "arr" => a
+                    .arr
+                    .partial_cmp(&b.arr)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+                _ => std::cmp::Ordering::Equal,
+            };
+            if asc { ord } else { ord.reverse() }
+        });
+
+        let bold = Format::new().set_bold();
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet
+            .set_name("Revenue Overview")
+            .map_err(|e| e.to_string())?;
+
+        let headers = [
+            "Customer Name",
+            "Contact",
+            "Phone",
+            "Email",
+            "Cloud Customer",
+            "ARR (€)",
+        ];
+        for (col, h) in headers.iter().enumerate() {
+            sheet
+                .write_with_format(0, col as u16, *h, &bold)
+                .map_err(|e| e.to_string())?;
+        }
+
+        for (row_idx, row) in rows.iter().enumerate() {
+            let cloud_str = match row.cloud {
+                Some(1) => "Yes",
+                Some(0) => "No",
+                _ => "",
+            };
+            let arr_str = row.arr.map(|v| v.to_string()).unwrap_or_default();
+            let cells: [&str; 6] = [
+                &row.name,
+                &row.contact_name,
+                &row.phone,
+                &row.email,
+                cloud_str,
+                &arr_str,
+            ];
+            for (col, val) in cells.iter().enumerate() {
+                sheet
+                    .write(row_idx as u32 + 1, col as u16, *val)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+
+        workbook.save(params.path.as_str()).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Export a pre-built table (headers + rows) to a single-sheet XLSX file.
 /// Used by the revenue overview export where data is already filtered in JS.
 #[tauri::command]
@@ -283,6 +475,7 @@ pub fn run() {
             refresh_oauth_token,
             export_db_all,
             export_rows,
+            export_revenue_overview,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

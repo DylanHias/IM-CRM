@@ -208,19 +208,20 @@ export default function RevenueOverviewPage() {
       setIsExporting(true);
       const toastId = toast.loading('Exporting…');
       try {
-        const headers = ['Customer Name', 'Contact', 'Phone', 'Email', 'Cloud Customer', 'ARR (€)'];
-        const rows = filtered.map((c) => [
-          c.name,
-          getContactLabel(c, allContacts).name,
-          getPhone(c, allContacts),
-          getEmail(c, allContacts),
-          c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-          String(c.arr ?? ''),
-        ]);
-
         const { invoke } = await import('@tauri-apps/api/core');
-        // Rust generates XLSX and writes to disk — zero JS-heap allocation, no GC pressure
-        await invoke('export_rows', { path: savePath, sheetName: 'Revenue Overview', headers, rows });
+        // Pass only filter params — Rust queries SQLite directly, no large IPC payload
+        await invoke('export_revenue_overview', {
+          params: {
+            path: savePath,
+            search: searchQuery.trim(),
+            filter_cloud: filterCloud,
+            filter_country: filterCountry,
+            arr_min: arrMin !== '' ? Number(arrMin) : null,
+            arr_max: arrMax !== '' ? Number(arrMax) : null,
+            sort_by: sortBy,
+            sort_dir: sortDir,
+          },
+        });
         toast.success('Export complete', { id: toastId, description: savePath });
       } catch (err) {
         console.error('[data] Revenue Overview export failed:', err);
