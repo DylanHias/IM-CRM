@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { queryFollowUpsByUser, completeFollowUp, uncompleteFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
+import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { onDataEvent, emitDataEvent } from '@/lib/dataEvents';
@@ -100,33 +100,6 @@ export default function FollowUpsPage() {
       emitDataEvent('followup', 'completed', followUps.find((f) => f.id === id)?.customerId ?? '');
     } catch (err) {
       console.error('[followup] Failed to complete:', err);
-    }
-  };
-
-  const handleUncomplete = async (id: string) => {
-    try {
-      if (isTauriApp()) {
-        await uncompleteFollowUp(id);
-        const target = followUps.find((f) => f.id === id);
-        if (target) {
-          directPushFollowUp({ ...target, completed: false, completedAt: null, syncStatus: 'pending' }).then((result) => {
-            if (result) {
-              setFollowUps((prev) =>
-                prev.map((f) => f.id === id ? { ...f, syncStatus: 'synced', remoteId: result.remoteId } : f)
-              );
-              emitDataEvent('followup', 'updated', target.customerId);
-            }
-          });
-        }
-      }
-      setFollowUps((prev) =>
-        prev.map((f) =>
-          f.id === id ? { ...f, completed: false, completedAt: null, syncStatus: 'pending' } : f
-        )
-      );
-      emitDataEvent('followup', 'updated', followUps.find((f) => f.id === id)?.customerId ?? '');
-    } catch (err) {
-      console.error('[followup] Failed to uncomplete:', err);
     }
   };
 
@@ -247,7 +220,7 @@ export default function FollowUpsPage() {
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Recently Completed</h3>
               <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
                 {done.map((f) => (
-                  <FollowUpItem key={f.id} followUp={f} onUncomplete={handleUncomplete} />
+                  <FollowUpItem key={f.id} followUp={f} />
                 ))}
               </div>
             </section>

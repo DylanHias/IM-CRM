@@ -17,11 +17,10 @@ interface FollowUpListProps {
   followUps: FollowUp[];
   customerId: string;
   onComplete: (id: string) => void;
-  onUncomplete?: (id: string) => void;
   onAdd?: () => void;
 }
 
-export function FollowUpList({ followUps, customerId, onComplete, onUncomplete, onAdd }: FollowUpListProps) {
+export function FollowUpList({ followUps, customerId, onComplete, onAdd }: FollowUpListProps) {
   const { editFollowUp, deleteFollowUp } = useFollowUps(customerId);
 
   const [editing, setEditing] = useState<FollowUp | null>(null);
@@ -133,7 +132,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onUncomplete, 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
                   >
-                    <FollowUpItem followUp={f} onUncomplete={onUncomplete} />
+                    <FollowUpItem followUp={f} />
                   </motion.div>
                 ))}
               </div>

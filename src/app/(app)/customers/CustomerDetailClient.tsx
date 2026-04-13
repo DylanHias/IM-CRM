@@ -54,7 +54,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
   const [filteredActivityCount, setFilteredActivityCount] = useState<number | null>(null);
-  const { followUps, createFollowUp, completeFollowUp, uncompleteFollowUp } = useFollowUps(customerId);
+  const { followUps, createFollowUp, completeFollowUp } = useFollowUps(customerId);
   const { opportunities: customerOpportunities } = useOpportunities(customerId);
 
   useEffect(() => {
@@ -573,7 +573,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
-                    <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} onUncomplete={uncompleteFollowUp} onAdd={() => setAddFollowUpOpen(true)} />
+                    <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} onAdd={() => setAddFollowUpOpen(true)} />
                   </motion.div>
                 )}
 
