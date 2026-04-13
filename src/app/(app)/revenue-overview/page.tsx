@@ -17,6 +17,7 @@ import { useCustomerStore } from '@/store/customerStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useShortcutListener } from '@/hooks/useShortcuts';
+import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/lib/utils';
 import { exportFile } from '@/lib/utils/exportFile';
 import type { Customer, Contact } from '@/types/entities';
@@ -124,6 +125,7 @@ export default function RevenueOverviewPage() {
 
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
+  const walkthroughActive = useSettingsStore((s) => s.walkthroughActive);
 
   const countryOptions = useMemo(() => {
     const codes = new Set<string>();
@@ -308,10 +310,12 @@ export default function RevenueOverviewPage() {
 
             <button
               data-tour="export-button"
-              onClick={handleExport}
+              onClick={walkthroughActive ? undefined : handleExport}
+              disabled={walkthroughActive}
               className={cn(
                 'ml-auto flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',
-                'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors'
+                'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
+                walkthroughActive && 'pointer-events-none'
               )}
             >
               <Download size={14} />

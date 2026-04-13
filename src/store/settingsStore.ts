@@ -61,6 +61,7 @@ interface SettingsState {
 
   // Onboarding
   hasCompletedWalkthrough: boolean;
+  walkthroughActive: boolean;
 
   // Actions
   updateSetting: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
@@ -148,10 +149,13 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       ...ALL_DEFAULTS,
+      walkthroughActive: false,
 
       updateSetting: (key, value) => {
         set({ [key]: value } as Partial<SettingsState>);
-        persistToDb(String(key), value);
+        if ((SETTINGS_KEYS as string[]).includes(String(key))) {
+          persistToDb(String(key), value);
+        }
       },
 
       resetSection: (section) => {

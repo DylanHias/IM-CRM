@@ -138,6 +138,10 @@ export function Walkthrough() {
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
+  useEffect(() => {
+    updateSetting('walkthroughActive', run);
+  }, [run, updateSetting]);
+
   const firstCustomerId = customers.length > 0 ? customers[0].id : null;
   const steps = useMemo(() => buildSteps(firstCustomerId), [firstCustomerId]);
 
