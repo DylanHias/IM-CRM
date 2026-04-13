@@ -1,8 +1,11 @@
 mod oauth;
 
 use oauth::OAuthServer;
+use rusqlite::types::Value;
+use rust_xlsxwriter::{Format, Workbook, Worksheet};
 use serde::Serialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
 
@@ -132,6 +135,132 @@ async fn refresh_oauth_token(
     })
 }
 
+// ─── Excel Export ────────────────────────────────────────────────────────────
+
+/// Write one SQLite value into a worksheet cell.
+fn write_cell(
+    sheet: &mut Worksheet,
+    row: u32,
+    col: u16,
+    value: Value,
+) -> Result<(), rust_xlsxwriter::XlsxError> {
+    match value {
+        Value::Null => { sheet.write(row, col, "")?; }
+        Value::Integer(n) => { sheet.write(row, col, n)?; }
+        Value::Real(f) => { sheet.write(row, col, f)?; }
+        Value::Text(s) => { sheet.write(row, col, s)?; }
+        Value::Blob(_) => { sheet.write(row, col, "[blob]")?; }
+    }
+    Ok(())
+}
+
+/// Query one SQLite table and append it as a sheet to the workbook.
+fn write_db_sheet(
+    conn: &rusqlite::Connection,
+    table: &str,
+    workbook: &mut Workbook,
+    bold: &Format,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut info = conn.prepare(&format!("PRAGMA table_info(\"{}\")", table))?;
+    let columns: Vec<String> = info
+        .query_map([], |row| row.get::<_, String>(1))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if columns.is_empty() {
+        return Ok(());
+    }
+
+    let sheet = workbook.add_worksheet();
+    sheet.set_name(table)?;
+
+    for (col, name) in columns.iter().enumerate() {
+        sheet.write_with_format(0, col as u16, name.as_str(), bold)?;
+    }
+
+    let mut stmt = conn.prepare(&format!("SELECT * FROM \"{}\"", table))?;
+    let col_count = columns.len();
+    let mut rows = stmt.query([])?;
+    let mut row_idx: u32 = 1;
+
+    while let Some(row) = rows.next()? {
+        for col in 0..col_count {
+            let value: Value = row.get(col)?;
+            write_cell(sheet, row_idx, col as u16, value)?;
+        }
+        row_idx += 1;
+    }
+
+    Ok(())
+}
+
+/// Export all CRM tables to a multi-sheet XLSX file.
+/// Runs entirely in Rust — zero JS-heap allocation, no GC pressure on the WebView.
+#[tauri::command]
+async fn export_db_all(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    let db_path: PathBuf = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("crm.db");
+
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        let conn = rusqlite::Connection::open_with_flags(
+            &db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .map_err(|e| e.to_string())?;
+
+        let bold = Format::new().set_bold();
+        let mut workbook = Workbook::new();
+
+        for table in &["customers", "contacts", "activities", "follow_ups", "opportunities"] {
+            write_db_sheet(&conn, table, &mut workbook, &bold)
+                .map_err(|e| e.to_string())?;
+        }
+
+        workbook.save(path.as_str()).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Export a pre-built table (headers + rows) to a single-sheet XLSX file.
+/// Used by the revenue overview export where data is already filtered in JS.
+#[tauri::command]
+async fn export_rows(
+    path: String,
+    sheet_name: String,
+    headers: Vec<String>,
+    rows: Vec<Vec<String>>,
+) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        let bold = Format::new().set_bold();
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.set_name(sheet_name.as_str()).map_err(|e| e.to_string())?;
+
+        for (col, header) in headers.iter().enumerate() {
+            sheet
+                .write_with_format(0, col as u16, header.as_str(), &bold)
+                .map_err(|e| e.to_string())?;
+        }
+
+        for (row_idx, row) in rows.iter().enumerate() {
+            for (col, value) in row.iter().enumerate() {
+                sheet
+                    .write(row_idx as u32 + 1, col as u16, value.as_str())
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+
+        workbook.save(path.as_str()).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -152,6 +281,8 @@ pub fn run() {
             stop_oauth_server,
             exchange_oauth_code,
             refresh_oauth_token,
+            export_db_all,
+            export_rows,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

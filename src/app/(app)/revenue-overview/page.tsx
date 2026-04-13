@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search, Download, Building2, User, X,
-  SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown,
+  SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,8 @@ import { TablePagination } from '@/components/ui/TablePagination';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/lib/utils';
-import { exportFile } from '@/lib/utils/exportFile';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { toast } from 'sonner';
 import type { Customer, Contact } from '@/types/entities';
 
 type SortField = 'name' | 'cloudCustomer' | 'arr';
@@ -116,6 +117,7 @@ export default function RevenueOverviewPage() {
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
   const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('revenueOverview');
   const { visibleColumns } = useColumnConfig('revenueOverview', ARR_COLUMNS);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -190,31 +192,77 @@ export default function RevenueOverviewPage() {
   const pagedRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   async function handleExport() {
-    try {
-      const rows = filtered.map((c) => ({
-        'Customer Name': c.name,
-        Contact: getContactLabel(c, allContacts).name,
-        Phone: getPhone(c, allContacts),
-        Email: getEmail(c, allContacts),
-        'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-        'ARR (€)': c.arr ?? '',
-      }));
+    if (isExporting) return;
 
-      const date = new Date().toISOString().split('T')[0];
-      const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const worker = new Worker(new URL('../../../lib/utils/exportWorker.ts', import.meta.url));
-        worker.onmessage = (e: MessageEvent<ArrayBuffer>) => { resolve(e.data); worker.terminate(); };
-        worker.onerror = (e) => { reject(new Error(e.message)); worker.terminate(); };
-        worker.postMessage({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });
+    const date = new Date().toISOString().split('T')[0];
+
+    if (isTauriApp()) {
+      // Ask where to save immediately — before any heavy processing
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const savePath = await save({
+        defaultPath: `revenue-overview-${date}.xlsx`,
+        filters: [{ name: 'Excel Spreadsheet', extensions: ['xlsx'] }],
       });
-      await exportFile({
-        defaultName: `revenue-overview-${date}.xlsx`,
-        filterLabel: 'Excel Spreadsheet',
-        extensions: ['xlsx'],
-        data: buffer,
-      });
-    } catch (err) {
-      console.error('[data] Revenue Overview export failed:', err);
+      if (!savePath) return;
+
+      setIsExporting(true);
+      const toastId = toast.loading('Exporting…');
+      try {
+        const headers = ['Customer Name', 'Contact', 'Phone', 'Email', 'Cloud Customer', 'ARR (€)'];
+        const rows = filtered.map((c) => [
+          c.name,
+          getContactLabel(c, allContacts).name,
+          getPhone(c, allContacts),
+          getEmail(c, allContacts),
+          c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
+          String(c.arr ?? ''),
+        ]);
+
+        const { invoke } = await import('@tauri-apps/api/core');
+        // Rust generates XLSX and writes to disk — zero JS-heap allocation, no GC pressure
+        await invoke('export_rows', { path: savePath, sheetName: 'Revenue Overview', headers, rows });
+        toast.success('Export complete', { id: toastId, description: savePath });
+      } catch (err) {
+        console.error('[data] Revenue Overview export failed:', err);
+        toast.error('Export failed', { id: toastId, description: err instanceof Error ? err.message : String(err) });
+      } finally {
+        setIsExporting(false);
+      }
+    } else {
+      // Browser fallback
+      try {
+        const rows = filtered.map((c) => ({
+          'Customer Name': c.name,
+          Contact: getContactLabel(c, allContacts).name,
+          Phone: getPhone(c, allContacts),
+          Email: getEmail(c, allContacts),
+          'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
+          'ARR (€)': c.arr ?? '',
+        }));
+
+        const payload = JSON.stringify({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });
+        const encoded = new TextEncoder().encode(payload);
+        const buf = encoded.buffer as ArrayBuffer;
+
+        const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+          const worker = new Worker(new URL('../../../lib/utils/exportWorker.ts', import.meta.url));
+          worker.onmessage = (e: MessageEvent<ArrayBuffer>) => { resolve(e.data); worker.terminate(); };
+          worker.onerror = (e) => { reject(new Error(e.message)); worker.terminate(); };
+          worker.postMessage(buf, [buf]);
+        });
+
+        const blob = new Blob([buffer]);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `revenue-overview-${date}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Export started');
+      } catch (err) {
+        console.error('[data] Revenue Overview export failed:', err);
+        toast.error('Export failed');
+      }
     }
   }
 
@@ -310,16 +358,16 @@ export default function RevenueOverviewPage() {
 
             <button
               data-tour="export-button"
-              onClick={walkthroughActive ? undefined : handleExport}
-              disabled={walkthroughActive}
+              onClick={walkthroughActive || isExporting ? undefined : handleExport}
+              disabled={walkthroughActive || isExporting}
               className={cn(
                 'ml-auto flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',
                 'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
-                walkthroughActive && 'pointer-events-none'
+                (walkthroughActive || isExporting) && 'pointer-events-none opacity-70'
               )}
             >
-              <Download size={14} />
-              Export to Excel
+              {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {isExporting ? 'Exporting…' : 'Export to Excel'}
             </button>
           </div>
 

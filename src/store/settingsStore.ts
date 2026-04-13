@@ -6,7 +6,6 @@ import type { SortBy } from '@/store/customerStore';
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
-type ExportFormat = 'xlsx' | 'csv';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
@@ -50,7 +49,6 @@ interface SettingsState {
   showSyncToasts: boolean;
 
   // Data Management
-  defaultExportFormat: ExportFormat;
   mockDataEnabled: boolean;
 
   // Table Columns
@@ -104,7 +102,6 @@ const SYNC_DEFAULTS = {
 };
 
 const DATA_MANAGEMENT_DEFAULTS = {
-  defaultExportFormat: 'xlsx' as ExportFormat,
   mockDataEnabled: false,
 };
 

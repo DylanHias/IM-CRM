@@ -5,12 +5,10 @@ import { useAdminStore } from '@/store/adminStore';
 import { Download, Trash2, Database, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from 'sonner';
 
 export function DataManagement() {
   const { tableStats, isLoading, loadDataManagement } = useAdminStore();
-  const exportFormat = useSettingsStore((s) => s.defaultExportFormat);
   const [syncPurgeDays, setSyncPurgeDays] = useState(90);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -21,59 +19,28 @@ export function DataManagement() {
   const handleExportAll = async () => {
     if (!isTauriApp()) return;
     const datestamp = new Date().toISOString().split('T')[0];
-    const isCsv = exportFormat === 'csv';
-    const bookType = isCsv ? 'csv' : 'xlsx';
 
-    // Pick save location first, before any heavy processing
+    // Pick save location first — user gets immediate feedback
     const { save } = await import('@tauri-apps/plugin-dialog');
     const path = await save({
-      defaultPath: `im-crm-export-${datestamp}.${bookType}`,
-      filters: [{ name: isCsv ? 'CSV File' : 'Excel Spreadsheet', extensions: [bookType] }],
+      defaultPath: `im-crm-export-${datestamp}.xlsx`,
+      filters: [{ name: 'Excel Spreadsheet', extensions: ['xlsx'] }],
     });
     if (!path) return;
 
     setIsExporting(true);
+    const toastId = toast.loading('Exporting…');
 
     try {
-      const { getDb } = await import('@/lib/db/client');
-      const db = await getDb();
-
-      const tableNames = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities'];
-      const tables: { name: string; rows: Record<string, unknown>[] }[] = [];
-
-      await Promise.all(
-        tableNames.map(async (name) => {
-          try {
-            const rows = await db.select<Record<string, unknown>[]>(`SELECT * FROM ${name}`);
-            tables.push({ name, rows });
-          } catch {
-            // Table might not exist yet
-          }
-        }),
-      );
-
-      // Offload blocking XLSX serialization to a worker so the UI stays responsive
-      const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const worker = new Worker(new URL('../../lib/utils/exportWorker.ts', import.meta.url));
-        worker.onmessage = (e: MessageEvent<ArrayBuffer>) => {
-          resolve(e.data);
-          worker.terminate();
-        };
-        worker.onerror = (e) => {
-          reject(new Error(e.message));
-          worker.terminate();
-        };
-        worker.postMessage({ tables, bookType });
-      });
-
-      const { writeFile } = await import('@tauri-apps/plugin-fs');
-      await writeFile(path, new Uint8Array(buffer));
-
-      toast.success('Export complete', { description: path });
+      const { invoke } = await import('@tauri-apps/api/core');
+      // Rust reads the DB, generates XLSX, and writes to disk — zero JS-heap allocation
+      await invoke('export_db_all', { path });
+      toast.success('Export complete', { id: toastId, description: path });
     } catch (err) {
       console.error('[data] Export failed:', err);
       toast.error('Export failed', {
-        description: err instanceof Error ? err.message : 'Unknown error',
+        id: toastId,
+        description: err instanceof Error ? err.message : String(err),
       });
     } finally {
       setIsExporting(false);
@@ -129,7 +96,7 @@ export function DataManagement() {
             ) : (
               <Download size={14} />
             )}
-            <span className="ml-1.5">{isExporting ? 'Exporting…' : `Export All Data (${exportFormat})`}</span>
+            <span className="ml-1.5">{isExporting ? 'Exporting…' : 'Export All Data'}</span>
           </Button>
         </div>
       </div>

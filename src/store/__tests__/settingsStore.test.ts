@@ -29,7 +29,6 @@ describe('settingsStore', () => {
     expect(store().opportunityStaleReminderDays).toBe(30);
     expect(store().autoSyncOnLaunch).toBe(false);
     expect(store().syncIntervalMinutes).toBe(30);
-    expect(store().defaultExportFormat).toBe('xlsx');
     expect(store().mockDataEnabled).toBe(false);
   });
 
@@ -151,12 +150,10 @@ describe('settingsStore', () => {
 
   describe('resetSection dataManagement', () => {
     it('resets all data management keys', () => {
-      store().updateSetting('defaultExportFormat', 'csv');
       store().updateSetting('mockDataEnabled', true);
 
       store().resetSection('dataManagement');
 
-      expect(store().defaultExportFormat).toBe('xlsx');
       expect(store().mockDataEnabled).toBe(false);
     });
 
@@ -182,7 +179,6 @@ describe('settingsStore', () => {
       store().updateSetting('showSyncToasts', false);
       store().updateSetting('autoSyncOnLaunch', false);
       store().updateSetting('syncIntervalMinutes', 60);
-      store().updateSetting('defaultExportFormat', 'csv');
       store().updateSetting('mockDataEnabled', true);
 
       store().resetAll();
@@ -202,7 +198,6 @@ describe('settingsStore', () => {
       expect(store().autoSyncOnLaunch).toBe(false);
       expect(store().syncIntervalMinutes).toBe(30);
       // Data Management
-      expect(store().defaultExportFormat).toBe('xlsx');
       expect(store().mockDataEnabled).toBe(false);
     });
   });
