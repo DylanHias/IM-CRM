@@ -31,8 +31,8 @@ function fmtEur(n: number): string {
 }
 
 const forecastConfig = {
-  weighted: { label: 'Weighted', color: 'hsl(var(--primary))' },
-  total: { label: 'Total', color: 'hsl(var(--chart-2, 220 70% 50%))' },
+  total: { label: 'Total', color: 'hsl(var(--primary))' },
+  weighted: { label: 'Weighted', color: 'hsl(var(--chart-3, 150 60% 40%))' },
 };
 
 const funnelConfig = {

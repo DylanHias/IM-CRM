@@ -19,7 +19,7 @@ const DIRECTION_COLORS: Record<string, string> = {
 
 const typeMixConfig = {
   mine: { label: 'Mine', color: 'hsl(var(--primary))' },
-  team: { label: 'Team', color: 'hsl(var(--chart-2, 220 70% 50%))' },
+  team: { label: 'Team', color: 'hsl(var(--chart-4, 280 65% 60%))' },
 };
 
 const heatmapConfig = {
