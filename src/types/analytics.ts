@@ -74,7 +74,7 @@ export interface TopCustomer {
 }
 
 export interface CustomerHealthData {
-  stale: { count30: number; count60: number; count90: number; total: number };
+  stale: { count30: number; count60: number; count90: number; total: number; cloudCount: number };
   cloudBySegment: { segment: string; cloud: number; total: number }[];
   arrDistribution: { bucket: string; count: number }[];
   arrByIndustry: ArrByDimensionPoint[];

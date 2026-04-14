@@ -98,7 +98,7 @@ export function CustomersPanel() {
     : [];
 
   const totalCloudPct = c && c.stale.total > 0
-    ? Math.round((c.cloudBySegment.reduce((s, x) => s + x.cloud, 0) / c.cloudBySegment.reduce((s, x) => s + x.total, 0)) * 100)
+    ? Math.round((c.stale.cloudCount / c.stale.total) * 100)
     : null;
 
   return (

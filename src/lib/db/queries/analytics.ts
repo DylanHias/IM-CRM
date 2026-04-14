@@ -229,12 +229,13 @@ export async function queryCustomerHealthData(): Promise<CustomerHealthData> {
     topByArr,
     coverageRow,
   ] = await Promise.all([
-    db.select<{ count30: number; count60: number; count90: number; total: number }[]>(
+    db.select<{ count30: number; count60: number; count90: number; total: number; cloudCount: number }[]>(
       `SELECT
          COUNT(CASE WHEN last_activity_at IS NULL OR last_activity_at < datetime('now', '-30 days') THEN 1 END) as count30,
          COUNT(CASE WHEN last_activity_at IS NULL OR last_activity_at < datetime('now', '-60 days') THEN 1 END) as count60,
          COUNT(CASE WHEN last_activity_at IS NULL OR last_activity_at < datetime('now', '-90 days') THEN 1 END) as count90,
-         COUNT(*) as total
+         COUNT(*) as total,
+         COUNT(CASE WHEN cloud_customer = 1 THEN 1 END) as cloudCount
        FROM customers WHERE status = 'active'`,
     ),
 
@@ -291,7 +292,7 @@ export async function queryCustomerHealthData(): Promise<CustomerHealthData> {
 
   const cr = coverageRow[0];
   return {
-    stale: staleRow[0] ?? { count30: 0, count60: 0, count90: 0, total: 0 },
+    stale: staleRow[0] ?? { count30: 0, count60: 0, count90: 0, total: 0, cloudCount: 0 },
     cloudBySegment,
     arrDistribution,
     arrByIndustry,
