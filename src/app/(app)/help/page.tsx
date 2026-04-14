@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Settings2,
   Keyboard,
+  LineChart,
 } from 'lucide-react';
 import { SubSidebar } from '@/components/layout/SubSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,6 +25,7 @@ import followUps from '../../../../docs/help/follow-ups.md';
 import contacts from '../../../../docs/help/contacts.md';
 import opportunities from '../../../../docs/help/opportunities.md';
 import revenueOverview from '../../../../docs/help/revenue-overview.md';
+import analytics from '../../../../docs/help/analytics.md';
 import sync from '../../../../docs/help/sync.md';
 import settings from '../../../../docs/help/settings.md';
 import shortcuts from '../../../../docs/help/shortcuts.md';
@@ -36,6 +38,7 @@ const TABS = [
   { id: 'contacts', label: 'Contacts', icon: Contact },
   { id: 'opportunities', label: 'Opportunities', icon: Target },
   { id: 'revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
+  { id: 'analytics', label: 'Analytics', icon: LineChart },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'settings', label: 'Settings', icon: Settings2 },
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
@@ -51,6 +54,7 @@ const CONTENT: Record<TabId, string> = {
   contacts,
   opportunities,
   'revenue-overview': revenueOverview,
+  analytics,
   sync,
   settings,
   shortcuts,

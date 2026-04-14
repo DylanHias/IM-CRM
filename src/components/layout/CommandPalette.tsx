@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
+  Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
   Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle,
 } from 'lucide-react';
 import {
@@ -25,6 +25,7 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/opportunities': Target,
   '/invoices': FileText,
   '/revenue-overview': BarChart2,
+  '/analytics': LineChart,
 };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {

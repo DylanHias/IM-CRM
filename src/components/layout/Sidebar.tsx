@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, FileText, Target,
+  Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
   ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark,
@@ -127,6 +127,7 @@ export function AppSidebar() {
     '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target, disabled: true, disabledTooltip: 'Coming soon' },
     '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
+    '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart, disabled: !isAdmin, disabledTooltip: 'Admin only' },
   };
 
   const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);

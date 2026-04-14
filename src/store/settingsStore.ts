@@ -9,7 +9,7 @@ type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
-export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/revenue-overview';
+export type SidebarTab = '/customers' | '/sync' | '/followups' | '/opportunities' | '/invoices' | '/revenue-overview' | '/analytics';
 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/customers',
@@ -18,6 +18,7 @@ export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/opportunities',
   '/invoices',
   '/revenue-overview',
+  '/analytics',
 ];
 
 interface SettingsState {
