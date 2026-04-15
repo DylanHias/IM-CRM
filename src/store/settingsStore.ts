@@ -14,13 +14,13 @@ export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/dashboard',
   '/customers',
-  '/sync',
-  '/followups',
-  '/opportunities',
-  '/invoices',
   '/revenue-overview',
+  '/followups',
   '/analytics',
   '/timeline',
+  '/sync',
+  '/opportunities',
+  '/invoices',
 ];
 
 interface SettingsState {
