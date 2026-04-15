@@ -131,7 +131,7 @@ export function GlobalSearchBar({ activities, followUps }: Props) {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search everything… (press / to focus)"
+          placeholder="Search everything…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
