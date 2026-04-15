@@ -300,7 +300,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '22')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '23')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -634,6 +634,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     try { await db.execute(`ALTER TABLE contacts ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
     await db.execute(
       `UPDATE app_settings SET value = '22', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 23) {
+    // direction was added in v16 migration but DBs already at v16+ missed it — ensure column exists
+    try { await db.execute(`ALTER TABLE activities ADD COLUMN direction TEXT`); } catch { /* already exists */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '23', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
