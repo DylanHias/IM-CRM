@@ -109,6 +109,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       occurred_at     TEXT NOT NULL,
       start_time      TEXT,
       activity_status TEXT NOT NULL DEFAULT 'open',
+      direction       TEXT,
       created_by_id   TEXT NOT NULL,
       created_by_name TEXT NOT NULL,
       sync_status     TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
