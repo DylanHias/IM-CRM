@@ -4,7 +4,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
-  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User,
+  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User, LayoutDashboard,
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { SidebarTab } from '@/store/settingsStore';
 
 const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
+  '/today': LayoutDashboard,
   '/customers': Users,
   '/sync': RefreshCw,
   '/followups': CheckSquare,

@@ -365,6 +365,30 @@ export async function bulkUpsertFollowUps(
   return { inserted, updated, skipped, errors };
 }
 
+export async function queryDueTodayFollowUps(userId?: string, altUserId?: string): Promise<FollowUp[]> {
+  const db = await getDb();
+  const today = new Date().toISOString().split('T')[0];
+  if (userId && altUserId && altUserId !== userId) {
+    const rows = await db.select<FollowUpRow[]>(
+      `SELECT * FROM follow_ups WHERE completed = 0 AND due_date = $1 AND created_by_id IN ($2, $3) ORDER BY due_date ASC`,
+      [today, userId, altUserId]
+    );
+    return rows.map(rowToFollowUp);
+  }
+  if (userId) {
+    const rows = await db.select<FollowUpRow[]>(
+      `SELECT * FROM follow_ups WHERE completed = 0 AND due_date = $1 AND created_by_id = $2 ORDER BY due_date ASC`,
+      [today, userId]
+    );
+    return rows.map(rowToFollowUp);
+  }
+  const rows = await db.select<FollowUpRow[]>(
+    `SELECT * FROM follow_ups WHERE completed = 0 AND due_date = $1 ORDER BY due_date ASC`,
+    [today]
+  );
+  return rows.map(rowToFollowUp);
+}
+
 export async function countPendingFollowUps(): Promise<number> {
   const db = await getDb();
   const rows = await db.select<{ count: number }[]>(

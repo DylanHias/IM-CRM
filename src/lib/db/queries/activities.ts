@@ -293,6 +293,31 @@ export async function bulkUpsertActivities(
   return { inserted, updated, skipped, errors };
 }
 
+export async function queryRecentActivities(limit = 10): Promise<Activity[]> {
+  const db = await getDb();
+  const rows = await db.select<ActivityRow[]>(
+    `SELECT * FROM activities ORDER BY occurred_at DESC LIMIT $1`,
+    [limit]
+  );
+  return rows.map(rowToActivity);
+}
+
+export async function queryMyActivityCountSince(userId: string, altUserId: string | null, sinceISO: string): Promise<number> {
+  const db = await getDb();
+  if (altUserId && altUserId !== userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM activities WHERE created_by_id IN ($1, $2) AND occurred_at >= $3`,
+      [userId, altUserId, sinceISO]
+    );
+    return rows[0]?.count ?? 0;
+  }
+  const rows = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM activities WHERE created_by_id = $1 AND occurred_at >= $2`,
+    [userId, sinceISO]
+  );
+  return rows[0]?.count ?? 0;
+}
+
 export async function countPendingActivities(): Promise<number> {
   const db = await getDb();
   const rows = await db.select<{ count: number }[]>(

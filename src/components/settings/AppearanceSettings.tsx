@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, LineChart, Clock } from 'lucide-react';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, LineChart, Clock, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -41,6 +41,7 @@ const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string }[] = [
 ];
 
 const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }> = {
+  '/today': { label: 'Today', icon: LayoutDashboard },
   '/customers': { label: 'Customers', icon: Users },
   '/sync': { label: 'Sync', icon: RefreshCw },
   '/followups': { label: 'Follow-Ups', icon: CheckSquare },

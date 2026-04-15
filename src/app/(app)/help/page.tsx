@@ -15,10 +15,12 @@ import {
   Keyboard,
   LineChart,
   CalendarClock,
+  LayoutDashboard,
 } from 'lucide-react';
 import { SubSidebar } from '@/components/layout/SubSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+import today from '../../../../docs/help/today.md';
 import gettingStarted from '../../../../docs/help/getting-started.md';
 import customers from '../../../../docs/help/customers.md';
 import activities from '../../../../docs/help/activities.md';
@@ -33,6 +35,7 @@ import timeline from '../../../../docs/help/timeline.md';
 import shortcuts from '../../../../docs/help/shortcuts.md';
 
 const TABS = [
+  { id: 'today', label: 'Today', icon: LayoutDashboard },
   { id: 'getting-started', label: 'Getting Started', icon: Rocket },
   { id: 'customers', label: 'Customers', icon: Users },
   { id: 'activities', label: 'Activities', icon: Calendar },
@@ -50,6 +53,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 const CONTENT: Record<TabId, string> = {
+  today,
   'getting-started': gettingStarted,
   customers,
   activities,

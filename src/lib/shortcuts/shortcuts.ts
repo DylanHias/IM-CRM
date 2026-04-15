@@ -26,6 +26,7 @@ const SHORTCUT_SECTIONS: ShortcutSection[] = [
 
 function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinition[] {
   const labelMap: Record<SidebarTab, string> = {
+    '/today': 'Go to Today',
     '/customers': 'Go to Customers',
     '/sync': 'Go to Sync',
     '/followups': 'Go to Follow-Ups',
