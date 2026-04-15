@@ -285,9 +285,40 @@ async function ensureTablesExist(db: Database): Promise<void> {
   `);
 }
 
+// Idempotent column backfill — runs every startup after ensureTablesExist.
+// Ensures every column ever added by a migration exists, regardless of whether
+// the DB came from a fresh install or an upgrade. Add an entry here whenever
+// a migration adds a new column so fresh installs can never silently miss it.
+async function ensureAllColumns(db: Database): Promise<void> {
+  const cols: [string, string, string][] = [
+    ['customers',  'reseller_id',     'TEXT'],
+    ['customers',  'bcn',             'TEXT'],
+    ['customers',  'cloud_customer',  'INTEGER'],
+    ['customers',  'arr',             'REAL'],
+    ['contacts',   'contact_type',    'TEXT'],
+    ['contacts',   'cloud_contact',   'INTEGER'],
+    ['contacts',   'sync_status',     "TEXT NOT NULL DEFAULT 'synced'"],
+    ['contacts',   'remote_id',       'TEXT'],
+    ['contacts',   'source',          "TEXT DEFAULT 'd365'"],
+    ['contacts',   'is_primary',      'INTEGER NOT NULL DEFAULT 0'],
+    ['activities', 'start_time',      'TEXT'],
+    ['activities', 'source',          "TEXT DEFAULT 'local'"],
+    ['activities', 'activity_status', "TEXT NOT NULL DEFAULT 'open'"],
+    ['activities', 'direction',       'TEXT'],
+    ['follow_ups', 'source',          "TEXT DEFAULT 'local'"],
+    ['users',      'title',           'TEXT'],
+    ['users',      'profile_photo',   'TEXT'],
+  ];
+  for (const [table, col, def] of cols) {
+    try { await db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); } catch { /* column already exists */ }
+  }
+}
+
 async function runSchema(db: Database): Promise<void> {
   // Always ensure all tables exist first — guards against partial init or corruption
   await ensureTablesExist(db);
+  // Always backfill any columns that may be missing (handles fresh install / migration drift)
+  await ensureAllColumns(db);
 
   const rows = await db.select<{ value: string }[]>(
     `SELECT value FROM app_settings WHERE key = 'schema_version'`
