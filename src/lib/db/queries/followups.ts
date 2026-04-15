@@ -269,6 +269,102 @@ export async function upsertPulledFollowUp(followUp: FollowUp): Promise<boolean>
   return true;
 }
 
+/** Load remote_id → {localId, syncStatus} map for all D365-pulled follow-ups. One query replaces N per-record SELECTs. */
+export async function preloadFollowUpState(): Promise<Map<string, { localId: string; syncStatus: string }>> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string; remote_id: string; sync_status: string }[]>(
+    `SELECT id, remote_id, sync_status FROM follow_ups WHERE remote_id IS NOT NULL`,
+  );
+  const map = new Map<string, { localId: string; syncStatus: string }>();
+  for (const row of rows) {
+    map.set(row.remote_id, { localId: row.id, syncStatus: row.sync_status });
+  }
+  return map;
+}
+
+/**
+ * Bulk upsert follow-ups fetched from D365.
+ * - Filters out-of-scope records in memory.
+ * - Multi-value INSERT for new records (66 rows/batch).
+ * - Individual UPDATE for existing records.
+ */
+export async function bulkUpsertFollowUps(
+  followUps: FollowUp[],
+  customerIdSet: Set<string>,
+  existing: Map<string, { localId: string; syncStatus: string }>,
+): Promise<{ inserted: number; updated: number; skipped: number; errors: number }> {
+  if (followUps.length === 0) return { inserted: 0, updated: 0, skipped: 0, errors: 0 };
+  const db = await getDb();
+
+  const toInsert: FollowUp[] = [];
+  const toUpdate: FollowUp[] = [];
+  let skipped = 0;
+
+  for (const followUp of followUps) {
+    if (!customerIdSet.has(followUp.customerId)) { skipped++; continue; }
+    const prev = followUp.remoteId ? existing.get(followUp.remoteId) : undefined;
+    if (prev) {
+      if (prev.syncStatus === 'pending') { skipped++; continue; }
+      toUpdate.push(followUp);
+    } else {
+      toInsert.push(followUp);
+    }
+  }
+
+  const COLS = 15;
+  const CHUNK = Math.floor(999 / COLS); // 66 rows per batch
+  let inserted = 0;
+  let errors = 0;
+
+  for (let i = 0; i < toInsert.length; i += CHUNK) {
+    const chunk = toInsert.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap((f) => [
+      f.id, f.customerId, f.activityId, f.title, f.description, f.dueDate,
+      f.completed ? 1 : 0, f.completedAt, f.createdById, f.createdByName,
+      'synced', f.remoteId, 'd365', f.createdAt, f.updatedAt,
+    ]);
+    try {
+      const result = await db.execute(
+        `INSERT OR IGNORE INTO follow_ups (
+          id, customer_id, activity_id, title, description, due_date, completed,
+          completed_at, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+        ) VALUES ${placeholders}`,
+        values,
+      );
+      inserted += result.rowsAffected;
+    } catch (err) {
+      console.error('[followup] Bulk insert chunk failed:', err instanceof Error ? err.message : err);
+      errors++;
+    }
+  }
+
+  let updated = 0;
+  for (const f of toUpdate) {
+    try {
+      await db.execute(
+        `UPDATE follow_ups SET customer_id=$1, title=$2, description=$3, due_date=$4,
+         completed=$5, completed_at=$6, created_by_id=$7, created_by_name=$8,
+         sync_status='synced', source='d365', updated_at=$9
+         WHERE remote_id=$10`,
+        [
+          f.customerId, f.title, f.description, f.dueDate,
+          f.completed ? 1 : 0, f.completedAt,
+          f.createdById, f.createdByName, f.updatedAt, f.remoteId,
+        ],
+      );
+      updated++;
+    } catch (err) {
+      console.error(`[followup] Failed to update follow-up ${f.remoteId}:`, err instanceof Error ? err.message : err);
+      errors++;
+    }
+  }
+
+  return { inserted, updated, skipped, errors };
+}
+
 export async function countPendingFollowUps(): Promise<number> {
   const db = await getDb();
   const rows = await db.select<{ count: number }[]>(

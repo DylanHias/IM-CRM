@@ -180,6 +180,54 @@ export async function removeCustomerFavorite(customerId: string): Promise<void> 
   );
 }
 
+/** Multi-value INSERT for bulk sync. Returns total rows changed. */
+export async function bulkUpsertCustomers(customers: Customer[]): Promise<number> {
+  if (customers.length === 0) return 0;
+  const db = await getDb();
+  const COLS = 22;
+  const CHUNK = Math.floor(999 / COLS); // 45 rows per batch
+  let changed = 0;
+
+  for (let i = 0; i < customers.length; i += CHUNK) {
+    const chunk = customers.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap((c) => [
+      c.id, c.name, c.accountNumber, c.industry,
+      c.segment, c.ownerId, c.ownerName, c.phone,
+      c.email, c.addressStreet, c.addressCity,
+      c.addressCountry, c.website, c.resellerId, c.bcn,
+      null, c.arr, c.status,
+      c.lastActivityAt, c.syncedAt, c.createdAt, c.updatedAt,
+    ]);
+    const result = await db.execute(
+      `INSERT INTO customers (
+        id, name, account_number, industry, segment, owner_id, owner_name,
+        phone, email, address_street, address_city, address_country, website,
+        reseller_id, bcn, cloud_customer, arr,
+        status, last_activity_at, synced_at, created_at, updated_at
+      ) VALUES ${placeholders}
+      ON CONFLICT(id) DO UPDATE SET
+        name=excluded.name, account_number=excluded.account_number,
+        industry=excluded.industry, segment=excluded.segment,
+        owner_id=excluded.owner_id, owner_name=excluded.owner_name,
+        phone=excluded.phone, email=excluded.email,
+        address_street=excluded.address_street, address_city=excluded.address_city,
+        address_country=excluded.address_country, website=excluded.website,
+        reseller_id=excluded.reseller_id, bcn=excluded.bcn,
+        arr=excluded.arr,
+        status=excluded.status, synced_at=excluded.synced_at,
+        last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
+        updated_at=excluded.updated_at
+      WHERE excluded.updated_at > customers.updated_at OR customers.updated_at IS NULL`,
+      values,
+    );
+    changed += result.rowsAffected;
+  }
+  return changed;
+}
+
 export async function queryUniqueOwners(): Promise<{ id: string; name: string }[]> {
   const db = await getDb();
   const rows = await db.select<{ owner_id: string; owner_name: string }[]>(

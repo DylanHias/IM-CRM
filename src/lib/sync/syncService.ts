@@ -1,14 +1,15 @@
 import { getD365Adapter } from './d365Adapter';
 import { fetchD365TeamUserIds } from './d365UserAdapter';
-import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
-import { upsertContactBulk, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
-import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
-import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
+import { bulkUpsertCustomers, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
+import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
+import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
+import { queryPendingFollowUps, markFollowUpSynced, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
 import {
   queryPendingOpportunities,
   markOpportunitySynced,
   markOpportunitySyncError,
-  upsertPulledOpportunity,
+  preloadOpportunityState,
+  bulkUpsertOpportunities,
 } from '@/lib/db/queries/opportunities';
 import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
@@ -18,44 +19,9 @@ import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
-import type { Opportunity } from '@/types/entities';
+import type { Activity, FollowUp, Opportunity } from '@/types/entities';
 import type { OpportunityOptionValues } from '@/lib/sync/d365Adapter';
 
-interface BatchResult {
-  successes: number;
-  errors: number;
-}
-
-/**
- * Process items sequentially with individual auto-committed writes.
- * Manual BEGIN/COMMIT is intentionally avoided — the Tauri SQL plugin uses
- * a sqlx connection pool, so consecutive execute() calls can land on different
- * connections. A BEGIN on connection A followed by an INSERT on connection B
- * causes "database is locked" because A still holds an open transaction.
- * Auto-commit per statement avoids this entirely.
- */
-async function batchedUpsert<T>(
-  items: T[],
-  fn: (item: T) => Promise<boolean>,
-  onSuccess: () => void,
-  onError: (item: T, err: unknown) => void,
-): Promise<BatchResult> {
-  let successes = 0;
-  let errors = 0;
-
-  for (const item of items) {
-    try {
-      const result = await fn(item);
-      if (result) successes++;
-      onSuccess();
-    } catch (err) {
-      errors++;
-      onError(item, err);
-    }
-  }
-
-  return { successes, errors };
-}
 
 async function resolveOpportunityOptionValues(opportunity: Opportunity): Promise<OpportunityOptionValues> {
   const [stage, sellType, opportunityType, recordType, source] = await Promise.all([
@@ -166,150 +132,126 @@ async function syncD365(token: string): Promise<void> {
 
   try {
     const isInitialSync = useSyncStore.getState().initialSyncProgress !== null;
-    let processed = 0;
-    let total = 0;
-
-    const emitProgress = (phase: string) => {
+    const emitProgress = (phase: string, processed: number, total: number) => {
       if (!isInitialSync) return;
       useSyncStore.getState().setInitialSyncProgress({ phase, processed, total });
     };
 
     const adapter = getD365Adapter();
-
-    // Delta sync: only fetch records modified since last sync
     const lastSync = await getAppSetting('last_d365_sync');
     const lastSyncTs = lastSync && lastSync.length > 0 ? lastSync : undefined;
-    console.log(`[sync] D365 delta sync — last sync: ${lastSyncTs ?? 'never'}`);
+    console.log(`[sync] D365 sync — last sync: ${lastSyncTs ?? 'never (initial)'}`);
 
+    // --- Customers ---
+    console.time('[sync] fetch:customers');
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
-    total += customers.length;
-    emitProgress('Syncing customers...');
-    const customerResult = await batchedUpsert(
-      customers,
-      (customer) => upsertCustomerBulk(customer),
-      () => { pulled++; processed++; emitProgress('Syncing customers...'); },
-      (customer, err) => console.error(`[sync] Failed to upsert customer ${customer.name} (${customer.id}):`, err instanceof Error ? err.message : err),
-    );
-    errors += customerResult.errors;
-    console.log(`[sync] Customers: ${customers.length} fetched, ${customerResult.successes} changed, ${customers.length - customerResult.successes - customerResult.errors} unchanged, ${customerResult.errors} errors`);
+    console.timeEnd('[sync] fetch:customers');
+    emitProgress('Syncing customers...', 0, customers.length);
+    console.time('[sync] write:customers');
+    const customerChanged = await bulkUpsertCustomers(customers);
+    console.timeEnd('[sync] write:customers');
+    pulled += customerChanged;
+    console.log(`[sync] Customers: ${customers.length} fetched, ${customerChanged} changed`);
 
-    // Build set of local customer IDs so child entities are scoped to Benelux customers only
     const localCustomerIds = await queryAllCustomerIds();
     console.log(`[sync] ${localCustomerIds.size} local customers — filtering child entities to this scope`);
 
-    const contacts = await adapter.fetchContacts(token, localCustomerIds, lastSyncTs);
-    total += contacts.length;
-    emitProgress('Syncing contacts...');
-    const contactResult = await batchedUpsert(
-      contacts,
-      (contact) => upsertContactBulk(contact),
-      () => { pulled++; processed++; emitProgress('Syncing contacts...'); },
-      (contact, err) => console.error(`[sync] Failed to upsert contact ${contact.firstName} ${contact.lastName} (${contact.id}):`, err instanceof Error ? err.message : err),
-    );
-    console.log(`[sync] Contacts: ${contacts.length} scoped, ${contactResult.successes} changed, ${contactResult.errors} errors`);
-    errors += contactResult.errors;
+    // --- Parallel D365 fetch (contacts + all activity types + opportunities) ---
+    emitProgress('Fetching from D365...', customers.length, customers.length);
+    console.time('[sync] fetch:parallel');
+    const [contacts, phoneCalls, appointments, annotations, tasks, opportunities] = await Promise.all([
+      adapter.fetchContacts(token, localCustomerIds, lastSyncTs),
+      adapter.fetchPhoneCalls(token, localCustomerIds, lastSyncTs).catch((err: unknown) => {
+        console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
+        return [] as Activity[];
+      }),
+      adapter.fetchAppointments(token, localCustomerIds, lastSyncTs).catch((err: unknown) => {
+        console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
+        return [] as Activity[];
+      }),
+      adapter.fetchAnnotations(token, localCustomerIds, lastSyncTs).catch((err: unknown) => {
+        console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
+        return [] as Activity[];
+      }),
+      adapter.fetchTasks(token, localCustomerIds, lastSyncTs).catch((err: unknown) => {
+        console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
+        return [] as FollowUp[];
+      }),
+      fetchD365TeamUserIds(token)
+        .then((teamOwnerIds) => {
+          console.log(`[sync] Resolved ${teamOwnerIds.size} team owner ids for opportunity scope`);
+          return adapter.fetchOpportunities(token, localCustomerIds, teamOwnerIds, lastSyncTs);
+        })
+        .catch((err: unknown) => {
+          console.error('[sync] Failed to fetch opportunities:', err instanceof Error ? err.message : err);
+          return [] as Opportunity[];
+        }),
+    ]);
+    console.timeEnd('[sync] fetch:parallel');
+    console.log(`[sync] Fetched: ${contacts.length} contacts, ${phoneCalls.length} calls, ${appointments.length} appointments, ${annotations.length} annotations, ${tasks.length} tasks, ${opportunities.length} opportunities`);
 
-    // Pull activities from D365 (filtered to local customers)
-    try {
-      console.log('[sync] Fetching phone calls from D365...');
-      const phoneCalls = await adapter.fetchPhoneCalls(token, localCustomerIds, lastSyncTs);
-      total += phoneCalls.length;
-      emitProgress('Syncing calls...');
-      const phoneResult = await batchedUpsert(
-        phoneCalls,
-        (activity) => upsertPulledActivity(activity),
-        () => { pulled++; processed++; emitProgress('Syncing calls...'); },
-        (activity, err) => console.error(`[sync] Failed to upsert phone call ${activity.remoteId}:`, err instanceof Error ? err.message : err),
-      );
-      errors += phoneResult.errors;
-      console.log(`[sync] Phone calls: ${phoneCalls.length} scoped, ${phoneResult.successes} upserted, ${phoneCalls.length - phoneResult.successes - phoneResult.errors} skipped, ${phoneResult.errors} errors`);
-    } catch (err) {
-      console.error('[sync] Failed to fetch phone calls:', err instanceof Error ? err.message : err);
-    }
+    const totalFetched = contacts.length + phoneCalls.length + appointments.length + annotations.length + tasks.length + opportunities.length;
+    let processed = customers.length;
 
-    try {
-      console.log('[sync] Fetching appointments from D365...');
-      const appointments = await adapter.fetchAppointments(token, localCustomerIds, lastSyncTs);
-      total += appointments.length;
-      emitProgress('Syncing appointments...');
-      const appointmentResult = await batchedUpsert(
-        appointments,
-        (activity) => upsertPulledActivity(activity),
-        () => { pulled++; processed++; emitProgress('Syncing appointments...'); },
-        (activity, err) => console.error(`[sync] Failed to upsert appointment ${activity.remoteId}:`, err instanceof Error ? err.message : err),
-      );
-      errors += appointmentResult.errors;
-      console.log(`[sync] Appointments: ${appointments.length} scoped, ${appointmentResult.successes} upserted, ${appointments.length - appointmentResult.successes - appointmentResult.errors} skipped, ${appointmentResult.errors} errors`);
-    } catch (err) {
-      console.error('[sync] Failed to fetch appointments:', err instanceof Error ? err.message : err);
-    }
+    // --- Contacts ---
+    emitProgress('Syncing contacts...', processed, customers.length + totalFetched);
+    console.time('[sync] write:contacts');
+    const contactChanged = await bulkUpsertContacts(contacts, localCustomerIds);
+    console.timeEnd('[sync] write:contacts');
+    pulled += contactChanged;
+    processed += contacts.length;
+    console.log(`[sync] Contacts: ${contacts.length} scoped, ${contactChanged} changed`);
 
-    try {
-      console.log('[sync] Fetching annotations from D365...');
-      const annotations = await adapter.fetchAnnotations(token, localCustomerIds, lastSyncTs);
-      total += annotations.length;
-      emitProgress('Syncing notes...');
-      const annotationResult = await batchedUpsert(
-        annotations,
-        (activity) => upsertPulledActivity(activity),
-        () => { pulled++; processed++; emitProgress('Syncing notes...'); },
-        (activity, err) => console.error(`[sync] Failed to upsert annotation ${activity.remoteId}:`, err instanceof Error ? err.message : err),
-      );
-      errors += annotationResult.errors;
-      console.log(`[sync] Annotations: ${annotations.length} scoped, ${annotationResult.successes} upserted, ${annotations.length - annotationResult.successes - annotationResult.errors} skipped, ${annotationResult.errors} errors`);
-    } catch (err) {
-      console.error('[sync] Failed to fetch annotations:', err instanceof Error ? err.message : err);
-    }
+    // --- Preload lookup state for activities / follow-ups / opportunities ---
+    const [contactIdSet, existingActivityMap, existingFollowUpMap, existingOppMap] = await Promise.all([
+      queryAllContactIds(),
+      preloadActivityState(),
+      preloadFollowUpState(),
+      preloadOpportunityState(),
+    ]);
 
-    // Pull tasks (follow-ups) from D365 (filtered to local customers)
-    try {
-      console.log('[sync] Fetching tasks from D365...');
-      const tasks = await adapter.fetchTasks(token, localCustomerIds, lastSyncTs);
-      total += tasks.length;
-      emitProgress('Syncing tasks...');
-      const taskResult = await batchedUpsert(
-        tasks,
-        (followUp) => upsertPulledFollowUp(followUp),
-        () => { pulled++; processed++; emitProgress('Syncing tasks...'); },
-        (followUp, err) => console.error(`[sync] Failed to upsert task ${followUp.remoteId}:`, err instanceof Error ? err.message : err),
-      );
-      errors += taskResult.errors;
-      console.log(`[sync] Tasks: ${tasks.length} scoped, ${taskResult.successes} upserted, ${tasks.length - taskResult.successes - taskResult.errors} skipped, ${taskResult.errors} errors`);
-    } catch (err) {
-      console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
-    }
+    // --- Activities (phone calls + appointments + annotations combined) ---
+    emitProgress('Syncing activities...', processed, customers.length + totalFetched);
+    console.time('[sync] write:activities');
+    const allActivities = [...phoneCalls, ...appointments, ...annotations];
+    const activityResult = await bulkUpsertActivities(allActivities, localCustomerIds, contactIdSet, existingActivityMap);
+    console.timeEnd('[sync] write:activities');
+    pulled += activityResult.inserted + activityResult.updated;
+    errors += activityResult.errors;
+    processed += allActivities.length;
+    console.log(`[sync] Activities: ${allActivities.length} fetched, ${activityResult.inserted} inserted, ${activityResult.updated} updated, ${activityResult.skipped} skipped, ${activityResult.errors} errors`);
 
-    // Pull opportunities from D365 (filtered to Cloud Users - Belgium team members)
-    try {
-      console.log('[sync] Fetching opportunities from D365...');
-      const teamOwnerIds = await fetchD365TeamUserIds(token);
-      console.log(`[sync] Resolved ${teamOwnerIds.size} team owner ids for opportunity scope`);
-      const opportunities = await adapter.fetchOpportunities(token, localCustomerIds, teamOwnerIds, lastSyncTs);
-      total += opportunities.length;
-      emitProgress('Syncing opportunities...');
-      const opportunityResult = await batchedUpsert(
-        opportunities,
-        (opportunity) => upsertPulledOpportunity(opportunity),
-        () => { pulled++; processed++; emitProgress('Syncing opportunities...'); },
-        (opportunity, err) => console.error(`[sync] Failed to upsert opportunity ${opportunity.remoteId}:`, err instanceof Error ? err.message : err),
-      );
-      errors += opportunityResult.errors;
-      console.log(`[sync] Opportunities: ${opportunities.length} scoped, ${opportunityResult.successes} upserted, ${opportunities.length - opportunityResult.successes - opportunityResult.errors} skipped, ${opportunityResult.errors} errors`);
-    } catch (err) {
-      console.error('[sync] Failed to fetch opportunities:', err instanceof Error ? err.message : err);
-    }
+    // --- Follow-ups (tasks) ---
+    emitProgress('Syncing tasks...', processed, customers.length + totalFetched);
+    console.time('[sync] write:followups');
+    const followUpResult = await bulkUpsertFollowUps(tasks, localCustomerIds, existingFollowUpMap);
+    console.timeEnd('[sync] write:followups');
+    pulled += followUpResult.inserted + followUpResult.updated;
+    errors += followUpResult.errors;
+    processed += tasks.length;
+    console.log(`[sync] Tasks: ${tasks.length} fetched, ${followUpResult.inserted} inserted, ${followUpResult.updated} updated, ${followUpResult.skipped} skipped, ${followUpResult.errors} errors`);
 
-    // Derive cloud customer status from contact types + recompute last activity dates
-    emitProgress('Finishing up...');
+    // --- Opportunities ---
+    emitProgress('Syncing opportunities...', processed, customers.length + totalFetched);
+    console.time('[sync] write:opportunities');
+    const opportunityResult = await bulkUpsertOpportunities(opportunities, localCustomerIds, contactIdSet, existingOppMap);
+    console.timeEnd('[sync] write:opportunities');
+    pulled += opportunityResult.inserted + opportunityResult.updated;
+    errors += opportunityResult.errors;
+    processed += opportunities.length;
+    console.log(`[sync] Opportunities: ${opportunities.length} fetched, ${opportunityResult.inserted} inserted, ${opportunityResult.updated} updated, ${opportunityResult.skipped} skipped, ${opportunityResult.errors} errors`);
+
+    // --- Post-sync derives ---
+    emitProgress('Finishing up...', processed, customers.length + totalFetched);
     await recomputeCloudCustomerStatus();
     await recomputeLastActivityDates();
 
-    await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} upsert errors` : null);
+    await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} errors` : null);
     const now = new Date().toISOString();
     await setAppSetting('last_d365_sync', now);
     store.setLastD365Sync(now);
     if (errors > 0) {
-      console.warn(`[sync] ${errors} records failed to upsert — watermark advanced, failed records retry when modified in D365`);
+      console.warn(`[sync] ${errors} errors — watermark advanced, failed records retry when modified in D365`);
     }
     console.log(`[sync] D365 sync done — pulled ${pulled}, errors ${errors}, watermark set to ${now}`);
   } catch (err) {

@@ -186,6 +186,113 @@ export async function upsertPulledActivity(activity: Activity): Promise<boolean>
   return true;
 }
 
+/** Load remote_id → {localId, syncStatus} map for all D365-pulled activities. One query replaces N per-record SELECTs. */
+export async function preloadActivityState(): Promise<Map<string, { localId: string; syncStatus: string }>> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string; remote_id: string; sync_status: string }[]>(
+    `SELECT id, remote_id, sync_status FROM activities WHERE remote_id IS NOT NULL`,
+  );
+  const map = new Map<string, { localId: string; syncStatus: string }>();
+  for (const row of rows) {
+    map.set(row.remote_id, { localId: row.id, syncStatus: row.sync_status });
+  }
+  return map;
+}
+
+export interface BulkUpsertResult {
+  inserted: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+}
+
+/**
+ * Bulk upsert activities fetched from D365.
+ * - Filters out-of-scope records in memory (no per-row SELECTs).
+ * - Multi-value INSERT for new records (58 rows/batch).
+ * - Individual UPDATE for existing records that need refreshing.
+ */
+export async function bulkUpsertActivities(
+  activities: Activity[],
+  customerIdSet: Set<string>,
+  contactIdSet: Set<string>,
+  existing: Map<string, { localId: string; syncStatus: string }>,
+): Promise<BulkUpsertResult> {
+  if (activities.length === 0) return { inserted: 0, updated: 0, skipped: 0, errors: 0 };
+  const db = await getDb();
+
+  const toInsert: Activity[] = [];
+  const toUpdate: Activity[] = [];
+  let skipped = 0;
+
+  for (const activity of activities) {
+    if (!customerIdSet.has(activity.customerId)) { skipped++; continue; }
+    const contactId = activity.contactId && contactIdSet.has(activity.contactId) ? activity.contactId : null;
+    const mapped: Activity = contactId !== activity.contactId ? { ...activity, contactId } : activity;
+    const prev = activity.remoteId ? existing.get(activity.remoteId) : undefined;
+    if (prev) {
+      if (prev.syncStatus === 'pending') { skipped++; continue; }
+      toUpdate.push(mapped);
+    } else {
+      toInsert.push(mapped);
+    }
+  }
+
+  const COLS = 17;
+  const CHUNK = Math.floor(999 / COLS); // 58 rows per batch
+  let inserted = 0;
+  let errors = 0;
+
+  for (let i = 0; i < toInsert.length; i += CHUNK) {
+    const chunk = toInsert.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap((a) => [
+      a.id, a.customerId, a.contactId, a.type, a.subject, a.description,
+      a.occurredAt, a.startTime, a.activityStatus, a.direction,
+      a.createdById, a.createdByName, 'synced', a.remoteId, 'd365',
+      a.createdAt, a.updatedAt,
+    ]);
+    try {
+      const result = await db.execute(
+        `INSERT OR IGNORE INTO activities (
+          id, customer_id, contact_id, type, subject, description, occurred_at, start_time,
+          activity_status, direction, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+        ) VALUES ${placeholders}`,
+        values,
+      );
+      inserted += result.rowsAffected;
+    } catch (err) {
+      console.error('[activity] Bulk insert chunk failed:', err instanceof Error ? err.message : err);
+      errors++;
+    }
+  }
+
+  let updated = 0;
+  for (const a of toUpdate) {
+    try {
+      await db.execute(
+        `UPDATE activities SET customer_id=$1, contact_id=$2, type=$3, subject=$4, description=$5,
+         occurred_at=$6, start_time=$7, activity_status=$8, direction=$9,
+         created_by_id=$10, created_by_name=$11, sync_status='synced', source='d365', updated_at=$12
+         WHERE remote_id=$13`,
+        [
+          a.customerId, a.contactId, a.type, a.subject, a.description,
+          a.occurredAt, a.startTime, a.activityStatus, a.direction,
+          a.createdById, a.createdByName, a.updatedAt, a.remoteId,
+        ],
+      );
+      updated++;
+    } catch (err) {
+      console.error(`[activity] Failed to update activity ${a.remoteId}:`, err instanceof Error ? err.message : err);
+      errors++;
+    }
+  }
+
+  return { inserted, updated, skipped, errors };
+}
+
 export async function countPendingActivities(): Promise<number> {
   const db = await getDb();
   const rows = await db.select<{ count: number }[]>(
