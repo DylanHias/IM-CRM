@@ -20,6 +20,7 @@ export function useCustomers() {
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
   const d365UserId = useD365UserId();
   const appliedOwnerFilter = useRef(false);
+  const prevSyncAt = useRef(lastD365SyncAt);
 
   // Apply "show my customers first" default filter once on mount
   useEffect(() => {
@@ -32,9 +33,11 @@ export function useCustomers() {
     }
   }, [account, d365UserId, setFilterOwnerId]);
 
-  // Load customers and favorites (re-runs after sync completes when list is still empty)
+  // Load customers and favorites; always reloads after sync so cloud_customer is fresh
   useEffect(() => {
-    if (customers.length > 0) return;
+    const syncUpdated = lastD365SyncAt !== prevSyncAt.current;
+    prevSyncAt.current = lastD365SyncAt;
+    if (customers.length > 0 && !syncUpdated) return;
     setLoading(true);
     const load = async () => {
       try {

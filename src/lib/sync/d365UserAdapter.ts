@@ -31,11 +31,11 @@ async function fetchLastActionByUser(baseUrl: string, token: string): Promise<Ma
   const results = await Promise.allSettled(
     LAST_ACTION_ENTITIES.map((entity) =>
       fetch(
-        `${baseUrl}/api/data/v9.2/${entity}?$apply=groupby((_modifiedby_value),aggregate(modifiedon with max as maxDate))`,
+        `${baseUrl}/api/data/v9.2/${entity}?$select=_modifiedby_value,modifiedon&$orderby=modifiedon desc&$top=500`,
         { headers },
       ).then((res) => {
-        if (!res.ok) throw new Error(`D365 ${entity} aggregate error ${res.status}`);
-        return res.json() as Promise<{ value: { _modifiedby_value: string; maxDate: string }[] }>;
+        if (!res.ok) throw new Error(`D365 ${entity} fetch error ${res.status}`);
+        return res.json() as Promise<{ value: { _modifiedby_value: string; modifiedon: string }[] }>;
       }),
     ),
   );
@@ -48,7 +48,7 @@ async function fetchLastActionByUser(baseUrl: string, token: string): Promise<Ma
     }
     for (const row of result.value.value) {
       const userId = row._modifiedby_value;
-      const date = row.maxDate;
+      const date = row.modifiedon;
       if (!userId || !date) continue;
       const existing = map.get(userId);
       if (!existing || date > existing) map.set(userId, date);
