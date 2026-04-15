@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -15,7 +15,6 @@ const POLL_INTERVAL = 15 * 60 * 1000;
 export function useAppUpdater(): AppUpdaterState {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const updateRef = useRef<Awaited<ReturnType<typeof import('@tauri-apps/plugin-updater').check>> | null>(null);
 
   const checkForUpdate = useCallback(async () => {
     if (!isTauriApp()) return;
@@ -23,7 +22,6 @@ export function useAppUpdater(): AppUpdaterState {
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check();
       if (update) {
-        updateRef.current = update;
         setUpdateAvailable(true);
         if (useSettingsStore.getState().showUpdateToasts) {
           toast.info(`Update ${update.version} available`, {
@@ -44,10 +42,16 @@ export function useAppUpdater(): AppUpdaterState {
   }, [checkForUpdate]);
 
   const install = useCallback(async () => {
-    const update = updateRef.current;
-    if (!update || downloading) return;
+    if (downloading) return;
     try {
       setDownloading(true);
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (!update) {
+        setUpdateAvailable(false);
+        setDownloading(false);
+        return;
+      }
       if (update.body) {
         await storeChangelog(update.body, update.version);
       }
