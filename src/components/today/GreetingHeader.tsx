@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { pickGreeting } from '@/lib/today/greetings';
+import { Badge } from '@/components/ui/badge';
 
 export function GreetingHeader() {
   const account = useAuthStore((s) => s.account);
@@ -25,9 +26,9 @@ export function GreetingHeader() {
           <span key={i}>
             {part}
             {i < parts.length - 1 && (
-              <span className="text-foreground font-bold bg-primary/10 px-1 rounded">
+              <Badge variant="purple" className="text-base font-bold px-2 py-0 rounded-md align-baseline inline-flex">
                 {firstName}
-              </span>
+              </Badge>
             )}
           </span>
         ))}

@@ -8,15 +8,21 @@ import { GlobalSearchBar } from '@/components/today/GlobalSearchBar';
 import { TodayFollowUpsCard } from '@/components/today/TodayFollowUpsCard';
 import { RecentActivitiesCard } from '@/components/today/RecentActivitiesCard';
 import { OpenOpportunitiesCard } from '@/components/today/OpenOpportunitiesCard';
+import { FavoritedCustomersCard } from '@/components/today/FavoritedCustomersCard';
 import { useAuthStore } from '@/store/authStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
+import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { Activity as ActivityType, FollowUp } from '@/types/entities';
 
 export default function TodayPage() {
   const account = useAuthStore((s) => s.account);
   const d365UserId = useD365UserId();
+
+  // Ensures customerStore.customers and allContacts are loaded for RecentActivitiesCard,
+  // FavoritedCustomersCard, and GlobalSearchBar
+  useCustomers();
 
   const [todayFollowUps, setTodayFollowUps] = useState<FollowUp[]>([]);
   const [recentActivities, setRecentActivities] = useState<ActivityType[]>([]);
@@ -107,6 +113,8 @@ export default function TodayPage() {
       </div>
 
       <OpenOpportunitiesCard />
+
+      <FavoritedCustomersCard />
     </div>
   );
 }
