@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useSyncStore } from '@/store/syncStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 /**
@@ -12,6 +13,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
  */
 export function useD365UserId(): string | null {
   const account = useAuthStore((s) => s.account);
+  const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
   const [d365UserId, setD365UserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function useD365UserId(): string | null {
       }
     };
     resolve();
-  }, [account?.username]);
+  }, [account?.username, lastD365SyncAt]);
 
   return d365UserId;
 }

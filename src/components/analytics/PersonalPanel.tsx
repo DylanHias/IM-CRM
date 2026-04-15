@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSyncStore } from '@/store/syncStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { PeriodPicker, periodToRange, prevPeriodRange } from '@/components/analytics/PeriodPicker';
@@ -27,6 +28,7 @@ export function PersonalPanel() {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
+  const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
   const userId = d365UserId ?? account?.localAccountId ?? '';
 
   const { personal, isLoadingPersonal, loadPersonal } = useAnalyticsStore();
@@ -36,7 +38,7 @@ export function PersonalPanel() {
     const range = periodToRange(period);
     const prev = prevPeriodRange(period);
     loadPersonal(userId, range, prev);
-  }, [userId, period, loadPersonal]);
+  }, [userId, period, lastD365SyncAt, loadPersonal]);
 
   if (isLoadingPersonal && !personal) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
