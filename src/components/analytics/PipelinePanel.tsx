@@ -300,7 +300,7 @@ export function PipelinePanel({ refreshKey }: Props) {
 
           {p.byVendor.length > 0 && (
             <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">By Vendor</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">By Reseller</p>
               <p className="text-xs text-muted-foreground mb-3">Average deal size · top 10</p>
               <ChartContainer config={vendorConfig} className="w-full" style={{ height: Math.max(120, p.byVendor.length * 40) }}>
                 <BarChart data={p.byVendor} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
