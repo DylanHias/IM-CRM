@@ -1,6 +1,6 @@
-# Today
+# Dashboard
 
-The Today screen is your personal dashboard and the first thing you see when you open the app. It gives you a snapshot of what matters right now, without having to dig through different sections.
+The Dashboard is your personal overview and the first thing you see when you open the app. It gives you a snapshot of what matters right now, without having to dig through different sections.
 
 ## What you see
 
@@ -23,6 +23,6 @@ The Today screen is your personal dashboard and the first thing you see when you
 
 ## Tips
 
-- The Today screen is your default landing page when you open the app.
+- The Dashboard is your default landing page when you open the app.
 - Use the search bar to jump to any customer, contact, opportunity, or activity without navigating through separate sections.
 - Completing a follow-up from the Due Today card removes it from the list immediately.

@@ -27,7 +27,7 @@ interface DashboardCache {
 }
 let cache: DashboardCache | null = null;
 
-export default function TodayPage() {
+export default function DashboardPage() {
   const account = useAuthStore((s) => s.account);
   // Read resolved D365 user ID directly from the sync store — available immediately
   // after the first sync without waiting for the async useD365UserId hook.
