@@ -39,16 +39,19 @@ export default function TodayPage() {
     const load = async () => {
       try {
         const { queryDueTodayFollowUps, queryAllFollowUps } = await import('@/lib/db/queries/followups');
-        const { queryRecentActivities, queryMyActivityCountSince } = await import('@/lib/db/queries/activities');
+        const { queryMyRecentActivities, queryMyActivityCountSince } = await import('@/lib/db/queries/activities');
 
         const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+        const altId = altUserId && altUserId !== userId ? altUserId : null;
 
         const [dueTodayFUs, recentActs, allFUs, actCount] = await Promise.all([
           queryDueTodayFollowUps(userId, altUserId),
-          queryRecentActivities(10),
+          userId
+            ? queryMyRecentActivities(userId, altId, sevenDaysAgo)
+            : Promise.resolve([]),
           queryAllFollowUps(),
           userId
-            ? queryMyActivityCountSince(userId, altUserId && altUserId !== userId ? altUserId : null, sevenDaysAgo)
+            ? queryMyActivityCountSince(userId, altId, sevenDaysAgo)
             : Promise.resolve(0),
         ]);
 
@@ -70,13 +73,13 @@ export default function TodayPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       <GreetingHeader />
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
       {/* Metric cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MetricCard
           label="Due Today"
           value={loading ? '—' : todayFollowUps.length}
@@ -98,7 +101,7 @@ export default function TodayPage() {
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TodayFollowUpsCard followUps={todayFollowUps} onCompleted={handleFollowUpCompleted} />
         <RecentActivitiesCard activities={recentActivities} />
       </div>

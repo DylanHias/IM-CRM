@@ -35,7 +35,7 @@ import timeline from '../../../../docs/help/timeline.md';
 import shortcuts from '../../../../docs/help/shortcuts.md';
 
 const TABS = [
-  { id: 'today', label: 'Today', icon: LayoutDashboard },
+  { id: 'today', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'getting-started', label: 'Getting Started', icon: Rocket },
   { id: 'customers', label: 'Customers', icon: Users },
   { id: 'activities', label: 'Activities', icon: Calendar },

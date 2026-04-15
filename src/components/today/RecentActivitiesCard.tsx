@@ -1,17 +1,19 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Clock, Phone, Users, FileText, MapPin } from 'lucide-react';
+import { Clock, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useCustomerStore } from '@/store/customerStore';
 import { cn } from '@/lib/utils';
+import { ACTIVITY_ICONS, STATUS_CONFIG } from '@/components/activities/ActivityItem';
 import type { Activity } from '@/types/entities';
 
-const TYPE_META: Record<Activity['type'], { icon: typeof Clock; label: string }> = {
-  call: { icon: Phone, label: 'Call' },
-  meeting: { icon: Users, label: 'Meeting' },
-  note: { icon: FileText, label: 'Note' },
-  visit: { icon: MapPin, label: 'Visit' },
+const BORDER_COLOR: Record<Activity['type'], string> = {
+  meeting: 'border-l-activity-meeting',
+  visit: 'border-l-activity-visit',
+  call: 'border-l-activity-call',
+  note: 'border-l-activity-note',
 };
 
 interface Props {
@@ -38,29 +40,56 @@ export function RecentActivitiesCard({ activities }: Props) {
         ) : (
           <ul className="space-y-1.5">
             {activities.map((a) => {
-              const { icon: Icon, label } = TYPE_META[a.type] ?? { icon: Clock, label: a.type };
+              const typeConfig = ACTIVITY_ICONS[a.type] ?? ACTIVITY_ICONS.note;
+              const statusConfig = STATUS_CONFIG[a.activityStatus];
+              const Icon = typeConfig.icon;
+              const StatusIcon = statusConfig.icon;
+              const borderClass = BORDER_COLOR[a.type] ?? 'border-l-muted';
+
               const occurred = new Date(a.occurredAt).toLocaleDateString('en-BE', {
-                month: 'short', day: 'numeric',
+                month: 'short',
+                day: 'numeric',
               });
+
               return (
                 <li
                   key={a.id}
-                  className="flex items-start gap-2.5 cursor-pointer group"
+                  className={cn(
+                    'flex items-center gap-2.5 cursor-pointer rounded-md px-2 py-2',
+                    'border-l-2 border border-transparent',
+                    borderClass,
+                    'hover:bg-accent/50 transition-colors',
+                  )}
                   onClick={() => router.push(`/customers?id=${a.customerId}&tab=activities`)}
                 >
+                  {/* Type icon */}
                   <div className={cn(
-                    'mt-0.5 shrink-0 w-5 h-5 rounded-md flex items-center justify-center bg-muted',
-                    'group-hover:bg-accent transition-colors',
+                    'shrink-0 w-7 h-7 rounded-md flex items-center justify-center',
+                    typeConfig.bgClass,
                   )}>
-                    <Icon size={11} className="text-muted-foreground" />
+                    <Icon size={13} className={typeConfig.colorClass} />
                   </div>
+
+                  {/* Subject + customer */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate leading-snug">{a.subject}</p>
+                    <p className="text-sm font-medium truncate leading-tight">{a.subject}</p>
                     <p className="text-xs text-muted-foreground truncate">{customerName(a.customerId)}</p>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-[10px] text-muted-foreground">{label}</p>
-                    <p className="text-[10px] text-muted-foreground">{occurred}</p>
+
+                  {/* Status + date */}
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    <Badge
+                      variant="outline"
+                      className={cn('text-[10px] px-1.5 py-0 h-4 gap-0.5 font-medium', statusConfig.className)}
+                    >
+                      <StatusIcon size={8} />
+                      {statusConfig.label}
+                    </Badge>
+                    <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                      {a.type === 'call' && a.direction === 'outgoing' && <ArrowUpRight size={9} />}
+                      {a.type === 'call' && a.direction === 'incoming' && <ArrowDownLeft size={9} />}
+                      {occurred}
+                    </div>
                   </div>
                 </li>
               );

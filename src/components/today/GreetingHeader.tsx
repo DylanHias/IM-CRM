@@ -16,9 +16,22 @@ export function GreetingHeader() {
     month: 'long',
   });
 
+  const parts = greeting.split(firstName);
+
   return (
     <div>
-      <p className="text-2xl font-semibold tracking-tight">{greeting}</p>
+      <p className="text-2xl font-semibold tracking-tight">
+        {parts.map((part, i) => (
+          <span key={i}>
+            {part}
+            {i < parts.length - 1 && (
+              <span className="text-foreground font-bold bg-primary/10 px-1 rounded">
+                {firstName}
+              </span>
+            )}
+          </span>
+        ))}
+      </p>
       <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
     </div>
   );

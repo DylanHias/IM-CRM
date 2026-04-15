@@ -41,7 +41,7 @@ const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string }[] = [
 ];
 
 const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }> = {
-  '/dashboard': { label: 'Today', icon: LayoutDashboard },
+  '/dashboard': { label: 'Dashboard', icon: LayoutDashboard },
   '/customers': { label: 'Customers', icon: Users },
   '/sync': { label: 'Sync', icon: RefreshCw },
   '/followups': { label: 'Follow-Ups', icon: CheckSquare },
