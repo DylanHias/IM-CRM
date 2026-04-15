@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import {
   AreaChart, Area,
-  BarChart, Bar, PieChart, Pie, Cell,
+  BarChart, Bar,
   XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
@@ -12,28 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Search, X } from 'lucide-react';
 
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2, 220 70% 50%))',
-  'hsl(var(--chart-3, 150 60% 40%))',
-  'hsl(var(--chart-4, 280 65% 60%))',
-  'hsl(var(--chart-5, 340 75% 55%))',
-  'hsl(var(--destructive))',
-  'hsl(var(--warning, 45 93% 47%))',
-  'hsl(var(--muted-foreground))',
-];
-
 const ACTIVITY_TYPES = ['meeting', 'call', 'visit', 'note'] as const;
-
-const winRateChartConfig = {
-  won: { label: 'Won', color: 'hsl(142 71% 45%)' },
-  lost: { label: 'Lost', color: 'hsl(var(--destructive))' },
-  open: { label: 'Open', color: 'hsl(var(--primary))' },
-};
-
-const pipelineChartConfig = {
-  count: { label: 'Deals', color: 'hsl(var(--primary))' },
-};
 
 const activityChartConfig = {
   meeting: { label: 'Meeting', color: 'hsl(var(--primary))' },
@@ -53,7 +32,7 @@ const TIME_RANGE_LABELS: Record<TimeRange, string> = {
 export function AnalyticsReports() {
   const {
     dataQuality, activityTimeline,
-    activityByUser, pipelineByStage, winRate,
+    activityByUser,
     isLoading, loadAnalytics,
   } = useAdminStore();
   const [timeRange, setTimeRange] = useState<TimeRange>('90d');
@@ -80,14 +59,6 @@ export function AnalyticsReports() {
   if (isLoading && !dataQuality) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading analytics...</p>;
   }
-
-  const winRateData = winRate
-    ? [
-        { name: 'Won', value: winRate.won },
-        { name: 'Lost', value: winRate.lost },
-        { name: 'Open', value: winRate.open },
-      ].filter((d) => d.value > 0)
-    : [];
 
   const qualityCards = dataQuality ? [
     { label: 'Customers w/o Contacts', value: dataQuality.customersWithoutContacts, total: dataQuality.totalCustomers },
@@ -248,97 +219,6 @@ export function AnalyticsReports() {
         )}
       </div>
 
-      {/* Opportunity Statistics divider */}
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-border/60" />
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Opportunity Statistics</span>
-        <div className="h-px flex-1 bg-border/60" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Pipeline by Stage */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-          <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pipeline by Stage</p>
-          <p className="mb-3 text-xs text-muted-foreground">Deals per stage · hover for revenue</p>
-          <ChartContainer config={pipelineChartConfig} className="aspect-auto h-[200px] w-full">
-            <BarChart data={pipelineByStage}>
-              <CartesianGrid vertical={false} className="stroke-border" />
-              <XAxis
-                dataKey="stage"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={4}
-                interval={0}
-                tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
-                  const words = payload.value.split(' ');
-                  const lines: string[] = [];
-                  let cur = '';
-                  for (const w of words) {
-                    if (cur && (cur + ' ' + w).length > 12) { lines.push(cur); cur = w; }
-                    else cur = cur ? cur + ' ' + w : w;
-                  }
-                  if (cur) lines.push(cur);
-                  return (
-                    <text x={x} y={y} textAnchor="middle" fontSize={10} fill="currentColor">
-                      {lines.map((line, i) => (
-                        <tspan key={i} x={x} dy={i === 0 ? 0 : 12}>{line}</tspan>
-                      ))}
-                    </text>
-                  );
-                }}
-              />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, _name, item) => (
-                      <div className="space-y-0.5 text-xs">
-                        <p className="font-medium">{value} deals</p>
-                        <p className="text-muted-foreground">
-                          Revenue: €{Number(item.payload.totalRevenue).toLocaleString('nl-BE')}
-                        </p>
-                      </div>
-                    )}
-                  />
-                }
-              />
-              <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        </div>
-
-        {/* Win Rate */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-          <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
-          <p className="mb-3 text-xs text-muted-foreground">Won · Lost · Open</p>
-          <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
-            <PieChart>
-              <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-              <Pie
-                data={winRateData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                dataKey="value"
-                label={({ value }) => value}
-                labelLine
-              >
-                {winRateData.map((entry) => (
-                  <Cell key={entry.name} fill={winRateChartConfig[entry.name.toLowerCase() as keyof typeof winRateChartConfig]?.color ?? COLORS[0]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-          <div className="flex items-center justify-center gap-4 mt-2">
-            {Object.entries(winRateChartConfig).map(([key, { label, color }]) => (
-              <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-                {label}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

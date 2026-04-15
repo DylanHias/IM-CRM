@@ -140,7 +140,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
   const multiVendorRate =
     kpiRow && kpiRow.totalCount > 0 ? (kpiRow.multiCount / kpiRow.totalCount) * 100 : 0;
 
-  const [forecast, expiring, bySellType, byVendor, stageFunnel] = await Promise.all([
+  const [forecast, expiring, bySellType, byVendor, stageFunnel, winRateRows] = await Promise.all([
     db.select<ForecastPoint[]>(
       `SELECT strftime('%Y-%m', expiration_date) as month,
          COALESCE(SUM(estimated_revenue * probability / 100.0), 0) as weighted,
@@ -194,7 +194,14 @@ export async function queryPipelineData(): Promise<PipelineData> {
        WHERE status = 'Open'
        GROUP BY stage`,
     ),
+
+    db.select<{ status: string; count: number }[]>(
+      `SELECT status, COUNT(*) as count FROM opportunities GROUP BY status`,
+    ),
   ]);
+
+  const winRateMap: Record<string, number> = {};
+  for (const r of winRateRows) winRateMap[r.status] = r.count;
 
   return {
     kpis: {
@@ -208,6 +215,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
     bySellType,
     byVendor,
     stageFunnel,
+    winRate: { won: winRateMap['Won'] ?? 0, lost: winRateMap['Lost'] ?? 0, open: winRateMap['Open'] ?? 0 },
   };
 }
 

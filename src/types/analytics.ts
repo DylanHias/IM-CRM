@@ -56,6 +56,7 @@ export interface PipelineData {
   bySellType: DealBySellType[];
   byVendor: DealByVendor[];
   stageFunnel: StageFunnelPoint[];
+  winRate: { won: number; lost: number; open: number };
 }
 
 // ── Customers ────────────────────────────────────────────

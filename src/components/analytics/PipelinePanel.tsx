@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Target, TrendingUp, Layers, Users } from 'lucide-react';
 import type { StageFunnelPoint } from '@/types/analytics';
@@ -37,6 +37,12 @@ const forecastConfig = {
 
 const funnelConfig = {
   count: { label: 'Deals', color: 'hsl(var(--primary))' },
+};
+
+const winRateChartConfig = {
+  won: { label: 'Won', color: 'hsl(142 71% 45%)' },
+  lost: { label: 'Lost', color: 'hsl(var(--destructive))' },
+  open: { label: 'Open', color: 'hsl(var(--primary))' },
 };
 
 const sellTypeConfig = {
@@ -153,6 +159,39 @@ export function PipelinePanel() {
           <p className="py-8 text-center text-sm text-muted-foreground">No open opportunities.</p>
         )}
       </div>
+
+      {/* Win Rate */}
+      {p && (p.winRate.won > 0 || p.winRate.lost > 0 || p.winRate.open > 0) && (() => {
+        const winRateData = [
+          { name: 'Won', value: p.winRate.won },
+          { name: 'Lost', value: p.winRate.lost },
+          { name: 'Open', value: p.winRate.open },
+        ].filter((d) => d.value > 0);
+        return (
+          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Win Rate</p>
+            <p className="text-xs text-muted-foreground mb-4">Won · Lost · Open — all time</p>
+            <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
+              <PieChart>
+                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                <Pie data={winRateData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ value }) => value} labelLine>
+                  {winRateData.map((entry) => (
+                    <Cell key={entry.name} fill={winRateChartConfig[entry.name.toLowerCase() as keyof typeof winRateChartConfig]?.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+            <div className="flex items-center justify-center gap-4 mt-2">
+              {Object.entries(winRateChartConfig).map(([key, { label, color }]) => (
+                <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                  {label}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Forecast over time */}
       {p && p.forecast.length > 0 && (
