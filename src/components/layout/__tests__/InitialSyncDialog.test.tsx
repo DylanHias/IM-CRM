@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { InitialSyncDialog } from '../InitialSyncDialog';
 import { useSyncStore } from '@/store/syncStore';
 import { useAuthStore } from '@/store/authStore';
 
+// Stable reference so the useEffect([needsInitialSync, triggerSync]) dep doesn't
+// change on every render and keep act() spinning indefinitely.
+const mockTriggerSync = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
 // Mock useSync to prevent actual sync calls
 vi.mock('@/hooks/useSync', () => ({
   useSync: () => ({
-    triggerSync: vi.fn().mockResolvedValue(undefined),
+    triggerSync: mockTriggerSync,
     isOnline: true,
     isSyncing: false,
     lastD365SyncAt: null,
@@ -57,10 +61,10 @@ describe('InitialSyncDialog', () => {
     useSyncStore.setState({
       initialSyncProgress: { phase: 'Syncing customers...', processed: 50, total: 200 },
     });
-    render(<InitialSyncDialog />);
-    await waitFor(() => {
-      expect(screen.getByText('Setting up your workspace')).toBeInTheDocument();
+    await act(async () => {
+      render(<InitialSyncDialog />);
     });
+    expect(screen.getByText('Setting up your workspace')).toBeInTheDocument();
     expect(screen.getByText('Syncing customers...')).toBeInTheDocument();
     expect(screen.getByText('50 / 200 records')).toBeInTheDocument();
   });
@@ -69,11 +73,11 @@ describe('InitialSyncDialog', () => {
     useSyncStore.setState({
       initialSyncProgress: { phase: 'Syncing contacts...', processed: 75, total: 100 },
     });
-    render(<InitialSyncDialog />);
-    await waitFor(() => {
-      expect(screen.getByTestId('sync-progress-fill')).toBeInTheDocument();
+    await act(async () => {
+      render(<InitialSyncDialog />);
     });
     const progressBar = screen.getByTestId('sync-progress-fill');
+    expect(progressBar).toBeInTheDocument();
     expect(progressBar).toHaveStyle({ width: '75%' });
   });
 });
