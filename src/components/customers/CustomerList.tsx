@@ -122,9 +122,10 @@ const itemVariants = {
 
 interface CustomerListProps {
   customers: Customer[];
+  showFavoriteButton?: boolean;
 }
 
-export function CustomerList({ customers }: CustomerListProps) {
+export function CustomerList({ customers, showFavoriteButton = true }: CustomerListProps) {
   const router = useRouter();
   const { setSelectedCustomerId, favoriteIds, toggleFavorite } = useCustomerStore();
 
@@ -183,16 +184,18 @@ export function CustomerList({ customers }: CustomerListProps) {
                 </Meta>
               </Info>
 
-              <button
-                className={`bookmark-btn ml-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-all ${isFavorite ? 'opacity-100' : 'opacity-0'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(customer.id);
-                }}
-                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
-              </button>
+              {showFavoriteButton && (
+                <button
+                  className={`bookmark-btn ml-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-all ${isFavorite ? 'opacity-100' : 'opacity-0'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(customer.id);
+                  }}
+                  title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
+                </button>
+              )}
 
               <Right>
                 <Badge

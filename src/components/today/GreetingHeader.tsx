@@ -26,7 +26,7 @@ export function GreetingHeader() {
           <span key={i}>
             {part}
             {i < parts.length - 1 && (
-              <Badge variant="purple" className="text-base font-bold px-2 py-0 rounded-md align-baseline inline-flex">
+              <Badge variant="purple" className="text-2xl font-semibold px-2 py-0 rounded-md align-middle inline-flex">
                 {firstName}
               </Badge>
             )}

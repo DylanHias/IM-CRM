@@ -22,7 +22,7 @@ export function FavoritedCustomersCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <CustomerList customers={favorites} />
+        <CustomerList customers={favorites} showFavoriteButton={false} />
       </CardContent>
     </Card>
   );
