@@ -43,7 +43,7 @@ const TEMPLATES = [
   '{name}. Remarkable. You found the login button again.',
   'Day one of {name} pretending to be productive. Let\'s go.',
   'Hi {name}. Please ignore the previous greeting.',
-  'Your enemies are already working, {name}. Just saying.',
+  'Your competitors are already working, {name}. Just saying.',
 ];
 
 export function pickGreeting(name: string): string {
