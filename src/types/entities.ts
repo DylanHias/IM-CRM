@@ -35,6 +35,9 @@ export interface Contact {
   notes: string | null;
   contactType: string | null;
   cloudContact: boolean | null;
+  syncStatus: 'pending' | 'synced' | 'error';
+  remoteId: string | null;
+  source: 'local' | 'd365';
   syncedAt: string;
   createdAt: string;
   updatedAt: string;

@@ -36,6 +36,9 @@ export interface ContactRow {
   notes: string | null;
   contact_type: string | null;
   cloud_contact: number | null;
+  sync_status: string;
+  remote_id: string | null;
+  source: string | null;
   synced_at: string;
   created_at: string;
   updated_at: string;

@@ -5,9 +5,10 @@ import { getD365Adapter } from '@/lib/sync/d365Adapter';
 import { markActivitySynced } from '@/lib/db/queries/activities';
 import { markFollowUpSynced } from '@/lib/db/queries/followups';
 import { markOpportunitySynced } from '@/lib/db/queries/opportunities';
-import { queryContactPhone } from '@/lib/db/queries/contacts';
+import { markContactSynced, queryContactPhone } from '@/lib/db/queries/contacts';
+import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
-import type { Activity, FollowUp, Opportunity } from '@/types/entities';
+import type { Activity, Contact, FollowUp, Opportunity } from '@/types/entities';
 import type { OpportunityOptionValues } from '@/lib/sync/d365Adapter';
 
 async function tryDirectPush<T>(
@@ -79,6 +80,35 @@ export async function directPushFollowUp(
     return { remoteId: result.result };
   }
   return null;
+}
+
+export async function directPushContact(
+  contact: Contact,
+): Promise<{ remoteId: string } | null> {
+  const result = await tryDirectPush(async (token) => {
+    const adapter = getD365Adapter();
+    return adapter.pushContact(token, contact);
+  });
+
+  if (result.success) {
+    await markContactSynced(contact.id, result.result);
+    return { remoteId: result.result };
+  }
+  return null;
+}
+
+export async function directDeleteContact(
+  remoteId: string,
+): Promise<boolean> {
+  const result = await tryDirectPush(async (token) => {
+    const adapter = getD365Adapter();
+    await adapter.deleteContact(token, remoteId);
+  });
+
+  if (!result.success) {
+    await insertPendingDelete('contact', remoteId);
+  }
+  return result.success;
 }
 
 export async function directDeleteActivity(

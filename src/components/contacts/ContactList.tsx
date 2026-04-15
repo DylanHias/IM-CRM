@@ -11,6 +11,7 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { ContactForm } from '@/components/contacts/ContactForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { deleteContact } from '@/lib/db/queries/contacts';
+import { directDeleteContact } from '@/lib/sync/directPushService';
 import type { Contact } from '@/types/entities';
 
 interface ContactListProps {
@@ -73,6 +74,9 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
     try {
       if (isTauriApp()) {
         await deleteContact(contact.id);
+        if (contact.remoteId) {
+          await directDeleteContact(contact.remoteId);
+        }
       }
       onContactDeleted(contact.id);
     } catch (err) {

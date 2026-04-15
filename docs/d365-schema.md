@@ -50,7 +50,19 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `im360_cloudcontact` | Cloud Contact flag (custom boolean) |
 | `modifiedon` | Last modified |
 
-### Push: N/A (read-only)
+### Push Fields
+| Field | Description |
+|---|---|
+| `firstname` | First name |
+| `lastname` | Last name |
+| `jobtitle` | Job title |
+| `emailaddress1` | Email |
+| `telephone1` | Phone |
+| `mobilephone` | Mobile |
+| `parentcustomerid_account@odata.bind` | Parent account lookup (`/accounts(id)`) |
+| `im360_cloudcontact` | Cloud Contact flag (boolean) |
+
+**Note:** `im360_contacttype` is not pushed — only the formatted label is stored locally, not the numeric option set value. `notes` is local-only.
 
 ---
 

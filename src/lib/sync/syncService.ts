@@ -1,7 +1,7 @@
 import { getD365Adapter } from './d365Adapter';
 import { fetchD365TeamUserIds } from './d365UserAdapter';
 import { upsertCustomerBulk, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
-import { upsertContactBulk, queryContactPhone } from '@/lib/db/queries/contacts';
+import { upsertContactBulk, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, upsertPulledActivity } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, upsertPulledFollowUp } from '@/lib/db/queries/followups';
 import {
@@ -86,6 +86,7 @@ export async function pushPendingChanges(token: string): Promise<void> {
   console.log('[sync] Pushing pending changes');
 
   try {
+    await pushPendingContacts(token);
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
     await pushPendingOpportunities(token);
@@ -116,6 +117,7 @@ export async function runFullSync(token: string): Promise<void> {
   try {
     await syncOptionSets(token);
     await syncD365(token);
+    await pushPendingContacts(token);
     await pushPendingActivities(token);
     await pushPendingFollowUps(token);
     await pushPendingOpportunities(token);
@@ -299,6 +301,28 @@ async function syncD365(token: string): Promise<void> {
   }
 }
 
+async function pushPendingContacts(token: string): Promise<void> {
+  const pending = await queryPendingContacts();
+  if (pending.length === 0) return;
+
+  console.log(`[sync] Pushing ${pending.length} pending contacts to D365`);
+  const adapter = getD365Adapter();
+  let pushed = 0;
+
+  for (const contact of pending) {
+    try {
+      const remoteId = await adapter.pushContact(token, contact);
+      await markContactSynced(contact.id, remoteId);
+      pushed++;
+    } catch (err) {
+      console.error(`[sync] Failed to push contact "${contact.firstName} ${contact.lastName}" (${contact.id}):`, err instanceof Error ? err.message : err);
+      await markContactSyncError(contact.id);
+    }
+  }
+
+  console.log(`[sync] Pushed ${pushed}/${pending.length} contacts`);
+}
+
 async function pushPendingActivities(token: string): Promise<void> {
   const store = useSyncStore.getState();
   const pending = await queryPendingActivities();
@@ -422,6 +446,8 @@ async function pushPendingDeletes(token: string): Promise<void> {
         await adapter.deleteOpportunity(token, item.remoteId);
       } else if (item.entityType === 'task') {
         await adapter.deleteFollowUp(token, item.remoteId);
+      } else if (item.entityType === 'contact') {
+        await adapter.deleteContact(token, item.remoteId);
       } else {
         const activityType = item.entityType === 'phonecall' ? 'call' : item.entityType === 'annotation' ? 'note' : 'meeting';
         await adapter.deleteActivity(token, item.remoteId, activityType);

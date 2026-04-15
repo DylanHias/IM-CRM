@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { upsertContact } from '@/lib/db/queries/contacts';
+import { directPushContact } from '@/lib/sync/directPushService';
 import type { Contact } from '@/types/entities';
 
 interface ContactFormProps {
@@ -73,6 +74,9 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       notes: notes.trim() || null,
       contactType: initialData?.contactType ?? null,
       cloudContact: initialData?.cloudContact ?? null,
+      syncStatus: 'pending',
+      remoteId: initialData?.remoteId ?? null,
+      source: initialData?.source ?? 'local',
       syncedAt: now,
       createdAt: initialData?.createdAt ?? now,
       updatedAt: now,
@@ -81,6 +85,11 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
     try {
       if (isTauriApp()) {
         await upsertContact(contact);
+        const pushed = await directPushContact(contact);
+        if (pushed) {
+          contact.remoteId = pushed.remoteId;
+          contact.syncStatus = 'synced';
+        }
       }
       setSuccess(true);
       onContactSaved(contact);

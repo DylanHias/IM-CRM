@@ -40,4 +40,8 @@ When logging an activity, you can select which contact was involved. This helps 
 
 ## Sync
 
-Contacts are synced from Dynamics 365. Any changes will be reflected after the next sync cycle.
+Contacts are synced two ways with Dynamics 365:
+
+- **Pull** — contacts from D365 appear automatically after each sync
+- **Push** — contacts you add or edit are sent to D365 immediately (or on the next sync if you're offline)
+- **Delete** — removing a contact also deletes it from D365

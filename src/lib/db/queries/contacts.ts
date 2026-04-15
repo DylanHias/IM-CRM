@@ -16,6 +16,9 @@ function rowToContact(row: ContactRow): Contact {
     notes: row.notes,
     contactType: row.contact_type,
     cloudContact: row.cloud_contact === 1 ? true : row.cloud_contact === 0 ? false : null,
+    syncStatus: (row.sync_status ?? 'synced') as Contact['syncStatus'],
+    remoteId: row.remote_id,
+    source: (row.source ?? 'local') as Contact['source'],
     syncedAt: row.synced_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -51,23 +54,24 @@ export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact,
+      sync_status, remote_id, source, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
-      cloud_contact=excluded.cloud_contact,
-      synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+      cloud_contact=excluded.cloud_contact, sync_status=excluded.sync_status,
+      remote_id=excluded.remote_id, synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
       contact.notes, contact.contactType,
       contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
+      contact.syncStatus, contact.remoteId, contact.source,
       contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
-
 }
 
 /** Returns true if the record was actually inserted or updated, false if skipped. */
@@ -82,21 +86,24 @@ export async function upsertContactBulk(contact: Contact): Promise<boolean> {
 
   const result = await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact,
+      sync_status, remote_id, source, synced_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
       cloud_contact=excluded.cloud_contact,
+      sync_status=excluded.sync_status, remote_id=excluded.remote_id,
       synced_at=excluded.synced_at, updated_at=excluded.updated_at
-    WHERE excluded.updated_at > contacts.updated_at
-       OR contacts.updated_at IS NULL`,
+    WHERE (excluded.updated_at > contacts.updated_at OR contacts.updated_at IS NULL)
+      AND contacts.sync_status != 'pending'`,
     [
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
       contact.notes, contact.contactType,
       contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
+      contact.syncStatus, contact.remoteId, contact.source,
       contact.syncedAt, contact.createdAt, contact.updatedAt,
     ]
   );
@@ -114,4 +121,28 @@ export async function updateContactNotes(contactId: string, notes: string): Prom
     `UPDATE contacts SET notes = $1, updated_at = $2 WHERE id = $3`,
     [notes, new Date().toISOString(), contactId]
   );
+}
+
+export async function markContactSynced(id: string, remoteId: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE contacts SET sync_status = 'synced', remote_id = $1 WHERE id = $2`,
+    [remoteId, id]
+  );
+}
+
+export async function markContactSyncError(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE contacts SET sync_status = 'error' WHERE id = $1`,
+    [id]
+  );
+}
+
+export async function queryPendingContacts(): Promise<Contact[]> {
+  const db = await getDb();
+  const rows = await db.select<ContactRow[]>(
+    `SELECT * FROM contacts WHERE sync_status = 'pending' ORDER BY created_at`
+  );
+  return rows.map(rowToContact);
 }

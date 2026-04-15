@@ -87,6 +87,9 @@ async function ensureTablesExist(db: Database): Promise<void> {
       notes         TEXT,
       contact_type  TEXT,
       cloud_contact INTEGER,
+      sync_status   TEXT NOT NULL DEFAULT 'pending',
+      remote_id     TEXT,
+      source        TEXT DEFAULT 'local',
       synced_at     TEXT NOT NULL,
       created_at    TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -255,7 +258,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS pending_deletes (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task','opportunity')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('phonecall','appointment','annotation','task','opportunity','contact')),
       remote_id  TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     )
@@ -295,7 +298,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '15')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '21')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -598,6 +601,30 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`ALTER TABLE pending_deletes_new RENAME TO pending_deletes`);
     await db.execute(
       `UPDATE app_settings SET value = '20', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 21) {
+    // Add sync tracking columns to contacts
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN sync_status TEXT NOT NULL DEFAULT 'synced'`); } catch { /* already exists */ }
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN remote_id TEXT`); } catch { /* already exists */ }
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN source TEXT DEFAULT 'd365'`); } catch { /* already exists */ }
+    // Backfill remote_id for existing D365-pulled contacts (their id IS the D365 contactid)
+    await db.execute(`UPDATE contacts SET remote_id = id WHERE remote_id IS NULL`);
+    // Recreate pending_deletes to allow 'contact' entity type
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS pending_deletes_v21 (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT NOT NULL,
+        remote_id   TEXT NOT NULL,
+        created_at  TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`INSERT INTO pending_deletes_v21 SELECT * FROM pending_deletes`);
+    await db.execute(`DROP TABLE pending_deletes`);
+    await db.execute(`ALTER TABLE pending_deletes_v21 RENAME TO pending_deletes`);
+    await db.execute(
+      `UPDATE app_settings SET value = '21', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

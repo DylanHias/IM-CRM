@@ -38,6 +38,8 @@ export interface ID365Adapter {
   fetchOpportunities(token: string, customerIds: Set<string>, ownerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
   pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string>;
   deleteOpportunity(token: string, remoteId: string): Promise<void>;
+  pushContact(token: string, contact: Contact): Promise<string>;
+  deleteContact(token: string, remoteId: string): Promise<void>;
 }
 
 // D365 standard industry code → label mapping
@@ -125,6 +127,9 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     notes: null,
     contactType: d365['im360_contacttype@OData.Community.Display.V1.FormattedValue'] ?? null,
     cloudContact: d365.im360_cloudcontact ?? null,
+    syncStatus: 'synced',
+    remoteId: d365.contactid,
+    source: 'd365',
     syncedAt: now,
     createdAt: now,
     updatedAt: d365.modifiedon,
@@ -825,6 +830,62 @@ class RealD365Adapter implements ID365Adapter {
     return resolvedId;
   }
 
+  async pushContact(token: string, contact: Contact): Promise<string> {
+    const isUpdate = !!contact.remoteId;
+    const body: Record<string, unknown> = {
+      firstname: contact.firstName,
+      lastname: contact.lastName,
+      'parentcustomerid_account@odata.bind': `/accounts(${contact.customerId})`,
+    };
+    if (contact.jobTitle) body.jobtitle = contact.jobTitle;
+    if (contact.email) body.emailaddress1 = contact.email;
+    if (contact.phone) body.telephone1 = contact.phone;
+    if (contact.mobile) body.mobilephone = contact.mobile;
+    if (contact.cloudContact != null) body.im360_cloudcontact = contact.cloudContact;
+
+    const endpoint = isUpdate
+      ? `${this.baseUrl}/api/data/v9.2/contacts(${contact.remoteId})`
+      : `${this.baseUrl}/api/data/v9.2/contacts`;
+
+    const res = await fetch(endpoint, {
+      method: isUpdate ? 'PATCH' : 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 push contact failed ${res.status}: ${text}`);
+    }
+
+    if (isUpdate) return contact.remoteId!;
+
+    const entityId = res.headers.get('OData-EntityId') ?? '';
+    const match = entityId.match(/\(([^)]+)\)$/);
+    return match ? match[1] : entityId;
+  }
+
+  async deleteContact(token: string, remoteId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/contacts(${remoteId})`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+      },
+    });
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new Error(`D365 delete contact failed ${res.status}: ${text}`);
+    }
+  }
+
   async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
     let entitySet: string;
     if (type === 'call') entitySet = 'phonecalls';
@@ -955,6 +1016,15 @@ class MockD365Adapter implements ID365Adapter {
   }
 
   async deleteOpportunity(_token: string, _remoteId: string): Promise<void> {
+    await delay(200);
+  }
+
+  async pushContact(_token: string, contact: Contact): Promise<string> {
+    await delay(200);
+    return `D365-CON-${contact.id.slice(0, 8).toUpperCase()}`;
+  }
+
+  async deleteContact(_token: string, _remoteId: string): Promise<void> {
     await delay(200);
   }
 }
