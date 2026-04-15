@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckSquare, Activity, Target } from 'lucide-react';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { GreetingHeader } from '@/components/today/GreetingHeader';
@@ -10,37 +10,54 @@ import { RecentActivitiesCard } from '@/components/today/RecentActivitiesCard';
 import { OpenOpportunitiesCard } from '@/components/today/OpenOpportunitiesCard';
 import { FavoritedCustomersCard } from '@/components/today/FavoritedCustomersCard';
 import { useAuthStore } from '@/store/authStore';
-import { useD365UserId } from '@/hooks/useD365UserId';
+import { useSyncStore } from '@/store/syncStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
 import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { Activity as ActivityType, FollowUp } from '@/types/entities';
 
+// Module-level cache: survives navigation (re-mounts) within a session.
+// Stale data shows instantly while a fresh load runs in the background.
+interface DashboardCache {
+  todayFollowUps: FollowUp[];
+  recentActivities: ActivityType[];
+  allFollowUps: FollowUp[];
+  activityCountThisWeek: number | null;
+  forUserId: string | null;
+}
+let cache: DashboardCache | null = null;
+
 export default function TodayPage() {
   const account = useAuthStore((s) => s.account);
-  const d365UserId = useD365UserId();
+  // Read resolved D365 user ID directly from the sync store — available immediately
+  // after the first sync without waiting for the async useD365UserId hook.
+  const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+  const userId = callerD365UserId ?? account?.localAccountId ?? null;
 
   // Ensures customerStore.customers and allContacts are loaded for RecentActivitiesCard,
-  // FavoritedCustomersCard, and GlobalSearchBar
+  // FavoritedCustomersCard, and GlobalSearchBar.
   useCustomers();
 
-  const [todayFollowUps, setTodayFollowUps] = useState<FollowUp[]>([]);
-  const [recentActivities, setRecentActivities] = useState<ActivityType[]>([]);
-  const [allFollowUps, setAllFollowUps] = useState<FollowUp[]>([]);
-  const [activityCountThisWeek, setActivityCountThisWeek] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [todayFollowUps, setTodayFollowUps] = useState<FollowUp[]>(cache?.todayFollowUps ?? []);
+  const [recentActivities, setRecentActivities] = useState<ActivityType[]>(cache?.recentActivities ?? []);
+  const [allFollowUps, setAllFollowUps] = useState<FollowUp[]>(cache?.allFollowUps ?? []);
+  const [activityCountThisWeek, setActivityCountThisWeek] = useState<number | null>(cache?.activityCountThisWeek ?? null);
+  // Only show loading state when we have no cached data to display.
+  const [loading, setLoading] = useState(cache === null);
 
   const opportunities = useOpportunityListStore((s) => s.opportunities);
   const openOpps = opportunities.filter((o) => o.status === 'Open');
   const pipelineValue = openOpps.reduce((sum, o) => sum + (o.estimatedRevenue ?? 0), 0);
 
+  const loadedForUserId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!isTauriApp()) {
+    if (!isTauriApp() || !userId) {
       setLoading(false);
       return;
     }
-    const userId = d365UserId ?? account?.localAccountId ?? undefined;
-    const altUserId = account?.localAccountId ?? undefined;
+    // Skip if we already loaded for this user in this session (cache is fresh).
+    if (loadedForUserId.current === userId && cache?.forUserId === userId) return;
 
     const load = async () => {
       try {
@@ -48,18 +65,23 @@ export default function TodayPage() {
         const { queryMyRecentActivities, queryMyActivityCountSince } = await import('@/lib/db/queries/activities');
 
         const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-        const altId = altUserId && altUserId !== userId ? altUserId : null;
+        const altId = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
 
         const [dueTodayFUs, recentActs, allFUs, actCount] = await Promise.all([
-          queryDueTodayFollowUps(userId, altUserId),
-          userId
-            ? queryMyRecentActivities(userId, altId, sevenDaysAgo)
-            : Promise.resolve([]),
+          queryDueTodayFollowUps(userId, account?.localAccountId),
+          queryMyRecentActivities(userId, altId, sevenDaysAgo),
           queryAllFollowUps(),
-          userId
-            ? queryMyActivityCountSince(userId, altId, sevenDaysAgo)
-            : Promise.resolve(0),
+          queryMyActivityCountSince(userId, altId, sevenDaysAgo),
         ]);
+
+        cache = {
+          todayFollowUps: dueTodayFUs,
+          recentActivities: recentActs,
+          allFollowUps: allFUs,
+          activityCountThisWeek: actCount,
+          forUserId: userId,
+        };
+        loadedForUserId.current = userId;
 
         setTodayFollowUps(dueTodayFUs);
         setRecentActivities(recentActs);
@@ -72,10 +94,14 @@ export default function TodayPage() {
       }
     };
     load();
-  }, [d365UserId, account?.localAccountId]);
+  }, [userId, account?.localAccountId]);
 
   const handleFollowUpCompleted = (id: string) => {
-    setTodayFollowUps((prev) => prev.filter((f) => f.id !== id));
+    setTodayFollowUps((prev) => {
+      const next = prev.filter((f) => f.id !== id);
+      if (cache) cache = { ...cache, todayFollowUps: next };
+      return next;
+    });
   };
 
   return (
