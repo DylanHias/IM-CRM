@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, LineChart, Clock, LayoutDashboard } from 'lucide-react';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, FileText, BarChart2, LineChart, Clock, LayoutDashboard, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -53,7 +53,7 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
 };
 
 export function AppearanceSettings() {
-  const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, updateSetting, resetSection } =
+  const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, sidebarHiddenTabs, updateSetting, resetSection } =
     useSettingsStore();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -145,7 +145,17 @@ export function AppearanceSettings() {
           <SortableContext items={sidebarOrder} strategy={verticalListSortingStrategy}>
             <div className="space-y-1">
               {sidebarOrder.map((tab) => (
-                <SortableTabItem key={tab} id={tab} />
+                <SortableTabItem
+                  key={tab}
+                  id={tab}
+                  hidden={sidebarHiddenTabs.includes(tab)}
+                  onToggleHidden={() => {
+                    const next = sidebarHiddenTabs.includes(tab)
+                      ? sidebarHiddenTabs.filter((t) => t !== tab)
+                      : [...sidebarHiddenTabs, tab];
+                    updateSetting('sidebarHiddenTabs', next);
+                  }}
+                />
               ))}
             </div>
           </SortableContext>
@@ -156,7 +166,7 @@ export function AppearanceSettings() {
   );
 }
 
-function SortableTabItem({ id }: { id: SidebarTab }) {
+function SortableTabItem({ id, hidden, onToggleHidden }: { id: SidebarTab; hidden: boolean; onToggleHidden: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const meta = SIDEBAR_TAB_META[id];
   if (!meta) return null;
@@ -174,6 +184,7 @@ function SortableTabItem({ id }: { id: SidebarTab }) {
       className={cn(
         'flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm',
         isDragging ? 'z-50 shadow-md border-primary/30 bg-card/95' : 'border-border',
+        hidden && 'opacity-50',
       )}
     >
       <button
@@ -185,6 +196,13 @@ function SortableTabItem({ id }: { id: SidebarTab }) {
       </button>
       <Icon size={14} className="text-muted-foreground flex-shrink-0" />
       <span className="text-sm">{meta.label}</span>
+      <button
+        className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+        onClick={onToggleHidden}
+        title={hidden ? 'Show in sidebar' : 'Hide from sidebar'}
+      >
+        {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
     </div>
   );
 }

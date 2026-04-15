@@ -106,6 +106,7 @@ export function AppSidebar() {
   const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const sidebarHiddenTabs = useSettingsStore((s) => s.sidebarHiddenTabs);
 
   const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
     '/dashboard': { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -132,7 +133,7 @@ export function AppSidebar() {
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
   };
 
-  const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);
+  const navItems = sidebarOrder.filter((key) => !sidebarHiddenTabs.includes(key)).map((key) => navItemMap[key]).filter(Boolean);
 
   const recentCustomers = recentCustomerIds
     .map((id) => {

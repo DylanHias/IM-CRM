@@ -15,7 +15,7 @@ Access Settings from the user menu at the bottom of the sidebar, or press the sh
 - **Theme** — Choose between Light, Dark, or System (follows your OS setting)
 - **Accent color** — Pick your preferred accent color: Blue, Purple, Green, Orange, Red, or Pink
 - **Sidebar default state** — Choose whether the sidebar starts expanded or collapsed
-- **Sidebar order** — Drag and drop navigation items to reorder them however you like
+- **Sidebar order** — Drag and drop navigation items to reorder them however you like; use the eye icon on each item to show or hide it from the sidebar
 - **Reset appearance** — Restore all appearance settings to defaults
 
 ## Data & Defaults

@@ -30,6 +30,7 @@ interface SettingsState {
   compactMode: boolean;
   sidebarDefaultExpanded: boolean;
   sidebarOrder: SidebarTab[];
+  sidebarHiddenTabs: SidebarTab[];
 
   // Data & Defaults
   defaultActivityType: ActivityType;
@@ -79,6 +80,7 @@ const APPEARANCE_DEFAULTS = {
   compactMode: false,
   sidebarDefaultExpanded: false,
   sidebarOrder: DEFAULT_SIDEBAR_ORDER as SidebarTab[],
+  sidebarHiddenTabs: [] as SidebarTab[],
 };
 
 const DATA_DEFAULTS = {
@@ -195,6 +197,11 @@ export const useSettingsStore = create<SettingsState>()(
             const missing = DEFAULT_SIDEBAR_ORDER.filter((t) => !valid.includes(t));
             patch.sidebarOrder = [...valid, ...missing];
           }
+          if (patch.sidebarHiddenTabs) {
+            patch.sidebarHiddenTabs = (patch.sidebarHiddenTabs as SidebarTab[]).filter((t) =>
+              (DEFAULT_SIDEBAR_ORDER as string[]).includes(t)
+            );
+          }
           if (Object.keys(patch).length > 0) {
             set(patch as Partial<SettingsState>);
           }
@@ -219,6 +226,10 @@ export const useSettingsStore = create<SettingsState>()(
           const valid = raw.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
           const missing = DEFAULT_SIDEBAR_ORDER.filter((t) => !valid.includes(t));
           merged.sidebarOrder = [...valid, ...missing];
+        }
+        const rawHidden = (persisted as Partial<SettingsState>).sidebarHiddenTabs;
+        if (rawHidden) {
+          merged.sidebarHiddenTabs = rawHidden.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
         }
         return merged;
       },
