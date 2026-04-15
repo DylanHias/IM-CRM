@@ -24,7 +24,11 @@ const timelineConfig = {
   count: { label: 'Activities', color: 'hsl(var(--primary))' },
 };
 
-export function PersonalPanel() {
+interface Props {
+  refreshKey?: number;
+}
+
+export function PersonalPanel({ refreshKey }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -43,7 +47,7 @@ export function PersonalPanel() {
     const prev = prevPeriodRange(period);
     loadPersonal(userIds, range, prev);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d365UserId, account?.localAccountId, period, lastD365SyncAt, loadPersonal]);
+  }, [d365UserId, account?.localAccountId, period, lastD365SyncAt, loadPersonal, refreshKey]);
 
   if (isLoadingPersonal && !personal) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;

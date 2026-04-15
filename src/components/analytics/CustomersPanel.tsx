@@ -64,13 +64,18 @@ function ArrByDimChart({ data }: { data: ArrByDimensionPoint[] }) {
   );
 }
 
-export function CustomersPanel() {
+interface Props {
+  refreshKey?: number;
+}
+
+export function CustomersPanel({ refreshKey }: Props) {
   const [arrDim, setArrDim] = useState<ArrDim>('industry');
   const { customers, isLoadingCustomers, loadCustomers } = useAnalyticsStore();
 
   useEffect(() => {
     loadCustomers();
-  }, [loadCustomers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadCustomers, refreshKey]);
 
   if (isLoadingCustomers && !customers) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;

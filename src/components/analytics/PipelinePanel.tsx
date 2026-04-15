@@ -55,13 +55,18 @@ const vendorConfig = {
 
 type ExpiryWindow = '7d' | '30d';
 
-export function PipelinePanel() {
+interface Props {
+  refreshKey?: number;
+}
+
+export function PipelinePanel({ refreshKey }: Props) {
   const [expiryWindow, setExpiryWindow] = useState<ExpiryWindow>('30d');
   const { pipeline, isLoadingPipeline, loadPipeline } = useAnalyticsStore();
 
   useEffect(() => {
     loadPipeline();
-  }, [loadPipeline]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadPipeline, refreshKey]);
 
   if (isLoadingPipeline && !pipeline) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;

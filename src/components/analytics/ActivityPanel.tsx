@@ -26,7 +26,11 @@ const heatmapConfig = {
   count: { label: 'Activities', color: 'hsl(var(--primary))' },
 };
 
-export function ActivityPanel() {
+interface Props {
+  refreshKey?: number;
+}
+
+export function ActivityPanel({ refreshKey }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -40,7 +44,7 @@ export function ActivityPanel() {
     const range = periodToRange(period);
     loadActivity(userIds, range);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d365UserId, account?.localAccountId, period, loadActivity]);
+  }, [d365UserId, account?.localAccountId, period, loadActivity, refreshKey]);
 
   if (isLoadingActivity && !activity) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
