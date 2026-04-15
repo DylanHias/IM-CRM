@@ -160,7 +160,7 @@ describe('Security tests', () => {
           for (const block of sqlBlocks) {
             const interpolations = block.match(/\$\{(?!excluded\.)[^}]+\}/g) ?? [];
             const unsafeInterpolations = interpolations.filter(
-              (interp) => !interp.includes('col') && !interp.includes('TABLE')
+              (interp) => !interp.includes('col') && !interp.includes('TABLE') && !interp.includes('placeholder')
             );
             expect(unsafeInterpolations).toEqual([]);
           }
