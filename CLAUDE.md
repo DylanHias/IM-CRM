@@ -63,7 +63,7 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 - Test before pushing; commit each logical unit; push after commit
 - **Every commit** must include: version bump in `package.json`, `pnpm sync-version`, and a `.changelog/v{version}.md` entry
 - Semver: patch = fixes, minor = features, major = breaking
-- Changelog: `.changelog/v{version}.md` — plain language, zero tech terms, explain what the user sees
+- Changelog: `.changelog/v{version}.md` — plain language, zero tech terms, explain what the user sees; format: version header on its own line, then plain hyphen bullets, no bold/markdown/extra styling (e.g. `- Fixed: something the user notices`)
 - Releases: manual via `workflow_dispatch`
 - Build runs automatically via pre-commit hook — do NOT run `pnpm build` manually before commits
 - Only stage files related to the current task (`git add <specific-files>`) — never `git add .` or `git add -A`
