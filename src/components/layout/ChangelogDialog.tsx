@@ -135,7 +135,7 @@ export function ChangelogDialog() {
           <div className="space-y-4 text-sm overflow-y-auto min-h-0">
             {entry.sections.map((section, si) => (
               <div key={si}>
-                {section.heading && (
+                {section.heading && section.heading !== `v${entry.version}` && (
                   <h4 className="font-semibold text-foreground mb-1.5">{section.heading}</h4>
                 )}
                 <ul className="space-y-2">
