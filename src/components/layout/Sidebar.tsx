@@ -127,7 +127,7 @@ export function AppSidebar() {
     '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target, disabled: true, disabledTooltip: 'Coming soon' },
     '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
-    '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart, disabled: !isAdmin, disabledTooltip: 'Admin only' },
+    '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
   };
 
   const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);
