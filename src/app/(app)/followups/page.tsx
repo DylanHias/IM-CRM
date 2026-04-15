@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { TablePagination } from '@/components/ui/TablePagination';
+import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
@@ -35,6 +37,14 @@ export default function FollowUpsPage() {
   const [editDescription, setEditDescription] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  const [overduePage, setOverduePage] = useState(1);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [donePage, setDonePage] = useState(1);
+
+  const { pageSize: overduePageSize, setPageSize: setOverduePageSize, pageSizeOptions } = usePaginationPreference('followups-overdue');
+  const { pageSize: upcomingPageSize, setPageSize: setUpcomingPageSize } = usePaginationPreference('followups-upcoming');
+  const { pageSize: donePageSize, setPageSize: setDonePageSize } = usePaginationPreference('followups-done');
 
   const userId = d365UserId ?? account?.localAccountId;
 
@@ -165,66 +175,104 @@ export default function FollowUpsPage() {
   const upcoming = followUps.filter((f) => !f.completed && f.dueDate >= today);
   const done = followUps
     .filter((f) => f.completed)
-    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
-    .slice(0, 10);
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
+
+  const overdueSlice = overdue.slice((overduePage - 1) * overduePageSize, overduePage * overduePageSize);
+  const upcomingSlice = upcoming.slice((upcomingPage - 1) * upcomingPageSize, upcomingPage * upcomingPageSize);
+  const doneSlice = done.slice((donePage - 1) * donePageSize, donePage * donePageSize);
 
   const getCustomerName = (customerId: string) =>
     customerMap.get(customerId) ?? customerId;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-          <div data-tour="page-followups">
-            <h2 className="text-xl font-semibold text-foreground">Your Follow-Ups</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Track your open tasks and next actions across all customers.
-            </p>
+      <div data-tour="page-followups">
+        <h2 className="text-xl font-semibold text-foreground">Your Follow-Ups</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Track your open tasks and next actions across all customers.
+        </p>
+      </div>
+
+      {overdue.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-destructive">Overdue</h3>
+            <Badge variant="destructive">{overdue.length}</Badge>
           </div>
+          <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60">
+            {overdueSlice.map((f) => (
+              <div key={f.id}>
+                <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
+                  {getCustomerName(f.customerId)}
+                </p>
+                <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
+              </div>
+            ))}
+          </div>
+          <TablePagination
+            totalItems={overdue.length}
+            page={overduePage}
+            pageSize={overduePageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setOverduePage}
+            onPageSizeChange={(s) => { setOverduePageSize(s); setOverduePage(1); }}
+          />
+        </section>
+      )}
 
-          {overdue.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-semibold text-destructive">Overdue</h3>
-                <Badge variant="destructive">{overdue.length}</Badge>
+      {upcoming.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Upcoming ({upcoming.length})</h3>
+          <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
+            {upcomingSlice.map((f) => (
+              <div key={f.id}>
+                <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
+                  {getCustomerName(f.customerId)}
+                </p>
+                <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
               </div>
-              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60">
-                {overdue.map((f) => (
-                  <div key={f.id}>
-                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
-                      {getCustomerName(f.customerId)}
-                    </p>
-                    <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+            ))}
+          </div>
+          <TablePagination
+            totalItems={upcoming.length}
+            page={upcomingPage}
+            pageSize={upcomingPageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setUpcomingPage}
+            onPageSizeChange={(s) => { setUpcomingPageSize(s); setUpcomingPage(1); }}
+          />
+        </section>
+      )}
 
-          {upcoming.length > 0 && (
-            <section>
-              <h3 className="text-sm font-semibold text-foreground mb-3">Upcoming ({upcoming.length})</h3>
-              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
-                {upcoming.map((f) => (
-                  <div key={f.id}>
-                    <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
-                      {getCustomerName(f.customerId)}
-                    </p>
-                    <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {done.length > 0 && (
-            <section>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Recently Completed</h3>
-              <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
-                {done.map((f) => (
-                  <FollowUpItem key={f.id} followUp={f} />
-                ))}
-              </div>
-            </section>
-          )}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground">Completed ({done.length})</h3>
+        {done.length === 0 ? (
+          <div className="bg-card rounded-xl px-4 py-6 text-center text-sm text-muted-foreground border border-border/60 shadow-sm">
+            No completed follow-ups yet.
+          </div>
+        ) : (
+          <>
+            <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
+              {doneSlice.map((f) => (
+                <div key={f.id}>
+                  <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
+                    {getCustomerName(f.customerId)}
+                  </p>
+                  <FollowUpItem followUp={f} />
+                </div>
+              ))}
+            </div>
+            <TablePagination
+              totalItems={done.length}
+              page={donePage}
+              pageSize={donePageSize}
+              pageSizeOptions={pageSizeOptions}
+              onPageChange={setDonePage}
+              onPageSizeChange={(s) => { setDonePageSize(s); setDonePage(1); }}
+            />
+          </>
+        )}
+      </section>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="sm:max-w-md">

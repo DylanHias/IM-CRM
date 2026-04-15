@@ -33,7 +33,9 @@ The **Follow-Ups** page in the sidebar shows all your follow-ups across all cust
 
 - **Overdue** — Past their due date (highlighted in red)
 - **Upcoming** — Not yet due
-- **Recently Completed** — Your last completed tasks
+- **Completed** — All follow-ups you have marked as done, paginated
+
+Each section is paginated so you can browse through large lists without everything loading at once.
 
 ## Completing a Follow-Up
 

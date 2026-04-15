@@ -113,16 +113,23 @@ export function InitialSyncDialog() {
                 </p>
                 <div className="w-full">
                   <div className="h-2 w-full rounded-full bg-secondary overflow-hidden mb-3">
-                    <div
-                      data-testid="sync-progress-fill"
-                      className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
-                      style={{ width: `${percent}%` }}
-                    />
+                    {progress?.total && progress.total > 0 ? (
+                      <div
+                        data-testid="sync-progress-fill"
+                        className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                        style={{ width: `${percent}%` }}
+                      />
+                    ) : (
+                      <div
+                        data-testid="sync-progress-fill"
+                        className="h-full w-full rounded-full bg-primary/50 animate-pulse"
+                      />
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {progress && progress.total > 0
+                    {progress?.total && progress.total > 0
                       ? `${progress.processed.toLocaleString()} / ${progress.total.toLocaleString()} records`
-                      : 'Connecting to Dynamics 365...'}
+                      : 'Fetching data from Dynamics 365\u2026'}
                   </p>
                 </div>
               </>

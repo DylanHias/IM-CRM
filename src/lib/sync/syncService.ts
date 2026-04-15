@@ -143,10 +143,11 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] D365 sync — last sync: ${lastSyncTs ?? 'never (initial)'}`);
 
     // --- Customers ---
+    emitProgress('Fetching customers...', 0, 0);
     console.time('[sync] fetch:customers');
     const customers = await adapter.fetchCustomers(token, lastSyncTs);
     console.timeEnd('[sync] fetch:customers');
-    emitProgress('Syncing customers...', 0, customers.length);
+    emitProgress('Syncing customers...', 0, 0);
     console.time('[sync] write:customers');
     const customerChanged = await bulkUpsertCustomers(customers);
     console.timeEnd('[sync] write:customers');
@@ -157,7 +158,8 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] ${localCustomerIds.size} local customers — filtering child entities to this scope`);
 
     // --- Parallel D365 fetch (contacts + all activity types + opportunities) ---
-    emitProgress('Fetching from D365...', customers.length, customers.length);
+    // Keep total=0 (indeterminate) until we know all record counts after the parallel fetch
+    emitProgress('Fetching from Dynamics 365...', 0, 0);
     console.time('[sync] fetch:parallel');
     const [contacts, phoneCalls, appointments, annotations, tasks, opportunities] = await Promise.all([
       adapter.fetchContacts(token, localCustomerIds, lastSyncTs),
@@ -191,10 +193,12 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] Fetched: ${contacts.length} contacts, ${phoneCalls.length} calls, ${appointments.length} appointments, ${annotations.length} annotations, ${tasks.length} tasks, ${opportunities.length} opportunities`);
 
     const totalFetched = contacts.length + phoneCalls.length + appointments.length + annotations.length + tasks.length + opportunities.length;
-    let processed = customers.length;
+    // Now we know the full total — set it once so the bar never goes backwards
+    const grandTotal = customers.length + totalFetched;
+    let processed = customers.length; // customers already written above
 
     // --- Contacts ---
-    emitProgress('Syncing contacts...', processed, customers.length + totalFetched);
+    emitProgress('Syncing contacts...', processed, grandTotal);
     console.time('[sync] write:contacts');
     const contactChanged = await bulkUpsertContacts(contacts, localCustomerIds);
     console.timeEnd('[sync] write:contacts');
@@ -211,7 +215,7 @@ async function syncD365(token: string): Promise<void> {
     ]);
 
     // --- Activities (phone calls + appointments + annotations combined) ---
-    emitProgress('Syncing activities...', processed, customers.length + totalFetched);
+    emitProgress('Syncing activities...', processed, grandTotal);
     console.time('[sync] write:activities');
     const allActivities = [...phoneCalls, ...appointments, ...annotations];
     const activityResult = await bulkUpsertActivities(allActivities, localCustomerIds, contactIdSet, existingActivityMap);
@@ -222,7 +226,7 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] Activities: ${allActivities.length} fetched, ${activityResult.inserted} inserted, ${activityResult.updated} updated, ${activityResult.skipped} skipped, ${activityResult.errors} errors`);
 
     // --- Follow-ups (tasks) ---
-    emitProgress('Syncing tasks...', processed, customers.length + totalFetched);
+    emitProgress('Syncing tasks...', processed, grandTotal);
     console.time('[sync] write:followups');
     const followUpResult = await bulkUpsertFollowUps(tasks, localCustomerIds, existingFollowUpMap);
     console.timeEnd('[sync] write:followups');
@@ -232,7 +236,7 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] Tasks: ${tasks.length} fetched, ${followUpResult.inserted} inserted, ${followUpResult.updated} updated, ${followUpResult.skipped} skipped, ${followUpResult.errors} errors`);
 
     // --- Opportunities ---
-    emitProgress('Syncing opportunities...', processed, customers.length + totalFetched);
+    emitProgress('Syncing opportunities...', processed, grandTotal);
     console.time('[sync] write:opportunities');
     const opportunityResult = await bulkUpsertOpportunities(opportunities, localCustomerIds, contactIdSet, existingOppMap);
     console.timeEnd('[sync] write:opportunities');
@@ -242,7 +246,7 @@ async function syncD365(token: string): Promise<void> {
     console.log(`[sync] Opportunities: ${opportunities.length} fetched, ${opportunityResult.inserted} inserted, ${opportunityResult.updated} updated, ${opportunityResult.skipped} skipped, ${opportunityResult.errors} errors`);
 
     // --- Post-sync derives ---
-    emitProgress('Finishing up...', processed, customers.length + totalFetched);
+    emitProgress('Finishing up...', grandTotal, grandTotal);
     await recomputeCloudCustomerStatus();
     await recomputeLastActivityDates();
 
