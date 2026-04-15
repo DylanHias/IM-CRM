@@ -873,16 +873,18 @@ class RealD365Adapter implements ID365Adapter {
 
   async deleteContact(token: string, remoteId: string): Promise<void> {
     const res = await fetch(`${this.baseUrl}/api/data/v9.2/contacts(${remoteId})`, {
-      method: 'DELETE',
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
         'OData-MaxVersion': '4.0',
         'OData-Version': '4.0',
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ statecode: 1, statuscode: 2 }),
     });
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
-      throw new Error(`D365 delete contact failed ${res.status}: ${text}`);
+      throw new Error(`D365 deactivate contact failed ${res.status}: ${text}`);
     }
   }
 
