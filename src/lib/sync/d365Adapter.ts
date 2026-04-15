@@ -40,6 +40,7 @@ export interface ID365Adapter {
   deleteOpportunity(token: string, remoteId: string): Promise<void>;
   pushContact(token: string, contact: Contact): Promise<string>;
   deleteContact(token: string, remoteId: string): Promise<void>;
+  setPrimaryContact(token: string, accountId: string, contactRemoteId: string): Promise<void>;
 }
 
 // D365 standard industry code → label mapping
@@ -127,6 +128,7 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     notes: null,
     contactType: d365['im360_contacttype@OData.Community.Display.V1.FormattedValue'] ?? null,
     cloudContact: d365.im360_cloudcontact ?? null,
+    isPrimary: false,
     syncStatus: 'synced',
     remoteId: d365.contactid,
     source: 'd365',
@@ -888,6 +890,24 @@ class RealD365Adapter implements ID365Adapter {
     }
   }
 
+  async setPrimaryContact(token: string, accountId: string, contactRemoteId: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ 'primarycontactid@odata.bind': `/contacts(${contactRemoteId})` }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 set primary contact failed ${res.status}: ${text}`);
+    }
+  }
+
   async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
     let entitySet: string;
     if (type === 'call') entitySet = 'phonecalls';
@@ -1027,6 +1047,10 @@ class MockD365Adapter implements ID365Adapter {
   }
 
   async deleteContact(_token: string, _remoteId: string): Promise<void> {
+    await delay(200);
+  }
+
+  async setPrimaryContact(_token: string, _accountId: string, _contactRemoteId: string): Promise<void> {
     await delay(200);
   }
 }

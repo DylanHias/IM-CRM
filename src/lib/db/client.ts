@@ -87,6 +87,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       notes         TEXT,
       contact_type  TEXT,
       cloud_contact INTEGER,
+      is_primary    INTEGER NOT NULL DEFAULT 0,
       sync_status   TEXT NOT NULL DEFAULT 'pending',
       remote_id     TEXT,
       source        TEXT DEFAULT 'local',
@@ -298,7 +299,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '21')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '22')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -625,6 +626,13 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`ALTER TABLE pending_deletes_v21 RENAME TO pending_deletes`);
     await db.execute(
       `UPDATE app_settings SET value = '21', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 22) {
+    try { await db.execute(`ALTER TABLE contacts ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '22', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

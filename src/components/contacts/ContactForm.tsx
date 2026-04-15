@@ -74,6 +74,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       notes: notes.trim() || null,
       contactType: initialData?.contactType ?? null,
       cloudContact: initialData?.cloudContact ?? null,
+      isPrimary: initialData?.isPrimary ?? false,
       syncStatus: 'pending',
       remoteId: initialData?.remoteId ?? null,
       source: initialData?.source ?? 'local',

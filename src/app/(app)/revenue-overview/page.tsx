@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search, Download, Building2, User, X,
-  SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Loader2,
+  SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,26 +30,28 @@ function formatArr(value: number | null): string {
   return `€ ${value.toLocaleString('nl-BE')}`;
 }
 
-function getMostRecentContact(customerId: string, contacts: Contact[]): Contact | undefined {
-  return contacts
-    .filter((c) => c.customerId === customerId)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+function getDisplayContact(customerId: string, contacts: Contact[]): Contact | undefined {
+  const customerContacts = contacts.filter((c) => c.customerId === customerId);
+  return (
+    customerContacts.find((c) => c.isPrimary) ??
+    customerContacts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
+  );
 }
 
 function getPhone(customer: Customer, contacts: Contact[]): string {
-  const contact = getMostRecentContact(customer.id, contacts);
+  const contact = getDisplayContact(customer.id, contacts);
   return contact?.phone ?? contact?.mobile ?? customer.phone ?? '—';
 }
 
 function getEmail(customer: Customer, contacts: Contact[]): string {
-  const contact = getMostRecentContact(customer.id, contacts);
+  const contact = getDisplayContact(customer.id, contacts);
   return contact?.email ?? customer.email ?? '—';
 }
 
-function getContactLabel(customer: Customer, contacts: Contact[]): { name: string; isCompany: boolean } {
-  const contact = getMostRecentContact(customer.id, contacts);
-  if (contact) return { name: `${contact.firstName} ${contact.lastName}`, isCompany: false };
-  return { name: customer.name, isCompany: true };
+function getContactLabel(customer: Customer, contacts: Contact[]): { name: string; isCompany: boolean; isPrimary: boolean } {
+  const contact = getDisplayContact(customer.id, contacts);
+  if (contact) return { name: `${contact.firstName} ${contact.lastName}`, isCompany: false, isPrimary: contact.isPrimary };
+  return { name: customer.name, isCompany: true, isPrimary: false };
 }
 
 const ARR_COLUMNS: (ColumnDef & { field: SortField | null; align: string })[] = [
@@ -80,6 +82,8 @@ function renderArrCell(customer: Customer, columnId: string, contacts: Contact[]
         <span className="flex items-center gap-1.5 text-muted-foreground">
           {label.isCompany ? (
             <Building2 size={12} className="text-warning shrink-0" />
+          ) : label.isPrimary ? (
+            <Star size={12} className="text-warning fill-warning shrink-0" />
           ) : (
             <User size={12} className="text-primary shrink-0" />
           )}

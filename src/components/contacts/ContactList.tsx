@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, Search, X } from 'lucide-react';
+import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, Search, X, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -21,9 +21,10 @@ interface ContactListProps {
   onContactAdded: (contact: Contact) => void;
   onContactUpdated: (contact: Contact) => void;
   onContactDeleted: (id: string) => void;
+  onPrimaryChanged?: (contactId: string) => void;
 }
 
-export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted }: ContactListProps) {
+export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted, onPrimaryChanged }: ContactListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,13 +137,25 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
-                    {contact.firstName[0]}{contact.lastName[0]}
+                  <div className="relative">
+                    <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
+                      {contact.firstName[0]}{contact.lastName[0]}
+                    </div>
+                    {contact.isPrimary && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center">
+                        <Star size={9} className="text-warning-foreground fill-warning-foreground" />
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-foreground">
-                      {contact.firstName} {contact.lastName}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-sm text-foreground">
+                        {contact.firstName} {contact.lastName}
+                      </p>
+                      {contact.isPrimary && (
+                        <span className="text-[10px] font-medium text-warning leading-none">Primary</span>
+                      )}
+                    </div>
                     {contact.jobTitle && (
                       <p className="text-xs text-muted-foreground">{contact.jobTitle}</p>
                     )}
@@ -150,6 +163,15 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
                 </div>
 
                 <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  {onPrimaryChanged && !contact.isPrimary && (
+                    <button
+                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-warning/10 hover:text-warning transition-all duration-150 active:scale-95"
+                      onClick={() => onPrimaryChanged(contact.id)}
+                      title="Set as primary contact"
+                    >
+                      <Star size={11} />
+                    </button>
+                  )}
                   <button
                     className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
                     onClick={() => openEdit(contact)}

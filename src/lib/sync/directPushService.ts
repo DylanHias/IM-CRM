@@ -166,3 +166,14 @@ export async function directDeleteOpportunity(remoteId: string): Promise<boolean
   });
   return result.success;
 }
+
+export async function directPushPrimaryContact(
+  accountId: string,
+  contactRemoteId: string,
+): Promise<boolean> {
+  const result = await tryDirectPush(async (token) => {
+    const adapter = getD365Adapter();
+    await adapter.setPrimaryContact(token, accountId, contactRemoteId);
+  });
+  return result.success;
+}

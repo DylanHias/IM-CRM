@@ -35,6 +35,7 @@ export interface Contact {
   notes: string | null;
   contactType: string | null;
   cloudContact: boolean | null;
+  isPrimary: boolean;
   syncStatus: 'pending' | 'synced' | 'error';
   remoteId: string | null;
   source: 'local' | 'd365';
@@ -125,4 +126,5 @@ export interface Opportunity {
 
 export type TimelineEvent =
   | ({ kind: 'activity' } & Activity)
-  | ({ kind: 'followup' } & FollowUp);
+  | ({ kind: 'followup' } & FollowUp)
+  | ({ kind: 'opportunity' } & Opportunity);

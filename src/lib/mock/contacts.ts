@@ -3,7 +3,7 @@ import type { Contact } from '@/types/entities';
 const now = new Date().toISOString();
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
 
-const syncDefaults = { syncStatus: 'synced' as const, remoteId: null, source: 'd365' as const };
+const syncDefaults = { syncStatus: 'synced' as const, remoteId: null, source: 'd365' as const, isPrimary: false };
 
 export const mockContacts: Contact[] = [
   // cust-001 Technocom Solutions

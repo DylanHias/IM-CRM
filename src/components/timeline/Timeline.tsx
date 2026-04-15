@@ -17,7 +17,8 @@ interface TimelineProps {
 
 function getEventDate(event: TimelineEvent): string {
   if (event.kind === 'activity') return event.occurredAt;
-  return event.dueDate;
+  if (event.kind === 'followup') return event.dueDate;
+  return event.expirationDate ?? event.createdAt;
 }
 
 export function Timeline({ activities, followUps, paginate, onEditActivity, onDeleteActivity }: TimelineProps) {

@@ -30,7 +30,8 @@ import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useActivities } from '@/hooks/useActivities';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
+import { queryContactsByCustomer, setPrimaryContact } from '@/lib/db/queries/contacts';
+import { directPushPrimaryContact } from '@/lib/sync/directPushService';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
@@ -268,6 +269,28 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     };
     load();
   }, [customerId]);
+
+  const handlePrimaryChanged = useCallback(async (contactId: string) => {
+    if (!isTauriApp()) return;
+    try {
+      await setPrimaryContact(contactId, customerId);
+      const updated = contacts.map((c) => ({ ...c, isPrimary: c.id === contactId }));
+      setContacts(updated);
+      useCustomerStore.getState().setAllContacts(
+        useCustomerStore.getState().allContacts.map((c) =>
+          c.customerId === customerId ? { ...c, isPrimary: c.id === contactId } : c,
+        ),
+      );
+      const contact = updated.find((c) => c.id === contactId);
+      if (contact?.remoteId) {
+        directPushPrimaryContact(customerId, contact.remoteId).catch((err) =>
+          console.error('[contact] D365 primary contact push failed:', err),
+        );
+      }
+    } catch (err) {
+      console.error('[contact] Failed to set primary contact:', err);
+    }
+  }, [contacts, customerId]);
 
   const profileTabs: { key: ProfileTab; label: string; icon: typeof Settings; count?: number; disabled?: boolean }[] = useMemo(() => [
     { key: 'overview', label: 'Overview', icon: Settings },
@@ -560,6 +583,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       onContactAdded={(c) => setContacts((prev) => [...prev, c])}
                       onContactUpdated={(c) => setContacts((prev) => prev.map((x) => (x.id === c.id ? c : x)))}
                       onContactDeleted={(id) => setContacts((prev) => prev.filter((x) => x.id !== id))}
+                      onPrimaryChanged={handlePrimaryChanged}
                     />
                   </motion.div>
                 )}

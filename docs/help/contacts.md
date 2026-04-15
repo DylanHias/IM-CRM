@@ -34,6 +34,18 @@ Click the **pencil icon** on a contact to update their information.
 
 Click the **trash icon** and confirm to remove a contact.
 
+## Primary Contact
+
+You can mark one contact per customer as the primary contact. The primary contact appears at the top of the Revenue Overview with a star icon.
+
+To set a primary contact:
+
+1. Go to a customer's **Contacts** tab
+2. Hover over a contact card
+3. Click the **star icon** to make that contact the primary one
+
+Only one contact can be primary at a time — setting a new one automatically removes the previous designation. The change syncs to Dynamics 365.
+
 ## Linking Contacts to Activities
 
 When logging an activity, you can select which contact was involved. This helps you track your interaction history with specific people at a company. When viewing activities, you'll see which contact was linked to each one.
