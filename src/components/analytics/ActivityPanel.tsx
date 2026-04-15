@@ -74,7 +74,7 @@ export function ActivityPanel() {
       {/* Activity type mix — mine vs team */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Activity Type Mix</p>
-        <p className="text-xs text-muted-foreground mb-4">My activities vs the rest of the team — no individual names shown</p>
+        <p className="text-xs text-muted-foreground mb-4">My activities vs the rest of the team</p>
         {a && a.typeMix.some((t) => t.mine + t.team > 0) ? (
           <ChartContainer config={typeMixConfig} className="aspect-auto h-[200px] w-full">
             <BarChart
