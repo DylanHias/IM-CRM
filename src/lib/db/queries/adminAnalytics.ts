@@ -46,7 +46,7 @@ export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> 
   const rows = await db.select<{ date: string; type: string; count: number }[]>(
     `SELECT strftime('%Y-%m-%d', occurred_at) as date, type, COUNT(*) as count
      FROM activities
-     WHERE occurred_at >= datetime('now', '-90 days')
+     WHERE occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')
      GROUP BY date, type
      ORDER BY date`
   );

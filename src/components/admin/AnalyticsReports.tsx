@@ -71,7 +71,10 @@ export function AnalyticsReports() {
 
   const filteredTimeline = useMemo(() => {
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-    return activityTimeline.slice(-days);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    return activityTimeline.filter((p) => p.date >= cutoffStr);
   }, [activityTimeline, timeRange]);
 
   if (isLoading && !dataQuality) {
