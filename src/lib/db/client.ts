@@ -238,6 +238,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       business_unit TEXT,
       title TEXT,
       last_active_at TEXT,
+      profile_photo TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
