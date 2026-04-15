@@ -107,91 +107,92 @@ export function PipelinePanel() {
         />
       </div>
 
-      {/* Stage funnel */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stage Funnel</p>
-        <p className="text-xs text-muted-foreground mb-4">Open deals per stage · hover for revenue</p>
-        {funnel.length > 0 ? (
-          <ChartContainer config={funnelConfig} className="aspect-auto h-[220px] w-full">
-            <BarChart data={funnel} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-              <CartesianGrid vertical={false} className="stroke-border" />
-              <XAxis
-                dataKey="stage"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={4}
-                interval={0}
-                tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
-                  const words = payload.value.split(' ');
-                  const lines: string[] = [];
-                  let cur = '';
-                  for (const w of words) {
-                    if (cur && (cur + ' ' + w).length > 12) { lines.push(cur); cur = w; }
-                    else cur = cur ? cur + ' ' + w : w;
+      {/* Stage funnel + Win Rate side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stage Funnel</p>
+          <p className="text-xs text-muted-foreground mb-4">Open deals per stage · hover for revenue</p>
+          {funnel.length > 0 ? (
+            <ChartContainer config={funnelConfig} className="aspect-auto h-[220px] w-full">
+              <BarChart data={funnel} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                <CartesianGrid vertical={false} className="stroke-border" />
+                <XAxis
+                  dataKey="stage"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={4}
+                  interval={0}
+                  tick={({ x, y, payload }: { x: number; y: number; payload: { value: string } }) => {
+                    const words = payload.value.split(' ');
+                    const lines: string[] = [];
+                    let cur = '';
+                    for (const w of words) {
+                      if (cur && (cur + ' ' + w).length > 12) { lines.push(cur); cur = w; }
+                      else cur = cur ? cur + ' ' + w : w;
+                    }
+                    if (cur) lines.push(cur);
+                    return (
+                      <text x={x} y={y} textAnchor="middle" fontSize={10} fill="currentColor">
+                        {lines.map((line, i) => (
+                          <tspan key={i} x={x} dy={i === 0 ? 0 : 12}>{line}</tspan>
+                        ))}
+                      </text>
+                    );
+                  }}
+                />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value, _name, item) => (
+                        <div className="space-y-0.5 text-xs">
+                          <p className="font-medium">{value} deals</p>
+                          <p className="text-muted-foreground">Revenue: {fmtEur(Number(item.payload.totalRevenue))}</p>
+                        </div>
+                      )}
+                    />
                   }
-                  if (cur) lines.push(cur);
-                  return (
-                    <text x={x} y={y} textAnchor="middle" fontSize={10} fill="currentColor">
-                      {lines.map((line, i) => (
-                        <tspan key={i} x={x} dy={i === 0 ? 0 : 12}>{line}</tspan>
-                      ))}
-                    </text>
-                  );
-                }}
-              />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} allowDecimals={false} />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, _name, item) => (
-                      <div className="space-y-0.5 text-xs">
-                        <p className="font-medium">{value} deals</p>
-                        <p className="text-muted-foreground">Revenue: {fmtEur(Number(item.payload.totalRevenue))}</p>
-                      </div>
-                    )}
-                  />
-                }
-              />
-              <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ChartContainer>
-        ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground">No open opportunities.</p>
-        )}
-      </div>
-
-      {/* Win Rate */}
-      {p && (p.winRate.won > 0 || p.winRate.lost > 0 || p.winRate.open > 0) && (() => {
-        const winRateData = [
-          { name: 'Won', value: p.winRate.won },
-          { name: 'Lost', value: p.winRate.lost },
-          { name: 'Open', value: p.winRate.open },
-        ].filter((d) => d.value > 0);
-        return (
-          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Win Rate</p>
-            <p className="text-xs text-muted-foreground mb-4">Won · Lost · Open — all time</p>
-            <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                <Pie data={winRateData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ value }) => value} labelLine>
-                  {winRateData.map((entry) => (
-                    <Cell key={entry.name} fill={winRateChartConfig[entry.name.toLowerCase() as keyof typeof winRateChartConfig]?.color} />
-                  ))}
-                </Pie>
-              </PieChart>
+                />
+                <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ChartContainer>
-            <div className="flex items-center justify-center gap-4 mt-2">
-              {Object.entries(winRateChartConfig).map(([key, { label, color }]) => (
-                <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-                  {label}
-                </div>
-              ))}
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No open opportunities.</p>
+          )}
+        </div>
+
+        {p && (p.winRate.won > 0 || p.winRate.lost > 0 || p.winRate.open > 0) ? (() => {
+          const winRateData = [
+            { name: 'Won', value: p.winRate.won },
+            { name: 'Lost', value: p.winRate.lost },
+            { name: 'Open', value: p.winRate.open },
+          ].filter((d) => d.value > 0);
+          return (
+            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Win Rate</p>
+              <p className="text-xs text-muted-foreground mb-4">Won · Lost · Open — all time</p>
+              <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
+                <PieChart>
+                  <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                  <Pie data={winRateData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ value }) => value} labelLine>
+                    {winRateData.map((entry) => (
+                      <Cell key={entry.name} fill={winRateChartConfig[entry.name.toLowerCase() as keyof typeof winRateChartConfig]?.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+              <div className="flex items-center justify-center gap-4 mt-2">
+                {Object.entries(winRateChartConfig).map(([key, { label, color }]) => (
+                  <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                    {label}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })() : <div />}
+      </div>
 
       {/* Forecast over time */}
       {p && p.forecast.length > 0 && (
