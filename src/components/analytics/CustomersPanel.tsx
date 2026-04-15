@@ -167,7 +167,7 @@ export function CustomersPanel() {
           label="Overall Cloud Rate"
           value={totalCloudPct !== null ? `${totalCloudPct}%` : '—'}
           icon={CloudLightning}
-          sub={c ? `${c.cloudBySegment.reduce((s, x) => s + x.cloud, 0)} cloud customers` : undefined}
+          sub={c ? `${c.stale.cloudCount} cloud customers` : undefined}
         />
 
         {c && c.cloudBySegment.length > 0 && (

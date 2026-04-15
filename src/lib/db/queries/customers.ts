@@ -129,16 +129,15 @@ export async function updateCustomerLastActivity(customerId: string, at: string)
   );
 }
 
-/** Derive cloud_customer from contacts: true if the most recently updated contact has contact_type 'Cloud Reseller'/'Cloud Contact' or cloud_contact = 1. */
+/** Derive cloud_customer from contacts: true if ANY contact has contact_type 'Cloud Reseller'/'Cloud Contact' or cloud_contact = 1. */
 export async function recomputeCloudCustomerStatus(): Promise<void> {
   const db = await getDb();
   await db.execute(`
     UPDATE customers SET cloud_customer = (
-      SELECT CASE WHEN contact_type IN ('Cloud Reseller', 'Cloud Contact') OR cloud_contact = 1 THEN 1 ELSE 0 END
+      SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
       FROM contacts
       WHERE contacts.customer_id = customers.id
-      ORDER BY contacts.updated_at DESC
-      LIMIT 1
+        AND (contact_type IN ('Cloud Reseller', 'Cloud Contact') OR cloud_contact = 1)
     )
   `);
 }
