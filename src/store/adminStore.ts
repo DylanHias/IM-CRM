@@ -8,6 +8,7 @@ import type {
   ActivityTimelinePoint,
   PipelineStats,
   TableStats,
+  UserActivityBreakdown,
 } from '@/types/admin';
 import type { SyncRecord } from '@/types/sync';
 
@@ -17,7 +18,7 @@ interface AdminState {
   syncErrors: SyncRecord[];
   dataQuality: DataQualityMetrics | null;
   activityTimeline: ActivityTimelinePoint[];
-  activityByUser: { userName: string; count: number }[];
+  activityByUser: UserActivityBreakdown[];
   pipelineByStage: PipelineStats[];
   winRate: { won: number; lost: number; open: number } | null;
   tableStats: TableStats[];
@@ -28,7 +29,7 @@ interface AdminState {
   setSyncErrors: (errors: SyncRecord[]) => void;
   setDataQuality: (quality: DataQualityMetrics) => void;
   setActivityTimeline: (data: ActivityTimelinePoint[]) => void;
-  setActivityByUser: (data: { userName: string; count: number }[]) => void;
+  setActivityByUser: (data: UserActivityBreakdown[]) => void;
   setPipelineByStage: (data: PipelineStats[]) => void;
   setWinRate: (data: { won: number; lost: number; open: number }) => void;
   setTableStats: (data: TableStats[]) => void;
@@ -126,7 +127,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         await Promise.all([
           queryDataQualityMetrics().catch((e) => { console.error('[admin] dataQuality query failed:', e); return null; }),
           queryActivityTimeline().catch((e) => { console.error('[admin] activityTimeline query failed:', e); return [] as ActivityTimelinePoint[]; }),
-          queryActivityBreakdownByUser().catch((e) => { console.error('[admin] activityByUser query failed:', e); return [] as { userName: string; count: number }[]; }),
+          queryActivityBreakdownByUser().catch((e) => { console.error('[admin] activityByUser query failed:', e); return [] as UserActivityBreakdown[]; }),
           queryPipelineByStage().catch((e) => { console.error('[admin] pipelineByStage query failed:', e); return [] as PipelineStats[]; }),
           queryWinRate().catch((e) => { console.error('[admin] winRate query failed:', e); return null; }),
         ]);

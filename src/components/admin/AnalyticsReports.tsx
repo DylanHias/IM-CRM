@@ -210,7 +210,36 @@ export function AnalyticsReports() {
             <BarChart data={filteredUsers} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
               <XAxis type="number" hide />
               <YAxis dataKey="userName" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} width={140} />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload;
+                  if (!d) return null;
+                  const types = [
+                    { label: 'Meeting', value: d.meeting as number, color: activityChartConfig.meeting.color },
+                    { label: 'Call', value: d.call as number, color: activityChartConfig.call.color },
+                    { label: 'Visit', value: d.visit as number, color: activityChartConfig.visit.color },
+                    { label: 'Note', value: d.note as number, color: activityChartConfig.note.color },
+                  ].filter((t) => t.value > 0);
+                  return (
+                    <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-md text-xs min-w-[140px]">
+                      <p className="font-semibold mb-1.5">{d.userName}</p>
+                      <p className="text-muted-foreground mb-1.5">{d.count} total</p>
+                      <div className="space-y-1">
+                        {types.map((t) => (
+                          <div key={t.label} className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-block h-2 w-2 rounded-sm flex-shrink-0" style={{ backgroundColor: t.color }} />
+                              <span className="text-muted-foreground">{t.label}</span>
+                            </div>
+                            <span className="font-medium">{t.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }}
+              />
               <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </ChartContainer>

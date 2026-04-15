@@ -64,10 +64,15 @@ export async function queryActivityTimeline(): Promise<ActivityTimelinePoint[]> 
   return Array.from(map.values());
 }
 
-export async function queryActivityBreakdownByUser(): Promise<{ userName: string; count: number }[]> {
+export async function queryActivityBreakdownByUser(): Promise<{ userName: string; count: number; meeting: number; call: number; visit: number; note: number }[]> {
   const db = await getDb();
-  return db.select<{ userName: string; count: number }[]>(
-    `SELECT u.name as userName, COUNT(a.id) as count
+  return db.select<{ userName: string; count: number; meeting: number; call: number; visit: number; note: number }[]>(
+    `SELECT u.name as userName,
+            COUNT(a.id) as count,
+            COUNT(CASE WHEN a.type = 'meeting' THEN 1 END) as meeting,
+            COUNT(CASE WHEN a.type = 'call' THEN 1 END) as call,
+            COUNT(CASE WHEN a.type = 'visit' THEN 1 END) as visit,
+            COUNT(CASE WHEN a.type = 'note' THEN 1 END) as note
      FROM users u
      LEFT JOIN activities a ON a.created_by_id = u.id
      GROUP BY u.id, u.name

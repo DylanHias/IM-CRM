@@ -49,6 +49,15 @@ export interface ActivityBreakdown {
   count: number;
 }
 
+export interface UserActivityBreakdown {
+  userName: string;
+  count: number;
+  meeting: number;
+  call: number;
+  visit: number;
+  note: number;
+}
+
 export interface ActivityTimelinePoint {
   date: string;
   meeting: number;

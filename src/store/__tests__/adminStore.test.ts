@@ -12,7 +12,7 @@ vi.mock('@/lib/db/queries/users', () => ({
 vi.mock('@/lib/db/queries/adminAnalytics', () => ({
   queryDataQualityMetrics: vi.fn().mockResolvedValue({ totalCustomers: 10, customersWithoutContacts: 2, customersWithoutRecentActivity: 3, staleOpportunities: 1 }),
   queryActivityTimeline: vi.fn().mockResolvedValue([{ date: '2026-03-01', meeting: 1, call: 2, visit: 0, note: 1 }]),
-  queryActivityBreakdownByUser: vi.fn().mockResolvedValue([{ userName: 'Jan De Vries', count: 5 }]),
+  queryActivityBreakdownByUser: vi.fn().mockResolvedValue([{ userName: 'Jan De Vries', count: 5, meeting: 2, call: 1, visit: 1, note: 1 }]),
   queryPipelineByStage: vi.fn().mockResolvedValue([{ stage: 'Discovery', count: 3, totalRevenue: 90000 }]),
   queryWinRate: vi.fn().mockResolvedValue({ won: 3, lost: 1, open: 5 }),
   querySyncHealthMetrics: vi.fn().mockResolvedValue(null),
@@ -69,7 +69,7 @@ describe('adminStore', () => {
   });
 
   it('setActivityByUser', () => {
-    const data = [{ userName: 'Dylan', count: 15 }];
+    const data = [{ userName: 'Dylan', count: 15, meeting: 5, call: 4, visit: 3, note: 3 }];
     store().setActivityByUser(data);
     expect(store().activityByUser).toEqual(data);
   });
