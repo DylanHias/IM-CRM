@@ -29,22 +29,27 @@ export function PersonalPanel() {
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
-  const userId = d365UserId ?? account?.localAccountId ?? '';
+
+  // Collect all known IDs for the current user — activities may be stored with
+  // either the Azure AD localAccountId (created locally) or the D365 system GUID
+  // (overwritten after D365 sync). Querying with both ensures nothing is missed.
+  const userIds = Array.from(new Set([d365UserId, account?.localAccountId].filter(Boolean) as string[]));
 
   const { personal, isLoadingPersonal, loadPersonal } = useAnalyticsStore();
 
   useEffect(() => {
-    if (!userId) return;
+    if (userIds.length === 0) return;
     const range = periodToRange(period);
     const prev = prevPeriodRange(period);
-    loadPersonal(userId, range, prev);
-  }, [userId, period, lastD365SyncAt, loadPersonal]);
+    loadPersonal(userIds, range, prev);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d365UserId, account?.localAccountId, period, lastD365SyncAt, loadPersonal]);
 
   if (isLoadingPersonal && !personal) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
   }
 
-  if (!userId) {
+  if (userIds.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Unable to identify user. Sync with D365 first.</p>;
   }
 

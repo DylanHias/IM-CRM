@@ -30,21 +30,23 @@ export function ActivityPanel() {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
-  const userId = d365UserId ?? account?.localAccountId ?? '';
+
+  const userIds = Array.from(new Set([d365UserId, account?.localAccountId].filter(Boolean) as string[]));
 
   const { activity, isLoadingActivity, loadActivity } = useAnalyticsStore();
 
   useEffect(() => {
-    if (!userId) return;
+    if (userIds.length === 0) return;
     const range = periodToRange(period);
-    loadActivity(userId, range);
-  }, [userId, period, loadActivity]);
+    loadActivity(userIds, range);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d365UserId, account?.localAccountId, period, loadActivity]);
 
   if (isLoadingActivity && !activity) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
   }
 
-  if (!userId) {
+  if (userIds.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Unable to identify user. Sync with D365 first.</p>;
   }
 

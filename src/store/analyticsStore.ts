@@ -18,10 +18,10 @@ interface AnalyticsState {
   isLoadingCustomers: boolean;
   isLoadingActivity: boolean;
 
-  loadPersonal: (userId: string, range: DateRange, prevRange: DateRange) => Promise<void>;
+  loadPersonal: (userIds: string[], range: DateRange, prevRange: DateRange) => Promise<void>;
   loadPipeline: () => Promise<void>;
   loadCustomers: () => Promise<void>;
-  loadActivity: (userId: string, range: DateRange) => Promise<void>;
+  loadActivity: (userIds: string[], range: DateRange) => Promise<void>;
 }
 
 export const useAnalyticsStore = create<AnalyticsState>((set) => ({
@@ -35,11 +35,11 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
   isLoadingCustomers: false,
   isLoadingActivity: false,
 
-  loadPersonal: async (userId, range, prevRange) => {
+  loadPersonal: async (userIds, range, prevRange) => {
     set({ isLoadingPersonal: true });
     try {
       const { queryPersonalStats } = await import('@/lib/db/queries/analytics');
-      const personal = await queryPersonalStats(userId, range, prevRange);
+      const personal = await queryPersonalStats(userIds, range, prevRange);
       set({ personal });
     } catch (e) {
       console.error('[analytics] loadPersonal failed:', e);
@@ -74,11 +74,11 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
     }
   },
 
-  loadActivity: async (userId, range) => {
+  loadActivity: async (userIds, range) => {
     set({ isLoadingActivity: true });
     try {
       const { queryActivityPatternsData } = await import('@/lib/db/queries/analytics');
-      const activity = await queryActivityPatternsData(userId, range);
+      const activity = await queryActivityPatternsData(userIds, range);
       set({ activity });
     } catch (e) {
       console.error('[analytics] loadActivity failed:', e);

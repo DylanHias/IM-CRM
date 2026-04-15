@@ -21,32 +21,43 @@ function rangeParams(range: DateRange): [string, string] {
   return [range.from, range.to];
 }
 
+// Builds a parameterized IN clause: "$1, $2, ..." starting at `offset + 1`
+function inClause(count: number, offset = 0): string {
+  return Array.from({ length: count }, (_, i) => `$${i + 1 + offset}`).join(', ');
+}
+
 // ── Personal ──────────────────────────────────────────────────────────────────
 
-async function queryMyActivityCount(userId: string, range: DateRange): Promise<number> {
+// userIds contains both the D365 system GUID and the Azure AD localAccountId so activities
+// stored with either identifier (local creation vs D365-synced) are always matched.
+
+async function queryMyActivityCount(userIds: string[], range: DateRange): Promise<number> {
   const db = await getDb();
+  const n = userIds.length;
   const [row] = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM activities
-     WHERE created_by_id = $1 AND occurred_at >= $2 AND occurred_at <= $3`,
-    [userId, ...rangeParams(range)],
+     WHERE created_by_id IN (${inClause(n)}) AND occurred_at >= $${n + 1} AND occurred_at <= $${n + 2}`,
+    [...userIds, ...rangeParams(range)],
   );
   return row?.count ?? 0;
 }
 
-async function queryMyActivityTimeline(userId: string, range: DateRange): Promise<{ date: string; count: number }[]> {
+async function queryMyActivityTimeline(userIds: string[], range: DateRange): Promise<{ date: string; count: number }[]> {
   const db = await getDb();
+  const n = userIds.length;
   return db.select<{ date: string; count: number }[]>(
     `SELECT strftime('%Y-%m-%d', occurred_at) as date, COUNT(*) as count
      FROM activities
-     WHERE created_by_id = $1 AND occurred_at >= $2 AND occurred_at <= $3
+     WHERE created_by_id IN (${inClause(n)}) AND occurred_at >= $${n + 1} AND occurred_at <= $${n + 2}
      GROUP BY date
      ORDER BY date`,
-    [userId, ...rangeParams(range)],
+    [...userIds, ...rangeParams(range)],
   );
 }
 
-async function queryMyFollowUpCompletion(userId: string, range: DateRange): Promise<{ completed: number; total: number; avgDaysToComplete: number }> {
+async function queryMyFollowUpCompletion(userIds: string[], range: DateRange): Promise<{ completed: number; total: number; avgDaysToComplete: number }> {
   const db = await getDb();
+  const n = userIds.length;
   const [row] = await db.select<{ total: number; completed: number; avgDays: number | null }[]>(
     `SELECT
        COUNT(*) as total,
@@ -54,8 +65,8 @@ async function queryMyFollowUpCompletion(userId: string, range: DateRange): Prom
        AVG(CASE WHEN completed = 1 AND completed_at IS NOT NULL
                 THEN julianday(completed_at) - julianday(created_at) ELSE NULL END) as avgDays
      FROM follow_ups
-     WHERE created_by_id = $1 AND created_at >= $2 AND created_at <= $3`,
-    [userId, ...rangeParams(range)],
+     WHERE created_by_id IN (${inClause(n)}) AND created_at >= $${n + 1} AND created_at <= $${n + 2}`,
+    [...userIds, ...rangeParams(range)],
   );
   return {
     total: row?.total ?? 0,
@@ -64,7 +75,7 @@ async function queryMyFollowUpCompletion(userId: string, range: DateRange): Prom
   };
 }
 
-async function queryMyPipeline(userId: string): Promise<{ openCount: number; openValue: number; weightedForecast: number }> {
+async function queryMyPipeline(userIds: string[]): Promise<{ openCount: number; openValue: number; weightedForecast: number }> {
   const db = await getDb();
   const [row] = await db.select<{ openCount: number; openValue: number; weightedForecast: number }[]>(
     `SELECT
@@ -72,8 +83,8 @@ async function queryMyPipeline(userId: string): Promise<{ openCount: number; ope
        COALESCE(SUM(estimated_revenue), 0) as openValue,
        COALESCE(SUM(estimated_revenue * probability / 100.0), 0) as weightedForecast
      FROM opportunities
-     WHERE created_by_id = $1 AND status = 'Open'`,
-    [userId],
+     WHERE created_by_id IN (${inClause(userIds.length)}) AND status = 'Open'`,
+    userIds,
   );
   return {
     openCount: row?.openCount ?? 0,
@@ -82,13 +93,13 @@ async function queryMyPipeline(userId: string): Promise<{ openCount: number; ope
   };
 }
 
-async function queryMyWinRate(userId: string): Promise<{ won: number; lost: number }> {
+async function queryMyWinRate(userIds: string[]): Promise<{ won: number; lost: number }> {
   const db = await getDb();
   const rows = await db.select<{ status: string; count: number }[]>(
     `SELECT status, COUNT(*) as count FROM opportunities
-     WHERE created_by_id = $1 AND status IN ('Won', 'Lost')
+     WHERE created_by_id IN (${inClause(userIds.length)}) AND status IN ('Won', 'Lost')
      GROUP BY status`,
-    [userId],
+    userIds,
   );
   const map: Record<string, number> = {};
   for (const r of rows) map[r.status] = r.count;
@@ -96,17 +107,17 @@ async function queryMyWinRate(userId: string): Promise<{ won: number; lost: numb
 }
 
 export async function queryPersonalStats(
-  userId: string,
+  userIds: string[],
   range: DateRange,
   prevRange: DateRange,
 ): Promise<PersonalStats> {
   const [current, previous, timeline, followUpCompletion, pipeline, winRate] = await Promise.all([
-    queryMyActivityCount(userId, range),
-    queryMyActivityCount(userId, prevRange),
-    queryMyActivityTimeline(userId, range),
-    queryMyFollowUpCompletion(userId, range),
-    queryMyPipeline(userId),
-    queryMyWinRate(userId),
+    queryMyActivityCount(userIds, range),
+    queryMyActivityCount(userIds, prevRange),
+    queryMyActivityTimeline(userIds, range),
+    queryMyFollowUpCompletion(userIds, range),
+    queryMyPipeline(userIds),
+    queryMyWinRate(userIds),
   ]);
   return { activityCount: { current, previous }, activityTimeline: timeline, followUpCompletion, pipeline, winRate };
 }
@@ -312,11 +323,12 @@ export async function queryCustomerHealthData(): Promise<CustomerHealthData> {
 // ── Activity ──────────────────────────────────────────────────────────────────
 
 export async function queryActivityPatternsData(
-  userId: string,
+  userIds: string[],
   range: DateRange,
 ): Promise<ActivityPatternsData> {
   const db = await getDb();
   const [from, to] = rangeParams(range);
+  const n = userIds.length;
 
   const [callDirection, typeMixRaw, heatmapRaw, mostActiveCustomers] = await Promise.all([
     db.select<{ incoming: number; outgoing: number; unknown: number }[]>(
@@ -331,12 +343,12 @@ export async function queryActivityPatternsData(
 
     db.select<{ type: string; mine: number; team: number }[]>(
       `SELECT type,
-         SUM(CASE WHEN created_by_id = $1 THEN 1 ELSE 0 END) as mine,
-         SUM(CASE WHEN created_by_id != $1 THEN 1 ELSE 0 END) as team
+         SUM(CASE WHEN created_by_id IN (${inClause(n)}) THEN 1 ELSE 0 END) as mine,
+         SUM(CASE WHEN created_by_id NOT IN (${inClause(n)}) THEN 1 ELSE 0 END) as team
        FROM activities
-       WHERE occurred_at >= $2 AND occurred_at <= $3
+       WHERE occurred_at >= $${n * 2 + 1} AND occurred_at <= $${n * 2 + 2}
        GROUP BY type`,
-      [userId, from, to],
+      [...userIds, ...userIds, from, to],
     ),
 
     db.select<{ dayOfWeek: number; count: number }[]>(
