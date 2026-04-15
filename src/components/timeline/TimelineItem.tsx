@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, Users, MapPin, FileText, CheckSquare, Calendar, MessageCircle, Pencil, Trash2 } from 'lucide-react';
+import { Phone, Users, MapPin, FileText, CheckSquare, Calendar, MessageCircle, Pencil, Trash2, Target, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
@@ -19,9 +19,24 @@ interface TimelineItemProps {
   isLast?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  customerName?: string;
+  onOpenCustomer?: () => void;
 }
 
-export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemProps) {
+function CustomerLine({ name, onClick }: { name?: string; onClick?: () => void }) {
+  if (!name) return null;
+  return (
+    <p
+      className={`text-[11px] text-muted-foreground flex items-center gap-1 mb-0.5 ${onClick ? 'cursor-pointer hover:underline hover:text-foreground' : ''}`}
+      onClick={onClick}
+    >
+      <Building2 size={10} />
+      {name}
+    </p>
+  );
+}
+
+export function TimelineItem({ event, isLast, onEdit, onDelete, customerName, onOpenCustomer }: TimelineItemProps) {
   if (event.kind === 'activity') {
     const config = ACTIVITY_CONFIG[event.type];
     const Icon = config.icon;
@@ -38,6 +53,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemPr
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div>
+              <CustomerLine name={customerName} onClick={onOpenCustomer} />
               <p className="text-sm text-foreground">
                 <span className="font-medium">{event.subject}</span>
               </p>
@@ -86,38 +102,76 @@ export function TimelineItem({ event, isLast, onEdit, onDelete }: TimelineItemPr
   }
 
   // followup
+  if (event.kind === 'followup') {
+    return (
+      <div className="flex gap-3.5 px-4 py-3.5 group">
+        <div className="relative z-10 flex-shrink-0 mt-0.5">
+          {!isLast && <div className="absolute left-1/2 top-1/2 bottom-0 -translate-x-1/2 w-px bg-border/60 h-[calc(100%+14px)]" />}
+          <div className={`relative w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-success/10' : 'bg-warning/10'}`}>
+            {event.completed
+              ? <CheckSquare size={15} className="text-success" />
+              : <Calendar size={15} className="text-warning" />
+            }
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CustomerLine name={customerName} onClick={onOpenCustomer} />
+              <p className="text-sm text-foreground">
+                <span className={`font-medium ${event.completed ? 'line-through text-muted-foreground' : ''}`}>
+                  {event.title}
+                </span>
+                {' '}
+                <Badge variant={event.completed ? 'success' : 'warning'} className="text-[10px] ml-1 align-middle">
+                  {event.completed ? 'Done' : 'Open'}
+                </Badge>
+              </p>
+              {event.description && (
+                <p className="text-[13px] text-muted-foreground mt-0.5">{event.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${formatDisplayName(event.createdByName)}`}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
+              {formatDate(event.dueDate)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // opportunity
+  const statusVariant = event.status === 'Won' ? 'success' : event.status === 'Lost' ? 'destructive' : 'secondary';
   return (
     <div className="flex gap-3.5 px-4 py-3.5 group">
       <div className="relative z-10 flex-shrink-0 mt-0.5">
         {!isLast && <div className="absolute left-1/2 top-1/2 bottom-0 -translate-x-1/2 w-px bg-border/60 h-[calc(100%+14px)]" />}
-        <div className={`relative w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card ${event.completed ? 'bg-success/10' : 'bg-warning/10'}`}>
-          {event.completed
-            ? <CheckSquare size={15} className="text-success" />
-            : <Calendar size={15} className="text-warning" />
-          }
+        <div className="relative w-9 h-9 rounded-full flex items-center justify-center ring-[3px] ring-card bg-primary/10">
+          <Target size={15} className="text-primary" />
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div>
+            <CustomerLine name={customerName} onClick={onOpenCustomer} />
             <p className="text-sm text-foreground">
-              <span className={`font-medium ${event.completed ? 'line-through text-muted-foreground' : ''}`}>
-                {event.title}
-              </span>
+              <span className="font-medium">{event.subject}</span>
               {' '}
-              <Badge variant={event.completed ? 'success' : 'warning'} className="text-[10px] ml-1 align-middle">
-                {event.completed ? 'Done' : 'Open'}
-              </Badge>
+              <Badge variant={statusVariant} className="text-[10px] ml-1 align-middle">{event.status}</Badge>
             </p>
-            {event.description && (
-              <p className="text-[13px] text-muted-foreground mt-0.5">{event.description}</p>
-            )}
-            <p className="text-xs text-muted-foreground mt-1.5">
-              Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${formatDisplayName(event.createdByName)}`}
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+              {event.stage && <span>{event.stage}</span>}
+              {event.primaryVendor && <span className="text-muted-foreground/70">· {event.primaryVendor}</span>}
+              {event.estimatedRevenue != null && (
+                <span>· {new Intl.NumberFormat('en-US', { style: 'currency', currency: event.currency || 'USD', maximumFractionDigits: 0 }).format(event.estimatedRevenue)}</span>
+              )}
             </p>
           </div>
           <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0 pt-0.5">
-            {formatDate(event.dueDate)}
+            {event.expirationDate ? formatDate(event.expirationDate) : formatDate(event.createdAt)}
           </span>
         </div>
       </div>

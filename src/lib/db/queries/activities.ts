@@ -25,6 +25,14 @@ function rowToActivity(row: ActivityRow): Activity {
   };
 }
 
+export async function queryAllActivities(): Promise<Activity[]> {
+  const db = await getDb();
+  const rows = await db.select<ActivityRow[]>(
+    `SELECT * FROM activities ORDER BY occurred_at DESC`
+  );
+  return rows.map(rowToActivity);
+}
+
 export async function queryActivitiesByCustomer(customerId: string): Promise<Activity[]> {
   const db = await getDb();
   const rows = await db.select<ActivityRow[]>(

@@ -17,6 +17,7 @@ The **sidebar** on the left is your main navigation. It gives you quick access t
 - **Follow-Ups** — All your pending tasks and reminders
 - **Opportunities** — Sales pipeline and deals
 - **Revenue Overview** — Annual Recurring Revenue dashboard
+- **Timeline** — A chronological feed of all activities, follow-ups, and opportunities across every customer
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.
 
@@ -26,7 +27,7 @@ Below the main navigation, you'll find your **Recent Customers** section. This s
 
 ## Quick Actions
 
-- Press **Ctrl+K** (or **Cmd+K** on Mac) to open the **Command Palette** — a quick search for any action in the app
+- Press **Ctrl+K** (or **Cmd+K** on Mac) to open the **Command Palette** — search customers and contacts by name, or run any action in the app
 - Press **?** to see all available **keyboard shortcuts**
 - Press **N** on most pages to create a new item (activity, follow-up, contact, etc.)
 - Press **/** to focus the search bar on any page that has one

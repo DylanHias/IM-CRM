@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
-  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle,
+  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User,
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
@@ -13,6 +13,7 @@ import {
 import { KbdGroup } from '@/components/ui/kbd';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useCustomerStore } from '@/store/customerStore';
 import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcuts/shortcuts';
 import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
 import type { LucideIcon } from 'lucide-react';
@@ -26,6 +27,7 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/invoices': FileText,
   '/revenue-overview': BarChart2,
   '/analytics': LineChart,
+  '/timeline': Clock,
 };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
@@ -54,13 +56,18 @@ export function CommandPalette() {
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
   const customKeybindings = useSettingsStore((s) => s.customKeybindings);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const customers = useCustomerStore((s) => s.customers);
+  const allContacts = useCustomerStore((s) => s.allContacts);
   const router = useRouter();
+
+  const [query, setQuery] = useState('');
 
   const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
   const handleSelect = useCallback(
     (shortcut: ShortcutDefinition) => {
       setOpen(false);
+      setQuery('');
 
       if (shortcut.id.startsWith('nav-') && !isNaN(Number(shortcut.id.split('-')[1]))) {
         const idx = Number(shortcut.id.split('-')[1]) - 1;
@@ -91,7 +98,29 @@ export function CommandPalette() {
     [router, sidebarOrder, setOpen, toggleSidebar]
   );
 
-  // Group shortcuts by section, skip sections that are purely contextual or have no palette value
+  const q = query.toLowerCase().trim();
+
+  const matchedCustomers = useMemo(() => {
+    if (!q) return [];
+    return customers
+      .filter((c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.accountNumber?.toLowerCase().includes(q) ||
+        c.addressCity?.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+  }, [customers, q]);
+
+  const matchedContacts = useMemo(() => {
+    if (!q) return [];
+    return allContacts
+      .filter((c) => {
+        const full = `${c.firstName} ${c.lastName}`.toLowerCase();
+        return full.includes(q) || c.email?.toLowerCase().includes(q) || c.jobTitle?.toLowerCase().includes(q);
+      })
+      .slice(0, 5);
+  }, [allContacts, q]);
+
   const paletteShortcuts = shortcuts.filter(
     (s) => s.id !== 'command-palette' && s.id !== 'close' && s.section !== 'List Navigation'
   );
@@ -103,12 +132,72 @@ export function CommandPalette() {
     }))
     .filter((g) => g.items.length > 0);
 
+  const hasSearchResults = matchedCustomers.length > 0 || matchedContacts.length > 0;
+
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search…" />
+    <CommandDialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setQuery('');
+      }}
+    >
+      <CommandInput
+        placeholder="Search customers, contacts, or type a command…"
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        {grouped.map(({ section, items }) => (
+
+        {matchedCustomers.length > 0 && (
+          <CommandGroup heading="Customers">
+            {matchedCustomers.map((c) => (
+              <CommandItem
+                key={`customer-${c.id}`}
+                value={`customer-${c.id}-${c.name}`}
+                onSelect={() => {
+                  setOpen(false);
+                  setQuery('');
+                  router.push(`/customers?id=${c.id}`);
+                }}
+              >
+                <Building2 className="mr-2 h-4 w-4 opacity-60" />
+                <span className="flex-1">{c.name}</span>
+                {c.addressCity && (
+                  <span className="text-xs text-muted-foreground ml-2">{c.addressCity}</span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {matchedContacts.length > 0 && (
+          <CommandGroup heading="Contacts">
+            {matchedContacts.map((c) => {
+              const customerName = customers.find((cu) => cu.id === c.customerId)?.name;
+              return (
+                <CommandItem
+                  key={`contact-${c.id}`}
+                  value={`contact-${c.id}-${c.firstName}-${c.lastName}`}
+                  onSelect={() => {
+                    setOpen(false);
+                    setQuery('');
+                    router.push(`/customers?id=${c.customerId}&tab=contacts`);
+                  }}
+                >
+                  <User className="mr-2 h-4 w-4 opacity-60" />
+                  <span className="flex-1">{c.firstName} {c.lastName}</span>
+                  {customerName && (
+                    <span className="text-xs text-muted-foreground ml-2">{customerName}</span>
+                  )}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+
+        {!hasSearchResults && grouped.map(({ section, items }) => (
           <CommandGroup key={section} heading={section}>
             {items.map((shortcut) => {
               const Icon = getIcon(shortcut, sidebarOrder);
@@ -126,18 +215,22 @@ export function CommandPalette() {
             })}
           </CommandGroup>
         ))}
-        <CommandGroup heading="Other">
-          <CommandItem
-            value="Help"
-            onSelect={() => {
-              setOpen(false);
-              router.push('/help');
-            }}
-          >
-            <HelpCircle className="mr-2 h-4 w-4 opacity-60" />
-            <span className="flex-1">Help</span>
-          </CommandItem>
-        </CommandGroup>
+
+        {!hasSearchResults && (
+          <CommandGroup heading="Other">
+            <CommandItem
+              value="Help"
+              onSelect={() => {
+                setOpen(false);
+                setQuery('');
+                router.push('/help');
+              }}
+            >
+              <HelpCircle className="mr-2 h-4 w-4 opacity-60" />
+              <span className="flex-1">Help</span>
+            </CommandItem>
+          </CommandGroup>
+        )}
       </CommandList>
     </CommandDialog>
   );

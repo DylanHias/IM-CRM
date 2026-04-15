@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -128,6 +128,7 @@ export function AppSidebar() {
     '/invoices': { href: '/invoices', label: 'Invoices', icon: FileText, disabled: true, disabledTooltip: 'Coming soon' },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
+    '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
   };
 
   const navItems = sidebarOrder.map((key) => navItemMap[key]).filter(Boolean);

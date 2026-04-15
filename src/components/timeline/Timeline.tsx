@@ -4,15 +4,18 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
-import type { Activity, FollowUp, TimelineEvent } from '@/types/entities';
+import type { Activity, FollowUp, Opportunity, TimelineEvent } from '@/types/entities';
 import { TimelineItem } from './TimelineItem';
 
 interface TimelineProps {
   activities: Activity[];
   followUps: FollowUp[];
+  opportunities?: Opportunity[];
   paginate?: boolean;
   onEditActivity?: (activity: Activity) => void;
   onDeleteActivity?: (activity: Activity) => void;
+  customerMap?: Map<string, string>;
+  onOpenCustomer?: (customerId: string) => void;
 }
 
 function getEventDate(event: TimelineEvent): string {
@@ -21,7 +24,7 @@ function getEventDate(event: TimelineEvent): string {
   return event.expirationDate ?? event.createdAt;
 }
 
-export function Timeline({ activities, followUps, paginate, onEditActivity, onDeleteActivity }: TimelineProps) {
+export function Timeline({ activities, followUps, opportunities, paginate, onEditActivity, onDeleteActivity, customerMap, onOpenCustomer }: TimelineProps) {
   const [page, setPage] = useState(1);
   const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('timeline');
 
@@ -29,9 +32,10 @@ export function Timeline({ activities, followUps, paginate, onEditActivity, onDe
     const all: TimelineEvent[] = [
       ...activities.map((a) => ({ kind: 'activity' as const, ...a })),
       ...followUps.map((f) => ({ kind: 'followup' as const, ...f })),
+      ...(opportunities ?? []).map((o) => ({ kind: 'opportunity' as const, ...o })),
     ];
     return all.sort((a, b) => getEventDate(b).localeCompare(getEventDate(a)));
-  }, [activities, followUps]);
+  }, [activities, followUps, opportunities]);
 
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -63,6 +67,8 @@ export function Timeline({ activities, followUps, paginate, onEditActivity, onDe
               isLast={i === visibleEvents.length - 1}
               onEdit={event.kind === 'activity' && onEditActivity ? () => onEditActivity(event) : undefined}
               onDelete={event.kind === 'activity' && onDeleteActivity ? () => onDeleteActivity(event) : undefined}
+              customerName={customerMap?.get(event.customerId)}
+              onOpenCustomer={onOpenCustomer ? () => onOpenCustomer(event.customerId) : undefined}
             />
           </motion.div>
         ))}

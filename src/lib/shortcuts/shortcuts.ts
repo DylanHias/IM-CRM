@@ -33,6 +33,7 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/invoices': 'Go to Invoices',
     '/revenue-overview': 'Go to Revenue Overview',
     '/analytics': 'Go to Analytics',
+    '/timeline': 'Go to Timeline',
   };
 
   return sidebarOrder.map((tab, i) => ({

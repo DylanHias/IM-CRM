@@ -14,6 +14,7 @@ import {
   Settings2,
   Keyboard,
   LineChart,
+  CalendarClock,
 } from 'lucide-react';
 import { SubSidebar } from '@/components/layout/SubSidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +29,7 @@ import revenueOverview from '../../../../docs/help/revenue-overview.md';
 import analytics from '../../../../docs/help/analytics.md';
 import sync from '../../../../docs/help/sync.md';
 import settings from '../../../../docs/help/settings.md';
+import timeline from '../../../../docs/help/timeline.md';
 import shortcuts from '../../../../docs/help/shortcuts.md';
 
 const TABS = [
@@ -41,6 +43,7 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: LineChart },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'settings', label: 'Settings', icon: Settings2 },
+  { id: 'timeline', label: 'Timeline', icon: CalendarClock },
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
 ] as const;
 
@@ -57,6 +60,7 @@ const CONTENT: Record<TabId, string> = {
   analytics,
   sync,
   settings,
+  timeline,
   shortcuts,
 };
 
