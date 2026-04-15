@@ -5,6 +5,7 @@ import type { SyncError, SyncRecord } from '@/types/sync';
 interface SyncState {
   isSyncing: boolean;
   lastD365SyncAt: string | null;
+  callerD365UserId: string | null;
   syncErrors: SyncError[];
   recentRecords: SyncRecord[];
   pendingActivityCount: number;
@@ -19,6 +20,7 @@ interface SyncState {
   setSyncing: (syncing: boolean) => void;
   setInitialSyncProgress: (progress: { phase: string; processed: number; total: number } | null) => void;
   setLastD365Sync: (at: string) => void;
+  setCallerD365UserId: (id: string) => void;
   addSyncError: (error: SyncError) => void;
   clearSyncErrors: () => void;
   setRecentRecords: (records: SyncRecord[]) => void;
@@ -31,6 +33,7 @@ export const useSyncStore = create<SyncState>()(
     (set) => ({
       isSyncing: false,
       lastD365SyncAt: null,
+      callerD365UserId: null,
       syncErrors: [],
       recentRecords: [],
       pendingActivityCount: 0,
@@ -40,6 +43,7 @@ export const useSyncStore = create<SyncState>()(
 
       setSyncing: (isSyncing) => set({ isSyncing }),
       setLastD365Sync: (at) => set({ lastD365SyncAt: at }),
+      setCallerD365UserId: (id) => set({ callerD365UserId: id }),
       addSyncError: (error) => set((s) => ({ syncErrors: [error, ...s.syncErrors].slice(0, 50) })),
       clearSyncErrors: () => set({ syncErrors: [] }),
       setRecentRecords: (recentRecords) => set({ recentRecords, historyPage: 1 }),
@@ -52,6 +56,7 @@ export const useSyncStore = create<SyncState>()(
       name: 'crm-sync-store',
       partialize: (s) => ({
         lastD365SyncAt: s.lastD365SyncAt,
+        callerD365UserId: s.callerD365UserId,
       }),
     }
   )

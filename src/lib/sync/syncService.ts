@@ -86,8 +86,18 @@ export async function pushPendingChanges(token: string): Promise<void> {
   console.log('[sync] Pushing pending changes');
 
   try {
+    let resolvedCallerD365Id: string | undefined;
+    try {
+      const adapter = getD365Adapter();
+      resolvedCallerD365Id = await adapter.whoAmI(token);
+      store.setCallerD365UserId(resolvedCallerD365Id);
+      console.log(`[sync] Persisted caller D365 systemuserid: ${resolvedCallerD365Id}`);
+    } catch (err) {
+      console.error('[sync] Failed to resolve caller D365 ID via WhoAmI:', err instanceof Error ? err.message : err);
+    }
+
     await pushPendingContacts(token);
-    await pushPendingActivities(token);
+    await pushPendingActivities(token, resolvedCallerD365Id);
     await pushPendingFollowUps(token);
     await pushPendingOpportunities(token);
     await pushPendingDeletes(token);
@@ -116,9 +126,22 @@ export async function runFullSync(token: string): Promise<void> {
 
   try {
     await syncOptionSets(token);
+
+    // Resolve the caller's D365 system user ID once and persist it so analytics
+    // queries can match D365-synced activities (which store the D365 GUID as created_by_id).
+    let resolvedCallerD365Id: string | undefined;
+    try {
+      const adapter = getD365Adapter();
+      resolvedCallerD365Id = await adapter.whoAmI(token);
+      store.setCallerD365UserId(resolvedCallerD365Id);
+      console.log(`[sync] Persisted caller D365 systemuserid: ${resolvedCallerD365Id}`);
+    } catch (err) {
+      console.error('[sync] Failed to resolve caller D365 ID via WhoAmI:', err instanceof Error ? err.message : err);
+    }
+
     await syncD365(token);
     await pushPendingContacts(token);
-    await pushPendingActivities(token);
+    await pushPendingActivities(token, resolvedCallerD365Id);
     await pushPendingFollowUps(token);
     await pushPendingOpportunities(token);
     await pushPendingDeletes(token);
@@ -323,7 +346,7 @@ async function pushPendingContacts(token: string): Promise<void> {
   console.log(`[sync] Pushed ${pushed}/${pending.length} contacts`);
 }
 
-async function pushPendingActivities(token: string): Promise<void> {
+async function pushPendingActivities(token: string, callerD365Id?: string): Promise<void> {
   const store = useSyncStore.getState();
   const pending = await queryPendingActivities();
   if (pending.length === 0) return;
@@ -334,12 +357,14 @@ async function pushPendingActivities(token: string): Promise<void> {
   let pushed = 0;
 
   const adapter = getD365Adapter();
-  let callerD365Id: string | undefined;
-  try {
-    callerD365Id = await adapter.whoAmI(token);
-    console.log(`[sync] Resolved caller D365 systemuserid: ${callerD365Id}`);
-  } catch (err) {
-    console.error('[sync] Failed to resolve caller D365 ID via WhoAmI — call/meeting/visit activities will fail:', err instanceof Error ? err.message : err);
+  if (!callerD365Id) {
+    try {
+      callerD365Id = await adapter.whoAmI(token);
+      store.setCallerD365UserId(callerD365Id);
+      console.log(`[sync] Resolved caller D365 systemuserid: ${callerD365Id}`);
+    } catch (err) {
+      console.error('[sync] Failed to resolve caller D365 ID via WhoAmI — call/meeting/visit activities will fail:', err instanceof Error ? err.message : err);
+    }
   }
   for (const activity of pending) {
     try {
