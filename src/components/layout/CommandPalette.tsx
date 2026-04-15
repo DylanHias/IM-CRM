@@ -20,7 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { SidebarTab } from '@/store/settingsStore';
 
 const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
-  '/today': LayoutDashboard,
+  '/dashboard': LayoutDashboard,
   '/customers': Users,
   '/sync': RefreshCw,
   '/followups': CheckSquare,

@@ -108,7 +108,7 @@ export function AppSidebar() {
   const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
 
   const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
-    '/today': { href: '/today', label: 'Today', icon: LayoutDashboard },
+    '/dashboard': { href: '/dashboard', label: 'Today', icon: LayoutDashboard },
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
     '/sync': {
       href: '/sync',

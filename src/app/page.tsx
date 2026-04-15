@@ -13,7 +13,7 @@ export default function RootPage() {
   useEffect(() => {
     if (inProgress !== 'none') return;
     if (accounts.length > 0 || isAuthenticated) {
-      router.replace('/today');
+      router.replace('/dashboard');
     } else {
       router.replace('/login');
     }
