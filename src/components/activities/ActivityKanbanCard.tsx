@@ -29,9 +29,10 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const config = ACTIVITY_ICONS[activity.type];
   const Icon = config.icon;
+  const isTerminal = activity.activityStatus === 'completed' || activity.activityStatus === 'rejected' || activity.activityStatus === 'expired';
 
   return (
-    <KanbanBoardCard data={{ id: activity.id }}>
+    <KanbanBoardCard data={{ id: activity.id }} draggable={!isTerminal} className={isTerminal ? 'cursor-default' : undefined}>
       <KanbanBoardCardButtonGroup style={confirmOpen ? { display: 'flex' } : undefined}>
         <KanbanBoardCardButton
           tooltip="Edit"
