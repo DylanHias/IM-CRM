@@ -75,7 +75,7 @@ async function queryMyFollowUpCompletion(userIds: string[], range: DateRange): P
   };
 }
 
-async function queryMyPipeline(userIds: string[]): Promise<{ openCount: number; openValue: number; weightedForecast: number }> {
+export async function queryMyPipeline(userIds: string[]): Promise<{ openCount: number; openValue: number; weightedForecast: number }> {
   const db = await getDb();
   const [row] = await db.select<{ openCount: number; openValue: number; weightedForecast: number }[]>(
     `SELECT
@@ -326,6 +326,39 @@ export async function queryCustomerHealthData(): Promise<CustomerHealthData> {
         : 0,
     },
   };
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export async function queryMyActivitiesCountAllTime(userIds: string[]): Promise<number> {
+  const db = await getDb();
+  const [row] = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM activities WHERE created_by_id IN (${inClause(userIds.length)})`,
+    userIds,
+  );
+  return row?.count ?? 0;
+}
+
+export async function queryMyOpportunitiesCountAllTime(userIds: string[]): Promise<number> {
+  const db = await getDb();
+  const [row] = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM opportunities WHERE created_by_id IN (${inClause(userIds.length)})`,
+    userIds,
+  );
+  return row?.count ?? 0;
+}
+
+export async function queryBelgianCustomersByCity(): Promise<{ cityKey: string; n: number }[]> {
+  const db = await getDb();
+  return db.select<{ cityKey: string; n: number }[]>(
+    `SELECT LOWER(TRIM(address_city)) AS cityKey, COUNT(*) AS n
+     FROM customers
+     WHERE address_country = 'BE'
+       AND address_city IS NOT NULL
+       AND address_city != ''
+     GROUP BY LOWER(TRIM(address_city))
+     ORDER BY n DESC`,
+  );
 }
 
 // ── Activity ──────────────────────────────────────────────────────────────────

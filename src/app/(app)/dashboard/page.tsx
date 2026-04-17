@@ -1,53 +1,82 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CheckSquare, Activity, Target } from 'lucide-react';
+import { Activity, Target, CalendarClock, Wallet } from 'lucide-react';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { GreetingHeader } from '@/components/today/GreetingHeader';
 import { GlobalSearchBar } from '@/components/today/GlobalSearchBar';
-import { TodayFollowUpsCard } from '@/components/today/TodayFollowUpsCard';
-import { RecentActivitiesCard } from '@/components/today/RecentActivitiesCard';
-import { OpenOpportunitiesCard } from '@/components/today/OpenOpportunitiesCard';
-import { FavoritedCustomersCard } from '@/components/today/FavoritedCustomersCard';
+import { BelgiumMapCard } from '@/components/dashboard/BelgiumMapCard';
+import { RecentActivityPanel } from '@/components/dashboard/RecentActivityPanel';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
-import { useOpportunityListStore } from '@/store/opportunityListStore';
 import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { normalizeCityKey } from '@/lib/geo/belgianCities';
 import type { Activity as ActivityType, FollowUp } from '@/types/entities';
 
-// Module-level cache: survives navigation (re-mounts) within a session.
-// Stale data shows instantly while a fresh load runs in the background.
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return n.toString();
+}
+
+function fmtEur(n: number): string {
+  if (n >= 1_000_000) return `€${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `€${Math.round(n / 1_000)}k`;
+  return `€${Math.round(n)}`;
+}
+
+interface CityCount {
+  cityId: string;
+  n: number;
+}
+
 interface DashboardCache {
-  todayFollowUps: FollowUp[];
   recentActivities: ActivityType[];
   allFollowUps: FollowUp[];
-  activityCountThisWeek: number | null;
-  forUserId: string | null;
+  activitiesCount: number;
+  opportunitiesCount: number;
+  followUpsDueToday: number;
+  openPipelineValue: number;
+  cityCounts: CityCount[];
+  totalBelgianCustomers: number;
+  forUserId: string;
 }
 let cache: DashboardCache | null = null;
 
 export default function DashboardPage() {
   const account = useAuthStore((s) => s.account);
-  // Read resolved D365 user ID directly from the sync store — available immediately
-  // after the first sync without waiting for the async useD365UserId hook.
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
   const userId = callerD365UserId ?? account?.localAccountId ?? null;
+  const altUserId =
+    account?.localAccountId && account.localAccountId !== userId
+      ? account.localAccountId
+      : null;
 
-  // Ensures customerStore.customers and allContacts are loaded for RecentActivitiesCard,
-  // FavoritedCustomersCard, and GlobalSearchBar.
+  // Warm the customer store so RecentActivityPanel can resolve customer names.
   useCustomers();
 
-  const [todayFollowUps, setTodayFollowUps] = useState<FollowUp[]>(cache?.todayFollowUps ?? []);
-  const [recentActivities, setRecentActivities] = useState<ActivityType[]>(cache?.recentActivities ?? []);
+  const [recentActivities, setRecentActivities] = useState<ActivityType[]>(
+    cache?.recentActivities ?? [],
+  );
   const [allFollowUps, setAllFollowUps] = useState<FollowUp[]>(cache?.allFollowUps ?? []);
-  const [activityCountThisWeek, setActivityCountThisWeek] = useState<number | null>(cache?.activityCountThisWeek ?? null);
-  // Only show loading state when we have no cached data to display.
+  const [activitiesCount, setActivitiesCount] = useState<number | null>(
+    cache?.activitiesCount ?? null,
+  );
+  const [opportunitiesCount, setOpportunitiesCount] = useState<number | null>(
+    cache?.opportunitiesCount ?? null,
+  );
+  const [followUpsDueToday, setFollowUpsDueToday] = useState<number | null>(
+    cache?.followUpsDueToday ?? null,
+  );
+  const [openPipelineValue, setOpenPipelineValue] = useState<number | null>(
+    cache?.openPipelineValue ?? null,
+  );
+  const [cityCounts, setCityCounts] = useState<CityCount[]>(cache?.cityCounts ?? []);
+  const [totalBelgianCustomers, setTotalBelgianCustomers] = useState<number>(
+    cache?.totalBelgianCustomers ?? 0,
+  );
   const [loading, setLoading] = useState(cache === null);
-
-  const opportunities = useOpportunityListStore((s) => s.opportunities);
-  const openOpps = opportunities.filter((o) => o.status === 'Open');
-  const pipelineValue = openOpps.reduce((sum, o) => sum + (o.estimatedRevenue ?? 0), 0);
 
   const loadedForUserId = useRef<string | null>(null);
 
@@ -56,53 +85,74 @@ export default function DashboardPage() {
       setLoading(false);
       return;
     }
-    // Skip if we already loaded for this user in this session (cache is fresh).
     if (loadedForUserId.current === userId && cache?.forUserId === userId) return;
 
     const load = async () => {
       try {
-        const { queryDueTodayFollowUps, queryAllFollowUps } = await import('@/lib/db/queries/followups');
-        const { queryMyRecentActivities, queryMyActivityCountSince } = await import('@/lib/db/queries/activities');
+        const userIds = [userId, altUserId].filter(Boolean) as string[];
 
-        const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-        const altId = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
-
-        const [dueTodayFUs, recentActs, allFUs, actCount] = await Promise.all([
-          queryDueTodayFollowUps(userId, account?.localAccountId),
-          queryMyRecentActivities(userId, altId, sevenDaysAgo),
-          queryAllFollowUps(),
-          queryMyActivityCountSince(userId, altId, sevenDaysAgo),
+        const [
+          { queryMyActivitiesCountAllTime, queryMyOpportunitiesCountAllTime, queryBelgianCustomersByCity, queryMyPipeline },
+          { queryDueTodayFollowUpCount, queryAllFollowUps },
+          { queryMyRecentActivitiesLatest },
+        ] = await Promise.all([
+          import('@/lib/db/queries/analytics'),
+          import('@/lib/db/queries/followups'),
+          import('@/lib/db/queries/activities'),
         ]);
 
+        const [
+          recentActs,
+          allFUs,
+          actCount,
+          oppCount,
+          dueTodayCount,
+          pipeline,
+          rawCities,
+        ] = await Promise.all([
+          queryMyRecentActivitiesLatest(userId, altUserId, 15),
+          queryAllFollowUps(),
+          queryMyActivitiesCountAllTime(userIds),
+          queryMyOpportunitiesCountAllTime(userIds),
+          queryDueTodayFollowUpCount(userId, altUserId ?? undefined),
+          queryMyPipeline(userIds),
+          queryBelgianCustomersByCity(),
+        ]);
+
+        const normalizedCities = rawCities
+          .map((r) => ({ cityId: normalizeCityKey(r.cityKey), n: r.n }))
+          .filter((r): r is CityCount => r.cityId !== null);
+        const totalBE = rawCities.reduce((s, r) => s + r.n, 0);
+
         cache = {
-          todayFollowUps: dueTodayFUs,
           recentActivities: recentActs,
           allFollowUps: allFUs,
-          activityCountThisWeek: actCount,
+          activitiesCount: actCount,
+          opportunitiesCount: oppCount,
+          followUpsDueToday: dueTodayCount,
+          openPipelineValue: pipeline.openValue,
+          cityCounts: normalizedCities,
+          totalBelgianCustomers: totalBE,
           forUserId: userId,
         };
         loadedForUserId.current = userId;
 
-        setTodayFollowUps(dueTodayFUs);
         setRecentActivities(recentActs);
         setAllFollowUps(allFUs);
-        setActivityCountThisWeek(actCount);
+        setActivitiesCount(actCount);
+        setOpportunitiesCount(oppCount);
+        setFollowUpsDueToday(dueTodayCount);
+        setOpenPipelineValue(pipeline.openValue);
+        setCityCounts(normalizedCities);
+        setTotalBelgianCustomers(totalBE);
       } catch (err) {
-        console.error('[today] Failed to load dashboard data:', err);
+        console.error('[dashboard] Failed to load dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [userId, account?.localAccountId]);
-
-  const handleFollowUpCompleted = (id: string) => {
-    setTodayFollowUps((prev) => {
-      const next = prev.filter((f) => f.id !== id);
-      if (cache) cache = { ...cache, todayFollowUps: next };
-      return next;
-    });
-  };
+  }, [userId, altUserId]);
 
   return (
     <div className="space-y-6">
@@ -110,37 +160,42 @@ export default function DashboardPage() {
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <MetricCard
-          label="Due Today"
-          value={loading ? '—' : todayFollowUps.length}
-          icon={CheckSquare}
-          sub="follow-ups"
-        />
-        <MetricCard
-          label="My Activities"
-          value={loading || activityCountThisWeek === null ? '—' : activityCountThisWeek}
-          icon={Activity}
-          sub="this week"
-        />
-        <MetricCard
-          label="Pipeline"
-          value={openOpps.length === 0 ? '—' : `€${pipelineValue.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`}
-          icon={Target}
-          sub={`${openOpps.length} open ${openOpps.length === 1 ? 'opportunity' : 'opportunities'}`}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-6 items-start">
+        {/* Left column: Belgium map + KPI cards */}
+        <div className="space-y-4">
+          <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <MetricCard
+              label="Total Activities"
+              value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
+              icon={Activity}
+              sub="All time"
+            />
+            <MetricCard
+              label="Opportunities"
+              value={loading || opportunitiesCount === null ? '—' : fmt(opportunitiesCount)}
+              icon={Target}
+              sub="All time"
+            />
+            <MetricCard
+              label="Due Today"
+              value={loading || followUpsDueToday === null ? '—' : fmt(followUpsDueToday)}
+              icon={CalendarClock}
+              sub="Follow-ups"
+            />
+            <MetricCard
+              label="Open Pipeline"
+              value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
+              icon={Wallet}
+              sub="Your open deals"
+            />
+          </div>
+        </div>
+
+        {/* Right column: Recent activities */}
+        <RecentActivityPanel activities={recentActivities} loading={loading} />
       </div>
-
-      {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TodayFollowUpsCard followUps={todayFollowUps} onCompleted={handleFollowUpCompleted} />
-        <RecentActivitiesCard activities={recentActivities} />
-      </div>
-
-      <OpenOpportunitiesCard />
-
-      <FavoritedCustomersCard />
     </div>
   );
 }

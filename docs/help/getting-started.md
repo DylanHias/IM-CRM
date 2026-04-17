@@ -8,6 +8,16 @@ When you open the app for the first time, you'll be asked to sign in with your M
 
 Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Opportunities, Revenue Overview, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
 
+## The Dashboard
+
+After signing in, you land on the **Dashboard** — your personal home screen. It shows:
+
+- **Belgium customer map** — A map of Belgium with a dot for each city where you have customers. Dot size reflects customer count; hover any dot to see the exact number.
+- **Key counters** — Your all-time total activities logged, total opportunities created, follow-ups due today, and total value of your open pipeline.
+- **Recent activity list** — Your 15 most recently logged activities on the right, sorted newest first. Click any row to jump straight to that customer's activity tab.
+
+The greeting and **Search everything** bar at the top let you search across customers, contacts, opportunities, activities, and follow-ups by typing any keyword.
+
 ## Navigating the App
 
 The **sidebar** on the left is your main navigation. It gives you quick access to:
