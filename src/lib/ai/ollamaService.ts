@@ -16,11 +16,6 @@ interface OllamaTagsResponse {
   models: OllamaModel[];
 }
 
-interface OllamaChatChunk {
-  message: { content: string };
-  done: boolean;
-}
-
 interface OllamaPullChunk {
   status: string;
   digest?: string;
@@ -29,23 +24,39 @@ interface OllamaPullChunk {
 }
 
 /**
- * Use Tauri's HTTP plugin when running inside Tauri (requests go through Rust,
- * bypassing the webview's CORS restrictions). Fall back to native fetch in
- * browser / dev mode.
+ * In Tauri: route through a Rust/reqwest invoke command to avoid Tauri HTTP
+ * plugin resource management issues (invalid resource ID errors on Windows).
+ * In browser/dev: use native fetch directly.
  */
-async function tauriFetch(url: string, init?: RequestInit): Promise<Response> {
+async function ollamaGet(path: string): Promise<unknown> {
   if (isTauriApp()) {
-    const { fetch: pluginFetch } = await import('@tauri-apps/plugin-http');
-    return pluginFetch(url, init) as Promise<Response>;
+    const { invoke } = await import('@tauri-apps/api/core');
+    const text = await invoke<string>('ollama_request', { path, body: null });
+    return JSON.parse(text);
   }
-  return fetch(url, init);
+  const res = await fetch(`${OLLAMA_BASE}${path}`);
+  if (!res.ok) throw new Error(`Ollama ${path} returned ${res.status}`);
+  return res.json();
+}
+
+async function ollamaPost(path: string, payload: unknown): Promise<unknown> {
+  if (isTauriApp()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const text = await invoke<string>('ollama_request', { path, body: JSON.stringify(payload) });
+    return JSON.parse(text);
+  }
+  const res = await fetch(`${OLLAMA_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Ollama ${path} returned ${res.status}`);
+  return res.json();
 }
 
 async function pingOllama(): Promise<{ available: boolean; models: string[] }> {
   try {
-    const res = await tauriFetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return { available: false, models: [] };
-    const data: OllamaTagsResponse = await res.json();
+    const data = await ollamaGet('/api/tags') as OllamaTagsResponse;
     return { available: true, models: data.models.map((m) => m.name) };
   } catch {
     return { available: false, models: [] };
@@ -56,8 +67,6 @@ async function spawnOllamaServe(): Promise<void> {
   if (!isTauriApp()) return;
   try {
     const { Command } = await import('@tauri-apps/plugin-shell');
-    // OLLAMA_ORIGINS allows the Tauri webview origin as a fallback for any
-    // direct fetch calls that bypass the HTTP plugin.
     const command = Command.sidecar('binaries/ollama', ['serve'], {
       env: { OLLAMA_ORIGINS: 'http://tauri.localhost' },
     });
@@ -72,10 +81,8 @@ export async function checkAvailability(): Promise<{ available: boolean; models:
   const first = await pingOllama();
   if (first.available) return first;
 
-  // Not running — try to start the bundled sidecar silently
   await spawnOllamaServe();
 
-  // Poll up to 5s until it responds
   for (let i = 0; i < 5; i++) {
     await new Promise((r) => setTimeout(r, 1000));
     const retry = await pingOllama();
@@ -99,7 +106,7 @@ export async function pullModel(
 }
 
 /**
- * Pull via `ollama pull` sidecar — avoids Tauri HTTP plugin resource-ID
+ * Pull via `ollama pull` sidecar — avoids HTTP plugin resource-ID
  * invalidation that occurs during long (~2 GB) streaming downloads.
  */
 async function pullModelViaSidecar(
@@ -111,7 +118,6 @@ async function pullModelViaSidecar(
   const { Command } = await import('@tauri-apps/plugin-shell');
   const command = Command.sidecar('binaries/ollama', ['pull', model]);
 
-  // ollama pull writes human-readable progress to stderr
   command.stderr.on('data', (line: string) => {
     const percentMatch = line.match(/(\d+)%/);
     if (percentMatch) {
@@ -148,7 +154,7 @@ async function pullModelViaHttp(
   onDone: () => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await tauriFetch(`${OLLAMA_BASE}/api/pull`, {
+  const res = await fetch(`${OLLAMA_BASE}/api/pull`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: model, stream: true }),
@@ -199,44 +205,44 @@ export async function streamChat(
   signal?: AbortSignal
 ): Promise<void> {
   if (isTauriApp()) {
-    return chatViaNonStreaming(model, messages, onChunk, onDone, signal);
+    // Tauri: stream via Rust command + events — HTTP plugin can't handle streaming
+    const { invoke } = await import('@tauri-apps/api/core');
+    const { listen } = await import('@tauri-apps/api/event');
+
+    await new Promise<void>((resolve, reject) => {
+      let unlisten: (() => void) | null = null;
+
+      listen<{ content: string; done: boolean }>('ollama-chunk', (event) => {
+        if (signal?.aborted) {
+          unlisten?.();
+          resolve();
+          return;
+        }
+        if (event.payload.content) onChunk(event.payload.content);
+        if (event.payload.done) {
+          unlisten?.();
+          onDone();
+          resolve();
+        }
+      })
+        .then((fn) => {
+          unlisten = fn;
+          signal?.addEventListener('abort', () => {
+            unlisten?.();
+            resolve();
+          });
+          return invoke('ollama_chat_stream', { model, messages });
+        })
+        .catch((err) => {
+          unlisten?.();
+          reject(err);
+        });
+    });
+    return;
   }
-  return chatViaStreaming(model, messages, onChunk, onDone, signal);
-}
 
-/**
- * Tauri's HTTP plugin buffers the full response before yielding chunks,
- * so streaming endpoints hang indefinitely. Use stream:false and get one response.
- */
-async function chatViaNonStreaming(
-  model: string,
-  messages: OllamaMessage[],
-  onChunk: (text: string) => void,
-  onDone: () => void,
-  signal?: AbortSignal
-): Promise<void> {
-  const res = await tauriFetch(`${OLLAMA_BASE}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages, stream: false }),
-    signal,
-  });
-
-  if (!res.ok) throw new Error(`Ollama returned ${res.status}`);
-
-  const data: { message: { content: string } } = await res.json();
-  if (data.message?.content) onChunk(data.message.content);
-  onDone();
-}
-
-async function chatViaStreaming(
-  model: string,
-  messages: OllamaMessage[],
-  onChunk: (text: string) => void,
-  onDone: () => void,
-  signal?: AbortSignal
-): Promise<void> {
-  const res = await tauriFetch(`${OLLAMA_BASE}/api/chat`, {
+  // Browser/dev: native fetch with NDJSON streaming
+  const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, messages, stream: true }),
@@ -258,7 +264,7 @@ async function chatViaStreaming(
       for (const line of text.split('\n')) {
         if (!line.trim()) continue;
         try {
-          const chunk: OllamaChatChunk = JSON.parse(line);
+          const chunk = JSON.parse(line) as { message?: { content: string }; done: boolean };
           if (chunk.message?.content) onChunk(chunk.message.content);
           if (chunk.done) {
             onDone();

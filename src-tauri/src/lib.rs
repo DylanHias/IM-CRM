@@ -135,6 +135,96 @@ async fn refresh_oauth_token(
     })
 }
 
+// ─── Ollama HTTP proxy ───────────────────────────────────────────────────────
+// Routes Ollama requests through Rust/reqwest to avoid Tauri HTTP plugin
+// resource management issues (invalid resource ID errors) on Windows.
+
+#[tauri::command]
+async fn ollama_request(path: String, body: Option<String>) -> Result<String, String> {
+    let url = format!("http://localhost:11434{}", path);
+    let client = reqwest::Client::new();
+
+    let res = if let Some(b) = body {
+        client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .body(b)
+            .send()
+            .await
+    } else {
+        client.get(&url).send().await
+    };
+
+    let res = res.map_err(|e| format!("ollama request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("ollama returned {}", res.status()));
+    }
+
+    res.text().await.map_err(|e| format!("ollama read failed: {e}"))
+}
+
+/// Stream an Ollama chat response token-by-token, emitting "ollama-chunk"
+/// events to the window. Payload: `{ content: string, done: boolean }`.
+#[tauri::command]
+async fn ollama_chat_stream(
+    window: tauri::Window,
+    model: String,
+    messages: serde_json::Value,
+) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let mut res = client
+        .post("http://localhost:11434/api/chat")
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "model": model, "messages": messages, "stream": true }))
+        .send()
+        .await
+        .map_err(|e| format!("ollama chat failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("ollama returned {}", res.status()));
+    }
+
+    let mut buffer = String::new();
+
+    while let Some(chunk) = res.chunk().await.map_err(|e| format!("ollama read: {e}"))? {
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        // Process complete newline-delimited JSON lines
+        while let Some(nl) = buffer.find('\n') {
+            let line = buffer[..nl].trim().to_string();
+            buffer.drain(..=nl);
+
+            if line.is_empty() {
+                continue;
+            }
+
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
+                let content = json["message"]["content"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+                let done = json["done"].as_bool().unwrap_or(false);
+
+                window
+                    .emit("ollama-chunk", serde_json::json!({ "content": content, "done": done }))
+                    .map_err(|e| format!("emit failed: {e}"))?;
+
+                if done {
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    // Flush any remaining buffer as done
+    window
+        .emit("ollama-chunk", serde_json::json!({ "content": "", "done": true }))
+        .map_err(|e| format!("emit failed: {e}"))?;
+
+    Ok(())
+}
+
 // ─── Excel Export ────────────────────────────────────────────────────────────
 
 /// Write one SQLite value into a worksheet cell.
@@ -476,6 +566,8 @@ pub fn run() {
             export_db_all,
             export_rows,
             export_revenue_overview,
+            ollama_request,
+            ollama_chat_stream,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
