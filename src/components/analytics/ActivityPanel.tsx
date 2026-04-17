@@ -5,6 +5,8 @@ import { useAnalyticsStore } from '@/store/analyticsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import { PeriodPicker, periodToRange } from '@/components/analytics/PeriodPicker';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import type { PeriodKey } from '@/types/analytics';
@@ -28,9 +30,10 @@ const heatmapConfig = {
 
 interface Props {
   refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-export function ActivityPanel({ refreshKey }: Props) {
+export function ActivityPanel({ refreshKey, onRefresh }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -74,7 +77,13 @@ export function ActivityPanel({ refreshKey }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Activity Patterns</h2>
-        <PeriodPicker value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-2">
+          <PeriodPicker value={period} onChange={setPeriod} />
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Activity type mix — mine vs team */}

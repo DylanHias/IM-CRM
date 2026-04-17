@@ -6,7 +6,8 @@ import { MetricCard } from '@/components/analytics/MetricCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, TrendingUp, Layers, Users } from 'lucide-react';
+import { Target, TrendingUp, Layers, Users, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { StageFunnelPoint } from '@/types/analytics';
 
 const STAGE_ORDER: Record<string, number> = {
@@ -57,9 +58,10 @@ type ExpiryWindow = '7d' | '30d';
 
 interface Props {
   refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-export function PipelinePanel({ refreshKey }: Props) {
+export function PipelinePanel({ refreshKey, onRefresh }: Props) {
   const [expiryWindow, setExpiryWindow] = useState<ExpiryWindow>('30d');
   const { pipeline, isLoadingPipeline, loadPipeline } = useAnalyticsStore();
 
@@ -84,7 +86,13 @@ export function PipelinePanel({ refreshKey }: Props) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-sm font-semibold">Pipeline & Forecast</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Pipeline & Forecast</h2>
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+          Refresh
+        </Button>
+      </div>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

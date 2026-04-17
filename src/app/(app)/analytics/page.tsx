@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Target, Users, Activity, RefreshCw } from 'lucide-react';
+import { User, Target, Users, Activity } from 'lucide-react';
 import { SubSidebar } from '@/components/layout/SubSidebar';
 import { PersonalPanel } from '@/components/analytics/PersonalPanel';
 import { PipelinePanel } from '@/components/analytics/PipelinePanel';
 import { CustomersPanel } from '@/components/analytics/CustomersPanel';
 import { ActivityPanel } from '@/components/analytics/ActivityPanel';
-import { Button } from '@/components/ui/button';
 
 const TABS = [
   { id: 'personal', label: 'Personal', icon: User },
@@ -22,22 +21,18 @@ export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('personal');
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const handleRefresh = () => setRefreshKey((k) => k + 1);
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold">Analytics</h1>
-        <Button variant="outline" size="sm" onClick={() => setRefreshKey((k) => k + 1)}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-          Refresh
-        </Button>
-      </div>
+      <h1 className="text-lg font-semibold mb-6">Analytics</h1>
       <div className="flex gap-8 min-h-0">
         <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[180px]" />
         <div className="flex-1 min-w-0">
-          {activeTab === 'personal' && <PersonalPanel refreshKey={refreshKey} />}
-          {activeTab === 'pipeline' && <PipelinePanel refreshKey={refreshKey} />}
-          {activeTab === 'customers' && <CustomersPanel refreshKey={refreshKey} />}
-          {activeTab === 'activity' && <ActivityPanel refreshKey={refreshKey} />}
+          {activeTab === 'personal' && <PersonalPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+          {activeTab === 'pipeline' && <PipelinePanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+          {activeTab === 'customers' && <CustomersPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+          {activeTab === 'activity' && <ActivityPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
         </div>
       </div>
     </div>

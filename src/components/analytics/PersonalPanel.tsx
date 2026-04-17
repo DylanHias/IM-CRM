@@ -9,7 +9,8 @@ import { MetricCard } from '@/components/analytics/MetricCard';
 import { PeriodPicker, periodToRange, prevPeriodRange } from '@/components/analytics/PeriodPicker';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Activity, CheckSquare, Target, Trophy } from 'lucide-react';
+import { Activity, CheckSquare, Target, Trophy, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { PeriodKey } from '@/types/analytics';
 
 function fmt(n: number): string {
@@ -26,9 +27,10 @@ const timelineConfig = {
 
 interface Props {
   refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-export function PersonalPanel({ refreshKey }: Props) {
+export function PersonalPanel({ refreshKey, onRefresh }: Props) {
   const [period, setPeriod] = useState<PeriodKey>('30d');
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -70,7 +72,13 @@ export function PersonalPanel({ refreshKey }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">My Performance</h2>
-        <PeriodPicker value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-2">
+          <PeriodPicker value={period} onChange={setPeriod} />
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* KPI cards */}

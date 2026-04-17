@@ -6,7 +6,8 @@ import { MetricCard } from '@/components/analytics/MetricCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, CloudLightning, AlertTriangle } from 'lucide-react';
+import { Users, CloudLightning, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { ArrByDimensionPoint } from '@/types/analytics';
 
 type ArrDim = 'industry' | 'segment' | 'country';
@@ -66,9 +67,10 @@ function ArrByDimChart({ data }: { data: ArrByDimensionPoint[] }) {
 
 interface Props {
   refreshKey?: number;
+  onRefresh?: () => void;
 }
 
-export function CustomersPanel({ refreshKey }: Props) {
+export function CustomersPanel({ refreshKey, onRefresh }: Props) {
   const [arrDim, setArrDim] = useState<ArrDim>('industry');
   const { customers, isLoadingCustomers, loadCustomers } = useAnalyticsStore();
 
@@ -108,7 +110,13 @@ export function CustomersPanel({ refreshKey }: Props) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-sm font-semibold">Customer Health</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Customer Health</h2>
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+          Refresh
+        </Button>
+      </div>
 
       {/* Stale customers */}
       <div className="flex items-center gap-3">
