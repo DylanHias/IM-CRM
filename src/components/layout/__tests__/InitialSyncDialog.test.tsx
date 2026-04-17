@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { InitialSyncDialog } from '../InitialSyncDialog';
 import { useSyncStore } from '@/store/syncStore';
 import { useAuthStore } from '@/store/authStore';
@@ -61,10 +61,8 @@ describe('InitialSyncDialog', () => {
     useSyncStore.setState({
       initialSyncProgress: { phase: 'Syncing customers...', processed: 50, total: 200 },
     });
-    await act(async () => {
-      render(<InitialSyncDialog />);
-    });
-    expect(screen.getByText('Setting up your workspace')).toBeInTheDocument();
+    render(<InitialSyncDialog />);
+    await waitFor(() => expect(screen.getByText('Setting up your workspace')).toBeInTheDocument());
     expect(screen.getByText('Syncing customers...')).toBeInTheDocument();
     expect(screen.getByText('50 / 200 records')).toBeInTheDocument();
   });
@@ -73,10 +71,8 @@ describe('InitialSyncDialog', () => {
     useSyncStore.setState({
       initialSyncProgress: { phase: 'Syncing contacts...', processed: 75, total: 100 },
     });
-    await act(async () => {
-      render(<InitialSyncDialog />);
-    });
-    const progressBar = screen.getByTestId('sync-progress-fill');
+    render(<InitialSyncDialog />);
+    const progressBar = await screen.findByTestId('sync-progress-fill');
     expect(progressBar).toBeInTheDocument();
     expect(progressBar).toHaveStyle({ width: '75%' });
   });
