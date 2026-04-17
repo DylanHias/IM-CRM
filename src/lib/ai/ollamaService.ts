@@ -1,7 +1,7 @@
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'qwen2.5:1.5b';
+export const DEFAULT_MODEL = 'qwen2.5:3b';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
