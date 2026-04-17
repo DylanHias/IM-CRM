@@ -15,6 +15,7 @@ import { useSyncStore } from '@/store/syncStore';
 import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { normalizeCityKey } from '@/lib/geo/belgianCities';
+import { normalizeCity } from '@/lib/utils/cityProvince';
 import type { Activity as ActivityType, FollowUp } from '@/types/entities';
 
 function fmt(n: number): string {
@@ -116,9 +117,13 @@ export default function DashboardPage() {
           queryBelgianCustomersByCity(),
         ]);
 
-        const normalizedCities = rawCities
-          .map((r) => ({ cityId: normalizeCityKey(r.cityKey), n: r.n }))
-          .filter((r): r is CityCount => r.cityId !== null);
+        const cityAgg = new Map<string, number>();
+        for (const r of rawCities) {
+          const canonical = normalizeCity(r.cityKey);
+          const cityId = canonical ? normalizeCityKey(canonical) : null;
+          if (cityId) cityAgg.set(cityId, (cityAgg.get(cityId) ?? 0) + r.n);
+        }
+        const normalizedCities = Array.from(cityAgg.entries()).map(([cityId, n]) => ({ cityId, n }));
         const totalBE = rawCities.reduce((s, r) => s + r.n, 0);
 
         cache = {

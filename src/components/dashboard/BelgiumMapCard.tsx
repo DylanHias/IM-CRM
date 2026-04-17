@@ -10,7 +10,7 @@ import { BELGIUM_PROVINCES } from '@/lib/geo/belgiumProvinces';
 
 
 function pinRadius(count: number): number {
-  return Math.min(10, Math.max(4, 4 + Math.log2(count + 1) * 1.8));
+  return Math.min(12, Math.max(3, 3 + Math.log2(count + 1) * 1.4));
 }
 
 interface CityCount {
