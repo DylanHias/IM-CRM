@@ -2,6 +2,11 @@ const COUNTRY_CODE_MAP: Record<string, string> = {
   'Belgium': 'BE',
   'Netherlands': 'NL',
   'Luxembourg': 'LU',
+  // D365 raw codes passthrough
+  'BE': 'BE',
+  'NL': 'NL',
+  'L': 'LU',
+  'LU': 'LU',
   'France': 'FR',
   'Germany': 'DE',
   'United Kingdom': 'GB',

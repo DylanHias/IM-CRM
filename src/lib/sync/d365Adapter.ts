@@ -379,7 +379,7 @@ class RealD365Adapter implements ID365Adapter {
       'statecode', 'modifiedon',
     ].join(',');
 
-    let filter = "statecode eq 0 and (address1_country eq 'BE' or address1_country eq 'NL' or address1_country eq 'L')";
+    let filter = "statecode eq 0 and (address1_country eq 'BE' or address1_country eq 'NL' or address1_country eq 'L' or address1_country eq 'LU')";
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
     const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
