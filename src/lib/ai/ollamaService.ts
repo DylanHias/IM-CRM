@@ -21,10 +21,14 @@ interface OllamaChatChunk {
 export async function checkAvailability(): Promise<{ available: boolean; models: string[] }> {
   try {
     const res = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return { available: false, models: [] };
+    if (!res.ok) {
+      console.error(`[ai] Ollama returned ${res.status} on /api/tags`);
+      return { available: false, models: [] };
+    }
     const data: OllamaTagsResponse = await res.json();
     return { available: true, models: data.models.map((m) => m.name) };
-  } catch {
+  } catch (err) {
+    console.error('[ai] Ollama unavailable (is it running?):', err);
     return { available: false, models: [] };
   }
 }

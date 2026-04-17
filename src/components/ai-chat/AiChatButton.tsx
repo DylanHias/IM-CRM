@@ -30,7 +30,7 @@ function AiChatButtonInner({ className }: Props) {
       aria-label={isOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
       className={cn(
         'fixed bottom-6 right-6 z-40',
-        'relative h-12 w-12 rounded-full',
+        'h-12 w-12 rounded-full',
         'bg-primary text-primary-foreground',
         'shadow-lg hover:shadow-xl',
         'flex items-center justify-center',
