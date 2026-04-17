@@ -79,6 +79,8 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
     if (!activity) return;
     const col = columnId as KanbanColumn;
     const newStatus: ActivityStatus = col === 'cancelled' ? 'rejected' : col;
+    // D365 forbids transitioning a completed activity to cancelled — only open is allowed
+    if (activity.activityStatus === 'completed' && col === 'cancelled') return;
     if (activity.activityStatus !== newStatus) {
       if (isCollapsed(col)) {
         setManualExpanded((prev) => new Set(prev).add(col));

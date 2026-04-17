@@ -299,7 +299,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities', label: 'Opportunities', icon: Target, disabled: true },
     { key: 'invoices', label: 'Invoices', icon: FileText, disabled: true },
-  ], [activities.length, filteredActivityCount, contacts.length, followUps.length, customerOpportunities.length]);
+  ], [activities.length, filteredActivityCount, contacts.length, followUps.length]);
 
 
   if (!customer) {
