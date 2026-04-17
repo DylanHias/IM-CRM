@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
-import { getProvinces } from '@/lib/utils/cityProvince';
+import { getUniqueCities, displayCity } from '@/lib/utils/cityProvince';
 import type { SortBy } from '@/store/customerStore';
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
@@ -24,9 +24,9 @@ export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterProvince, filterNoRecentActivity, filterFavorites,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
     setSearchQuery, setSortBy, setSortDir,
-    setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterProvince,
+    setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
     toggleNoRecentActivityFilter, toggleFavoritesFilter, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
@@ -56,9 +56,15 @@ export function CustomerFilters() {
     Array.from(new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])).sort(),
     [customers]);
 
-  const provinces = useMemo(() =>
-    getProvinces(customers.map((c) => c.addressCity)),
-    [customers]);
+  const citySourceCustomers = useMemo(
+    () => filterCountry ? customers.filter((c) => c.addressCountry === filterCountry) : customers,
+    [customers, filterCountry],
+  );
+
+  const cities = useMemo(
+    () => getUniqueCities(citySourceCustomers.map((c) => c.addressCity)),
+    [citySourceCustomers],
+  );
 
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
 
@@ -202,14 +208,14 @@ export function CustomerFilters() {
             </div>
           )}
 
-          {provinces.length > 0 && (
+          {cities.length > 0 && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Province</label>
-              <Select value={filterProvince ?? 'all'} onValueChange={(v) => setFilterProvince(v === 'all' ? null : v)}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All provinces" /></SelectTrigger>
+              <label className="text-xs font-medium text-muted-foreground">City</label>
+              <Select value={filterCity ?? 'all'} onValueChange={(v) => setFilterCity(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All cities" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All provinces</SelectItem>
-                  {provinces.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  <SelectItem value="all">All cities</SelectItem>
+                  {cities.map((c) => <SelectItem key={c} value={c}>{displayCity(c)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -257,9 +263,9 @@ export function CustomerFilters() {
               {filterCountry} <X size={10} />
             </Badge>
           )}
-          {filterProvince && (
-            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterProvince(null)}>
-              {filterProvince} <X size={10} />
+          {filterCity && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCity(null)}>
+              {displayCity(filterCity)} <X size={10} />
             </Badge>
           )}
           {filterNoRecentActivity && (
