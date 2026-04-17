@@ -8,13 +8,12 @@ import { BELGIUM_PROVINCES } from '@/lib/geo/belgiumProvinces';
 // viewBox="0 0 800 600"
 // Projection: x = (lng - 2.4) * 195,  y = (51.6 - lat) * 275
 
-function pinPath(cx: number, cy: number, r: number): string {
-  const hy = cy - r * 2.8;
-  return `M ${cx},${cy} L ${cx - r},${hy} A ${r},${r},0,0,0,${cx + r},${hy} Z`;
+function diamondPath(cx: number, cy: number, r: number): string {
+  return `M ${cx},${cy - r} L ${cx + r * 0.7},${cy} L ${cx},${cy + r} L ${cx - r * 0.7},${cy} Z`;
 }
 
 function pinRadius(count: number): number {
-  return Math.min(9, Math.max(3, 3 + Math.log2(count + 1) * 1.8));
+  return Math.min(10, Math.max(4, 4 + Math.log2(count + 1) * 1.8));
 }
 
 interface CityCount {
@@ -98,29 +97,22 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
                 >
                   {/* Drop shadow */}
                   <path
-                    d={pinPath(city.x + 1, city.y + 1, pr)}
+                    d={diamondPath(city.x + 1, city.y + 1, pr)}
                     fill="hsl(var(--background))"
-                    opacity={0.4}
+                    opacity={0.35}
                   />
-                  {/* Pin body */}
+                  {/* Diamond body */}
                   <path
-                    d={pinPath(city.x, city.y, pr)}
-                    fill="hsl(var(--primary))"
-                    opacity={0.9}
-                  />
-                  {/* Pin hole */}
-                  <circle
-                    cx={city.x}
-                    cy={city.y - pr * 2.8}
-                    r={pr * 0.3}
-                    fill="hsl(var(--background))"
-                    opacity={0.65}
-                    style={{ pointerEvents: 'none' }}
+                    d={diamondPath(city.x, city.y, pr)}
+                    fill={isHovered ? 'hsl(var(--primary))' : 'hsl(var(--primary))'}
+                    stroke="hsl(var(--primary-foreground))"
+                    strokeWidth={isHovered ? 1.2 : 0.8}
+                    opacity={isHovered ? 1 : 0.85}
                   />
                   {/* City label */}
                   <text
                     x={city.x}
-                    y={city.y + 10}
+                    y={city.y + pr + 9}
                     textAnchor="middle"
                     fill="hsl(var(--foreground))"
                     fontSize={9}
