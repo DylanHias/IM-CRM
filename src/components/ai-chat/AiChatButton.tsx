@@ -5,16 +5,14 @@ import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useAiChatStore } from '@/store/aiChatStore';
-import { useAuthStore } from '@/store/authStore';
 
 interface Props {
   className?: string;
 }
 
 export function AiChatButton({ className }: Props) {
-  const isAdmin = useAuthStore((s) => s.isAdmin);
   const isOpen = useAiChatStore((s) => s.isOpen);
-  if (!isTauriApp() || !isAdmin || isOpen) return null;
+  if (!isTauriApp() || isOpen) return null;
 
   return <AiChatButtonInner className={className} />;
 }

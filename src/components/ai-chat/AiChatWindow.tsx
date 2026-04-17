@@ -6,7 +6,6 @@ import { Send, Square, Trash2, RefreshCw, X, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useAiChatStore } from '@/store/aiChatStore';
-import { useAuthStore } from '@/store/authStore';
 import { streamChat, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { detectAndFetchContext } from '@/lib/ai/contextDetection';
@@ -14,8 +13,7 @@ import { AiChatMessage } from './AiChatMessage';
 import { Button } from '@/components/ui/button';
 
 export function AiChatWindow() {
-  const isAdmin = useAuthStore((s) => s.isAdmin);
-  if (!isTauriApp() || !isAdmin) return null;
+  if (!isTauriApp()) return null;
 
   return <AiChatWindowInner />;
 }
