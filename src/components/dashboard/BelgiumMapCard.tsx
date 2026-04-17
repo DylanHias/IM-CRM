@@ -3,15 +3,18 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BELGIAN_CITIES } from '@/lib/geo/belgianCities';
+import { BELGIUM_PROVINCES } from '@/lib/geo/belgiumProvinces';
 
 // viewBox="0 0 800 600"
 // Projection: x = (lng - 2.4) * 195,  y = (51.6 - lat) * 275
-const BELGIUM_PATH =
-  'M 29,144 L 189,62 L 273,36 L 361,36 L 394,88 L 468,36 L 527,50 L 671,83 ' +
-  'L 721,226 L 737,344 L 682,559 L 478,564 L 351,398 L 195,390 L 140,289 Z';
+
+function pinPath(cx: number, cy: number, r: number): string {
+  const hy = cy - r * 2.8;
+  return `M ${cx},${cy} L ${cx - r},${hy} A ${r},${r},0,0,0,${cx + r},${hy} Z`;
+}
 
 function pinRadius(count: number): number {
-  return Math.min(14, Math.max(4, 4 + Math.log2(count + 1) * 2.2));
+  return Math.min(9, Math.max(3, 3 + Math.log2(count + 1) * 1.8));
 }
 
 interface CityCount {
@@ -54,14 +57,29 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
             className="w-full h-full"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Belgium outline */}
-            <path
-              d={BELGIUM_PATH}
-              fill="hsl(var(--muted))"
-              stroke="hsl(var(--border))"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
+            {/* Province fills */}
+            {BELGIUM_PROVINCES.map((province) => (
+              <path
+                key={province.id}
+                d={province.path}
+                fill="hsl(var(--muted))"
+                stroke="hsl(var(--background))"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {/* Province outlines (thin, on top of fills) */}
+            {BELGIUM_PROVINCES.map((province) => (
+              <path
+                key={`outline-${province.id}`}
+                d={province.path}
+                fill="none"
+                stroke="hsl(var(--border))"
+                strokeWidth="0.75"
+                strokeLinejoin="round"
+              />
+            ))}
 
             {/* City pins */}
             {BELGIAN_CITIES.map((city) => {
@@ -69,6 +87,7 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
               if (count === 0) return null;
               const r = pinRadius(count);
               const isHovered = hovered === city.id;
+              const pr = isHovered ? r + 1 : r;
 
               return (
                 <g
@@ -77,27 +96,31 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
                   onMouseLeave={() => setHovered(null)}
                   style={{ cursor: 'default' }}
                 >
-                  {/* Halo ring */}
-                  <circle
-                    cx={city.x}
-                    cy={city.y}
-                    r={r + 3}
+                  {/* Drop shadow */}
+                  <path
+                    d={pinPath(city.x + 1, city.y + 1, pr)}
                     fill="hsl(var(--background))"
-                    opacity={0.8}
+                    opacity={0.4}
                   />
-                  {/* Pin */}
-                  <circle
-                    cx={city.x}
-                    cy={city.y}
-                    r={isHovered ? r + 1 : r}
+                  {/* Pin body */}
+                  <path
+                    d={pinPath(city.x, city.y, pr)}
                     fill="hsl(var(--primary))"
                     opacity={0.9}
-                    style={{ transition: 'r 0.1s ease' }}
+                  />
+                  {/* Pin hole */}
+                  <circle
+                    cx={city.x}
+                    cy={city.y - pr * 2.8}
+                    r={pr * 0.3}
+                    fill="hsl(var(--background))"
+                    opacity={0.65}
+                    style={{ pointerEvents: 'none' }}
                   />
                   {/* City label */}
                   <text
                     x={city.x}
-                    y={city.y + r + 12}
+                    y={city.y + 10}
                     textAnchor="middle"
                     fill="hsl(var(--foreground))"
                     fontSize={9}
@@ -114,9 +137,8 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
             {hoveredCity && (() => {
               const tw = 130;
               const th = 40;
-              // Clamp so the tooltip doesn't escape the viewBox
               const tx = Math.min(hoveredCity.x + 14, 800 - tw - 4);
-              const ty = Math.max(hoveredCity.y - th - 4, 4);
+              const ty = Math.max(hoveredCity.y - th - 16, 4);
               return (
                 <g style={{ pointerEvents: 'none' }}>
                   <rect
@@ -151,7 +173,6 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
             })()}
           </svg>
 
-          {/* Empty state overlay */}
           {citiesShown === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-xs text-muted-foreground bg-card/80 px-3 py-1.5 rounded-md">
