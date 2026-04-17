@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { FileText, Loader2, Search, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { rowSlideIn } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
@@ -108,11 +110,14 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
   // Show detail panel if selected
   if (selectedDetail || isLoadingDetail) {
     return (
-      <InvoiceDetailPanel
-        detail={selectedDetail}
-        isLoading={isLoadingDetail}
-        onClose={closeDetail}
-      />
+      <AnimatePresence mode="wait">
+        <InvoiceDetailPanel
+          key={selectedDetail?.invoiceNumber ?? 'loading'}
+          detail={selectedDetail}
+          isLoading={isLoadingDetail}
+          onClose={closeDetail}
+        />
+      </AnimatePresence>
     );
   }
 
@@ -201,11 +206,12 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/30">
-                  {invoices.map((inv) => (
-                    <tr
+                  {invoices.map((inv, i) => (
+                    <motion.tr
                       key={inv.invoiceNumber}
                       className="hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => loadInvoiceDetail(inv.invoiceNumber)}
+                      {...rowSlideIn(i)}
                     >
                       {visibleColumns.map((id) => {
                         const col = COLUMN_MAP.get(id);
@@ -216,7 +222,7 @@ export function InvoiceList({ resellerId, countryCode }: InvoiceListProps) {
                           </td>
                         );
                       })}
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>

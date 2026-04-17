@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { sectionReveal, rowSlideIn } from '@/lib/motion';
 import {
   Search, Download, Building2, User, X,
   SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Star,
@@ -286,15 +288,15 @@ export default function RevenueOverviewPage() {
   return (
     <div className="space-y-3">
           {/* Title */}
-          <div data-tour="page-revenue">
+          <motion.div data-tour="page-revenue" {...sectionReveal(0)}>
             <h2 className="text-xl font-semibold text-foreground">Revenue Overview</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {filtered.length} customer{filtered.length !== 1 ? 's' : ''} · sorted by {sortLabel} ({dirLabel})
             </p>
-          </div>
+          </motion.div>
 
           {/* Row 1: Search + Sort + Filters + Export */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <motion.div className="flex items-center gap-2 flex-wrap" {...sectionReveal(0.05)}>
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
               <Input
@@ -374,7 +376,7 @@ export default function RevenueOverviewPage() {
               {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               {isExporting ? 'Exporting…' : 'Export to Excel'}
             </button>
-          </div>
+          </motion.div>
 
           {/* Row 2: Collapsible filter panel */}
           {showFilters && (
@@ -506,9 +508,10 @@ export default function RevenueOverviewPage() {
                     </tr>
                   ) : (
                     pagedRows.map((customer, index) => (
-                      <tr
+                      <motion.tr
                         key={customer.id}
                         className="hover:bg-muted/30 transition-colors"
+                        {...rowSlideIn(index)}
                       >
                         <td className="px-4 py-3 text-muted-foreground tabular-nums">{(safePage - 1) * pageSize + index + 1}</td>
                         {visibleColumns.map((id) => {
@@ -520,7 +523,7 @@ export default function RevenueOverviewPage() {
                             </td>
                           );
                         })}
-                      </tr>
+                      </motion.tr>
                     ))
                   )}
                 </tbody>

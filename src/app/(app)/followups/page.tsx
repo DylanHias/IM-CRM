@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { listContainerVariants, listItemVariants } from '@/lib/motion';
 import { FollowUpItem } from '@/components/followups/FollowUpItem';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -199,16 +201,21 @@ export default function FollowUpsPage() {
             <h3 className="text-sm font-semibold text-destructive">Overdue</h3>
             <Badge variant="destructive">{overdue.length}</Badge>
           </div>
-          <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60">
+          <motion.div
+            className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60"
+            variants={listContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {overdueSlice.map((f) => (
-              <div key={f.id}>
+              <motion.div key={f.id} variants={listItemVariants}>
                 <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                   {getCustomerName(f.customerId)}
                 </p>
                 <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
           <TablePagination
             totalItems={overdue.length}
             page={overduePage}
@@ -223,16 +230,21 @@ export default function FollowUpsPage() {
       {upcoming.length > 0 && (
         <section className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Upcoming ({upcoming.length})</h3>
-          <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
+          <motion.div
+            className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60"
+            variants={listContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {upcomingSlice.map((f) => (
-              <div key={f.id}>
+              <motion.div key={f.id} variants={listItemVariants}>
                 <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                   {getCustomerName(f.customerId)}
                 </p>
                 <FollowUpItem followUp={f} onComplete={handleComplete} onEdit={() => openEdit(f)} onDelete={() => handleDelete(f)} />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
           <TablePagination
             totalItems={upcoming.length}
             page={upcomingPage}
@@ -252,16 +264,21 @@ export default function FollowUpsPage() {
           </div>
         ) : (
           <>
-            <div className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60">
+            <motion.div
+              className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60"
+              variants={listContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {doneSlice.map((f) => (
-                <div key={f.id}>
+                <motion.div key={f.id} variants={listItemVariants}>
                   <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                     {getCustomerName(f.customerId)}
                   </p>
                   <FollowUpItem followUp={f} />
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
             <TablePagination
               totalItems={done.length}
               page={donePage}

@@ -9,6 +9,7 @@ import { NotificationSettings } from '@/components/settings/NotificationSettings
 import { SyncSettings } from '@/components/settings/SyncSettings';
 import { KeybindingsSettings } from '@/components/settings/KeybindingsSettings';
 import { SubSidebar } from '@/components/layout/SubSidebar';
+import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
 const TABS = [
   { id: 'general', label: 'General', icon: Settings2 },
@@ -30,12 +31,14 @@ export default function SettingsPage() {
       <div className="flex gap-8 max-w-[960px] min-h-0">
         <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[200px]" />
         <div className="flex-1 min-w-0">
-          {activeTab === 'general' && <GeneralSettings />}
-          {activeTab === 'appearance' && <AppearanceSettings />}
-          {activeTab === 'data-defaults' && <DataDefaultsSettings />}
-          {activeTab === 'notifications' && <NotificationSettings />}
-          {activeTab === 'sync' && <SyncSettings />}
-          {activeTab === 'keybindings' && <KeybindingsSettings />}
+          <AnimatedTabPanels activeKey={activeTab}>
+            {activeTab === 'general' && <GeneralSettings />}
+            {activeTab === 'appearance' && <AppearanceSettings />}
+            {activeTab === 'data-defaults' && <DataDefaultsSettings />}
+            {activeTab === 'notifications' && <NotificationSettings />}
+            {activeTab === 'sync' && <SyncSettings />}
+            {activeTab === 'keybindings' && <KeybindingsSettings />}
+          </AnimatedTabPanels>
         </div>
       </div>
     </div>

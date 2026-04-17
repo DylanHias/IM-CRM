@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { underlineSpring, tabPanelMotion, statCardMotion, sectionReveal } from '@/lib/motion';
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
@@ -482,7 +483,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-full"
                         layoutId="tab-underline"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        transition={underlineSpring}
                       />
                     )}
                   </button>
@@ -494,10 +495,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'overview' && (
                   <motion.div
                     key="overview"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                     className="space-y-6"
                   >
                     <div className="grid grid-cols-3 gap-4">
@@ -518,9 +516,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                               <motion.div
                                 key={card.label}
                                 className="bg-card border border-border/70 rounded-xl p-4 shadow-sm"
-                                initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.15, delay: i * 0.03, ease: 'easeOut' }}
+                                {...statCardMotion(i)}
                               >
                                 <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
                                 <p className="text-lg font-bold text-foreground">{card.value}</p>
@@ -532,9 +528,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     </div>
 
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.18, delay: 0.1, ease: 'easeOut' }}
+                      {...sectionReveal(0.1)}
                     >
                       <h3 className="text-base font-semibold text-foreground mb-3">Recent Activity</h3>
                       <Timeline
@@ -550,10 +544,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'activities' && (
                   <motion.div
                     key="activities"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                   >
                     <ActivitiesTabContent
                       activities={activities}
@@ -571,10 +562,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'contacts' && (
                   <motion.div
                     key="contacts"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                   >
                     <ContactList
                       contacts={contacts}
@@ -592,10 +580,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'followups' && (
                   <motion.div
                     key="followups"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                   >
                     <FollowUpList followUps={followUps} customerId={customerId} onComplete={completeFollowUp} onAdd={() => setAddFollowUpOpen(true)} />
                   </motion.div>
@@ -605,10 +590,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'opportunities' && (
                   <motion.div
                     key="opportunities"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                   >
                     <OpportunityList customerId={customerId} triggerAdd={triggerOpportunityAdd} />
                   </motion.div>
@@ -618,10 +600,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                 {activeTab === 'invoices' && (
                   <motion.div
                     key="invoices"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    {...tabPanelMotion}
                   >
                     <InvoiceList resellerId={customer.resellerId} countryCode={getCountryCode(customer.addressCountry)} />
                   </motion.div>

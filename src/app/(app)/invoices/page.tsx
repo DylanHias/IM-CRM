@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { FileText, Search } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { tabPanelMotion } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { useCustomerStore } from '@/store/customerStore';
@@ -76,17 +78,21 @@ export default function InvoicesPage() {
           </div>
 
           {/* Content */}
-          {!selectedCustomer ? (
-            <div className="text-center py-20">
-              <FileText size={40} className="mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Select a customer to view their invoices</p>
-            </div>
-          ) : (
-            <InvoiceList
-              resellerId={selectedCustomer.resellerId}
-              countryCode={countryCode}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            {!selectedCustomer ? (
+              <motion.div key="empty" {...tabPanelMotion} className="text-center py-20">
+                <FileText size={40} className="mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">Select a customer to view their invoices</p>
+              </motion.div>
+            ) : (
+              <motion.div key={selectedCustomer.id} {...tabPanelMotion}>
+                <InvoiceList
+                  resellerId={selectedCustomer.resellerId}
+                  countryCode={countryCode}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
     </div>
   );
 }

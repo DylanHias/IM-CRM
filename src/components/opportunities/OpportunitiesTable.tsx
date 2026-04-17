@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Target, ChevronRight, Pencil, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
 import styled from 'styled-components';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -118,15 +119,6 @@ const SubMeta = styled.div`
   white-space: nowrap;
 `;
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' as const } },
-};
 
 function statusVariant(status: Opportunity['status']) {
   switch (status) {

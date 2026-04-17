@@ -8,6 +8,7 @@ import { formatRelative } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { Customer } from '@/types/entities';
 import { motion } from 'framer-motion';
+import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
 import styled from 'styled-components';
 
 const ICON_COLORS = [
@@ -110,15 +111,6 @@ const LastActivity = styled.div`
   color: hsl(var(--muted-foreground));
 `;
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' as const } },
-};
 
 interface CustomerListProps {
   customers: Customer[];

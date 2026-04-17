@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { rowSlideIn } from '@/lib/motion';
 import { Plus, Target, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,9 +105,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
             <motion.div
               key={opp.id}
               className="px-5 py-3.5 flex items-start justify-between gap-3 group"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+              {...rowSlideIn(i)}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">

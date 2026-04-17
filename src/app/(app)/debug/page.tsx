@@ -5,6 +5,7 @@ import { Terminal, RefreshCw } from 'lucide-react';
 import { ConsoleViewer } from '@/components/admin/ConsoleViewer';
 import { SyncAdministration } from '@/components/admin/SyncAdministration';
 import { SubSidebar } from '@/components/layout/SubSidebar';
+import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
 const TABS = [
   { id: 'console', label: 'Console', icon: Terminal },
@@ -22,8 +23,10 @@ export default function DebugPage() {
       <div className="flex gap-8 min-h-0">
         <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="flex-1 min-w-0">
-          {activeTab === 'console' && <ConsoleViewer />}
-          {activeTab === 'sync' && <SyncAdministration />}
+          <AnimatedTabPanels activeKey={activeTab}>
+            {activeTab === 'console' && <ConsoleViewer />}
+            {activeTab === 'sync' && <SyncAdministration />}
+          </AnimatedTabPanels>
         </div>
       </div>
     </div>

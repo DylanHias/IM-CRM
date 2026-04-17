@@ -8,6 +8,7 @@ import { AnalyticsReports } from '@/components/admin/AnalyticsReports';
 import { DataManagement } from '@/components/admin/DataManagement';
 import { DatabaseExplorer } from '@/components/admin/DatabaseExplorer';
 import { SubSidebar } from '@/components/layout/SubSidebar';
+import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
 const TABS = [
   { id: 'users', label: 'Users', icon: Users },
@@ -28,10 +29,12 @@ export default function AdminPage() {
         <div className="flex gap-8 min-h-0">
           <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[200px]" />
           <div className="flex-1 min-w-0">
-            {activeTab === 'users' && <UserManagement />}
-            {activeTab === 'analytics' && <AnalyticsReports />}
-            {activeTab === 'data' && <DataManagement />}
-            {activeTab === 'database' && <DatabaseExplorer />}
+            <AnimatedTabPanels activeKey={activeTab}>
+              {activeTab === 'users' && <UserManagement />}
+              {activeTab === 'analytics' && <AnalyticsReports />}
+              {activeTab === 'data' && <DataManagement />}
+              {activeTab === 'database' && <DatabaseExplorer />}
+            </AnimatedTabPanels>
           </div>
         </div>
       </div>

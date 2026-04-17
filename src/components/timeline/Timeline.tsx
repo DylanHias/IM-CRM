@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { rowSlideIn } from '@/lib/motion';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import type { Activity, FollowUp, Opportunity, TimelineEvent } from '@/types/entities';
@@ -58,9 +59,7 @@ export function Timeline({ activities, followUps, opportunities, paginate, onEdi
         {visibleEvents.map((event, i) => (
           <motion.div
             key={`${event.kind}-${event.id}`}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+            {...rowSlideIn(i)}
           >
             <TimelineItem
               event={event}

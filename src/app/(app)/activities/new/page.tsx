@@ -2,6 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { sectionReveal } from '@/lib/motion';
 import { ActivityForm } from '@/components/activities/ActivityForm';
 import { useCustomerStore } from '@/store/customerStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -39,10 +41,10 @@ function NewActivityContent() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <motion.div className="max-w-2xl mx-auto" {...sectionReveal(0)}>
       <h2 className="text-xl font-semibold text-foreground mb-6">Log Activity</h2>
       <ActivityForm customerId={customerId} customerName={customer.name} contacts={contacts} />
-    </div>
+    </motion.div>
   );
 }
 

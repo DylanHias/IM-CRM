@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { rowSlideIn } from '@/lib/motion';
 import { Plus, CheckSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,9 +107,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
               {open.map((f, i) => (
                 <motion.div
                   key={f.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+                  {...rowSlideIn(i)}
                 >
                   <FollowUpItem
                     followUp={f}
@@ -128,9 +127,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
                 {done.map((f, i) => (
                   <motion.div
                     key={f.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4), ease: 'easeOut' }}
+                    {...rowSlideIn(i)}
                   >
                     <FollowUpItem followUp={f} />
                   </motion.div>

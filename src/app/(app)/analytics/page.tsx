@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { User, Target, Users, Activity } from 'lucide-react';
 import { SubSidebar } from '@/components/layout/SubSidebar';
+import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 import { PersonalPanel } from '@/components/analytics/PersonalPanel';
 import { PipelinePanel } from '@/components/analytics/PipelinePanel';
 import { CustomersPanel } from '@/components/analytics/CustomersPanel';
@@ -29,10 +30,12 @@ export default function AnalyticsPage() {
       <div className="flex gap-8 min-h-0">
         <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[180px]" />
         <div className="flex-1 min-w-0">
-          {activeTab === 'personal' && <PersonalPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
-          {activeTab === 'pipeline' && <PipelinePanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
-          {activeTab === 'customers' && <CustomersPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
-          {activeTab === 'activity' && <ActivityPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+          <AnimatedTabPanels activeKey={activeTab}>
+            {activeTab === 'personal' && <PersonalPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+            {activeTab === 'pipeline' && <PipelinePanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+            {activeTab === 'customers' && <CustomersPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+            {activeTab === 'activity' && <ActivityPanel refreshKey={refreshKey} onRefresh={handleRefresh} />}
+          </AnimatedTabPanels>
         </div>
       </div>
     </div>

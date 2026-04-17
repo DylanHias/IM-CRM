@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { AppSidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
 import { PageMotion } from './PageMotion';
@@ -24,6 +25,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
   const compactMode = useSettingsStore((s) => s.compactMode);
   const { sidebarOpen, setSidebarOpen } = useUIStore();
   useAutoSync();
@@ -40,7 +42,7 @@ export function AppShell({ children }: AppShellProps) {
         <AppSidebar />
         <main className="flex-1 flex flex-col overflow-hidden bg-background">
           <div className={cn('flex-1 overflow-y-auto', compactMode ? 'px-5 py-4' : 'px-7 py-6')}>
-            <PageMotion>
+            <PageMotion key={pathname}>
               {children}
               <div className="h-12" />
             </PageMotion>

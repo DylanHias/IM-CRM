@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Timeline } from '@/components/timeline/Timeline';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -70,14 +71,14 @@ export default function TimelinePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
         <h2 className="text-xl font-semibold text-foreground">Timeline</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           All activities, follow-ups, and opportunities across your customers.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="relative">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, delay: 0.05, ease: 'easeOut' }} className="relative">
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
@@ -85,7 +86,7 @@ export default function TimelinePage() {
           placeholder="Filter by subject or customer…"
           className="pl-8"
         />
-      </div>
+      </motion.div>
 
       <Timeline
         activities={filteredActivities}
