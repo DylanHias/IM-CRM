@@ -88,6 +88,14 @@ export async function stopOllamaServe(): Promise<void> {
     }
     ollamaChild = null;
   }
+  if (isTauriApp()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('kill_ollama');
+    } catch (err) {
+      console.error('[ai] kill_ollama invoke error:', err);
+    }
+  }
 }
 
 export async function checkAvailability(): Promise<{ available: boolean; models: string[] }> {

@@ -6,6 +6,8 @@ use rust_xlsxwriter::{Format, Workbook, Worksheet};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 
@@ -133,6 +135,26 @@ async fn refresh_oauth_token(
         scope: body["scope"].as_str().unwrap_or_default().to_string(),
         token_type: body["token_type"].as_str().unwrap_or("Bearer").to_string(),
     })
+}
+
+// ─── Ollama process management ───────────────────────────────────────────────
+
+/// Force-kill all ollama.exe processes on Windows (including child processes).
+/// This is more reliable than killing the tracked sidecar child because ollama
+/// spawns runner sub-processes that outlive the parent kill signal.
+#[tauri::command]
+fn kill_ollama() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", "ollama.exe", "/T"])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("pkill").arg("-f").arg("ollama").output();
+    }
 }
 
 // ─── Ollama HTTP proxy ───────────────────────────────────────────────────────
@@ -576,6 +598,7 @@ pub fn run() {
             export_db_all,
             export_rows,
             export_revenue_overview,
+            kill_ollama,
             ollama_request,
             ollama_chat_stream,
         ])
