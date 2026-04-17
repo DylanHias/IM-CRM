@@ -1,7 +1,7 @@
-import { getHelpDocsContext } from './helpContext';
+import { getRelevantHelpDocs } from './helpContext';
 
-export function buildSystemPrompt(dataContext?: string): string {
-  const helpDocs = getHelpDocsContext();
+export function buildSystemPrompt(dataContext?: string, userMessage?: string): string {
+  const helpDocs = getRelevantHelpDocs(userMessage ?? '');
 
   const base = `You are a helpful assistant for the Ingram Micro CRM — a desktop application used by Ingram Micro account managers to manage customers, contacts, activities, follow-ups, opportunities, and revenue data.
 

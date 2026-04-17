@@ -18,13 +18,9 @@ interface AiChatState {
   isStreaming: boolean;
   streamingContent: string;
   ollamaStatus: OllamaStatus;
-  availableModels: string[];
   isPulling: boolean;
   pullProgress: number;
   pullStatus: string;
-
-  // Persisted
-  selectedModel: string;
 
   // Actions
   setOpen: (open: boolean) => void;
@@ -34,23 +30,30 @@ interface AiChatState {
   finalizeStreaming: () => void;
   clearMessages: () => void;
   setStreaming: (streaming: boolean) => void;
-  setSelectedModel: (model: string) => void;
   checkOllamaAvailability: () => Promise<void>;
+}
+
+async function ensureDefaultModel(
+  models: string[],
+  onProgress: (percent: number, status: string) => void
+): Promise<string[]> {
+  if (models.includes(DEFAULT_MODEL)) return models;
+  await pullModel(DEFAULT_MODEL, onProgress, () => {});
+  const after = await checkAvailability();
+  return after.models;
 }
 
 export const useAiChatStore = create<AiChatState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       isOpen: false,
       messages: [],
       isStreaming: false,
       streamingContent: '',
       ollamaStatus: 'unchecked',
-      availableModels: [],
       isPulling: false,
       pullProgress: 0,
       pullStatus: '',
-      selectedModel: '',
 
       setOpen: (isOpen) => set({ isOpen }),
       toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
@@ -81,48 +84,32 @@ export const useAiChatStore = create<AiChatState>()(
 
       setStreaming: (isStreaming) => set({ isStreaming }),
 
-      setSelectedModel: (selectedModel) => set({ selectedModel }),
-
       checkOllamaAvailability: async () => {
         set({ ollamaStatus: 'checking' });
         const { available, models } = await checkAvailability();
         if (!available) {
-          set({ ollamaStatus: 'unavailable', availableModels: [] });
+          set({ ollamaStatus: 'unavailable' });
           return;
         }
-        if (models.length === 0) {
-          // Auto-pull the default model — no user interaction needed
+        if (!models.includes(DEFAULT_MODEL)) {
           set({ ollamaStatus: 'pulling', isPulling: true, pullProgress: 0, pullStatus: 'Starting download…' });
           try {
-            await pullModel(
-              DEFAULT_MODEL,
-              (percent, status) => set({ pullProgress: percent, pullStatus: status }),
-              () => { /* handled below */ }
+            await ensureDefaultModel(
+              models,
+              (percent, status) => set({ pullProgress: percent, pullStatus: status })
             );
           } catch (err) {
             console.error('[ai] auto-pull failed:', err);
             set({ ollamaStatus: 'unavailable', isPulling: false });
             return;
           }
-          // Re-check after pull completes
-          const after = await checkAvailability();
-          if (!after.available || after.models.length === 0) {
-            set({ ollamaStatus: 'unavailable', isPulling: false });
-            return;
-          }
-          const current = get().selectedModel;
-          const selectedModel = after.models.includes(current) ? current : after.models[0];
-          set({ ollamaStatus: 'available', availableModels: after.models, selectedModel, isPulling: false, pullProgress: 0, pullStatus: '' });
-          return;
         }
-        const current = get().selectedModel;
-        const selectedModel = models.includes(current) ? current : models[0];
-        set({ ollamaStatus: 'available', availableModels: models, selectedModel });
+        set({ ollamaStatus: 'available', isPulling: false, pullProgress: 0, pullStatus: '' });
       },
     }),
     {
       name: 'crm-ai-chat-store',
-      partialize: (state) => ({ selectedModel: state.selectedModel }),
+      partialize: () => ({}),
     }
   )
 );

@@ -12,13 +12,6 @@ import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { detectAndFetchContext } from '@/lib/ai/contextDetection';
 import { AiChatMessage } from './AiChatMessage';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 export function AiChatWindow() {
   const isAdmin = useAuthStore((s) => s.isAdmin);
@@ -34,8 +27,6 @@ function AiChatWindowInner() {
     isStreaming,
     streamingContent,
     ollamaStatus,
-    availableModels,
-    selectedModel,
     pullProgress,
     pullStatus,
     setOpen,
@@ -44,7 +35,6 @@ function AiChatWindowInner() {
     finalizeStreaming,
     setStreaming,
     clearMessages,
-    setSelectedModel,
     checkOllamaAvailability,
   } = useAiChatStore();
 
@@ -119,7 +109,7 @@ function AiChatWindowInner() {
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || isStreaming || !selectedModel) return;
+    if (!text || isStreaming) return;
 
     setInput('');
     addMessage({ role: 'user', content: text });
@@ -131,7 +121,7 @@ function AiChatWindowInner() {
 
     try {
       const dataContext = await detectAndFetchContext(text);
-      const systemPrompt = buildSystemPrompt(dataContext ?? undefined);
+      const systemPrompt = buildSystemPrompt(dataContext ?? undefined, text);
 
       const history = useAiChatStore.getState().messages;
       const ollamaMessages = [
@@ -139,7 +129,7 @@ function AiChatWindowInner() {
         ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
       ];
 
-      await streamChat(selectedModel, ollamaMessages, onChunk, onDone, controller.signal);
+      await streamChat(DEFAULT_MODEL, ollamaMessages, onChunk, onDone, controller.signal);
     } catch (err) {
       console.error('[ai] send message error:', err);
       chunkBufferRef.current = '';
@@ -148,7 +138,7 @@ function AiChatWindowInner() {
     } finally {
       abortControllerRef.current = null;
     }
-  }, [input, isStreaming, selectedModel, addMessage, setStreaming, onChunk, onDone, finalizeStreaming]);
+  }, [input, isStreaming, addMessage, setStreaming, onChunk, onDone, finalizeStreaming]);
 
   const stopStreaming = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -197,21 +187,6 @@ function AiChatWindowInner() {
                 {ollamaStatus === 'checking' ? 'Starting…' : ollamaStatus === 'pulling' ? 'Setting up…' : 'AI Assistant'}
               </span>
             </div>
-
-            {availableModels.length > 0 && (
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="h-7 text-xs w-auto max-w-[140px] border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((m) => (
-                    <SelectItem key={m} value={m} className="text-xs">
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
 
             <Button
               variant="ghost"
