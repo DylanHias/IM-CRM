@@ -16,12 +16,20 @@ export function useAppUpdater(): AppUpdaterState {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const checkForUpdate = useCallback(async () => {
+  const checkForUpdate = useCallback(async (autoInstall = false) => {
     if (!isTauriApp()) return;
     try {
       const { check } = await import('@tauri-apps/plugin-updater');
       const update = await check();
-      if (update) {
+      if (!update) return;
+      if (autoInstall) {
+        setDownloading(true);
+        toast.info(`Updating to ${update.version}…`, { duration: 60000 });
+        if (update.body) await storeChangelog(update.body, update.version);
+        await update.downloadAndInstall();
+        const { relaunch } = await import('@tauri-apps/plugin-process');
+        await relaunch();
+      } else {
         setUpdateAvailable(true);
         if (useSettingsStore.getState().showUpdateToasts) {
           toast.info(`Update ${update.version} available`, {
@@ -32,11 +40,12 @@ export function useAppUpdater(): AppUpdaterState {
       }
     } catch (error) {
       console.error('[updater] Failed to check for updates:', error);
+      setDownloading(false);
     }
   }, []);
 
   useEffect(() => {
-    checkForUpdate();
+    checkForUpdate(true);
     const interval = setInterval(checkForUpdate, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [checkForUpdate]);
