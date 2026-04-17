@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Activity, Target, CalendarClock, Wallet } from 'lucide-react';
+import { Activity, Target, Wallet } from 'lucide-react';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { GreetingHeader } from '@/components/today/GreetingHeader';
 import { GlobalSearchBar } from '@/components/today/GlobalSearchBar';
 import { BelgiumMapCard } from '@/components/dashboard/BelgiumMapCard';
 import { RecentActivityPanel } from '@/components/dashboard/RecentActivityPanel';
+import { DueTodayPanel } from '@/components/dashboard/DueTodayPanel';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -36,7 +37,6 @@ interface DashboardCache {
   allFollowUps: FollowUp[];
   activitiesCount: number;
   opportunitiesCount: number;
-  followUpsDueToday: number;
   openPipelineValue: number;
   cityCounts: CityCount[];
   totalBelgianCustomers: number;
@@ -66,9 +66,6 @@ export default function DashboardPage() {
   const [opportunitiesCount, setOpportunitiesCount] = useState<number | null>(
     cache?.opportunitiesCount ?? null,
   );
-  const [followUpsDueToday, setFollowUpsDueToday] = useState<number | null>(
-    cache?.followUpsDueToday ?? null,
-  );
   const [openPipelineValue, setOpenPipelineValue] = useState<number | null>(
     cache?.openPipelineValue ?? null,
   );
@@ -93,7 +90,7 @@ export default function DashboardPage() {
 
         const [
           { queryMyActivitiesCountAllTime, queryMyOpportunitiesCountAllTime, queryBelgianCustomersByCity, queryMyPipeline },
-          { queryDueTodayFollowUpCount, queryAllFollowUps },
+          { queryAllFollowUps },
           { queryMyRecentActivitiesLatest },
         ] = await Promise.all([
           import('@/lib/db/queries/analytics'),
@@ -106,7 +103,6 @@ export default function DashboardPage() {
           allFUs,
           actCount,
           oppCount,
-          dueTodayCount,
           pipeline,
           rawCities,
         ] = await Promise.all([
@@ -114,7 +110,6 @@ export default function DashboardPage() {
           queryAllFollowUps(),
           queryMyActivitiesCountAllTime(userIds),
           queryMyOpportunitiesCountAllTime(userIds),
-          queryDueTodayFollowUpCount(userId, altUserId ?? undefined),
           queryMyPipeline(userIds),
           queryBelgianCustomersByCity(),
         ]);
@@ -129,7 +124,6 @@ export default function DashboardPage() {
           allFollowUps: allFUs,
           activitiesCount: actCount,
           opportunitiesCount: oppCount,
-          followUpsDueToday: dueTodayCount,
           openPipelineValue: pipeline.openValue,
           cityCounts: normalizedCities,
           totalBelgianCustomers: totalBE,
@@ -141,7 +135,6 @@ export default function DashboardPage() {
         setAllFollowUps(allFUs);
         setActivitiesCount(actCount);
         setOpportunitiesCount(oppCount);
-        setFollowUpsDueToday(dueTodayCount);
         setOpenPipelineValue(pipeline.openValue);
         setCityCounts(normalizedCities);
         setTotalBelgianCustomers(totalBE);
@@ -165,7 +158,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             <MetricCard
               label="Total Activities"
               value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
@@ -179,12 +172,6 @@ export default function DashboardPage() {
               sub="All time"
             />
             <MetricCard
-              label="Due Today"
-              value={loading || followUpsDueToday === null ? '—' : fmt(followUpsDueToday)}
-              icon={CalendarClock}
-              sub="Follow-ups"
-            />
-            <MetricCard
               label="Open Pipeline"
               value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
               icon={Wallet}
@@ -193,8 +180,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right column: Recent activities */}
-        <RecentActivityPanel activities={recentActivities} loading={loading} />
+        {/* Right column: Recent Activity + Due Today */}
+        <div className="flex flex-col gap-4">
+          <RecentActivityPanel activities={recentActivities} loading={loading} />
+          <DueTodayPanel
+            followUps={allFollowUps.filter((f) => {
+              const today = new Date().toISOString().split('T')[0];
+              return !f.completed && f.dueDate === today;
+            })}
+            loading={loading}
+          />
+        </div>
       </div>
     </div>
   );

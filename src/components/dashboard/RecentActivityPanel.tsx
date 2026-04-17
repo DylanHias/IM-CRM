@@ -39,7 +39,7 @@ export function RecentActivityPanel({ activities, loading }: Props) {
       </div>
 
       {/* Scrollable list */}
-      <div className="overflow-y-auto flex-1 min-h-0 max-h-[520px]">
+      <div className="overflow-y-auto flex-1 min-h-0 max-h-[280px]">
         {loading ? (
           <ul className="divide-y divide-border/60">
             {Array.from({ length: 5 }).map((_, i) => (
