@@ -137,7 +137,7 @@ export default function LoginPage() {
   // Already logged in?
   useEffect(() => {
     if (accounts.length > 0 || isAuthenticated) {
-      router.replace('/customers');
+      router.replace('/dashboard');
     }
   }, [accounts, router, isAuthenticated]);
 
@@ -182,7 +182,7 @@ export default function LoginPage() {
       }
     }
 
-    router.replace('/customers');
+    router.replace('/dashboard');
   };
 
   const handleLogin = async () => {
@@ -221,7 +221,7 @@ export default function LoginPage() {
           await loadProfilePhoto(result.account.localAccountId);
         }
 
-        router.replace('/customers');
+        router.replace('/dashboard');
       } else {
         setError('Login was cancelled or failed. Please try again.');
       }
