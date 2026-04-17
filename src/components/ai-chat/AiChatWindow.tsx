@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Square, Trash2, RefreshCw } from 'lucide-react';
+import { Send, Square, Trash2, RefreshCw, X, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useAiChatStore } from '@/store/aiChatStore';
 import { useAuthStore } from '@/store/authStore';
-import { streamChat } from '@/lib/ai/ollamaService';
+import { streamChat, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { detectAndFetchContext } from '@/lib/ai/contextDetection';
 import { AiChatMessage } from './AiChatMessage';
@@ -36,6 +36,8 @@ function AiChatWindowInner() {
     ollamaStatus,
     availableModels,
     selectedModel,
+    pullProgress,
+    pullStatus,
     setOpen,
     addMessage,
     updateStreamingContent,
@@ -177,7 +179,7 @@ function AiChatWindowInner() {
           exit={{ opacity: 0, scale: 0.92, y: 8 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
           style={{ transformOrigin: 'bottom right', maxHeight: 'min(520px, calc(100vh - 100px))' }}
-          className="fixed bottom-[72px] right-6 z-40 w-[380px] flex flex-col rounded-2xl border border-border bg-background shadow-2xl overflow-hidden"
+          className="fixed bottom-6 right-6 z-40 w-[380px] flex flex-col rounded-2xl border border-border bg-background shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-background shrink-0">
@@ -188,10 +190,12 @@ function AiChatWindowInner() {
                   ollamaStatus === 'available' && 'bg-green-500',
                   ollamaStatus === 'unavailable' && 'bg-red-500',
                   ollamaStatus === 'no-models' && 'bg-yellow-500',
-                  (ollamaStatus === 'unchecked' || ollamaStatus === 'checking') && 'bg-muted-foreground animate-pulse'
+                  (ollamaStatus === 'unchecked' || ollamaStatus === 'checking' || ollamaStatus === 'pulling') && 'bg-muted-foreground animate-pulse'
                 )}
               />
-              <span className="text-sm font-medium text-foreground">AI Assistant</span>
+              <span className="text-sm font-medium text-foreground">
+                {ollamaStatus === 'checking' ? 'Starting…' : ollamaStatus === 'pulling' ? 'Setting up…' : 'AI Assistant'}
+              </span>
             </div>
 
             {availableModels.length > 0 && (
@@ -218,14 +222,23 @@ function AiChatWindowInner() {
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setOpen(false)}
+              title="Close"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
           </div>
 
           {/* Body */}
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             {ollamaStatus === 'unavailable' ? (
               <OllamaUnavailable onRetry={checkOllamaAvailability} />
-            ) : ollamaStatus === 'no-models' ? (
-              <NoModels onRetry={checkOllamaAvailability} />
+            ) : ollamaStatus === 'pulling' ? (
+              <ModelPulling progress={pullProgress} status={pullStatus} model={DEFAULT_MODEL} />
             ) : (
               <>
                 {/* Messages */}
@@ -298,9 +311,9 @@ function AiChatWindowInner() {
 function OllamaUnavailable({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[200px] gap-3 px-6 text-center">
-      <p className="text-sm font-medium text-foreground">Ollama is not running</p>
+      <p className="text-sm font-medium text-foreground">AI Assistant unavailable</p>
       <p className="text-xs text-muted-foreground">
-        Start Ollama on your machine, then retry.
+        Could not connect to Ollama. Contact your administrator.
       </p>
       <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
         <RefreshCw className="h-3.5 w-3.5" />
@@ -310,17 +323,28 @@ function OllamaUnavailable({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function NoModels({ onRetry }: { onRetry: () => void }) {
+function ModelPulling({ progress, status, model }: { progress: number; status: string; model: string }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[200px] gap-3 px-6 text-center">
-      <p className="text-sm font-medium text-foreground">No models available</p>
-      <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-        ollama pull llama3.2
+    <div className="flex flex-col items-center justify-center h-full min-h-[200px] gap-4 px-6 text-center">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Download className="h-4 w-4 animate-bounce" />
+        <p className="text-sm font-medium text-foreground">Downloading AI model</p>
+      </div>
+      <p className="text-xs text-muted-foreground max-w-[260px]">
+        Setting up <span className="font-mono">{model}</span> for the first time. This is a one-time download (~2 GB).
       </p>
-      <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
-        <RefreshCw className="h-3.5 w-3.5" />
-        Retry
-      </Button>
+      <div className="w-full max-w-[260px] space-y-1.5">
+        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${Math.max(progress, 3)}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span className="truncate max-w-[200px]">{status || 'Preparing…'}</span>
+          {progress > 0 && <span>{progress}%</span>}
+        </div>
+      </div>
     </div>
   );
 }

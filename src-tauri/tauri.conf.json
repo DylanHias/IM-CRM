@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Ingram Micro CRM",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "identifier": "com.ingramcrm.app",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "pnpm sync-version && pnpm dev",
-    "beforeBuildCommand": "pnpm sync-version && pnpm build"
+    "beforeDevCommand": "node scripts/download-ollama.js && pnpm sync-version && pnpm dev",
+    "beforeBuildCommand": "node scripts/download-ollama.js && pnpm sync-version && pnpm build"
   },
   "app": {
     "windows": [
@@ -39,6 +39,9 @@
     "category": "Business",
     "shortDescription": "A streamlined CRM for Ingram Micro colleagues.",
     "longDescription": "Ingram Micro CRM is a lightweight desktop application built for Ingram Micro account managers. It replaces the cluttered Dynamics 365 interface with a focused tool for managing customers, contacts, activities, follow-ups, and opportunities — all synced with D365 in the background.",
+    "externalBin": [
+      "binaries/ollama"
+    ],
     "createUpdaterArtifacts": "v1Compatible",
     "icon": [
       "icons/32x32.png",

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { checkAvailability } from '@/lib/ai/ollamaService';
+import { checkAvailability, pullModel, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
 
 export interface ChatMessage {
   id: string;
@@ -9,7 +9,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-export type OllamaStatus = 'unchecked' | 'checking' | 'available' | 'unavailable' | 'no-models';
+export type OllamaStatus = 'unchecked' | 'checking' | 'available' | 'unavailable' | 'no-models' | 'pulling';
 
 interface AiChatState {
   // Ephemeral — not persisted
@@ -19,6 +19,9 @@ interface AiChatState {
   streamingContent: string;
   ollamaStatus: OllamaStatus;
   availableModels: string[];
+  isPulling: boolean;
+  pullProgress: number;
+  pullStatus: string;
 
   // Persisted
   selectedModel: string;
@@ -44,6 +47,9 @@ export const useAiChatStore = create<AiChatState>()(
       streamingContent: '',
       ollamaStatus: 'unchecked',
       availableModels: [],
+      isPulling: false,
+      pullProgress: 0,
+      pullStatus: '',
       selectedModel: '',
 
       setOpen: (isOpen) => set({ isOpen }),
@@ -85,7 +91,28 @@ export const useAiChatStore = create<AiChatState>()(
           return;
         }
         if (models.length === 0) {
-          set({ ollamaStatus: 'no-models', availableModels: [] });
+          // Auto-pull the default model — no user interaction needed
+          set({ ollamaStatus: 'pulling', isPulling: true, pullProgress: 0, pullStatus: 'Starting download…' });
+          try {
+            await pullModel(
+              DEFAULT_MODEL,
+              (percent, status) => set({ pullProgress: percent, pullStatus: status }),
+              () => { /* handled below */ }
+            );
+          } catch (err) {
+            console.error('[ai] auto-pull failed:', err);
+            set({ ollamaStatus: 'unavailable', isPulling: false });
+            return;
+          }
+          // Re-check after pull completes
+          const after = await checkAvailability();
+          if (!after.available || after.models.length === 0) {
+            set({ ollamaStatus: 'unavailable', isPulling: false });
+            return;
+          }
+          const current = get().selectedModel;
+          const selectedModel = after.models.includes(current) ? current : after.models[0];
+          set({ ollamaStatus: 'available', availableModels: after.models, selectedModel, isPulling: false, pullProgress: 0, pullStatus: '' });
           return;
         }
         const current = get().selectedModel;
