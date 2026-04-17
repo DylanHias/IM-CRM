@@ -11,12 +11,6 @@ export function GreetingHeader() {
   const firstName = account?.name ? formatDisplayName(account.name).split(' ')[0] : 'there';
   const [greeting] = useState(() => pickGreeting(firstName));
 
-  const today = new Date().toLocaleDateString('en-BE', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-
   const parts = greeting.split(firstName);
 
   return (
@@ -33,7 +27,6 @@ export function GreetingHeader() {
           </span>
         ))}
       </p>
-      <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
     </div>
   );
 }
