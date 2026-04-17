@@ -8,9 +8,6 @@ import { BELGIUM_PROVINCES } from '@/lib/geo/belgiumProvinces';
 // viewBox="0 0 800 600"
 // Projection: x = (lng - 2.4) * 195,  y = (51.6 - lat) * 275
 
-function diamondPath(cx: number, cy: number, r: number): string {
-  return `M ${cx},${cy - r} L ${cx + r * 0.7},${cy} L ${cx},${cy + r} L ${cx - r * 0.7},${cy} Z`;
-}
 
 function pinRadius(count: number): number {
   return Math.min(10, Math.max(4, 4 + Math.log2(count + 1) * 1.8));
@@ -96,15 +93,19 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
                   style={{ cursor: 'default' }}
                 >
                   {/* Drop shadow */}
-                  <path
-                    d={diamondPath(city.x + 1, city.y + 1, pr)}
+                  <circle
+                    cx={city.x + 1}
+                    cy={city.y + 1}
+                    r={pr}
                     fill="hsl(var(--background))"
                     opacity={0.35}
                   />
-                  {/* Diamond body */}
-                  <path
-                    d={diamondPath(city.x, city.y, pr)}
-                    fill={isHovered ? 'hsl(var(--primary))' : 'hsl(var(--primary))'}
+                  {/* Circle body */}
+                  <circle
+                    cx={city.x}
+                    cy={city.y}
+                    r={pr}
+                    fill="hsl(var(--primary))"
                     stroke="hsl(var(--primary-foreground))"
                     strokeWidth={isHovered ? 1.2 : 0.8}
                     opacity={isHovered ? 1 : 0.85}
