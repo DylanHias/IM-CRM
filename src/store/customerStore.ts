@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Customer, Contact } from '@/types/entities';
 import { useSettingsStore } from '@/store/settingsStore';
 import { addCustomerFavorite, removeCustomerFavorite } from '@/lib/db/queries/customers';
+import { getCityProvince } from '@/lib/utils/cityProvince';
 
 export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry';
 export type SortDir = 'asc' | 'desc';
@@ -20,7 +21,7 @@ interface CustomerState {
   filterIndustry: string | null;
   filterSegment: string | null;
   filterCountry: string | null;
-  filterCity: string | null;
+  filterProvince: string | null;
   filterNoRecentActivity: boolean;
   filterFavorites: boolean;
   page: number;
@@ -39,7 +40,7 @@ interface CustomerState {
   setFilterIndustry: (i: string | null) => void;
   setFilterSegment: (s: string | null) => void;
   setFilterCountry: (c: string | null) => void;
-  setFilterCity: (c: string | null) => void;
+  setFilterProvince: (p: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
   toggleFavoritesFilter: () => void;
   setPage: (page: number) => void;
@@ -65,7 +66,7 @@ export const useCustomerStore = create<CustomerState>()(
       filterIndustry: null,
       filterSegment: null,
       filterCountry: null,
-      filterCity: null,
+      filterProvince: null,
       filterNoRecentActivity: false,
       filterFavorites: false,
       page: 1,
@@ -99,7 +100,7 @@ export const useCustomerStore = create<CustomerState>()(
       setFilterIndustry: (filterIndustry) => set({ filterIndustry, page: 1 }),
       setFilterSegment: (filterSegment) => set({ filterSegment, page: 1 }),
       setFilterCountry: (filterCountry) => set({ filterCountry, page: 1 }),
-      setFilterCity: (filterCity) => set({ filterCity, page: 1 }),
+      setFilterProvince: (filterProvince) => set({ filterProvince, page: 1 }),
       toggleNoRecentActivityFilter: () =>
         set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity, page: 1 })),
       toggleFavoritesFilter: () =>
@@ -114,22 +115,22 @@ export const useCustomerStore = create<CustomerState>()(
         filterIndustry: null,
         filterSegment: null,
         filterCountry: null,
-        filterCity: null,
+        filterProvince: null,
         filterNoRecentActivity: false,
         filterFavorites: false,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites } = get();
-        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites]
+        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterProvince, filterNoRecentActivity, filterFavorites } = get();
+        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterProvince, filterNoRecentActivity, filterFavorites]
           .filter(Boolean).length;
       },
 
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterProvince, filterNoRecentActivity, filterFavorites,
         } = get();
 
         let result = customers;
@@ -160,8 +161,8 @@ export const useCustomerStore = create<CustomerState>()(
         if (filterCountry) {
           result = result.filter((c) => c.addressCountry === filterCountry);
         }
-        if (filterCity) {
-          result = result.filter((c) => c.addressCity === filterCity);
+        if (filterProvince) {
+          result = result.filter((c) => getCityProvince(c.addressCity) === filterProvince);
         }
         if (filterNoRecentActivity) {
           const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
@@ -207,7 +208,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterIndustry: state.filterIndustry,
         filterSegment: state.filterSegment,
         filterCountry: state.filterCountry,
-        filterCity: state.filterCity,
+        filterProvince: state.filterProvince,
         filterNoRecentActivity: state.filterNoRecentActivity,
         filterFavorites: state.filterFavorites,
       }),

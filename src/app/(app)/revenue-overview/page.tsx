@@ -22,6 +22,7 @@ import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { getCityProvince, getProvinces } from '@/lib/utils/cityProvince';
 import { toast } from 'sonner';
 import type { Customer, Contact } from '@/types/entities';
 
@@ -120,7 +121,7 @@ export default function RevenueOverviewPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
   const [filterCountry, setFilterCountry] = useState('');
-  const [filterCity, setFilterCity] = useState('');
+  const [filterProvince, setFilterProvince] = useState('');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -144,25 +145,21 @@ export default function RevenueOverviewPage() {
     return Array.from(codes).sort();
   }, [allCustomers]);
 
-  const cityOptions = useMemo(() => {
-    const cities = new Set<string>();
-    for (const c of allCustomers) {
-      if (c.addressCity) cities.add(c.addressCity);
-    }
-    return Array.from(cities).sort();
-  }, [allCustomers]);
+  const provinceOptions = useMemo(() =>
+    getProvinces(allCustomers.map((c) => c.addressCity)),
+    [allCustomers]);
 
   const activeFilterCount =
     (filterCloud !== 'all' ? 1 : 0) +
     (filterCountry !== '' ? 1 : 0) +
-    (filterCity !== '' ? 1 : 0) +
+    (filterProvince !== '' ? 1 : 0) +
     (arrMin !== '' ? 1 : 0) +
     (arrMax !== '' ? 1 : 0);
 
   function clearFilters() {
     setFilterCloud('all');
     setFilterCountry('');
-    setFilterCity('');
+    setFilterProvince('');
     setArrMin('');
     setArrMax('');
     setPage(1);
@@ -177,7 +174,7 @@ export default function RevenueOverviewPage() {
       if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
       if (filterCountry !== '' && c.addressCountry !== filterCountry) return false;
-      if (filterCity !== '' && c.addressCity !== filterCity) return false;
+      if (filterProvince !== '' && getCityProvince(c.addressCity) !== filterProvince) return false;
       if (min !== null && (c.arr === null || c.arr < min)) return false;
       if (max !== null && (c.arr === null || c.arr > max)) return false;
       return true;
@@ -203,7 +200,7 @@ export default function RevenueOverviewPage() {
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [allCustomers, searchQuery, filterCloud, filterCountry, filterCity, arrMin, arrMax, sortBy, sortDir]);
+  }, [allCustomers, searchQuery, filterCloud, filterCountry, filterProvince, arrMin, arrMax, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -407,13 +404,13 @@ export default function RevenueOverviewPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">City</label>
-                <Select value={filterCity || 'all'} onValueChange={(v) => { setFilterCity(v === 'all' ? '' : v); setPage(1); }}>
+                <label className="text-xs font-medium text-muted-foreground">Province</label>
+                <Select value={filterProvince || 'all'} onValueChange={(v) => { setFilterProvince(v === 'all' ? '' : v); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
-                    {cityOptions.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {provinceOptions.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -464,13 +461,13 @@ export default function RevenueOverviewPage() {
                   Country: {filterCountry} <X size={10} />
                 </Badge>
               )}
-              {filterCity !== '' && (
+              {filterProvince !== '' && (
                 <Badge
                   variant="secondary"
                   className="gap-1 cursor-pointer hover:bg-secondary"
-                  onClick={() => setFilterCity('')}
+                  onClick={() => setFilterProvince('')}
                 >
-                  City: {filterCity} <X size={10} />
+                  Province: {filterProvince} <X size={10} />
                 </Badge>
               )}
               {filterCloud !== 'all' && (

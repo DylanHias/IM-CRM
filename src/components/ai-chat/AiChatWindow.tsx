@@ -223,7 +223,7 @@ function AiChatWindowInner() {
                       message={{
                         id: 'welcome',
                         role: 'assistant',
-                        content: "Hey! What can I help you with?",
+                        content: "Hey, welcome! Ask me anything — just keep in mind responses can take a moment to come in.",
                         timestamp: 0,
                       }}
                     />
