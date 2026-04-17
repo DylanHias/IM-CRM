@@ -92,6 +92,62 @@ export async function pullModel(
   onDone: () => void,
   signal?: AbortSignal
 ): Promise<void> {
+  if (isTauriApp()) {
+    return pullModelViaSidecar(model, onProgress, onDone, signal);
+  }
+  return pullModelViaHttp(model, onProgress, onDone, signal);
+}
+
+/**
+ * Pull via `ollama pull` sidecar — avoids Tauri HTTP plugin resource-ID
+ * invalidation that occurs during long (~2 GB) streaming downloads.
+ */
+async function pullModelViaSidecar(
+  model: string,
+  onProgress: (percent: number, status: string) => void,
+  onDone: () => void,
+  signal?: AbortSignal
+): Promise<void> {
+  const { Command } = await import('@tauri-apps/plugin-shell');
+  const command = Command.sidecar('binaries/ollama', ['pull', model]);
+
+  // ollama pull writes human-readable progress to stderr
+  command.stderr.on('data', (line: string) => {
+    const percentMatch = line.match(/(\d+)%/);
+    if (percentMatch) {
+      onProgress(parseInt(percentMatch[1]), `pulling ${model}`);
+    } else if (line.includes('pulling manifest')) {
+      onProgress(0, 'pulling manifest');
+    } else if (line.includes('verifying') || line.includes('writing manifest')) {
+      onProgress(99, line.trim());
+    }
+  });
+
+  const child = await command.spawn();
+
+  signal?.addEventListener('abort', () => {
+    child.kill().catch(() => {});
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    command.on('close', (data: { code: number | null }) => {
+      if (data.code === 0 || data.code === null) {
+        onDone();
+        resolve();
+      } else {
+        reject(new Error(`ollama pull exited with code ${data.code}`));
+      }
+    });
+    command.on('error', (err: string) => reject(new Error(err)));
+  });
+}
+
+async function pullModelViaHttp(
+  model: string,
+  onProgress: (percent: number, status: string) => void,
+  onDone: () => void,
+  signal?: AbortSignal
+): Promise<void> {
   const res = await tauriFetch(`${OLLAMA_BASE}/api/pull`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -136,6 +192,44 @@ export async function pullModel(
 }
 
 export async function streamChat(
+  model: string,
+  messages: OllamaMessage[],
+  onChunk: (text: string) => void,
+  onDone: () => void,
+  signal?: AbortSignal
+): Promise<void> {
+  if (isTauriApp()) {
+    return chatViaNonStreaming(model, messages, onChunk, onDone, signal);
+  }
+  return chatViaStreaming(model, messages, onChunk, onDone, signal);
+}
+
+/**
+ * Tauri's HTTP plugin buffers the full response before yielding chunks,
+ * so streaming endpoints hang indefinitely. Use stream:false and get one response.
+ */
+async function chatViaNonStreaming(
+  model: string,
+  messages: OllamaMessage[],
+  onChunk: (text: string) => void,
+  onDone: () => void,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await tauriFetch(`${OLLAMA_BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, stream: false }),
+    signal,
+  });
+
+  if (!res.ok) throw new Error(`Ollama returned ${res.status}`);
+
+  const data: { message: { content: string } } = await res.json();
+  if (data.message?.content) onChunk(data.message.content);
+  onDone();
+}
+
+async function chatViaStreaming(
   model: string,
   messages: OllamaMessage[],
   onChunk: (text: string) => void,

@@ -244,11 +244,14 @@ function AiChatWindowInner() {
                 {/* Messages */}
                 <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                   {messages.length === 0 && !isStreaming && (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center px-4">
-                      <p className="text-sm text-muted-foreground">
-                        Ask anything about the app, or get quick info on a customer or contact.
-                      </p>
-                    </div>
+                    <AiChatMessage
+                      message={{
+                        id: 'welcome',
+                        role: 'assistant',
+                        content: "Hey! What can I help you with?",
+                        timestamp: 0,
+                      }}
+                    />
                   )}
                   {messages.map((msg) => (
                     <AiChatMessage key={msg.id} message={msg} />
