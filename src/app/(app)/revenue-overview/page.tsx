@@ -120,6 +120,7 @@ export default function RevenueOverviewPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
   const [filterCountry, setFilterCountry] = useState('');
+  const [filterCity, setFilterCity] = useState('');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -143,15 +144,25 @@ export default function RevenueOverviewPage() {
     return Array.from(codes).sort();
   }, [allCustomers]);
 
+  const cityOptions = useMemo(() => {
+    const cities = new Set<string>();
+    for (const c of allCustomers) {
+      if (c.addressCity) cities.add(c.addressCity);
+    }
+    return Array.from(cities).sort();
+  }, [allCustomers]);
+
   const activeFilterCount =
     (filterCloud !== 'all' ? 1 : 0) +
     (filterCountry !== '' ? 1 : 0) +
+    (filterCity !== '' ? 1 : 0) +
     (arrMin !== '' ? 1 : 0) +
     (arrMax !== '' ? 1 : 0);
 
   function clearFilters() {
     setFilterCloud('all');
     setFilterCountry('');
+    setFilterCity('');
     setArrMin('');
     setArrMax('');
     setPage(1);
@@ -166,6 +177,7 @@ export default function RevenueOverviewPage() {
       if (filterCloud === 'yes' && c.cloudCustomer !== true) return false;
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
       if (filterCountry !== '' && c.addressCountry !== filterCountry) return false;
+      if (filterCity !== '' && c.addressCity !== filterCity) return false;
       if (min !== null && (c.arr === null || c.arr < min)) return false;
       if (max !== null && (c.arr === null || c.arr > max)) return false;
       return true;
@@ -191,7 +203,7 @@ export default function RevenueOverviewPage() {
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [allCustomers, searchQuery, filterCloud, filterCountry, arrMin, arrMax, sortBy, sortDir]);
+  }, [allCustomers, searchQuery, filterCloud, filterCountry, filterCity, arrMin, arrMax, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -222,6 +234,7 @@ export default function RevenueOverviewPage() {
             search: searchQuery.trim(),
             filter_cloud: filterCloud,
             filter_country: filterCountry,
+            filter_city: filterCity,
             arr_min: arrMin !== '' ? Number(arrMin) : null,
             arr_max: arrMax !== '' ? Number(arrMax) : null,
             sort_by: sortBy,
@@ -380,7 +393,7 @@ export default function RevenueOverviewPage() {
 
           {/* Row 2: Collapsible filter panel */}
           {showFilters && (
-            <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 shadow-sm">
+            <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 shadow-sm">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Country</label>
                 <Select value={filterCountry || 'all'} onValueChange={(v) => { setFilterCountry(v === 'all' ? '' : v); setPage(1); }}>
@@ -388,6 +401,18 @@ export default function RevenueOverviewPage() {
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     {countryOptions.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">City</label>
+                <Select value={filterCity || 'all'} onValueChange={(v) => { setFilterCity(v === 'all' ? '' : v); setPage(1); }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {cityOptions.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
@@ -437,6 +462,15 @@ export default function RevenueOverviewPage() {
                   onClick={() => setFilterCountry('')}
                 >
                   Country: {filterCountry} <X size={10} />
+                </Badge>
+              )}
+              {filterCity !== '' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
+                  onClick={() => setFilterCity('')}
+                >
+                  City: {filterCity} <X size={10} />
                 </Badge>
               )}
               {filterCloud !== 'all' && (

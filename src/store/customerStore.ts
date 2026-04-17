@@ -20,6 +20,7 @@ interface CustomerState {
   filterIndustry: string | null;
   filterSegment: string | null;
   filterCountry: string | null;
+  filterCity: string | null;
   filterNoRecentActivity: boolean;
   filterFavorites: boolean;
   page: number;
@@ -38,6 +39,7 @@ interface CustomerState {
   setFilterIndustry: (i: string | null) => void;
   setFilterSegment: (s: string | null) => void;
   setFilterCountry: (c: string | null) => void;
+  setFilterCity: (c: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
   toggleFavoritesFilter: () => void;
   setPage: (page: number) => void;
@@ -63,6 +65,7 @@ export const useCustomerStore = create<CustomerState>()(
       filterIndustry: null,
       filterSegment: null,
       filterCountry: null,
+      filterCity: null,
       filterNoRecentActivity: false,
       filterFavorites: false,
       page: 1,
@@ -96,6 +99,7 @@ export const useCustomerStore = create<CustomerState>()(
       setFilterIndustry: (filterIndustry) => set({ filterIndustry, page: 1 }),
       setFilterSegment: (filterSegment) => set({ filterSegment, page: 1 }),
       setFilterCountry: (filterCountry) => set({ filterCountry, page: 1 }),
+      setFilterCity: (filterCity) => set({ filterCity, page: 1 }),
       toggleNoRecentActivityFilter: () =>
         set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity, page: 1 })),
       toggleFavoritesFilter: () =>
@@ -110,21 +114,22 @@ export const useCustomerStore = create<CustomerState>()(
         filterIndustry: null,
         filterSegment: null,
         filterCountry: null,
+        filterCity: null,
         filterNoRecentActivity: false,
         filterFavorites: false,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites } = get();
-        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites]
+        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites } = get();
+        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites]
           .filter(Boolean).length;
       },
 
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
         } = get();
 
         let result = customers;
@@ -154,6 +159,9 @@ export const useCustomerStore = create<CustomerState>()(
         }
         if (filterCountry) {
           result = result.filter((c) => c.addressCountry === filterCountry);
+        }
+        if (filterCity) {
+          result = result.filter((c) => c.addressCity === filterCity);
         }
         if (filterNoRecentActivity) {
           const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
@@ -199,6 +207,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterIndustry: state.filterIndustry,
         filterSegment: state.filterSegment,
         filterCountry: state.filterCountry,
+        filterCity: state.filterCity,
         filterNoRecentActivity: state.filterNoRecentActivity,
         filterFavorites: state.filterFavorites,
       }),

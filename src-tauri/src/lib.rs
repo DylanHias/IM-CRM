@@ -354,6 +354,7 @@ struct RevenueExportParams {
     search: String,
     filter_cloud: String, // "all" | "yes" | "no"
     filter_country: String,
+    filter_city: String,
     arr_min: Option<f64>,
     arr_max: Option<f64>,
     sort_by: String,  // "name" | "cloudCustomer" | "arr"
@@ -383,7 +384,7 @@ async fn export_revenue_overview(
             .prepare(
                 "SELECT
                     c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr,
-                    c.address_country,
+                    c.address_country, c.address_city,
                     con.first_name, con.last_name, con.phone, con.mobile, con.email
                  FROM customers c
                  LEFT JOIN contacts con ON con.id = (
@@ -404,6 +405,7 @@ async fn export_revenue_overview(
             cloud: Option<i64>,
             arr: Option<f64>,
             country: Option<String>,
+            city: Option<String>,
         }
 
         let search_lower = params.search.to_lowercase();
@@ -416,11 +418,12 @@ async fn export_revenue_overview(
                 let cloud: Option<i64> = r.get(4)?;
                 let arr: Option<f64> = r.get(5)?;
                 let country: Option<String> = r.get(6)?;
-                let con_first: Option<String> = r.get(7)?;
-                let con_last: Option<String> = r.get(8)?;
-                let con_phone: Option<String> = r.get(9)?;
-                let con_mobile: Option<String> = r.get(10)?;
-                let con_email: Option<String> = r.get(11)?;
+                let city: Option<String> = r.get(7)?;
+                let con_first: Option<String> = r.get(8)?;
+                let con_last: Option<String> = r.get(9)?;
+                let con_phone: Option<String> = r.get(10)?;
+                let con_mobile: Option<String> = r.get(11)?;
+                let con_email: Option<String> = r.get(12)?;
 
                 let contact_name = match (&con_first, &con_last) {
                     (Some(f), Some(l)) => format!("{} {}", f, l),
@@ -432,7 +435,7 @@ async fn export_revenue_overview(
                     .unwrap_or_else(|| "—".to_string());
                 let email = con_email.or(cust_email).unwrap_or_else(|| "—".to_string());
 
-                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, country })
+                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, country, city })
             })
             .map_err(|e| e.to_string())?
             .collect::<Result<Vec<_>, _>>()
@@ -458,6 +461,11 @@ async fn export_revenue_overview(
             }
             if !params.filter_country.is_empty()
                 && r.country.as_deref() != Some(params.filter_country.as_str())
+            {
+                return false;
+            }
+            if !params.filter_city.is_empty()
+                && r.city.as_deref() != Some(params.filter_city.as_str())
             {
                 return false;
             }

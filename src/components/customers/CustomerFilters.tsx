@@ -23,9 +23,9 @@ export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterNoRecentActivity, filterFavorites,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
     setSearchQuery, setSortBy, setSortDir,
-    setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry,
+    setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
     toggleNoRecentActivityFilter, toggleFavoritesFilter, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
@@ -53,6 +53,10 @@ export function CustomerFilters() {
 
   const countries = useMemo(() =>
     Array.from(new Set(customers.map((c) => c.addressCountry).filter(Boolean) as string[])).sort(),
+    [customers]);
+
+  const cities = useMemo(() =>
+    Array.from(new Set(customers.map((c) => c.addressCity).filter(Boolean) as string[])).sort(),
     [customers]);
 
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -197,6 +201,19 @@ export function CustomerFilters() {
             </div>
           )}
 
+          {cities.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">City</label>
+              <Select value={filterCity ?? 'all'} onValueChange={(v) => setFilterCity(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All cities" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All cities</SelectItem>
+                  {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Activity</label>
             <Button
@@ -237,6 +254,11 @@ export function CustomerFilters() {
           {filterCountry && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCountry(null)}>
               {filterCountry} <X size={10} />
+            </Badge>
+          )}
+          {filterCity && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCity(null)}>
+              {filterCity} <X size={10} />
             </Badge>
           )}
           {filterNoRecentActivity && (
