@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{Emitter, Manager, State};
+use tauri::{Manager, State};
 
 struct OAuthState(Mutex<Option<OAuthServer>>);
 
@@ -164,13 +164,20 @@ async fn ollama_request(path: String, body: Option<String>) -> Result<String, St
     res.text().await.map_err(|e| format!("ollama read failed: {e}"))
 }
 
-/// Stream an Ollama chat response token-by-token, emitting "ollama-chunk"
-/// events to the window. Payload: `{ content: string, done: boolean }`.
+/// Stream an Ollama chat response token-by-token via a Tauri Channel.
+/// The channel is passed from JS, so there is no listener-registration race condition.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "event", content = "data")]
+enum OllamaChunkEvent {
+    Chunk { content: String },
+    Done,
+}
+
 #[tauri::command]
 async fn ollama_chat_stream(
-    window: tauri::Window,
     model: String,
     messages: serde_json::Value,
+    on_chunk: tauri::ipc::Channel<OllamaChunkEvent>,
 ) -> Result<(), String> {
     let client = reqwest::Client::new();
     let mut res = client
@@ -190,7 +197,6 @@ async fn ollama_chat_stream(
     while let Some(chunk) = res.chunk().await.map_err(|e| format!("ollama read: {e}"))? {
         buffer.push_str(&String::from_utf8_lossy(&chunk));
 
-        // Process complete newline-delimited JSON lines
         while let Some(nl) = buffer.find('\n') {
             let line = buffer[..nl].trim().to_string();
             buffer.drain(..=nl);
@@ -206,21 +212,25 @@ async fn ollama_chat_stream(
                     .to_string();
                 let done = json["done"].as_bool().unwrap_or(false);
 
-                window
-                    .emit("ollama-chunk", serde_json::json!({ "content": content, "done": done }))
-                    .map_err(|e| format!("emit failed: {e}"))?;
+                if !content.is_empty() {
+                    on_chunk
+                        .send(OllamaChunkEvent::Chunk { content })
+                        .map_err(|e| format!("channel send failed: {e}"))?;
+                }
 
                 if done {
+                    on_chunk
+                        .send(OllamaChunkEvent::Done)
+                        .map_err(|e| format!("channel send failed: {e}"))?;
                     return Ok(());
                 }
             }
         }
     }
 
-    // Flush any remaining buffer as done
-    window
-        .emit("ollama-chunk", serde_json::json!({ "content": "", "done": true }))
-        .map_err(|e| format!("emit failed: {e}"))?;
+    on_chunk
+        .send(OllamaChunkEvent::Done)
+        .map_err(|e| format!("channel send failed: {e}"))?;
 
     Ok(())
 }

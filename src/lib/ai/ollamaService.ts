@@ -63,6 +63,8 @@ async function pingOllama(): Promise<{ available: boolean; models: string[] }> {
   }
 }
 
+let ollamaChild: { kill: () => Promise<void> } | null = null;
+
 async function spawnOllamaServe(): Promise<void> {
   if (!isTauriApp()) return;
   try {
@@ -70,10 +72,21 @@ async function spawnOllamaServe(): Promise<void> {
     const command = Command.sidecar('binaries/ollama', ['serve'], {
       env: { OLLAMA_ORIGINS: 'http://tauri.localhost' },
     });
-    await command.spawn();
+    ollamaChild = await command.spawn();
   } catch (err) {
     // Expected if already running or not yet bundled in dev
     console.error('[ai] ollama serve spawn error:', err);
+  }
+}
+
+export async function stopOllamaServe(): Promise<void> {
+  if (ollamaChild) {
+    try {
+      await ollamaChild.kill();
+    } catch (err) {
+      console.error('[ai] ollama kill error:', err);
+    }
+    ollamaChild = null;
   }
 }
 
@@ -205,38 +218,27 @@ export async function streamChat(
   signal?: AbortSignal
 ): Promise<void> {
   if (isTauriApp()) {
-    // Tauri: stream via Rust command + events — HTTP plugin can't handle streaming
-    const { invoke } = await import('@tauri-apps/api/core');
-    const { listen } = await import('@tauri-apps/api/event');
+    // Tauri: stream via Channel — passed directly into the command, no race condition
+    const { invoke, Channel } = await import('@tauri-apps/api/core');
+
+    type ChunkEvent =
+      | { event: 'chunk'; data: { content: string } }
+      | { event: 'done' };
 
     await new Promise<void>((resolve, reject) => {
-      let unlisten: (() => void) | null = null;
+      if (signal?.aborted) { resolve(); return; }
 
-      listen<{ content: string; done: boolean }>('ollama-chunk', (event) => {
-        if (signal?.aborted) {
-          unlisten?.();
-          resolve();
-          return;
-        }
-        if (event.payload.content) onChunk(event.payload.content);
-        if (event.payload.done) {
-          unlisten?.();
-          onDone();
-          resolve();
-        }
-      })
-        .then((fn) => {
-          unlisten = fn;
-          signal?.addEventListener('abort', () => {
-            unlisten?.();
-            resolve();
-          });
-          return invoke('ollama_chat_stream', { model, messages });
-        })
-        .catch((err) => {
-          unlisten?.();
-          reject(err);
-        });
+      const channel = new Channel<ChunkEvent>();
+      channel.onmessage = (msg) => {
+        if (signal?.aborted) { resolve(); return; }
+        if (msg.event === 'chunk') onChunk(msg.data.content);
+        if (msg.event === 'done') { onDone(); resolve(); }
+      };
+
+      signal?.addEventListener('abort', () => resolve());
+
+      invoke('ollama_chat_stream', { model, messages, onChunk: channel })
+        .catch(reject);
     });
     return;
   }
