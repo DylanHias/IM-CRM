@@ -27,7 +27,7 @@ export function RecentActivityPanel({ activities, loading }: Props) {
   const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? '';
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card shadow-sm flex flex-col h-full">
+    <div className="rounded-xl border border-border/60 bg-card shadow-sm flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
