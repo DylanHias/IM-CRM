@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "node scripts/download-ollama.js && pnpm sync-version && pnpm dev",
-    "beforeBuildCommand": "node scripts/download-ollama.js && pnpm sync-version && pnpm build"
+    "beforeDevCommand": "node scripts/download-ollama.mjs && pnpm sync-version && pnpm dev",
+    "beforeBuildCommand": "node scripts/download-ollama.mjs && pnpm sync-version && pnpm build"
   },
   "app": {
     "windows": [
