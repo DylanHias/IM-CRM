@@ -15,7 +15,8 @@
         { "url": "https://login.microsoftonline.com/*" },
         { "url": "https://login.microsoft.com/*" },
         { "url": "https://graph.microsoft.com/*" },
-        { "url": "https://*.crm4.dynamics.com/*" }
+        { "url": "https://*.crm4.dynamics.com/*" },
+        { "url": "http://localhost:11434/*" }
       ]
     },
     "updater:default",

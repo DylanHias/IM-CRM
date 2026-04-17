@@ -28,9 +28,22 @@ interface OllamaPullChunk {
   completed?: number;
 }
 
+/**
+ * Use Tauri's HTTP plugin when running inside Tauri (requests go through Rust,
+ * bypassing the webview's CORS restrictions). Fall back to native fetch in
+ * browser / dev mode.
+ */
+async function tauriFetch(url: string, init?: RequestInit): Promise<Response> {
+  if (isTauriApp()) {
+    const { fetch: pluginFetch } = await import('@tauri-apps/plugin-http');
+    return pluginFetch(url, init) as Promise<Response>;
+  }
+  return fetch(url, init);
+}
+
 async function pingOllama(): Promise<{ available: boolean; models: string[] }> {
   try {
-    const res = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    const res = await tauriFetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
     if (!res.ok) return { available: false, models: [] };
     const data: OllamaTagsResponse = await res.json();
     return { available: true, models: data.models.map((m) => m.name) };
@@ -43,7 +56,11 @@ async function spawnOllamaServe(): Promise<void> {
   if (!isTauriApp()) return;
   try {
     const { Command } = await import('@tauri-apps/plugin-shell');
-    const command = Command.sidecar('binaries/ollama', ['serve']);
+    // OLLAMA_ORIGINS allows the Tauri webview origin as a fallback for any
+    // direct fetch calls that bypass the HTTP plugin.
+    const command = Command.sidecar('binaries/ollama', ['serve'], {
+      env: { OLLAMA_ORIGINS: 'http://tauri.localhost' },
+    });
     await command.spawn();
   } catch (err) {
     // Expected if already running or not yet bundled in dev
@@ -75,7 +92,7 @@ export async function pullModel(
   onDone: () => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await fetch(`${OLLAMA_BASE}/api/pull`, {
+  const res = await tauriFetch(`${OLLAMA_BASE}/api/pull`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: model, stream: true }),
@@ -125,7 +142,7 @@ export async function streamChat(
   onDone: () => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
+  const res = await tauriFetch(`${OLLAMA_BASE}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, messages, stream: true }),
