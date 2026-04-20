@@ -9,7 +9,6 @@ import { ChangelogDialog } from './ChangelogDialog';
 import { InitialSyncDialog } from './InitialSyncDialog';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
-import { AiChatButton, AiChatWindow } from '@/components/ai-chat';
 import { Walkthrough } from '@/components/walkthrough/Walkthrough';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -54,8 +53,6 @@ export function AppShell({ children }: AppShellProps) {
       <InitialSyncDialog />
       <CommandPalette />
       <ShortcutsGuide />
-      <AiChatButton />
-      <AiChatWindow />
     </div>
   );
 }
