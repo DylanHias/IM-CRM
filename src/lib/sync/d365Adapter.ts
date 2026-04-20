@@ -106,6 +106,7 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     addressCountry: d365.address1_country,
     website: d365.websiteurl,
     cloudCustomer: null, // derived from contacts after sync (see recomputeCloudCustomerStatus)
+    healthScore: null, // derived post-sync (see recomputeCustomerHealthScores)
 arr: null,
     status: d365.statecode === 0 ? 'active' : 'inactive',
     lastActivityAt: null,

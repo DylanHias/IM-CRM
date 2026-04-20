@@ -5,6 +5,7 @@ import { useActivityStore } from '@/store/activityStore';
 import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, deleteActivity as dbDeleteActivity, countPendingActivities } from '@/lib/db/queries/activities';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
+import { refreshCustomerHealth } from '@/lib/customers/refreshHealth';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import { directPushActivity, directDeleteActivity } from '@/lib/sync/directPushService';
@@ -64,6 +65,7 @@ export function useActivities(customerId: string) {
         if (activity.occurredAt <= now) {
           await updateCustomerLastActivity(customerId, activity.occurredAt);
         }
+        refreshCustomerHealth(customerId);
         directPushActivity(activity).then((result) => {
           if (result) {
             updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
@@ -82,6 +84,7 @@ export function useActivities(customerId: string) {
     async (activity: Activity) => {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
+        refreshCustomerHealth(customerId);
         directPushActivity(activity).then((result) => {
           if (result) {
             updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
@@ -101,6 +104,7 @@ export function useActivities(customerId: string) {
       emitDataEvent('activity', 'deleted', customerId);
       if (isTauriApp()) {
         const deleted = await dbDeleteActivity(id);
+        refreshCustomerHealth(customerId);
         if (deleted?.remoteId) {
           const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
           const d365Type = deleted.type === 'call' ? 'call' : deleted.type === 'note' ? 'note' : 'meeting';

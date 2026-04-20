@@ -4,8 +4,9 @@ import type { Customer, Contact } from '@/types/entities';
 import { useSettingsStore } from '@/store/settingsStore';
 import { addCustomerFavorite, removeCustomerFavorite } from '@/lib/db/queries/customers';
 import { normalizeCity } from '@/lib/utils/cityProvince';
+import { healthTier, type HealthTier } from '@/lib/customers/healthScore';
 
-export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry';
+export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry' | 'health';
 export type SortDir = 'asc' | 'desc';
 
 interface CustomerState {
@@ -24,6 +25,7 @@ interface CustomerState {
   filterCity: string | null;
   filterNoRecentActivity: boolean;
   filterFavorites: boolean;
+  filterHealthTier: HealthTier | null;
   page: number;
   isLoading: boolean;
 
@@ -43,6 +45,7 @@ interface CustomerState {
   setFilterCity: (p: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
   toggleFavoritesFilter: () => void;
+  setFilterHealthTier: (t: HealthTier | null) => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -69,6 +72,7 @@ export const useCustomerStore = create<CustomerState>()(
       filterCity: null,
       filterNoRecentActivity: false,
       filterFavorites: false,
+      filterHealthTier: null,
       page: 1,
       isLoading: false,
 
@@ -105,6 +109,7 @@ export const useCustomerStore = create<CustomerState>()(
         set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity, page: 1 })),
       toggleFavoritesFilter: () =>
         set((s) => ({ filterFavorites: !s.filterFavorites, page: 1 })),
+      setFilterHealthTier: (filterHealthTier) => set({ filterHealthTier, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -118,19 +123,20 @@ export const useCustomerStore = create<CustomerState>()(
         filterCity: null,
         filterNoRecentActivity: false,
         filterFavorites: false,
+        filterHealthTier: null,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites } = get();
-        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites]
+        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier } = get();
+        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier]
           .filter(Boolean).length;
       },
 
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier,
         } = get();
 
         let result = customers;
@@ -172,6 +178,9 @@ export const useCustomerStore = create<CustomerState>()(
         if (filterFavorites) {
           result = result.filter((c) => favoriteIds.has(c.id));
         }
+        if (filterHealthTier) {
+          result = result.filter((c) => healthTier(c.healthScore) === filterHealthTier);
+        }
 
         result = [...result].sort((a, b) => {
           let cmp = 0;
@@ -181,6 +190,9 @@ export const useCustomerStore = create<CustomerState>()(
             cmp = (a.addressCity ?? '').localeCompare(b.addressCity ?? '');
           } else if (sortBy === 'industry') {
             cmp = (a.industry ?? '').localeCompare(b.industry ?? '');
+          } else if (sortBy === 'health') {
+            // null treated as lowest score
+            cmp = (a.healthScore ?? -1) - (b.healthScore ?? -1);
           } else {
             // lastActivity: null treated as oldest
             const aDate = a.lastActivityAt ?? '0000';
@@ -211,6 +223,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterCity: state.filterCity,
         filterNoRecentActivity: state.filterNoRecentActivity,
         filterFavorites: state.filterFavorites,
+        filterHealthTier: state.filterHealthTier,
       }),
     }
   )

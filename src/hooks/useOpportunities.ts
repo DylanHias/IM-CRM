@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { useOpportunityStore } from '@/store/opportunityStore';
 import { queryOpportunitiesByCustomer, insertOpportunity, updateOpportunity as dbUpdateOpportunity } from '@/lib/db/queries/opportunities';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
+import { refreshCustomerHealth } from '@/lib/customers/refreshHealth';
 import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
@@ -72,6 +73,7 @@ export function useOpportunities(customerId: string) {
       if (isTauriApp()) {
         await insertOpportunity(opportunity);
         await updateCustomerLastActivity(customerId, now);
+        refreshCustomerHealth(customerId);
         directPushOpportunity(opportunity).then((result) => {
           if (result) {
             updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });
@@ -90,6 +92,7 @@ export function useOpportunities(customerId: string) {
     async (opportunity: Opportunity) => {
       if (isTauriApp()) {
         await dbUpdateOpportunity(opportunity);
+        refreshCustomerHealth(customerId);
         directPushOpportunity(opportunity).then((result) => {
           if (result) {
             updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });

@@ -62,6 +62,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       website         TEXT,
       status          TEXT DEFAULT 'active',
       last_activity_at TEXT,
+      health_score    INTEGER,
       synced_at       TEXT NOT NULL,
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       reseller_id     TEXT,
@@ -295,6 +296,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'bcn',             'TEXT'],
     ['customers',  'cloud_customer',  'INTEGER'],
     ['customers',  'arr',             'REAL'],
+    ['customers',  'health_score',    'INTEGER'],
     ['contacts',   'contact_type',    'TEXT'],
     ['contacts',   'cloud_contact',   'INTEGER'],
     ['contacts',   'sync_status',     "TEXT NOT NULL DEFAULT 'synced'"],
@@ -332,7 +334,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '23')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '24')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -674,6 +676,13 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     try { await db.execute(`ALTER TABLE activities ADD COLUMN direction TEXT`); } catch { /* already exists */ }
     await db.execute(
       `UPDATE app_settings SET value = '23', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 24) {
+    try { await db.execute(`ALTER TABLE customers ADD COLUMN health_score INTEGER`); } catch { /* already exists */ }
+    await db.execute(
+      `UPDATE app_settings SET value = '24', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

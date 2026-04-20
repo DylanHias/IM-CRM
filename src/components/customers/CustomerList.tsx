@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Bookmark, Building2, ChevronRight, MapPin, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { HealthBadge } from '@/components/customers/HealthBadge';
 import { useCustomerStore } from '@/store/customerStore';
 import { formatRelative } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
@@ -190,12 +191,15 @@ export function CustomerList({ customers, showFavoriteButton = true }: CustomerL
               )}
 
               <Right>
-                <Badge
-                  variant={customer.status === 'active' ? 'success' : 'secondary'}
-                  className="text-xs"
-                >
-                  {customer.status}
-                </Badge>
+                <div className="flex items-center gap-1.5">
+                  <HealthBadge score={customer.healthScore} />
+                  <Badge
+                    variant={customer.status === 'active' ? 'success' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {customer.status}
+                  </Badge>
+                </div>
                 <LastActivity>
                   {customer.lastActivityAt
                     ? formatRelative(customer.lastActivityAt)

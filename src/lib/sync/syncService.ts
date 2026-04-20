@@ -1,6 +1,6 @@
 import { getD365Adapter } from './d365Adapter';
 import { fetchD365TeamUserIds } from './d365UserAdapter';
-import { bulkUpsertCustomers, recomputeLastActivityDates, recomputeCloudCustomerStatus, queryAllCustomerIds } from '@/lib/db/queries/customers';
+import { bulkUpsertCustomers, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
@@ -249,6 +249,7 @@ async function syncD365(token: string): Promise<void> {
     emitProgress('Finishing up...', grandTotal, grandTotal);
     await recomputeCloudCustomerStatus();
     await recomputeLastActivityDates();
+    await recomputeCustomerHealthScores();
 
     await updateSyncRecord(recordId, errors > 0 ? 'partial' : 'success', pulled, 0, errors > 0 ? `${errors} errors` : null);
     const now = new Date().toISOString();

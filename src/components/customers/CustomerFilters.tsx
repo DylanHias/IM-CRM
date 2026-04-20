@@ -12,22 +12,30 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { getUniqueCities, displayCity } from '@/lib/utils/cityProvince';
 import type { SortBy } from '@/store/customerStore';
+import type { HealthTier } from '@/lib/customers/healthScore';
 
 const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'lastActivity', label: 'Last Activity' },
+  { value: 'health', label: 'Health' },
   { value: 'name', label: 'Name' },
   { value: 'city', label: 'City' },
   { value: 'industry', label: 'Industry' },
+];
+
+const HEALTH_TIER_OPTIONS: { value: HealthTier; label: string }[] = [
+  { value: 'healthy', label: 'Healthy (70+)' },
+  { value: 'atRisk', label: 'At risk (40–69)' },
+  { value: 'critical', label: 'Critical (<40)' },
 ];
 
 export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier,
     setSearchQuery, setSortBy, setSortDir,
     setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
-    toggleNoRecentActivityFilter, toggleFavoritesFilter, clearFilters, getActiveFilterCount,
+    toggleNoRecentActivityFilter, toggleFavoritesFilter, setFilterHealthTier, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
   const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
@@ -232,6 +240,19 @@ export function CustomerFilters() {
               No activity ({noRecentActivityDays}d+)
             </Button>
           </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Health</label>
+            <Select value={filterHealthTier ?? 'all'} onValueChange={(v) => setFilterHealthTier(v === 'all' ? null : v as HealthTier)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All health" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All health</SelectItem>
+                {HEALTH_TIER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 
@@ -276,6 +297,11 @@ export function CustomerFilters() {
           {filterFavorites && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={toggleFavoritesFilter}>
               Favorites <X size={10} />
+            </Badge>
+          )}
+          {filterHealthTier && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterHealthTier(null)}>
+              {HEALTH_TIER_OPTIONS.find((o) => o.value === filterHealthTier)?.label ?? 'Health'} <X size={10} />
             </Badge>
           )}
         </div>

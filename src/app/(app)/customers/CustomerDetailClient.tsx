@@ -37,6 +37,7 @@ import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
+import { scoreHealth, healthTier, healthTierLabel, healthTierBadgeVariant } from '@/lib/customers/healthScore';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 
 type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'invoices';
@@ -500,15 +501,43 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   >
                     <div className="grid grid-cols-3 gap-4">
                       {(() => {
+                        const ninetyDaysAgo = Date.now() - 90 * 86400000;
+                        const nowIso = new Date().toISOString();
+                        const activityCount90 = activities.filter(
+                          (a) => a.occurredAt >= new Date(ninetyDaysAgo).toISOString() && a.occurredAt <= nowIso,
+                        ).length;
+                        const openOppCount = customerOpportunities.filter((o) => o.status === 'Open').length;
+                        const health = scoreHealth({
+                          lastActivityAt: customer.lastActivityAt,
+                          openOpportunityCount: openOppCount,
+                          activityCountLast90Days: activityCount90,
+                        });
+                        const tier = healthTier(health.total);
+                        const variant = healthTierBadgeVariant(tier);
+                        const tierColor =
+                          variant === 'success' ? 'text-success' :
+                          variant === 'warning' ? 'text-warning' :
+                          'text-destructive';
+
                         const statCards = [
+                          { label: 'Health', render: (
+                            <div className="flex items-baseline gap-2">
+                              <span className={`text-lg font-bold ${tierColor}`}>{health.total}</span>
+                              <span className={`text-xs font-medium ${tierColor}`}>{healthTierLabel(tier)}</span>
+                            </div>
+                          ), sub: `R${health.recency} · P${health.pipeline} · F${health.frequency}` },
                           customer.arr !== null && customer.arr !== undefined ? {
                             label: 'ARR',
-                            value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(customer.arr),
+                            render: (
+                              <p className="text-lg font-bold text-foreground">
+                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(customer.arr)}
+                              </p>
+                            ),
                           } : null,
-                          { label: 'Activities', value: String(activities.length) },
-                          { label: 'Open Follow-Ups', value: String(followUps.filter((f) => !f.completed).length) },
-                          { label: 'Contacts', value: String(contacts.length) },
-                        ].filter(Boolean) as { label: string; value: string }[];
+                          { label: 'Activities', render: <p className="text-lg font-bold text-foreground">{activities.length}</p> },
+                          { label: 'Open Follow-Ups', render: <p className="text-lg font-bold text-foreground">{followUps.filter((f) => !f.completed).length}</p> },
+                          { label: 'Contacts', render: <p className="text-lg font-bold text-foreground">{contacts.length}</p> },
+                        ].filter(Boolean) as { label: string; render: React.ReactNode; sub?: string }[];
 
                         return (
                           <>
@@ -519,7 +548,8 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                                 {...statCardMotion(i)}
                               >
                                 <p className="text-xs text-muted-foreground mb-1">{card.label}</p>
-                                <p className="text-lg font-bold text-foreground">{card.value}</p>
+                                {card.render}
+                                {card.sub && <p className="text-[10px] text-muted-foreground mt-1 tracking-wide">{card.sub}</p>}
                               </motion.div>
                             ))}
                           </>

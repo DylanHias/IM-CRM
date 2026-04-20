@@ -42,12 +42,13 @@ export function DataDefaultsSettings() {
         </SettingRow>
 
         <SettingRow label="Default customer sort" description="Initial sort when viewing the customer list">
-          <Select value={defaultCustomerSort} onValueChange={(v) => updateSetting('defaultCustomerSort', v as 'name' | 'lastActivity' | 'city' | 'industry')}>
+          <Select value={defaultCustomerSort} onValueChange={(v) => updateSetting('defaultCustomerSort', v as 'name' | 'lastActivity' | 'city' | 'industry' | 'health')}>
             <SelectTrigger className="w-[140px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="lastActivity">Last Activity</SelectItem>
+              <SelectItem value="health">Health</SelectItem>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="city">City</SelectItem>
               <SelectItem value="industry">Industry</SelectItem>

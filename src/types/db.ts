@@ -19,6 +19,7 @@ export interface CustomerRow {
   arr: number | null;
   status: string;
   last_activity_at: string | null;
+  health_score: number | null;
   synced_at: string;
   created_at: string;
   updated_at: string;

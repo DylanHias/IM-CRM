@@ -27,6 +27,7 @@ export function createCustomer(overrides?: Partial<Customer>): Customer {
     arr: 50000,
     status: 'active',
     lastActivityAt: '2026-03-20T10:00:00.000Z',
+    healthScore: null,
     syncedAt: NOW,
     createdAt: NOW,
     updatedAt: NOW,

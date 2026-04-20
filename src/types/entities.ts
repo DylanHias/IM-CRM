@@ -18,6 +18,7 @@ export interface Customer {
   arr: number | null;
   status: 'active' | 'inactive';
   lastActivityAt: string | null;
+  healthScore: number | null;
   syncedAt: string;
   createdAt: string;
   updatedAt: string;

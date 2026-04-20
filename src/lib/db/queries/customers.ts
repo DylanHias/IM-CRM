@@ -24,6 +24,7 @@ function rowToCustomer(row: CustomerRow): Customer {
     arr: row.arr,
     status: (row.status as Customer['status']) ?? 'active',
     lastActivityAt: row.last_activity_at,
+    healthScore: row.health_score,
     syncedAt: row.synced_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -140,6 +141,82 @@ export async function recomputeCloudCustomerStatus(): Promise<void> {
         AND (contact_type IN ('Cloud Reseller', 'Cloud Contact') OR cloud_contact = 1)
     )
   `);
+}
+
+/** Recompute health_score for all customers: weighted sum of recency (40%), open-opportunity pipeline (30%), and 90-day activity frequency (30%). */
+export async function recomputeCustomerHealthScores(): Promise<void> {
+  const db = await getDb();
+  await db.execute(`
+    UPDATE customers SET health_score = CAST(ROUND(
+      0.4 * (
+        CASE
+          WHEN last_activity_at IS NULL THEN 0
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 7  THEN 100
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 14 THEN 85
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 30 THEN 65
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 60 THEN 35
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 90 THEN 15
+          ELSE 0
+        END
+      )
+      + 0.3 * (
+        CASE (SELECT COUNT(*) FROM opportunities WHERE customer_id = customers.id AND status = 'Open')
+          WHEN 0 THEN 10
+          WHEN 1 THEN 55
+          WHEN 2 THEN 75
+          WHEN 3 THEN 90
+          ELSE 100
+        END
+      )
+      + 0.3 * (
+        CASE
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) = 0 THEN 0
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 2 THEN 40
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 5 THEN 70
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 9 THEN 90
+          ELSE 100
+        END
+      )
+    ) AS INTEGER)
+  `);
+}
+
+/** Recompute health_score for a single customer. Same formula as recomputeCustomerHealthScores. */
+export async function recomputeCustomerHealthScore(customerId: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`
+    UPDATE customers SET health_score = CAST(ROUND(
+      0.4 * (
+        CASE
+          WHEN last_activity_at IS NULL THEN 0
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 7  THEN 100
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 14 THEN 85
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 30 THEN 65
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 60 THEN 35
+          WHEN (julianday('now') - julianday(last_activity_at)) <= 90 THEN 15
+          ELSE 0
+        END
+      )
+      + 0.3 * (
+        CASE (SELECT COUNT(*) FROM opportunities WHERE customer_id = customers.id AND status = 'Open')
+          WHEN 0 THEN 10
+          WHEN 1 THEN 55
+          WHEN 2 THEN 75
+          WHEN 3 THEN 90
+          ELSE 100
+        END
+      )
+      + 0.3 * (
+        CASE
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) = 0 THEN 0
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 2 THEN 40
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 5 THEN 70
+          WHEN (SELECT COUNT(*) FROM activities WHERE customer_id = customers.id AND occurred_at >= datetime('now', '-90 days') AND occurred_at <= datetime('now')) <= 9 THEN 90
+          ELSE 100
+        END
+      )
+    ) AS INTEGER) WHERE id = $1
+  `, [customerId]);
 }
 
 /** Recompute last_activity_at for all customers based on actual activities and contact changes. */

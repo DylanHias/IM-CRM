@@ -10,7 +10,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 123 45 67', email: 'info@technocom.be', addressStreet: 'Rue de la Loi 1',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://technocom.be',
     cloudCustomer: true, arr: 1850000, resellerId: 'RSL-10001',
-    status: 'active', lastActivityAt: ago(3), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(3), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-002', name: 'Nexgen Retail Group', accountNumber: 'ACC-10002', bcn: 'BCN-002',
@@ -18,7 +18,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 3 987 65 43', email: 'contact@nexgenretail.com', addressStreet: 'Meir 22',
     addressCity: 'Antwerp', addressCountry: 'Belgium', website: 'https://nexgenretail.com',
     cloudCustomer: false, arr: 420000, resellerId: 'RSL-10002',
-    status: 'active', lastActivityAt: ago(7), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(7), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-003', name: 'FinBank Europe', accountNumber: 'ACC-10003', bcn: 'BCN-003',
@@ -26,7 +26,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 20 555 0100', email: 'bdm@finbank.eu', addressStreet: 'Herengracht 100',
     addressCity: 'Amsterdam', addressCountry: 'Netherlands', website: 'https://finbank.eu',
     cloudCustomer: true, arr: 2450000, resellerId: 'RSL-10003',
-    status: 'active', lastActivityAt: ago(14), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(14), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-004', name: 'MediCare Systems', accountNumber: 'ACC-10004', bcn: 'BCN-004',
@@ -34,7 +34,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 9 654 32 10', email: 'info@medcaresys.be', addressStreet: 'Kortrijksesteenweg 5',
     addressCity: 'Ghent', addressCountry: 'Belgium', website: 'https://medcaresys.be',
     cloudCustomer: true, arr: 980000, resellerId: 'RSL-10004',
-    status: 'active', lastActivityAt: ago(2), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(2), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-005', name: 'EduLearn Platform', accountNumber: 'ACC-10005', bcn: 'BCN-005',
@@ -42,7 +42,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 16 234 56 78', email: 'hello@edulearn.be', addressStreet: 'Naamsestraat 48',
     addressCity: 'Leuven', addressCountry: 'Belgium', website: 'https://edulearn.be',
     cloudCustomer: false, arr: 95000, resellerId: 'RSL-10005',
-    status: 'active', lastActivityAt: ago(120), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(120), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-006', name: 'AutoDrive Mobility', accountNumber: 'ACC-10006', bcn: 'BCN-006',
@@ -50,7 +50,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 11 345 67 89', email: 'fleet@autodrive.be', addressStreet: 'Hasseltweg 30',
     addressCity: 'Hasselt', addressCountry: 'Belgium', website: 'https://autodrive.be',
     cloudCustomer: false, arr: 310000, resellerId: 'RSL-10006',
-    status: 'active', lastActivityAt: ago(21), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(21), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-007', name: 'GreenEnergy Benelux', accountNumber: 'ACC-10007', bcn: 'BCN-007',
@@ -58,7 +58,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 10 789 01 23', email: 'info@greenenergy.benelux', addressStreet: 'Weena 400',
     addressCity: 'Rotterdam', addressCountry: 'Netherlands', website: null,
     cloudCustomer: true, arr: 1620000, resellerId: 'RSL-10007',
-    status: 'active', lastActivityAt: ago(5), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(5), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-008', name: 'LogiFlow NV', accountNumber: 'ACC-10008', bcn: 'BCN-008',
@@ -66,7 +66,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 3 456 78 90', email: 'ops@logiflow.be', addressStreet: 'Katwilgweg 10',
     addressCity: 'Antwerp', addressCountry: 'Belgium', website: 'https://logiflow.be',
     cloudCustomer: false, arr: 275000, resellerId: 'RSL-10008',
-    status: 'active', lastActivityAt: ago(10), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(10), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-009', name: 'CyberShield Security', accountNumber: 'ACC-10009', bcn: 'BCN-009',
@@ -74,7 +74,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 567 89 01', email: 'sales@cybershield.be', addressStreet: 'Avenue Louise 65',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://cybershield.be',
     cloudCustomer: true, arr: 145000, resellerId: 'RSL-10009',
-    status: 'active', lastActivityAt: ago(45), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(45), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-010', name: 'RetailPro SA', accountNumber: 'ACC-10010', bcn: 'BCN-010',
@@ -82,7 +82,7 @@ export const mockCustomers: Customer[] = [
     phone: '+352 2 678 90 12', email: 'contact@retailpro.lu', addressStreet: 'Rue Aldringen 25',
     addressCity: 'Luxembourg', addressCountry: 'Luxembourg', website: 'https://retailpro.lu',
     cloudCustomer: false, arr: 720000, resellerId: 'RSL-10010',
-    status: 'active', lastActivityAt: ago(60), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(60), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-011', name: 'AgroTech Partners', accountNumber: 'ACC-10011', bcn: 'BCN-011',
@@ -90,7 +90,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 51 789 01 23', email: 'info@agrotech.be', addressStreet: 'Tieltsesteenweg 2',
     addressCity: 'Roeselare', addressCountry: 'Belgium', website: null,
     cloudCustomer: false, arr: 65000, resellerId: 'RSL-10011',
-    status: 'active', lastActivityAt: ago(90), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(90), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-012', name: 'InsureTech BV', accountNumber: 'ACC-10012', bcn: 'BCN-012',
@@ -98,7 +98,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 70 890 12 34', email: 'bdm@insuretech.nl', addressStreet: 'Maliesingel 40',
     addressCity: 'Utrecht', addressCountry: 'Netherlands', website: 'https://insuretech.nl',
     cloudCustomer: true, arr: 540000, resellerId: 'RSL-10012',
-    status: 'active', lastActivityAt: ago(1), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(1), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-013', name: 'CloudBase NV', accountNumber: 'ACC-10013', bcn: 'BCN-013',
@@ -106,7 +106,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 901 23 45', email: 'sales@cloudbase.be', addressStreet: 'Bd du Régent 58',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://cloudbase.be',
     cloudCustomer: true, arr: 2100000, resellerId: 'RSL-10013',
-    status: 'active', lastActivityAt: ago(8), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(8), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-014', name: 'PharmaCare Group', accountNumber: 'ACC-10014', bcn: 'BCN-014',
@@ -114,7 +114,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 14 012 34 56', email: 'info@pharmacare.be', addressStreet: 'Turnhoutsebaan 80',
     addressCity: 'Herentals', addressCountry: 'Belgium', website: 'https://pharmacare.be',
     cloudCustomer: true, arr: 1350000, resellerId: 'RSL-10014',
-    status: 'active', lastActivityAt: ago(30), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(30), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-015', name: 'MediaHub Productions', accountNumber: 'ACC-10015', bcn: 'BCN-015',
@@ -122,7 +122,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 123 78 90', email: 'biz@mediahub.be', addressStreet: 'Rue Royale 200',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://mediahub.be',
     cloudCustomer: false, arr: 88000, resellerId: 'RSL-10015',
-    status: 'active', lastActivityAt: ago(15), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(15), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-016', name: 'SmartBuild Engineering', accountNumber: 'ACC-10016', bcn: 'BCN-016',
@@ -130,7 +130,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 56 234 56 78', email: 'info@smartbuild.be', addressStreet: 'Doorniksestraat 15',
     addressCity: 'Kortrijk', addressCountry: 'Belgium', website: 'https://smartbuild.be',
     cloudCustomer: false, arr: 195000, resellerId: 'RSL-10016',
-    status: 'active', lastActivityAt: ago(180), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(180), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-017', name: 'TravelEase Benelux', accountNumber: 'ACC-10017', bcn: 'BCN-017',
@@ -138,7 +138,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 345 67 89', email: 'info@travelease.be', addressStreet: 'Rue Neuve 10',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://travelease.be',
     cloudCustomer: false, arr: 52000, resellerId: 'RSL-10017',
-    status: 'inactive', lastActivityAt: ago(200), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'inactive', lastActivityAt: ago(200), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-018', name: 'DataVault Analytics', accountNumber: 'ACC-10018', bcn: 'BCN-018',
@@ -146,7 +146,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 20 456 78 90', email: 'hello@datavault.nl', addressStreet: 'Keizersgracht 50',
     addressCity: 'Amsterdam', addressCountry: 'Netherlands', website: 'https://datavault.nl',
     cloudCustomer: true, arr: 870000, resellerId: 'RSL-10018',
-    status: 'active', lastActivityAt: ago(6), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(6), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-019', name: 'FoodChain Logistics', accountNumber: 'ACC-10019', bcn: 'BCN-019',
@@ -154,7 +154,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 11 567 89 01', email: 'supply@foodchain.be', addressStreet: 'Industrielaan 20',
     addressCity: 'Genk', addressCountry: 'Belgium', website: 'https://foodchain.be',
     cloudCustomer: false, arr: 460000, resellerId: 'RSL-10019',
-    status: 'active', lastActivityAt: ago(18), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(18), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-020', name: 'PublicSector IT', accountNumber: 'ACC-10020', bcn: 'BCN-020',
@@ -162,7 +162,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 678 90 12', email: 'ict@publicsector.be', addressStreet: 'Rue Belliard 40',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: null,
     cloudCustomer: false, arr: 1100000, resellerId: 'RSL-10020',
-    status: 'active', lastActivityAt: ago(25), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(25), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-021', name: 'SecureNet Communications', accountNumber: 'ACC-10021', bcn: 'BCN-021',
@@ -170,7 +170,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 789 01 23', email: 'sales@securenet.be', addressStreet: 'Chaussée de Wavre 1',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://securenet.be',
     cloudCustomer: true, arr: 390000, resellerId: 'RSL-10021',
-    status: 'active', lastActivityAt: ago(12), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(12), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-022', name: 'BioPharma Research', accountNumber: 'ACC-10022', bcn: 'BCN-022',
@@ -178,7 +178,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 16 890 12 34', email: 'it@biopharma.be', addressStreet: 'Gaston Geenslaan 11',
     addressCity: 'Leuven', addressCountry: 'Belgium', website: 'https://biopharma.be',
     cloudCustomer: true, arr: 1750000, resellerId: 'RSL-10022',
-    status: 'active', lastActivityAt: ago(4), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(4), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-023', name: 'Urban Mobility SPRL', accountNumber: 'ACC-10023', bcn: 'BCN-023',
@@ -186,7 +186,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 901 23 45', email: 'info@urbanmobility.be', addressStreet: 'Avenue de Tervuren 30',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://urbanmobility.be',
     cloudCustomer: false, arr: 115000, resellerId: 'RSL-10023',
-    status: 'active', lastActivityAt: ago(35), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(35), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-024', name: 'EcoWaste Solutions', accountNumber: 'ACC-10024', bcn: 'BCN-024',
@@ -194,7 +194,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 9 012 34 56', email: 'info@ecowaste.be', addressStreet: 'Industrieweg 8',
     addressCity: 'Ghent', addressCountry: 'Belgium', website: 'https://ecowaste.be',
     cloudCustomer: false, arr: 78000, resellerId: 'RSL-10024',
-    status: 'active', lastActivityAt: ago(150), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(150), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-025', name: 'ProHR Services', accountNumber: 'ACC-10025', bcn: 'BCN-025',
@@ -202,7 +202,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 2 123 45 00', email: 'contact@prohr.be', addressStreet: 'Square de Meeûs 35',
     addressCity: 'Brussels', addressCountry: 'Belgium', website: 'https://prohr.be',
     cloudCustomer: true, arr: 235000, resellerId: 'RSL-10025',
-    status: 'active', lastActivityAt: ago(9), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(9), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-026', name: 'Flux Manufacturing NV', accountNumber: 'ACC-10026', bcn: 'BCN-026',
@@ -210,7 +210,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 15 345 67 89', email: 'info@fluxmfg.be', addressStreet: 'Antwerpsesteenweg 120',
     addressCity: 'Mechelen', addressCountry: 'Belgium', website: 'https://fluxmfg.be',
     cloudCustomer: true, arr: 1450000, resellerId: 'RSL-10026',
-    status: 'active', lastActivityAt: ago(4), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(4), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-027', name: 'Benelux Freight Services', accountNumber: 'ACC-10027', bcn: 'BCN-027',
@@ -218,7 +218,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 10 234 56 78', email: 'dispatch@beneluxfreight.nl', addressStreet: 'Europaweg 55',
     addressCity: 'Rotterdam', addressCountry: 'Netherlands', website: 'https://beneluxfreight.nl',
     cloudCustomer: false, arr: 380000, resellerId: 'RSL-10027',
-    status: 'active', lastActivityAt: ago(11), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(11), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-028', name: 'Ardenne Énergie SA', accountNumber: 'ACC-10028', bcn: 'BCN-028',
@@ -226,7 +226,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 81 456 78 90', email: 'contact@ardenneenergie.be', addressStreet: 'Rue de Bruxelles 72',
     addressCity: 'Namur', addressCountry: 'Belgium', website: 'https://ardenneenergie.be',
     cloudCustomer: true, arr: 2100000, resellerId: 'RSL-10028',
-    status: 'active', lastActivityAt: ago(6), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(6), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-029', name: 'DigiMedia Productions', accountNumber: 'ACC-10029', bcn: 'BCN-029',
@@ -234,7 +234,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 9 567 89 01', email: 'studio@digimedia.be', addressStreet: 'Veldstraat 88',
     addressCity: 'Ghent', addressCountry: 'Belgium', website: 'https://digimedia.be',
     cloudCustomer: false, arr: 92000, resellerId: 'RSL-10029',
-    status: 'active', lastActivityAt: ago(18), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(18), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-030', name: 'Luxembourg Health Institute', accountNumber: 'ACC-10030', bcn: 'BCN-030',
@@ -242,7 +242,7 @@ export const mockCustomers: Customer[] = [
     phone: '+352 26 789 012', email: 'it@luxhealth.lu', addressStreet: 'Boulevard Royal 18',
     addressCity: 'Luxembourg City', addressCountry: 'Luxembourg', website: 'https://luxhealth.lu',
     cloudCustomer: true, arr: 1680000, resellerId: 'RSL-10030',
-    status: 'active', lastActivityAt: ago(8), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(8), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-031', name: 'Vlaams Onderwijscentrum', accountNumber: 'ACC-10031', bcn: 'BCN-031',
@@ -250,7 +250,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 16 678 90 12', email: 'ict@vlaamsocentrum.be', addressStreet: 'Bondgenotenlaan 30',
     addressCity: 'Leuven', addressCountry: 'Belgium', website: 'https://vlaamsocentrum.be',
     cloudCustomer: false, arr: 210000, resellerId: 'RSL-10031',
-    status: 'active', lastActivityAt: ago(22), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(22), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-032', name: 'Gemeente Brugge IT', accountNumber: 'ACC-10032', bcn: 'BCN-032',
@@ -258,7 +258,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 50 789 01 23', email: 'ict@brugge.be', addressStreet: 'Burg 12',
     addressCity: 'Bruges', addressCountry: 'Belgium', website: null,
     cloudCustomer: false, arr: 890000, resellerId: 'RSL-10032',
-    status: 'active', lastActivityAt: ago(15), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(15), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-033', name: 'FinTrust Advisors', accountNumber: 'ACC-10033', bcn: 'BCN-033',
@@ -266,7 +266,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 30 890 12 34', email: 'ops@fintrust.nl', addressStreet: 'Maliebaan 75',
     addressCity: 'Utrecht', addressCountry: 'Netherlands', website: 'https://fintrust.nl',
     cloudCustomer: true, arr: 620000, resellerId: 'RSL-10033',
-    status: 'active', lastActivityAt: ago(3), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(3), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-034', name: 'Precision Plastics BV', accountNumber: 'ACC-10034', bcn: 'BCN-034',
@@ -274,7 +274,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 3 901 23 45', email: 'info@precisionplastics.be', addressStreet: 'Boomsesteenweg 200',
     addressCity: 'Antwerp', addressCountry: 'Belgium', website: 'https://precisionplastics.be',
     cloudCustomer: false, arr: 135000, resellerId: 'RSL-10034',
-    status: 'inactive', lastActivityAt: ago(95), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'inactive', lastActivityAt: ago(95), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-035', name: 'NovaTech Consulting', accountNumber: 'ACC-10035', bcn: 'BCN-035',
@@ -282,7 +282,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 4 012 34 56', email: 'hello@novatech.be', addressStreet: 'Rue des Guillemins 50',
     addressCity: 'Liège', addressCountry: 'Belgium', website: 'https://novatech.be',
     cloudCustomer: true, arr: 485000, resellerId: 'RSL-10035',
-    status: 'active', lastActivityAt: ago(7), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(7), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-036', name: 'CargoLink International', accountNumber: 'ACC-10036', bcn: 'BCN-036',
@@ -290,7 +290,7 @@ export const mockCustomers: Customer[] = [
     phone: '+31 20 123 45 67', email: 'operations@cargolink.nl', addressStreet: 'Piet Heinkade 35',
     addressCity: 'Amsterdam', addressCountry: 'Netherlands', website: 'https://cargolink.nl',
     cloudCustomer: true, arr: 2750000, resellerId: 'RSL-10036',
-    status: 'active', lastActivityAt: ago(2), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(2), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-037', name: 'Retail Connect SA', accountNumber: 'ACC-10037', bcn: 'BCN-037',
@@ -298,7 +298,7 @@ export const mockCustomers: Customer[] = [
     phone: '+352 27 345 678', email: 'info@retailconnect.lu', addressStreet: 'Avenue de la Liberté 42',
     addressCity: 'Luxembourg City', addressCountry: 'Luxembourg', website: 'https://retailconnect.lu',
     cloudCustomer: false, arr: 78000, resellerId: 'RSL-10037',
-    status: 'active', lastActivityAt: ago(30), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(30), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-038', name: 'SteelForge Industries', accountNumber: 'ACC-10038', bcn: 'BCN-038',
@@ -306,7 +306,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 4 123 45 67', email: 'it@steelforge.be', addressStreet: 'Quai de la Boverie 8',
     addressCity: 'Liège', addressCountry: 'Belgium', website: 'https://steelforge.be',
     cloudCustomer: false, arr: 1920000, resellerId: 'RSL-10038',
-    status: 'active', lastActivityAt: ago(12), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(12), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-039', name: 'BrightMinds Academy', accountNumber: 'ACC-10039', bcn: 'BCN-039',
@@ -314,7 +314,7 @@ export const mockCustomers: Customer[] = [
     phone: '+32 50 234 56 78', email: 'admin@brightminds.be', addressStreet: 'Markt 7',
     addressCity: 'Bruges', addressCountry: 'Belgium', website: 'https://brightminds.be',
     cloudCustomer: false, arr: 58000, resellerId: 'RSL-10039',
-    status: 'inactive', lastActivityAt: ago(180), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'inactive', lastActivityAt: ago(180), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
   {
     id: 'cust-040', name: 'MedVision Diagnostics', accountNumber: 'ACC-10040', bcn: 'BCN-040',
@@ -322,6 +322,6 @@ export const mockCustomers: Customer[] = [
     phone: '+32 15 456 78 90', email: 'info@medvision.be', addressStreet: 'Bruul 45',
     addressCity: 'Mechelen', addressCountry: 'Belgium', website: 'https://medvision.be',
     cloudCustomer: true, arr: 540000, resellerId: 'RSL-10040',
-    status: 'active', lastActivityAt: ago(5), syncedAt: now, createdAt: now, updatedAt: now,
+    status: 'active', lastActivityAt: ago(5), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
 ];
