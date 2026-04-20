@@ -385,7 +385,13 @@ class RealD365Adapter implements ID365Adapter {
     const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token, 'Accounts');
-    return records.map((r) => mapD365CustomerToCustomer(r, now));
+    const mapped = records.map((r) => mapD365CustomerToCustomer(r, now));
+    const valid = mapped.filter((c) => c.name != null && c.name.trim() !== '');
+    const dropped = mapped.length - valid.length;
+    if (dropped > 0) {
+      console.warn(`[sync] Dropped ${dropped} D365 account(s) with missing name`);
+    }
+    return valid;
   }
 
   async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
