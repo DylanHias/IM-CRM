@@ -334,7 +334,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '24')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '25')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -683,6 +683,24 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     try { await db.execute(`ALTER TABLE customers ADD COLUMN health_score INTEGER`); } catch { /* already exists */ }
     await db.execute(
       `UPDATE app_settings SET value = '24', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 25) {
+    // D365 returns GUIDs uppercase in OData-EntityId headers (after POST) but lowercase
+    // in GET responses. That case mismatch caused user-created records to be re-inserted
+    // as duplicates on the next full sync. Normalize to lowercase + dedupe + prevent recurrence.
+    for (const table of ['activities', 'follow_ups', 'opportunities']) {
+      await db.execute(`UPDATE ${table} SET remote_id = lower(remote_id) WHERE remote_id IS NOT NULL AND remote_id != lower(remote_id)`);
+      await db.execute(`
+        DELETE FROM ${table}
+        WHERE remote_id IS NOT NULL
+          AND rowid NOT IN (SELECT MIN(rowid) FROM ${table} WHERE remote_id IS NOT NULL GROUP BY remote_id)
+      `);
+      await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_${table}_remote_unique ON ${table}(remote_id) WHERE remote_id IS NOT NULL`);
+    }
+    await db.execute(
+      `UPDATE app_settings SET value = '25', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

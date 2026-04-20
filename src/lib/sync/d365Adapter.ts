@@ -260,6 +260,15 @@ function mapD365TaskToFollowUp(d365: D365Task, now: string): FollowUp {
   };
 }
 
+/** Extract the GUID from D365's OData-EntityId response header and normalize to lowercase.
+ *  D365 returns uppercase GUIDs in POST response headers but lowercase in GET responses —
+ *  lowercasing everywhere prevents duplicate rows on the next sync (see migration v25). */
+function parseEntityIdHeader(header: string | null): string {
+  const value = header ?? '';
+  const match = value.match(/\(([^)]+)\)$/);
+  return (match ? match[1] : value).toLowerCase();
+}
+
 async function fetchAllPages<T>(
   firstUrl: string,
   token: string,
@@ -657,11 +666,7 @@ class RealD365Adapter implements ID365Adapter {
 
     const resolvedId = isUpdate
       ? activity.remoteId!
-      : (() => {
-          const entityId = res.headers.get('OData-EntityId') ?? '';
-          const match = entityId.match(/\(([^)]+)\)$/);
-          return match ? match[1] : entityId;
-        })();
+      : parseEntityIdHeader(res.headers.get('OData-EntityId'));
 
     // D365 won't accept statecode/statuscode in the main body — set state via separate PATCH
     // Skip if open — D365 creates records as Open by default
@@ -726,11 +731,7 @@ class RealD365Adapter implements ID365Adapter {
 
     const resolvedId = isUpdate
       ? followUp.remoteId!
-      : (() => {
-          const entityId = res.headers.get('OData-EntityId') ?? '';
-          const match = entityId.match(/\(([^)]+)\)$/);
-          return match ? match[1] : entityId;
-        })();
+      : parseEntityIdHeader(res.headers.get('OData-EntityId'));
 
     // D365 won't accept statecode/statuscode in the main body — set state via separate PATCH
     // Task states: 0=Open/statuscode 3, 1=Completed/statuscode 5
@@ -806,11 +807,7 @@ class RealD365Adapter implements ID365Adapter {
 
     const resolvedId = isUpdate
       ? opportunity.remoteId!
-      : (() => {
-          const entityId = res.headers.get('OData-EntityId') ?? '';
-          const match = entityId.match(/\(([^)]+)\)$/);
-          return match ? match[1] : entityId;
-        })();
+      : parseEntityIdHeader(res.headers.get('OData-EntityId'));
 
     // D365 won't accept statecode in the main body for opportunities — set via separate PATCH
     // Open is the default; only patch if Won or Lost
@@ -874,10 +871,7 @@ class RealD365Adapter implements ID365Adapter {
     }
 
     if (isUpdate) return contact.remoteId!;
-
-    const entityId = res.headers.get('OData-EntityId') ?? '';
-    const match = entityId.match(/\(([^)]+)\)$/);
-    return match ? match[1] : entityId;
+    return parseEntityIdHeader(res.headers.get('OData-EntityId'));
   }
 
   async deleteContact(token: string, remoteId: string): Promise<void> {
