@@ -7,7 +7,7 @@ import { underlineSpring, tabPanelMotion, statCardMotion, sectionReveal } from '
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, FileText, Target, ArrowLeft, Copy, Check,
+  Mail, Phone, Globe, Target, ArrowLeft, Copy, Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,6 @@ import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { ContactList } from '@/components/contacts/ContactList';
 import { OpportunityList } from '@/components/opportunities/OpportunityList';
 import { ActivitiesTabContent } from '@/components/activities/ActivitiesTabContent';
-import { InvoiceList } from '@/components/invoices/InvoiceList';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
@@ -35,18 +34,17 @@ import { queryContactsByCustomer, setPrimaryContact } from '@/lib/db/queries/con
 import { directPushPrimaryContact } from '@/lib/sync/directPushService';
 import { todayISO, nowDatetimeLocal, isoToDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
-import { getCountryCode } from '@/lib/utils/countryUtils';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { scoreHealth, healthTier, healthTierLabel, healthTierBadgeVariant } from '@/lib/customers/healthScore';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 
-type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'invoices';
+type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities';
 
 interface CustomerDetailProps {
   customerId: string;
 }
 
-const validTabs: ProfileTab[] = ['overview', 'activities', 'contacts', 'followups', 'opportunities', 'invoices'];
+const validTabs: ProfileTab[] = ['overview', 'activities', 'contacts', 'followups', 'opportunities'];
 
 export default function CustomerDetailClient({ customerId }: CustomerDetailProps) {
   const router = useRouter();
@@ -300,7 +298,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities', label: 'Opportunities', icon: Target, disabled: true },
-    { key: 'invoices', label: 'Invoices', icon: FileText, disabled: true },
   ], [activities.length, filteredActivityCount, contacts.length, followUps.length]);
 
 
@@ -626,15 +623,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   </motion.div>
                 )}
 
-                {/* Invoices Tab */}
-                {activeTab === 'invoices' && (
-                  <motion.div
-                    key="invoices"
-                    {...tabPanelMotion}
-                  >
-                    <InvoiceList resellerId={customer.resellerId} countryCode={getCountryCode(customer.addressCountry)} />
-                  </motion.div>
-                )}
               </AnimatePresence>
 
               {/* Edit Activity Dialog */}

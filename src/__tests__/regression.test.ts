@@ -3,7 +3,6 @@ import { useCustomerStore } from '@/store/customerStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useActivityStore } from '@/store/activityStore';
 import { useSyncStore } from '@/store/syncStore';
-import { useInvoiceStore } from '@/store/invoiceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatDueDate, formatRelative, todayISO } from '@/lib/utils/dateUtils';
 import {
@@ -56,19 +55,6 @@ const resetSyncStore = () =>
     pendingFollowUpCount: 0,
   });
 
-const resetInvoiceStore = () =>
-  useInvoiceStore.setState({
-    invoices: [],
-    selectedDetail: null,
-    isLoading: false,
-    isLoadingDetail: false,
-    totalRecords: 0,
-    currentPage: 1,
-    pageSize: 10,
-    searchFilters: {},
-    error: null,
-  });
-
 const resetSettingsStore = () => useSettingsStore.getState().resetAll();
 
 describe('Regression tests', () => {
@@ -77,7 +63,6 @@ describe('Regression tests', () => {
     resetFollowUpStore();
     resetActivityStore();
     resetSyncStore();
-    resetInvoiceStore();
     resetSettingsStore();
   });
 
@@ -245,31 +230,6 @@ describe('Regression tests', () => {
       const before = store().theme;
       store().updateSetting('theme', before);
       expect(store().theme).toBe(before);
-    });
-  });
-
-  // --- Invoice store edge cases ---
-  describe('Invoice store edge cases', () => {
-    const store = () => useInvoiceStore.getState();
-
-    it('setFilters always resets page to 1', () => {
-      store().setPage(5);
-      expect(store().currentPage).toBe(5);
-      store().setFilters({ customerOrderNumber: 'CO-999' });
-      expect(store().currentPage).toBe(1);
-    });
-
-    it('reset after complex state — back to clean defaults', () => {
-      store().setInvoices([], 100, 3);
-      store().setError('something went wrong');
-      store().setFilters({ customerOrderNumber: 'CO-123' });
-      store().reset();
-      expect(store().invoices).toEqual([]);
-      expect(store().totalRecords).toBe(0);
-      expect(store().currentPage).toBe(1);
-      expect(store().searchFilters).toEqual({});
-      expect(store().error).toBeNull();
-      expect(store().selectedDetail).toBeNull();
     });
   });
 

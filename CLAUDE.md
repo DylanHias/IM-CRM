@@ -71,7 +71,7 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 ## Error Handling & Logging
 
 - Never silent `catch` — always `console.error('[tag] description:', err)`
-- Tags: `[auth]` `[db]` `[seed]` `[audit]` `[sync]` `[admin]` `[msal]` `[settings]` `[login]` `[activity]` `[contact]` `[followup]` `[opportunity]` `[invoice]` `[customer]` `[updater]` `[changelog]` `[data]`
+- Tags: `[auth]` `[db]` `[seed]` `[audit]` `[sync]` `[admin]` `[msal]` `[settings]` `[login]` `[activity]` `[contact]` `[followup]` `[opportunity]` `[customer]` `[updater]` `[changelog]` `[data]`
 - Exception: intentional silences with a comment explaining why
 - Interceptor: `src/lib/logCapture.ts` (side-effect import in `providers.tsx`)
 

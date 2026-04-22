@@ -3,7 +3,6 @@ import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
 import { mockActivities } from '@/lib/mock/activities';
 import { mockFollowUps } from '@/lib/mock/followups';
-import { MOCK_INVOICE_ITEMS, MOCK_RESELLER_INVOICE_MAP, MOCK_INVOICE_DETAILS } from '@/lib/mock/invoices';
 import { mockOpportunities } from '@/lib/mock/opportunities';
 import { mockUsers, mockSyncRecords } from '@/lib/mock/admin';
 
@@ -43,32 +42,6 @@ async function seedFollowUps(db: Database): Promise<void> {
   }
 }
 
-async function seedInvoices(db: Database): Promise<void> {
-  const seededInvoices = new Set<string>();
-  for (const [resellerId, indices] of Object.entries(MOCK_RESELLER_INVOICE_MAP)) {
-    for (const idx of indices) {
-      const inv = MOCK_INVOICE_ITEMS[idx];
-      const key = `${inv.invoiceNumber}-${resellerId}`;
-      if (seededInvoices.has(key)) continue;
-      seededInvoices.add(key);
-
-      await db.execute(
-        `INSERT OR IGNORE INTO invoices (invoice_number,reseller_id,invoice_status,invoice_date,invoice_due_date,invoiced_amount_due,invoice_amount_incl_tax,customer_order_number,end_customer_order_number,order_create_date,erp_order_number,payment_terms_due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-        [inv.invoiceNumber,resellerId,inv.invoiceStatus,inv.invoiceDate,inv.invoiceDueDate,inv.invoicedAmountDue,inv.invoiceAmountInclTax,inv.customerOrderNumber,inv.endCustomerOrderNumber,inv.orderCreateDate,inv.erpOrderNumber,inv.paymentTermsDueDate]
-      );
-    }
-  }
-
-  for (const [invoiceNumber, detail] of Object.entries(MOCK_INVOICE_DETAILS)) {
-    for (const line of detail.lines) {
-      await db.execute(
-        `INSERT OR IGNORE INTO invoice_lines (invoice_number,ingram_part_number,vendor_part_number,vendor_name,product_description,quantity,unit_price,extended_price,tax_amount,quantity_ordered,quantity_shipped,currency_code) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-        [invoiceNumber,line.ingramPartNumber,line.vendorPartNumber,line.vendorName,line.productDescription,line.quantity,line.unitPrice,line.extendedPrice,line.taxAmount,line.quantityOrdered,line.quantityShipped,line.currencyCode]
-      );
-    }
-  }
-}
-
 async function seedOpportunities(db: Database): Promise<void> {
   for (const o of mockOpportunities) {
     await db.execute(
@@ -101,7 +74,6 @@ const TABLE_SEEDERS: Record<string, (db: Database) => Promise<void>> = {
   contacts: seedContacts,
   activities: seedActivities,
   follow_ups: seedFollowUps,
-  invoices: seedInvoices,
   opportunities: seedOpportunities,
   users: seedUsers,
   sync_records: seedSyncRecords,

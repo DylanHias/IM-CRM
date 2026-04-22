@@ -46,7 +46,7 @@ const SECTIONS: HelpSection[] = [
   },
   {
     title: 'Revenue Overview',
-    keywords: ['revenue', 'invoice', 'arr', 'billing', 'payment', 'finance', 'money', 'euro', 'amount', 'cloud'],
+    keywords: ['revenue', 'arr', 'billing', 'payment', 'finance', 'money', 'euro', 'amount', 'cloud'],
     content: `REVENUE OVERVIEW: ARR financial dashboard. Table: customer name, primary contact, phone, email, cloud status, language, ARR (EUR). Search by customer name. Filter: Cloud Customer (Yes/No/All), Language, ARR range (min/max). Sort: ARR / Name / Cloud / Language. Column picker to show/hide columns. Export to Excel (respects active filters and columns). Paginated (10/25/50/100).`,
   },
   {

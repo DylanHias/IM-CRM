@@ -40,10 +40,10 @@ describe('shortcuts', () => {
     });
 
     it('respects custom sidebar order', () => {
-      const custom = ['/invoices', '/customers'] as typeof DEFAULT_SIDEBAR_ORDER;
+      const custom = ['/opportunities', '/customers'] as typeof DEFAULT_SIDEBAR_ORDER;
       const all = getAllShortcuts(custom);
       const nav1 = all.find((s) => s.id === 'nav-1');
-      expect(nav1!.label).toBe('Go to Invoices');
+      expect(nav1!.label).toBe('Go to Opportunities');
     });
   });
 

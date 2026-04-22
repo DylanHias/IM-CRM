@@ -31,7 +31,6 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/sync': 'Go to Sync',
     '/followups': 'Go to Follow-Ups',
     '/opportunities': 'Go to Opportunities',
-    '/invoices': 'Go to Invoices',
     '/revenue-overview': 'Go to Revenue Overview',
     '/analytics': 'Go to Analytics',
     '/timeline': 'Go to Timeline',

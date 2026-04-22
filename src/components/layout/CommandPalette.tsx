@@ -3,7 +3,7 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, FileText, Target, LineChart,
+  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart,
   Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User, LayoutDashboard,
 } from 'lucide-react';
 import {
@@ -25,7 +25,6 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/sync': RefreshCw,
   '/followups': CheckSquare,
   '/opportunities': Target,
-  '/invoices': FileText,
   '/revenue-overview': BarChart2,
   '/analytics': LineChart,
   '/timeline': Clock,
@@ -107,6 +106,7 @@ export function CommandPalette() {
       .filter((c) =>
         c.name.toLowerCase().includes(q) ||
         c.accountNumber?.toLowerCase().includes(q) ||
+        c.bcn?.toLowerCase().includes(q) ||
         c.addressCity?.toLowerCase().includes(q)
       )
       .slice(0, 5);

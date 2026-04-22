@@ -103,7 +103,7 @@ export async function queryWinRate(): Promise<{ won: number; lost: number; open:
 
 export async function queryTableStats(): Promise<TableStats[]> {
   const db = await getDb();
-  const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities', 'invoices', 'invoice_lines', 'sync_records', 'users'];
+  const tables = ['customers', 'contacts', 'activities', 'follow_ups', 'opportunities', 'sync_records', 'users'];
   const stats: TableStats[] = [];
 
   for (const tableName of tables) {

@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Contact, Activity, FollowUp, Opportunity } from '@/types/entities';
 import type { SyncRecord, SyncError } from '@/types/sync';
 import type { CrmUser } from '@/types/admin';
-import type { InvoiceSearchItem, InvoiceDetail } from '@/types/invoice';
 
 const NOW = '2026-03-25T12:00:00.000Z';
 
@@ -174,78 +173,3 @@ export function createCrmUser(overrides?: Partial<CrmUser>): CrmUser {
   };
 }
 
-export function createInvoiceSearchItem(overrides?: Partial<InvoiceSearchItem>): InvoiceSearchItem {
-  return {
-    invoiceNumber: 'INV-001',
-    invoiceStatus: 'Open',
-    invoiceDate: '2026-03-01',
-    invoiceDueDate: '2026-04-01',
-    invoicedAmountDue: 1500.00,
-    invoiceAmountInclTax: 1815.00,
-    customerOrderNumber: 'CO-123',
-    endCustomerOrderNumber: null,
-    orderCreateDate: '2026-02-28',
-    erpOrderNumber: 'ERP-456',
-    paymentTermsDueDate: '2026-04-01',
-    ...overrides,
-  };
-}
-
-export function createInvoiceDetail(overrides?: Partial<InvoiceDetail>): InvoiceDetail {
-  return {
-    invoiceNumber: 'INV-001',
-    invoiceStatus: 'Open',
-    invoiceDate: '2026-03-01',
-    invoiceDueDate: '2026-04-01',
-    customerOrderNumber: 'CO-123',
-    endCustomerOrderNumber: null,
-    erpOrderNumber: 'ERP-456',
-    orderCreateDate: '2026-02-28',
-    billToInfo: {
-      companyName: 'Acme Corp',
-      addressLine1: 'Main St 1',
-      addressLine2: null,
-      city: 'Antwerp',
-      state: null,
-      postalCode: '2000',
-      countryCode: 'BE',
-    },
-    shipToInfo: {
-      companyName: 'Acme Corp',
-      addressLine1: 'Main St 1',
-      addressLine2: null,
-      city: 'Antwerp',
-      state: null,
-      postalCode: '2000',
-      countryCode: 'BE',
-    },
-    paymentTermsInfo: {
-      paymentTermsDescription: 'Net 30',
-      paymentTermsDueDate: '2026-04-01',
-      paymentTermsNetDays: 30,
-    },
-    lines: [
-      {
-        ingramPartNumber: 'ING-001',
-        vendorPartNumber: 'VP-001',
-        vendorName: 'Microsoft',
-        productDescription: 'Azure Credits',
-        quantity: 1,
-        unitPrice: 1500.00,
-        extendedPrice: 1500.00,
-        taxAmount: 315.00,
-        quantityOrdered: 1,
-        quantityShipped: 1,
-        currencyCode: 'EUR',
-      },
-    ],
-    summary: {
-      totalLines: 1,
-      totalAmount: 1500.00,
-      totalTax: 315.00,
-      totalAmountInclTax: 1815.00,
-      currencyCode: 'EUR',
-    },
-    ...overrides,
-  };
-}

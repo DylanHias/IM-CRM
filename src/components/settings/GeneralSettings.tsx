@@ -117,7 +117,7 @@ export function GeneralSettings() {
       const { getDb } = await import('@/lib/db/client');
       const db = await getDb();
       const tables = [
-        'invoice_lines', 'invoices', 'activities', 'follow_ups',
+        'activities', 'follow_ups',
         'contacts', 'opportunities', 'option_sets', 'sync_records',
         'customers',
       ];

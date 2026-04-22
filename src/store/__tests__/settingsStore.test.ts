@@ -39,7 +39,7 @@ describe('settingsStore', () => {
 
   describe('resetSection appearance', () => {
     it('resets all appearance keys to defaults', () => {
-      const reordered: SidebarTab[] = ['/sync', '/customers', '/followups', '/opportunities', '/invoices', '/revenue-overview'];
+      const reordered: SidebarTab[] = ['/sync', '/customers', '/followups', '/opportunities', '/revenue-overview'];
       store().updateSetting('theme', 'dark');
       store().updateSetting('accentColor', 'red');
       store().updateSetting('compactMode', true);

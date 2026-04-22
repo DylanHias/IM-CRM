@@ -147,44 +147,6 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_followups_due ON follow_ups(due_date)`);
 
   await db.execute(`
-    CREATE TABLE IF NOT EXISTS invoices (
-      invoice_number          TEXT NOT NULL,
-      reseller_id             TEXT NOT NULL,
-      invoice_status          TEXT NOT NULL,
-      invoice_date            TEXT NOT NULL,
-      invoice_due_date        TEXT NOT NULL,
-      invoiced_amount_due     REAL NOT NULL,
-      invoice_amount_incl_tax REAL NOT NULL,
-      customer_order_number   TEXT,
-      end_customer_order_number TEXT,
-      order_create_date       TEXT,
-      erp_order_number        TEXT,
-      payment_terms_due_date  TEXT,
-      PRIMARY KEY (invoice_number, reseller_id)
-    )
-  `);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_invoices_reseller ON invoices(reseller_id)`);
-
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS invoice_lines (
-      id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_number     TEXT NOT NULL,
-      ingram_part_number TEXT,
-      vendor_part_number TEXT,
-      vendor_name        TEXT,
-      product_description TEXT,
-      quantity           INTEGER NOT NULL,
-      unit_price         REAL NOT NULL,
-      extended_price     REAL NOT NULL,
-      tax_amount         REAL NOT NULL,
-      quantity_ordered   INTEGER,
-      quantity_shipped   INTEGER,
-      currency_code      TEXT DEFAULT 'EUR'
-    )
-  `);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_invoice_lines_invoice ON invoice_lines(invoice_number)`);
-
-  await db.execute(`
     CREATE TABLE IF NOT EXISTS sync_records (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
       sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','push_activities','push_followups')),
@@ -334,7 +296,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '25')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '26')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -701,6 +663,16 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     }
     await db.execute(
       `UPDATE app_settings SET value = '25', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 26) {
+    await db.execute(`DROP INDEX IF EXISTS idx_invoices_reseller`);
+    await db.execute(`DROP INDEX IF EXISTS idx_invoice_lines_invoice`);
+    await db.execute(`DROP TABLE IF EXISTS invoice_lines`);
+    await db.execute(`DROP TABLE IF EXISTS invoices`);
+    await db.execute(
+      `UPDATE app_settings SET value = '26', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
