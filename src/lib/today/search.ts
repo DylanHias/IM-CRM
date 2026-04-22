@@ -11,7 +11,7 @@ export interface SearchResult {
 }
 
 export interface SearchData {
-  customers: { id: string; name: string; accountNumber: string | null; addressCity: string | null }[];
+  customers: { id: string; name: string; accountNumber: string | null; bcn: string | null; addressCity: string | null }[];
   contacts: { id: string; customerId: string; firstName: string; lastName: string; email: string | null; jobTitle: string | null }[];
   opportunities: Opportunity[];
   activities: Activity[];
@@ -32,6 +32,7 @@ export function searchAll(query: string, data: SearchData): Record<SearchCategor
     .filter((c) =>
       match(c.name, q) ||
       (c.accountNumber ? match(c.accountNumber, q) : false) ||
+      (c.bcn ? match(c.bcn, q) : false) ||
       (c.addressCity ? match(c.addressCity, q) : false)
     )
     .slice(0, PER_CAT)
@@ -39,7 +40,7 @@ export function searchAll(query: string, data: SearchData): Record<SearchCategor
       id: c.id,
       category: 'customer',
       primary: c.name,
-      secondary: [c.accountNumber, c.addressCity].filter(Boolean).join(' · '),
+      secondary: [c.accountNumber, c.bcn, c.addressCity].filter(Boolean).join(' · '),
       href: `/customers?id=${c.id}`,
     }));
 

@@ -34,7 +34,7 @@ The score updates automatically after every activity, opportunity, or sync.
 
 ## Searching
 
-Use the search bar at the top to find customers by name. Results update as you type. Press **/** to quickly focus the search bar.
+Use the search bar at the top to find customers by name, account number, BCN, city, email, or industry. Results update as you type. Press **/** to quickly focus the search bar.
 
 ## Sorting
 

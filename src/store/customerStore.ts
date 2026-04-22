@@ -146,6 +146,7 @@ export const useCustomerStore = create<CustomerState>()(
           result = result.filter((c) =>
             c.name.toLowerCase().includes(q) ||
             c.accountNumber?.toLowerCase().includes(q) ||
+            c.bcn?.toLowerCase().includes(q) ||
             c.addressCity?.toLowerCase().includes(q) ||
             c.email?.toLowerCase().includes(q) ||
             c.industry?.toLowerCase().includes(q)
