@@ -17,6 +17,7 @@ export interface CustomerRow {
   bcn: string | null;
   cloud_customer: number | null;
   arr: number | null;
+  arr_currency: string | null;
   status: string;
   last_activity_at: string | null;
   health_score: number | null;

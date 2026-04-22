@@ -1,6 +1,9 @@
 import { getD365Adapter } from './d365Adapter';
 import { fetchD365TeamUserIds } from './d365UserAdapter';
-import { bulkUpsertCustomers, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
+import { fetchArrByBcn } from '@/lib/integrations/powerbi/arrAdapter';
+import { getAccessToken } from '@/lib/auth/authHelpers';
+import { powerBiRequest } from '@/lib/auth/msalConfig';
+import { bulkUpsertCustomers, bulkUpdateCustomerArrByBcn, clearStaleCustomerArr, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
@@ -106,6 +109,7 @@ export async function runFullSync(token: string): Promise<void> {
     }
 
     await syncD365(token);
+    await syncPowerBiArr();
     await pushPendingContacts(token);
     await pushPendingActivities(token, resolvedCallerD365Id);
     await pushPendingFollowUps(token);
@@ -268,6 +272,36 @@ async function syncD365(token: string): Promise<void> {
       console.error('[sync] Failed to update sync record after D365 error:', recordErr instanceof Error ? recordErr.message : recordErr);
     }
     store.addSyncError({ id: uuidv4(), syncType: 'd365', message, occurredAt: new Date().toISOString() });
+  }
+}
+
+export async function syncPowerBiArr(): Promise<void> {
+  const store = useSyncStore.getState();
+  try {
+    const token = await getAccessToken(powerBiRequest.scopes);
+    if (!token) {
+      console.warn('[sync] PowerBI ARR skipped: no token');
+      return;
+    }
+
+    console.time('[sync] fetch:powerbi-arr');
+    const entries = await fetchArrByBcn(token);
+    console.timeEnd('[sync] fetch:powerbi-arr');
+    console.log(`[sync] PowerBI ARR: ${entries.length} rows fetched`);
+
+    if (entries.length === 0) return;
+
+    const updated = await bulkUpdateCustomerArrByBcn(entries);
+    const freshBcns = new Set(entries.map((e) => e.bcn));
+    const cleared = await clearStaleCustomerArr(freshBcns);
+
+    const now = new Date().toISOString();
+    await setAppSetting('last_powerbi_arr_sync', now);
+    console.log(`[sync] PowerBI ARR: ${updated} customers updated, ${cleared} cleared`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'PowerBI ARR sync failed';
+    console.error(`[sync] PowerBI ARR error: ${message}`, err);
+    store.addSyncError({ id: uuidv4(), syncType: 'd365', message: `ARR: ${message}`, occurredAt: new Date().toISOString() });
   }
 }
 

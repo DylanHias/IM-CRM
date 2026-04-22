@@ -6,7 +6,7 @@ Ingram Micro CRM syncs your data with Microsoft Dynamics 365 so your local data 
 
 Sync is a two-way process:
 
-- **Pull** — Downloads customer, contact, and opportunity data from D365 into the app
+- **Pull** — Downloads customer, contact, and opportunity data from D365 into the app, plus ARR (Annual Recurring Revenue) from the Power BI dashboard
 - **Push** — Uploads your locally created or updated activities, follow-ups, and opportunities to D365
 
 ## Automatic Sync

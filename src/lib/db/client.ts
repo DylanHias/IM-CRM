@@ -69,6 +69,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       bcn             TEXT,
       cloud_customer  INTEGER,
       arr             REAL,
+      arr_currency    TEXT,
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -258,6 +259,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'bcn',             'TEXT'],
     ['customers',  'cloud_customer',  'INTEGER'],
     ['customers',  'arr',             'REAL'],
+    ['customers',  'arr_currency',    'TEXT'],
     ['customers',  'health_score',    'INTEGER'],
     ['contacts',   'contact_type',    'TEXT'],
     ['contacts',   'cloud_contact',   'INTEGER'],
@@ -296,7 +298,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '26')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '27')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -673,6 +675,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`DROP TABLE IF EXISTS invoices`);
     await db.execute(
       `UPDATE app_settings SET value = '26', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 27) {
+    try { await db.execute(`ALTER TABLE customers ADD COLUMN arr_currency TEXT`); } catch { /* column may already exist */ }
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_customers_bcn ON customers(bcn)`);
+    await db.execute(
+      `UPDATE app_settings SET value = '27', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

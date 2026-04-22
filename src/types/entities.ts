@@ -16,6 +16,7 @@ export interface Customer {
   website: string | null;
   cloudCustomer: boolean | null;
   arr: number | null;
+  arrCurrency: string | null;
   status: 'active' | 'inactive';
   lastActivityAt: string | null;
   healthScore: number | null;

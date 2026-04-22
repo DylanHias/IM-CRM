@@ -527,7 +527,14 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                             label: 'ARR',
                             render: (
                               <p className="text-lg font-bold text-foreground">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(customer.arr)}
+                                {(() => {
+                                  const cur = customer.arrCurrency ?? 'USD';
+                                  try {
+                                    return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(customer.arr);
+                                  } catch {
+                                    return `${cur} ${customer.arr.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`;
+                                  }
+                                })()}
                               </p>
                             ),
                           } : null,

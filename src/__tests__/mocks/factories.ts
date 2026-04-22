@@ -24,6 +24,7 @@ export function createCustomer(overrides?: Partial<Customer>): Customer {
     website: 'https://acme.com',
     cloudCustomer: true,
     arr: 50000,
+    arrCurrency: 'EUR',
     status: 'active',
     lastActivityAt: '2026-03-20T10:00:00.000Z',
     healthScore: null,

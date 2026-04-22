@@ -22,6 +22,7 @@ function rowToCustomer(row: CustomerRow): Customer {
     website: row.website,
     cloudCustomer: row.cloud_customer === 1 ? true : row.cloud_customer === 0 ? false : null,
     arr: row.arr,
+    arrCurrency: row.arr_currency,
     status: (row.status as Customer['status']) ?? 'active',
     lastActivityAt: row.last_activity_at,
     healthScore: row.health_score,
@@ -71,7 +72,6 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       updated_at=excluded.updated_at`,
     [
@@ -104,7 +104,6 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       address_street=excluded.address_street, address_city=excluded.address_city,
       address_country=excluded.address_country, website=excluded.website,
       reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-      arr=excluded.arr,
       status=excluded.status, synced_at=excluded.synced_at,
       last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
       updated_at=excluded.updated_at
@@ -293,7 +292,6 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
         address_street=excluded.address_street, address_city=excluded.address_city,
         address_country=excluded.address_country, website=excluded.website,
         reseller_id=excluded.reseller_id, bcn=excluded.bcn,
-        arr=excluded.arr,
         status=excluded.status, synced_at=excluded.synced_at,
         last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
         updated_at=excluded.updated_at
@@ -301,6 +299,54 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
       values,
     );
     changed += result.rowsAffected;
+  }
+  return changed;
+}
+
+export interface ArrUpdate {
+  bcn: string;
+  arr: number;
+  currency: string | null;
+}
+
+/** Updates arr + arr_currency on matching customer rows keyed by BCN. Returns rows changed. */
+export async function bulkUpdateCustomerArrByBcn(entries: ArrUpdate[]): Promise<number> {
+  if (entries.length === 0) return 0;
+  const db = await getDb();
+  const now = new Date().toISOString();
+  let changed = 0;
+  const CHUNK = 200;
+  for (let i = 0; i < entries.length; i += CHUNK) {
+    const chunk = entries.slice(i, i + CHUNK);
+    for (const e of chunk) {
+      const result = await db.execute(
+        `UPDATE customers
+         SET arr = $1, arr_currency = $2, updated_at = $3
+         WHERE bcn = $4`,
+        [e.arr, e.currency, now, e.bcn],
+      );
+      changed += result.rowsAffected;
+    }
+  }
+  return changed;
+}
+
+/** Clears arr + arr_currency for any customer whose BCN is not in the provided set. Returns rows changed. */
+export async function clearStaleCustomerArr(freshBcns: Set<string>): Promise<number> {
+  const db = await getDb();
+  const rows = await db.select<{ bcn: string }[]>(
+    `SELECT bcn FROM customers WHERE arr IS NOT NULL AND bcn IS NOT NULL`,
+  );
+  const now = new Date().toISOString();
+  let changed = 0;
+  for (const { bcn } of rows) {
+    if (!freshBcns.has(bcn)) {
+      const result = await db.execute(
+        `UPDATE customers SET arr = NULL, arr_currency = NULL, updated_at = $1 WHERE bcn = $2`,
+        [now, bcn],
+      );
+      changed += result.rowsAffected;
+    }
   }
   return changed;
 }

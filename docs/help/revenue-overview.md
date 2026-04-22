@@ -11,7 +11,7 @@ The page displays a table with the following information per customer:
 - **Phone** and **Email** — Quick contact details
 - **Cloud Customer** — Whether the customer is a cloud customer (Yes/No)
 - **Language** — The customer's preferred language
-- **ARR** — The Annual Recurring Revenue amount (in EUR)
+- **ARR** — The Annual Recurring Revenue amount, shown in the customer's currency. Pulled from the Power BI dashboard on every sync.
 
 ## Searching and Filtering
 

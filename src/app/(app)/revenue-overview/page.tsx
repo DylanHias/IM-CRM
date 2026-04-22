@@ -28,9 +28,14 @@ import type { Customer, Contact } from '@/types/entities';
 
 type SortField = 'name' | 'cloudCustomer' | 'arr';
 
-function formatArr(value: number | null): string {
+function formatArr(value: number | null, currency: string | null): string {
   if (value === null) return '—';
-  return `€ ${value.toLocaleString('nl-BE')}`;
+  const cur = currency ?? 'USD';
+  try {
+    return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(value);
+  } catch {
+    return `${cur} ${value.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`;
+  }
 }
 
 function getDisplayContact(customerId: string, contacts: Contact[]): Contact | undefined {
@@ -107,7 +112,7 @@ function renderArrCell(customer: Customer, columnId: string, contacts: Contact[]
         <span className="text-muted-foreground">—</span>
       );
     case 'arr':
-      return <span className="font-semibold tabular-nums">{formatArr(customer.arr)}</span>;
+      return <span className="font-semibold tabular-nums">{formatArr(customer.arr, customer.arrCurrency)}</span>;
     default:
       return null;
   }
@@ -260,7 +265,8 @@ export default function RevenueOverviewPage() {
           Phone: getPhone(c, allContacts),
           Email: getEmail(c, allContacts),
           'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-          'ARR (€)': c.arr ?? '',
+          ARR: c.arr ?? '',
+          Currency: c.arrCurrency ?? '',
         }));
 
         const payload = JSON.stringify({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });

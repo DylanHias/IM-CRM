@@ -383,7 +383,7 @@ async fn export_revenue_overview(
         let mut stmt = conn
             .prepare(
                 "SELECT
-                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr,
+                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr, c.arr_currency,
                     c.address_country, c.address_city,
                     con.first_name, con.last_name, con.phone, con.mobile, con.email
                  FROM customers c
@@ -404,6 +404,7 @@ async fn export_revenue_overview(
             email: String,
             cloud: Option<i64>,
             arr: Option<f64>,
+            currency: Option<String>,
             country: Option<String>,
             city: Option<String>,
         }
@@ -417,13 +418,14 @@ async fn export_revenue_overview(
                 let cust_email: Option<String> = r.get(3)?;
                 let cloud: Option<i64> = r.get(4)?;
                 let arr: Option<f64> = r.get(5)?;
-                let country: Option<String> = r.get(6)?;
-                let city: Option<String> = r.get(7)?;
-                let con_first: Option<String> = r.get(8)?;
-                let con_last: Option<String> = r.get(9)?;
-                let con_phone: Option<String> = r.get(10)?;
-                let con_mobile: Option<String> = r.get(11)?;
-                let con_email: Option<String> = r.get(12)?;
+                let currency: Option<String> = r.get(6)?;
+                let country: Option<String> = r.get(7)?;
+                let city: Option<String> = r.get(8)?;
+                let con_first: Option<String> = r.get(9)?;
+                let con_last: Option<String> = r.get(10)?;
+                let con_phone: Option<String> = r.get(11)?;
+                let con_mobile: Option<String> = r.get(12)?;
+                let con_email: Option<String> = r.get(13)?;
 
                 let contact_name = match (&con_first, &con_last) {
                     (Some(f), Some(l)) => format!("{} {}", f, l),
@@ -435,7 +437,7 @@ async fn export_revenue_overview(
                     .unwrap_or_else(|| "—".to_string());
                 let email = con_email.or(cust_email).unwrap_or_else(|| "—".to_string());
 
-                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, country, city })
+                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, currency, country, city })
             })
             .map_err(|e| e.to_string())?
             .collect::<Result<Vec<_>, _>>()
@@ -510,7 +512,8 @@ async fn export_revenue_overview(
             "Phone",
             "Email",
             "Cloud Customer",
-            "ARR (€)",
+            "ARR",
+            "Currency",
         ];
         for (col, h) in headers.iter().enumerate() {
             sheet
@@ -525,13 +528,15 @@ async fn export_revenue_overview(
                 _ => "",
             };
             let arr_str = row.arr.map(|v| v.to_string()).unwrap_or_default();
-            let cells: [&str; 6] = [
+            let currency_str = row.currency.clone().unwrap_or_default();
+            let cells: [&str; 7] = [
                 &row.name,
                 &row.contact_name,
                 &row.phone,
                 &row.email,
                 cloud_str,
                 &arr_str,
+                &currency_str,
             ];
             for (col, val) in cells.iter().enumerate() {
                 sheet
