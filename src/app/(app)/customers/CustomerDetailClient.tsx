@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
@@ -792,15 +793,19 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label>Contact</Label>
-                        <Select value={newActContactId} onValueChange={setNewActContactId}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No contact</SelectItem>
-                            {contacts.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Combobox
+                          value={newActContactId}
+                          onValueChange={setNewActContactId}
+                          searchPlaceholder="Search contacts..."
+                          emptyText="No contacts found."
+                          options={[
+                            { value: 'none', label: 'No contact' },
+                            ...contacts.map((c) => ({
+                              value: c.id,
+                              label: `${c.firstName} ${c.lastName}`,
+                            })),
+                          ]}
+                        />
                       </div>
                     </div>
                     <div className="flex gap-3 pt-1">
