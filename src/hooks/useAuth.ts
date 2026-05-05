@@ -96,10 +96,10 @@ async function syncUserToDb(
 ): Promise<void> {
   if (!isTauriApp() || !account.localAccountId) return;
   try {
-    const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
+    const { upsertUser, isUserAdmin, isHardcodedAdmin } = await import('@/lib/db/queries/users');
     const now = new Date().toISOString();
     const email = account.username ?? '';
-    const role = email.toLowerCase() === 'dylan.hias@ingrammicro.com' ? 'admin' : 'user';
+    const role = isHardcodedAdmin(email) ? 'admin' : 'user';
     await upsertUser({
       id: account.localAccountId,
       email,

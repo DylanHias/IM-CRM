@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, BarChart3, HardDrive, TerminalSquare } from 'lucide-react';
+import { Users, BarChart3, HardDrive, TerminalSquare, PieChart } from 'lucide-react';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AnalyticsReports } from '@/components/admin/AnalyticsReports';
 import { DataManagement } from '@/components/admin/DataManagement';
 import { DatabaseExplorer } from '@/components/admin/DatabaseExplorer';
+import { PowerBiSchemaViewer } from '@/components/admin/PowerBiSchemaViewer';
 import { SubSidebar } from '@/components/layout/SubSidebar';
 import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'data', label: 'Data', icon: HardDrive },
   { id: 'database', label: 'Database', icon: TerminalSquare },
+  { id: 'powerbi', label: 'PowerBI', icon: PieChart },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -34,6 +36,7 @@ export default function AdminPage() {
               {activeTab === 'analytics' && <AnalyticsReports />}
               {activeTab === 'data' && <DataManagement />}
               {activeTab === 'database' && <DatabaseExplorer />}
+              {activeTab === 'powerbi' && <PowerBiSchemaViewer />}
             </AnimatedTabPanels>
           </div>
         </div>

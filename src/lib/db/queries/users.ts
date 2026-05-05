@@ -44,7 +44,11 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
   );
 }
 
-const HARDCODED_ADMIN_EMAILS = ['dylan.hias@ingrammicro.com'];
+export const HARDCODED_ADMIN_EMAILS = ['dylan.hias@ingrammicro.com', 'karim.elouch@ingrammicro.com'];
+
+export function isHardcodedAdmin(email: string): boolean {
+  return HARDCODED_ADMIN_EMAILS.includes(email.toLowerCase());
+}
 
 export async function isUserAdmin(id: string): Promise<boolean> {
   const db = await getDb();
@@ -53,7 +57,7 @@ export async function isUserAdmin(id: string): Promise<boolean> {
     [id]
   );
   if (!rows[0]) return false;
-  if (HARDCODED_ADMIN_EMAILS.includes(rows[0].email.toLowerCase())) return true;
+  if (isHardcodedAdmin(rows[0].email)) return true;
   return rows[0].role === 'admin';
 }
 

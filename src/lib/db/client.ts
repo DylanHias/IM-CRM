@@ -712,5 +712,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       `UPDATE app_settings SET value = '28', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
+
+  if (currentVersion < 29) {
+    await db.execute(
+      `UPDATE users SET role = 'admin', updated_at = datetime('now') WHERE LOWER(email) = 'karim.elouch@ingrammicro.com' AND role != 'admin'`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '29', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
 }
 

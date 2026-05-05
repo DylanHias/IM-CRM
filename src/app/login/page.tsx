@@ -197,10 +197,10 @@ export default function LoginPage() {
         // Sync user to DB and check admin status
         if (isTauriApp() && result.account.localAccountId) {
           try {
-            const { upsertUser, isUserAdmin } = await import('@/lib/db/queries/users');
+            const { upsertUser, isUserAdmin, isHardcodedAdmin } = await import('@/lib/db/queries/users');
             const now = new Date().toISOString();
             const email = result.account.username ?? '';
-            const role = email.toLowerCase() === 'dylan.hias@ingrammicro.com' ? 'admin' : 'user';
+            const role = isHardcodedAdmin(email) ? 'admin' : 'user';
             await upsertUser({
               id: result.account.localAccountId,
               email,
