@@ -36,6 +36,20 @@ interface IdTokenClaims {
   email?: string;
 }
 
+export class ConsentRequiredError extends Error {
+  readonly scopes: string[];
+  constructor(scopes: string[], cause: unknown) {
+    super(`Consent required for scopes: ${scopes.join(' ')}`);
+    this.name = 'ConsentRequiredError';
+    this.scopes = scopes;
+    if (cause instanceof Error) this.stack = cause.stack;
+  }
+}
+
+export function buildAdminConsentUrl(): string {
+  return `https://login.microsoftonline.com/${TENANT_ID}/adminconsent?client_id=${encodeURIComponent(CLIENT_ID)}`;
+}
+
 async function generatePkce(): Promise<{ verifier: string; challenge: string }> {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -152,13 +166,16 @@ export async function refreshAccessToken(scopes: string[]): Promise<{ accessToke
     await persistAccount(account);
     return { accessToken: tokens.access_token, account };
   } catch (err) {
-    console.error('[auth] Refresh token exchange failed:', err);
-    // Keep refresh token if the failure is consent_required — the token is still valid
-    // for already-consented resources; the caller can trigger an interactive re-consent.
     const message = err instanceof Error ? err.message : String(err);
-    if (!/consent_required/i.test(message)) {
-      storedRefreshToken = null;
+    // Tenant requires admin consent for these scopes. Refresh token is still valid for
+    // other resources, so keep it. Throw a typed error so callers don't fall back to
+    // interactive sign-in (which can't fix this — only an Azure AD admin can).
+    if (/consent_required|AADSTS65001/i.test(message)) {
+      console.error('[auth] Refresh token exchange failed (admin consent required):', message);
+      throw new ConsentRequiredError(scopes, err);
     }
+    console.error('[auth] Refresh token exchange failed:', err);
+    storedRefreshToken = null;
     return null;
   }
 }

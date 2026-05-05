@@ -3,6 +3,7 @@ import { fetchD365TeamUserIds } from './d365UserAdapter';
 import { fetchArrByBcn } from '@/lib/integrations/powerbi/arrAdapter';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
+import { useAuthStore } from '@/store/authStore';
 import { bulkUpsertCustomers, bulkUpdateCustomerArrByBcn, clearStaleCustomerArr, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
@@ -284,8 +285,13 @@ export async function syncPowerBiArr(): Promise<void> {
   try {
     const token = await getAccessToken(powerBiRequest.scopes);
     if (!token) {
-      console.warn('[sync] PowerBI ARR skipped: no token');
-      await updateSyncRecord(recordId, 'error', 0, 0, 'No PowerBI access token — sign in again to grant access');
+      const consentScopes = useAuthStore.getState().consentRequiredScopes;
+      const needsAdminConsent = consentScopes?.some((s) => s.includes('powerbi')) ?? false;
+      const message = needsAdminConsent
+        ? 'Power BI access requires Azure AD admin approval — ask your IT admin to grant consent for the IM-CRM Desktop app'
+        : 'No Power BI access token — sign in again to grant access';
+      console.warn(`[sync] PowerBI ARR skipped: ${message}`);
+      await updateSyncRecord(recordId, 'error', 0, 0, message);
       return;
     }
 

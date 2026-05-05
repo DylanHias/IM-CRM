@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock, ShieldAlert, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useSync } from '@/hooks/useSync';
 import { useSyncStore } from '@/store/syncStore';
+import { useAuthStore } from '@/store/authStore';
+import { buildAdminConsentUrl } from '@/lib/auth/tauriAuth';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
 import type { SyncRecord } from '@/types/sync';
@@ -48,9 +50,13 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
   } = useSync();
 
   const hasPending = pendingActivityCount > 0 || pendingFollowUpCount > 0;
+  const consentRequiredScopes = useAuthStore((s) => s.consentRequiredScopes);
+  const powerBiConsentRequired = consentRequiredScopes?.some((s) => s.includes('powerbi')) ?? false;
 
   return (
     <div className="space-y-5">
+      {powerBiConsentRequired && <PowerBiConsentBanner />}
+
       {/* Status overview */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card border rounded-lg p-4">
@@ -104,6 +110,43 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
       {records.length > 0 && (
         <SyncHistory records={records} />
       )}
+    </div>
+  );
+}
+
+function PowerBiConsentBanner() {
+  const [copied, setCopied] = useState(false);
+  const url = buildAdminConsentUrl();
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('[sync] Failed to copy admin consent URL:', err);
+    }
+  };
+
+  return (
+    <div className="border border-warning/40 bg-warning/10 rounded-lg p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">Power BI access needs admin approval</p>
+          <p className="text-xs text-muted-foreground">
+            Your Azure AD tenant requires an admin to grant consent before this app can read Power BI datasets.
+            ARR sync will stay paused until consent is granted. Forward the URL below to your IT or Azure admin.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 bg-background border rounded px-3 py-2">
+        <code className="text-xs text-muted-foreground flex-1 truncate select-all">{url}</code>
+        <Button size="sm" variant="ghost" onClick={copy} className="h-7 gap-1.5 shrink-0">
+          {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
     </div>
   );
 }

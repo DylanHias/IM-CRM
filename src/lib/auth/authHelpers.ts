@@ -35,10 +35,24 @@ export async function getAccessToken(scopes: string[]): Promise<string | null> {
 }
 
 async function getTauriAccessToken(scopes: string[]): Promise<string | null> {
-  const { refreshAccessToken } = await import('./tauriAuth');
-  const result = await refreshAccessToken(scopes);
+  const { refreshAccessToken, ConsentRequiredError } = await import('./tauriAuth');
+  let result: Awaited<ReturnType<typeof refreshAccessToken>> = null;
+  try {
+    result = await refreshAccessToken(scopes);
+  } catch (err) {
+    if (err instanceof ConsentRequiredError) {
+      // Admin consent required — interactive sign-in won't fix this. Surface state to UI
+      // and skip the popup loop. The user (or admin) must grant consent in Azure first.
+      useAuthStore.getState().setConsentRequired(err.scopes);
+      return null;
+    }
+    throw err;
+  }
   if (result) {
     useAuthStore.getState().setAccount(result.account, result.accessToken);
+    if (useAuthStore.getState().consentRequiredScopes) {
+      useAuthStore.getState().setConsentRequired(null);
+    }
     return result.accessToken;
   }
   // Refresh token expired — need full re-auth
@@ -47,10 +61,19 @@ async function getTauriAccessToken(scopes: string[]): Promise<string | null> {
     const signInResult = await tauriSignIn();
     if (signInResult) {
       // tauriSignIn returns a Graph-scoped token; exchange refresh token for the requested scope
-      const scopedResult = await refreshAccessToken(scopes);
-      if (scopedResult) {
-        useAuthStore.getState().setAccount(scopedResult.account, scopedResult.accessToken);
-        return scopedResult.accessToken;
+      try {
+        const scopedResult = await refreshAccessToken(scopes);
+        if (scopedResult) {
+          useAuthStore.getState().setAccount(scopedResult.account, scopedResult.accessToken);
+          return scopedResult.accessToken;
+        }
+      } catch (err) {
+        if (err instanceof ConsentRequiredError) {
+          useAuthStore.getState().setAccount(signInResult.account, signInResult.accessToken);
+          useAuthStore.getState().setConsentRequired(err.scopes);
+          return null;
+        }
+        throw err;
       }
       useAuthStore.getState().setAccount(signInResult.account, signInResult.accessToken);
       return signInResult.accessToken;
@@ -73,14 +96,22 @@ export function getActiveAccount(): AccountInfo | null {
 export async function restoreSession(): Promise<boolean> {
   if (!isTauriApp()) return false;
 
-  const { loadPersistedSession, refreshAccessToken } = await import('./tauriAuth');
+  const { loadPersistedSession, refreshAccessToken, ConsentRequiredError } = await import('./tauriAuth');
   const session = await loadPersistedSession();
   if (!session) return false;
 
-  const result = await refreshAccessToken(['User.Read', 'openid', 'profile']);
-  if (result) {
-    useAuthStore.getState().setAccount(result.account, result.accessToken);
-    return true;
+  try {
+    const result = await refreshAccessToken(['User.Read', 'openid', 'profile']);
+    if (result) {
+      useAuthStore.getState().setAccount(result.account, result.accessToken);
+      return true;
+    }
+  } catch (err) {
+    if (err instanceof ConsentRequiredError) {
+      console.error('[auth] Restore failed: admin consent required for Graph scopes');
+      return false;
+    }
+    throw err;
   }
   return false;
 }

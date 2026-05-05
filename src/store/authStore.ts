@@ -8,11 +8,13 @@ interface AuthState {
   isLoading: boolean;
   isAdmin: boolean;
   profilePhoto: string | null;
+  consentRequiredScopes: string[] | null;
   setAccount: (account: AccountInfo, accessToken: string) => void;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
   setIsAdmin: (isAdmin: boolean) => void;
   setProfilePhoto: (photo: string | null) => void;
+  setConsentRequired: (scopes: string[] | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -22,11 +24,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   isAdmin: false,
   profilePhoto: null,
+  consentRequiredScopes: null,
   setAccount: (account, accessToken) =>
     set({ account, accessToken, isAuthenticated: true, isLoading: false }),
   clearAuth: () =>
-    set({ account: null, accessToken: null, isAuthenticated: false, isLoading: false, isAdmin: false, profilePhoto: null }),
+    set({ account: null, accessToken: null, isAuthenticated: false, isLoading: false, isAdmin: false, profilePhoto: null, consentRequiredScopes: null }),
   setLoading: (isLoading) => set({ isLoading }),
   setIsAdmin: (isAdmin) => set({ isAdmin }),
   setProfilePhoto: (profilePhoto) => set({ profilePhoto }),
+  setConsentRequired: (consentRequiredScopes) => set({ consentRequiredScopes }),
 }));
