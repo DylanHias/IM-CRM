@@ -150,7 +150,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS sync_records (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','push_activities','push_followups')),
+      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','powerbi_arr','push_activities','push_followups','push_opportunities')),
       status         TEXT NOT NULL CHECK(status IN ('running','success','partial','error')),
       started_at     TEXT NOT NULL,
       finished_at    TEXT,
@@ -298,7 +298,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '27')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '28')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -683,6 +683,33 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_customers_bcn ON customers(bcn)`);
     await db.execute(
       `UPDATE app_settings SET value = '27', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 28) {
+    // Widen sync_records.sync_type CHECK constraint to include powerbi_arr and push_opportunities.
+    // SQLite cannot ALTER a CHECK, so rebuild the table preserving existing rows.
+    await db.execute(`
+      CREATE TABLE sync_records_v28 (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','powerbi_arr','push_activities','push_followups','push_opportunities')),
+        status         TEXT NOT NULL CHECK(status IN ('running','success','partial','error')),
+        started_at     TEXT NOT NULL,
+        finished_at    TEXT,
+        records_pulled INTEGER DEFAULT 0,
+        records_pushed INTEGER DEFAULT 0,
+        error_message  TEXT,
+        created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    await db.execute(`
+      INSERT INTO sync_records_v28 (id, sync_type, status, started_at, finished_at, records_pulled, records_pushed, error_message, created_at)
+      SELECT id, sync_type, status, started_at, finished_at, records_pulled, records_pushed, error_message, created_at FROM sync_records
+    `);
+    await db.execute(`DROP TABLE sync_records`);
+    await db.execute(`ALTER TABLE sync_records_v28 RENAME TO sync_records`);
+    await db.execute(
+      `UPDATE app_settings SET value = '28', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

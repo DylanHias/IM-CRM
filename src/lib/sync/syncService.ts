@@ -277,10 +277,15 @@ async function syncD365(token: string): Promise<void> {
 
 export async function syncPowerBiArr(): Promise<void> {
   const store = useSyncStore.getState();
+  const startedAt = new Date().toISOString();
+  const recordId = await insertSyncRecord('powerbi_arr', 'running', startedAt);
+  let updated = 0;
+
   try {
     const token = await getAccessToken(powerBiRequest.scopes);
     if (!token) {
       console.warn('[sync] PowerBI ARR skipped: no token');
+      await updateSyncRecord(recordId, 'error', 0, 0, 'No PowerBI access token — sign in again to grant access');
       return;
     }
 
@@ -289,19 +294,28 @@ export async function syncPowerBiArr(): Promise<void> {
     console.timeEnd('[sync] fetch:powerbi-arr');
     console.log(`[sync] PowerBI ARR: ${entries.length} rows fetched`);
 
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+      await updateSyncRecord(recordId, 'success', 0, 0, null);
+      return;
+    }
 
-    const updated = await bulkUpdateCustomerArrByBcn(entries);
+    updated = await bulkUpdateCustomerArrByBcn(entries);
     const freshBcns = new Set(entries.map((e) => e.bcn));
     const cleared = await clearStaleCustomerArr(freshBcns);
 
     const now = new Date().toISOString();
     await setAppSetting('last_powerbi_arr_sync', now);
     console.log(`[sync] PowerBI ARR: ${updated} customers updated, ${cleared} cleared`);
+    await updateSyncRecord(recordId, 'success', updated, 0, null);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'PowerBI ARR sync failed';
     console.error(`[sync] PowerBI ARR error: ${message}`, err);
-    store.addSyncError({ id: uuidv4(), syncType: 'd365', message: `ARR: ${message}`, occurredAt: new Date().toISOString() });
+    try {
+      await updateSyncRecord(recordId, 'error', updated, 0, message);
+    } catch (recordErr) {
+      console.error('[sync] Failed to update sync record after PowerBI error:', recordErr instanceof Error ? recordErr.message : recordErr);
+    }
+    store.addSyncError({ id: uuidv4(), syncType: 'powerbi_arr', message: `ARR: ${message}`, occurredAt: new Date().toISOString() });
   }
 }
 

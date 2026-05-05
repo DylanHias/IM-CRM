@@ -1,12 +1,19 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-shell';
-import { loginRequest } from './msalConfig';
+import { loginRequest, powerBiRequest } from './msalConfig';
 import type { AccountInfo } from '@azure/msal-browser';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_AZURE_CLIENT_ID ?? '';
 const TENANT_ID = process.env.NEXT_PUBLIC_AZURE_TENANT_ID ?? 'common';
 const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
+
+// Resources the user is asked to consent to at sign-in. AAD v2 allows multi-resource
+// consent at /authorize, but /token must be single-resource — so we exchange the code
+// for a Graph token and rely on the refresh token to fetch other resources later.
+const CONSENT_RESOURCE_SCOPES = [
+  ...powerBiRequest.scopes,
+];
 
 const REFRESH_TOKEN_KEY = 'auth.refresh_token';
 const ACCOUNT_KEY = 'auth.account';
@@ -146,7 +153,12 @@ export async function refreshAccessToken(scopes: string[]): Promise<{ accessToke
     return { accessToken: tokens.access_token, account };
   } catch (err) {
     console.error('[auth] Refresh token exchange failed:', err);
-    storedRefreshToken = null;
+    // Keep refresh token if the failure is consent_required — the token is still valid
+    // for already-consented resources; the caller can trigger an interactive re-consent.
+    const message = err instanceof Error ? err.message : String(err);
+    if (!/consent_required/i.test(message)) {
+      storedRefreshToken = null;
+    }
     return null;
   }
 }
@@ -156,7 +168,8 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
   const redirectUri = `http://localhost:${port}`;
   const { verifier, challenge } = await generatePkce();
 
-  const scopes = `${loginRequest.scopes.join(' ')} offline_access`;
+  const tokenScopes = `${loginRequest.scopes.join(' ')} offline_access`;
+  const consentScopes = `${tokenScopes} ${CONSENT_RESOURCE_SCOPES.join(' ')}`.trim();
   const state = crypto.randomUUID();
   const authUrl = [
     `${AUTHORITY}/oauth2/v2.0/authorize`,
@@ -164,7 +177,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
     `&response_type=code`,
     `&redirect_uri=${encodeURIComponent(redirectUri)}`,
     `&response_mode=query`,
-    `&scope=${encodeURIComponent(scopes)}`,
+    `&scope=${encodeURIComponent(consentScopes)}`,
     `&state=${state}`,
     `&code_challenge=${encodeURIComponent(challenge)}`,
     `&code_challenge_method=S256`,
@@ -205,7 +218,7 @@ export async function tauriSignIn(): Promise<{ account: AccountInfo; accessToken
             codeVerifier: verifier,
             clientId: CLIENT_ID,
             tenantId: TENANT_ID,
-            scopes,
+            scopes: tokenScopes,
           });
 
           const claims = parseIdToken(tokens.id_token);

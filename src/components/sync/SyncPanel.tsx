@@ -22,8 +22,10 @@ const STATUS_CONFIG = {
 
 const SYNC_TYPE_LABELS: Record<string, string> = {
   d365: 'Dynamics 365',
+  powerbi_arr: 'Power BI ARR',
   push_activities: 'Push Activities',
   push_followups: 'Push Follow-Ups',
+  push_opportunities: 'Push Opportunities',
 };
 
 const ACTIVITY_TYPE_LABELS: Record<string, string> = {
