@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-start">
         {/* Column 1: Belgium map */}
         <motion.div {...sectionReveal(0)}>
           <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />

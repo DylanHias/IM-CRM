@@ -15,8 +15,7 @@
         { "url": "https://login.microsoftonline.com/*" },
         { "url": "https://login.microsoft.com/*" },
         { "url": "https://graph.microsoft.com/*" },
-        { "url": "https://*.crm4.dynamics.com/*" },
-        { "url": "http://localhost:11434/*" }
+        { "url": "https://*.crm4.dynamics.com/*" }
       ]
     },
     "updater:default",
@@ -33,13 +32,6 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-    "shell:allow-open",
-    "shell:allow-kill",
-    {
-      "identifier": "shell:allow-spawn",
-      "allow": [
-        { "name": "binaries/ollama", "sidecar": true, "args": true }
-      ]
-    }
+    "shell:allow-open"
   ]
 }

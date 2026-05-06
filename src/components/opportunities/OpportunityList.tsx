@@ -217,7 +217,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
           <OpportunityWizard
             customer={customer}
             contacts={contacts}
@@ -228,7 +228,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
           {editing && (
             <OpportunityWizard
               opportunity={editing}

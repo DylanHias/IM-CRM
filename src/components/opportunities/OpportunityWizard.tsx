@@ -216,7 +216,7 @@ export function OpportunityWizard({
   const opportunityTypeOptions = isMs ? OPP_TYPES_AZURE : (isAws ? ['Trad', 'Services', 'SPA', 'CMP'] : OPP_TYPES_AZURE);
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh]">
+    <div className="flex flex-col w-full min-w-0 max-h-[85vh] overflow-hidden">
       {/* Header — title + status pills */}
       <div className="px-6 py-4 border-b">
         <div className="flex items-start justify-between gap-4">
@@ -264,7 +264,7 @@ export function OpportunityWizard({
       </div>
 
       {/* Body — scrollable */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+      <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-5 space-y-6">
         {/* Section: Basics */}
         <Section title="Basics" subtitle="Core details about this opportunity">
           <div className="grid grid-cols-2 gap-4">

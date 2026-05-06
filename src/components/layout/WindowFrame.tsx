@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Minus, Square, X, Copy } from 'lucide-react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { stopOllamaServe } from '@/lib/ai/ollamaService';
 import styled from 'styled-components';
 
 const Bar = styled.div`
@@ -112,23 +111,6 @@ function useWindowControls() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isTauriApp()) return;
-    let unlisten: (() => void) | undefined;
-
-    const setup = async () => {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      unlisten = await getCurrentWindow().onCloseRequested(async () => {
-        await stopOllamaServe();
-      });
-    };
-    setup();
-
-    return () => {
-      unlisten?.();
-    };
-  }, []);
-
   const minimize = async () => {
     if (!isTauriApp()) return;
     const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -144,7 +126,6 @@ function useWindowControls() {
 
   const close = async () => {
     if (!isTauriApp()) return;
-    await stopOllamaServe();
     const { getCurrentWindow } = await import('@tauri-apps/api/window');
     await getCurrentWindow().close();
   };

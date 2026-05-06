@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { useSettingsStore } from '@/store/settingsStore';
 import { storeChangelog } from '@/components/layout/ChangelogDialog';
-import { stopOllamaServe } from '@/lib/ai/ollamaService';
 
 interface AppUpdaterState {
   updateAvailable: boolean;
@@ -27,7 +26,6 @@ export function useAppUpdater(): AppUpdaterState {
         setDownloading(true);
         toast.info(`Updating to ${update.version}…`, { duration: 60000 });
         if (update.body) await storeChangelog(update.body, update.version);
-        await stopOllamaServe();
         await update.downloadAndInstall();
         const { relaunch } = await import('@tauri-apps/plugin-process');
         await relaunch();
@@ -66,7 +64,6 @@ export function useAppUpdater(): AppUpdaterState {
       if (update.body) {
         await storeChangelog(update.body, update.version);
       }
-      await stopOllamaServe();
       await update.downloadAndInstall();
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();

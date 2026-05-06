@@ -333,7 +333,7 @@ export default function OpportunitiesPage() {
       )}
 
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); }}>
-        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
           <OpportunityWizard
             customers={customers}
             contacts={contacts}
@@ -344,7 +344,7 @@ export default function OpportunitiesPage() {
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
-        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
           {editing && (
             <OpportunityWizard
               opportunity={editing}

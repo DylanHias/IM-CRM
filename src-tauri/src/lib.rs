@@ -6,8 +6,6 @@ use rust_xlsxwriter::{Format, Workbook, Worksheet};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 
@@ -135,126 +133,6 @@ async fn refresh_oauth_token(
         scope: body["scope"].as_str().unwrap_or_default().to_string(),
         token_type: body["token_type"].as_str().unwrap_or("Bearer").to_string(),
     })
-}
-
-// ─── Ollama process management ───────────────────────────────────────────────
-
-/// Force-kill all ollama.exe processes on Windows (including child processes).
-/// This is more reliable than killing the tracked sidecar child because ollama
-/// spawns runner sub-processes that outlive the parent kill signal.
-#[tauri::command]
-fn kill_ollama() {
-    #[cfg(target_os = "windows")]
-    {
-        let _ = std::process::Command::new("taskkill")
-            .args(["/F", "/IM", "ollama.exe", "/T"])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = std::process::Command::new("pkill").arg("-f").arg("ollama").output();
-    }
-}
-
-// ─── Ollama HTTP proxy ───────────────────────────────────────────────────────
-// Routes Ollama requests through Rust/reqwest to avoid Tauri HTTP plugin
-// resource management issues (invalid resource ID errors) on Windows.
-
-#[tauri::command]
-async fn ollama_request(path: String, body: Option<String>) -> Result<String, String> {
-    let url = format!("http://localhost:11434{}", path);
-    let client = reqwest::Client::new();
-
-    let res = if let Some(b) = body {
-        client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .body(b)
-            .send()
-            .await
-    } else {
-        client.get(&url).send().await
-    };
-
-    let res = res.map_err(|e| format!("ollama request failed: {e}"))?;
-
-    if !res.status().is_success() {
-        return Err(format!("ollama returned {}", res.status()));
-    }
-
-    res.text().await.map_err(|e| format!("ollama read failed: {e}"))
-}
-
-/// Stream an Ollama chat response token-by-token via a Tauri Channel.
-/// The channel is passed from JS, so there is no listener-registration race condition.
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase", tag = "event", content = "data")]
-enum OllamaChunkEvent {
-    Chunk { content: String },
-    Done,
-}
-
-#[tauri::command]
-async fn ollama_chat_stream(
-    model: String,
-    messages: serde_json::Value,
-    on_chunk: tauri::ipc::Channel<OllamaChunkEvent>,
-) -> Result<(), String> {
-    let client = reqwest::Client::new();
-    let mut res = client
-        .post("http://localhost:11434/api/chat")
-        .header("Content-Type", "application/json")
-        .json(&serde_json::json!({ "model": model, "messages": messages, "stream": true }))
-        .send()
-        .await
-        .map_err(|e| format!("ollama chat failed: {e}"))?;
-
-    if !res.status().is_success() {
-        return Err(format!("ollama returned {}", res.status()));
-    }
-
-    let mut buffer = String::new();
-
-    while let Some(chunk) = res.chunk().await.map_err(|e| format!("ollama read: {e}"))? {
-        buffer.push_str(&String::from_utf8_lossy(&chunk));
-
-        while let Some(nl) = buffer.find('\n') {
-            let line = buffer[..nl].trim().to_string();
-            buffer.drain(..=nl);
-
-            if line.is_empty() {
-                continue;
-            }
-
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
-                let content = json["message"]["content"]
-                    .as_str()
-                    .unwrap_or("")
-                    .to_string();
-                let done = json["done"].as_bool().unwrap_or(false);
-
-                if !content.is_empty() {
-                    on_chunk
-                        .send(OllamaChunkEvent::Chunk { content })
-                        .map_err(|e| format!("channel send failed: {e}"))?;
-                }
-
-                if done {
-                    on_chunk
-                        .send(OllamaChunkEvent::Done)
-                        .map_err(|e| format!("channel send failed: {e}"))?;
-                    return Ok(());
-                }
-            }
-        }
-    }
-
-    on_chunk
-        .send(OllamaChunkEvent::Done)
-        .map_err(|e| format!("channel send failed: {e}"))?;
-
-    Ok(())
 }
 
 // ─── Excel Export ────────────────────────────────────────────────────────────
@@ -611,9 +489,6 @@ pub fn run() {
             export_db_all,
             export_rows,
             export_revenue_overview,
-            kill_ollama,
-            ollama_request,
-            ollama_chat_stream,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
