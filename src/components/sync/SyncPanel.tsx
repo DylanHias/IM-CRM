@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock, ShieldAlert, Copy, Check } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock, ShieldAlert, Copy, Check, Mail, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -52,10 +52,15 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
   const hasPending = pendingActivityCount > 0 || pendingFollowUpCount > 0;
   const consentRequiredScopes = useAuthStore((s) => s.consentRequiredScopes);
   const powerBiConsentRequired = consentRequiredScopes?.some((s) => s.includes('powerbi')) ?? false;
+  const powerBiAccessDenied = useSyncStore((s) => s.powerBiAccessDenied);
+  const setPowerBiAccessDenied = useSyncStore((s) => s.setPowerBiAccessDenied);
 
   return (
     <div className="space-y-5">
       {powerBiConsentRequired && <PowerBiConsentBanner />}
+      {powerBiAccessDenied && !powerBiConsentRequired && (
+        <PowerBiAccessBanner onDismiss={() => setPowerBiAccessDenied(false)} />
+      )}
 
       {/* Status overview */}
       <div className="grid grid-cols-3 gap-3">
@@ -145,6 +150,50 @@ function PowerBiConsentBanner() {
         <Button size="sm" variant="ghost" onClick={copy} className="h-7 gap-1.5 shrink-0">
           {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
           {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function PowerBiAccessBanner({ onDismiss }: { onDismiss: () => void }) {
+  const datasetId =
+    process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
+  const subject = 'IM-CRM: Power BI dataset Build permission request';
+  const body =
+    `Hi,\n\nThe IM-CRM app needs Build permission on the Power BI dataset to read ARR data.` +
+    `\n\nDataset ID: ${datasetId}` +
+    `\nDataset name: Global Dashboard by CSM` +
+    `\n\nCould you share this dataset with our CRM users group with Build permission? In Power BI: open the dataset → Manage permissions → add the group with the "Build" checkbox enabled.` +
+    `\n\nThanks!`;
+  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  return (
+    <div className="border border-warning/40 bg-warning/10 rounded-lg p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" />
+        <div className="space-y-1 flex-1">
+          <p className="text-sm font-semibold text-foreground">Power BI ARR data is unavailable</p>
+          <p className="text-xs text-muted-foreground">
+            Your account doesn&apos;t have Build permission on the Power BI dataset. ARR sync is paused until the dataset
+            owner grants access. Use the button below to email a pre-written request — set the recipient to the dataset
+            owner (e.g. CO Dixit) or your IT admin.
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="text-muted-foreground hover:text-foreground shrink-0 -mt-1 -mr-1"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <div className="flex gap-2">
+        <Button asChild size="sm" className="gap-1.5">
+          <a href={mailto}>
+            <Mail size={13} />
+            Email request
+          </a>
         </Button>
       </div>
     </div>

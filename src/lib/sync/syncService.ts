@@ -279,6 +279,10 @@ async function syncD365(token: string): Promise<void> {
 
 export async function syncPowerBiArr(): Promise<void> {
   const store = useSyncStore.getState();
+  if (store.powerBiAccessDenied) {
+    console.log('[sync] PowerBI ARR skipped: access previously denied — use Sync page banner to request access');
+    return;
+  }
   const startedAt = new Date().toISOString();
   const recordId = await insertSyncRecord('powerbi_arr', 'running', startedAt);
   let updated = 0;
@@ -313,10 +317,12 @@ export async function syncPowerBiArr(): Promise<void> {
     const now = new Date().toISOString();
     await setAppSetting('last_powerbi_arr_sync', now);
     console.log(`[sync] PowerBI ARR: ${updated} customers updated, ${cleared} cleared`);
+    store.setPowerBiAccessDenied(false);
     await updateSyncRecord(recordId, 'success', updated, 0, null);
   } catch (err) {
     if (err instanceof PowerBiAccessError) {
       console.warn(`[sync] PowerBI ARR skipped: ${err.message}`);
+      store.setPowerBiAccessDenied(true);
       try {
         await updateSyncRecord(recordId, 'error', updated, 0, err.message);
       } catch (recordErr) {

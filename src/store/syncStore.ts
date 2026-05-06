@@ -11,6 +11,7 @@ interface SyncState {
   pendingActivityCount: number;
   pendingFollowUpCount: number;
   historyPage: number;
+  powerBiAccessDenied: boolean;
   initialSyncProgress: {
     phase: string;
     processed: number;
@@ -26,6 +27,7 @@ interface SyncState {
   setRecentRecords: (records: SyncRecord[]) => void;
   setPendingCounts: (activities: number, followUps: number) => void;
   setHistoryPage: (page: number) => void;
+  setPowerBiAccessDenied: (denied: boolean) => void;
 }
 
 export const useSyncStore = create<SyncState>()(
@@ -39,6 +41,7 @@ export const useSyncStore = create<SyncState>()(
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
       historyPage: 1,
+      powerBiAccessDenied: false,
       initialSyncProgress: null,
 
       setSyncing: (isSyncing) => set({ isSyncing }),
@@ -51,12 +54,14 @@ export const useSyncStore = create<SyncState>()(
       setPendingCounts: (activities, followUps) =>
         set({ pendingActivityCount: activities, pendingFollowUpCount: followUps }),
       setInitialSyncProgress: (initialSyncProgress) => set({ initialSyncProgress }),
+      setPowerBiAccessDenied: (powerBiAccessDenied) => set({ powerBiAccessDenied }),
     }),
     {
       name: 'crm-sync-store',
       partialize: (s) => ({
         lastD365SyncAt: s.lastD365SyncAt,
         callerD365UserId: s.callerD365UserId,
+        powerBiAccessDenied: s.powerBiAccessDenied,
       }),
     }
   )
