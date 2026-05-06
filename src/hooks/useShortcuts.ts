@@ -4,7 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { getAllShortcuts, isInputFocused } from '@/lib/shortcuts/shortcuts';
+import { getAllShortcuts, isInputFocused, isDialogOpen } from '@/lib/shortcuts/shortcuts';
 import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
 
 /**
@@ -57,6 +57,9 @@ export function useShortcuts() {
     const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
     const handler = (e: KeyboardEvent) => {
+      // Don't intercept while a dialog/modal is open — Radix handles Escape natively
+      if (isDialogOpen()) return;
+
       // Don't intercept when a modifier-less shortcut fires inside an input
       const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
 

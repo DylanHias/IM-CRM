@@ -153,6 +153,10 @@ function isInputFocused(): boolean {
   return false;
 }
 
+function isDialogOpen(): boolean {
+  return document.querySelector('[role="dialog"][data-state="open"]') !== null;
+}
+
 export {
   SHORTCUT_SECTIONS,
   getAllShortcuts,
@@ -160,6 +164,7 @@ export {
   getDefaultBinding,
   getDisplayKey,
   isInputFocused,
+  isDialogOpen,
   buildNavigationShortcuts,
   findConflict,
   normalizeBinding,

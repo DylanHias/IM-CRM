@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getAllShortcuts,
   getDisplayKey,
+  isDialogOpen,
   isInputFocused,
   SHORTCUT_SECTIONS,
 } from '../shortcuts';
@@ -99,6 +100,30 @@ describe('shortcuts', () => {
       div.focus();
       expect(isInputFocused()).toBe(false);
       document.body.removeChild(div);
+    });
+  });
+
+  describe('isDialogOpen', () => {
+    it('returns false when no dialog is mounted', () => {
+      expect(isDialogOpen()).toBe(false);
+    });
+
+    it('returns true when an open Radix dialog is in the DOM', () => {
+      const dialog = document.createElement('div');
+      dialog.setAttribute('role', 'dialog');
+      dialog.setAttribute('data-state', 'open');
+      document.body.appendChild(dialog);
+      expect(isDialogOpen()).toBe(true);
+      document.body.removeChild(dialog);
+    });
+
+    it('returns false when the dialog is closing', () => {
+      const dialog = document.createElement('div');
+      dialog.setAttribute('role', 'dialog');
+      dialog.setAttribute('data-state', 'closed');
+      document.body.appendChild(dialog);
+      expect(isDialogOpen()).toBe(false);
+      document.body.removeChild(dialog);
     });
   });
 
