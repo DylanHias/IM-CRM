@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
+import { stripHtml } from '@/lib/utils/htmlUtils';
 import type { TimelineEvent } from '@/types/entities';
 
 const ACTIVITY_CONFIG = {
@@ -58,7 +59,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete, customerName, on
                 <span className="font-medium">{event.subject}</span>
               </p>
               {event.description && (
-                <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{event.description}</p>
+                <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{stripHtml(event.description)}</p>
               )}
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1">
@@ -128,7 +129,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete, customerName, on
                 </Badge>
               </p>
               {event.description && (
-                <p className="text-[13px] text-muted-foreground mt-0.5">{event.description}</p>
+                <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{stripHtml(event.description)}</p>
               )}
               <p className="text-xs text-muted-foreground mt-1.5">
                 Due {formatDate(event.dueDate)} {event.createdByName && `\u00b7 ${formatDisplayName(event.createdByName)}`}

@@ -6,8 +6,9 @@ import { rowSlideIn } from '@/lib/motion';
 import { Plus, CheckSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FollowUpItem } from './FollowUpItem';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -49,7 +50,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
       await editFollowUp({
         ...editing,
         title: editTitle.trim(),
-        description: editDescription.trim() || null,
+        description: htmlIsEmpty(editDescription) ? null : editDescription,
         dueDate: editDueDate,
         updatedAt: new Date().toISOString(),
       });
@@ -139,7 +140,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
       )}
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Follow-Up</DialogTitle>
           </DialogHeader>
@@ -150,7 +151,11 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
             </div>
             <div className="space-y-1">
               <Label>Description</Label>
-              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
+              <RichTextEditor
+                value={editDescription}
+                onChange={setEditDescription}
+                editorClassName="min-h-[180px]"
+              />
             </div>
             <div className="space-y-1">
               <Label>Due Date *</Label>

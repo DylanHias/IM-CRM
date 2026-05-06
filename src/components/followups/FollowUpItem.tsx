@@ -4,6 +4,7 @@ import { CheckSquare, Square, Calendar, AlertCircle, Pencil, Trash2 } from 'luci
 import { Badge } from '@/components/ui/badge';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDueDate } from '@/lib/utils/dateUtils';
+import { stripHtml } from '@/lib/utils/htmlUtils';
 import type { FollowUp } from '@/types/entities';
 
 interface FollowUpItemProps {
@@ -48,7 +49,7 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
               {followUp.title}
             </p>
             {followUp.description && (
-              <p className="text-[13px] text-muted-foreground mt-0.5">{followUp.description}</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{stripHtml(followUp.description)}</p>
             )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>

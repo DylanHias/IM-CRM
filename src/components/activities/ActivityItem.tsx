@@ -7,6 +7,7 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
+import { stripHtml } from '@/lib/utils/htmlUtils';
 import type { Activity, ActivityStatus } from '@/types/entities';
 
 export const ACTIVITY_ICONS = {
@@ -97,7 +98,7 @@ export function ActivityItem({ activity, contactName, onEdit, onDelete, onStatus
             </div>
 
             {activity.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{stripHtml(activity.description)}</p>
             )}
 
             <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">

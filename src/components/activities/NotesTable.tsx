@@ -8,6 +8,7 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { formatDate } from '@/lib/utils/dateUtils';
+import { stripHtml } from '@/lib/utils/htmlUtils';
 import type { Activity, Contact } from '@/types/entities';
 
 interface NotesTableProps {
@@ -77,7 +78,7 @@ export function NotesTable({ notes, contacts, onEdit, onDelete }: NotesTableProp
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground">
-                    <span className="line-clamp-1">{note.description ?? '—'}</span>
+                    <span className="line-clamp-1">{note.description ? stripHtml(note.description) : '—'}</span>
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
                     {formatDate(note.occurredAt)}

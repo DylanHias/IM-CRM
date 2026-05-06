@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { Plus, Inbox, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ActivityItem } from './ActivityItem';
@@ -86,7 +87,7 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
         ...editing,
         type: editType,
         subject: editSubject.trim(),
-        description: editDescription.trim() || null,
+        description: htmlIsEmpty(editDescription) ? null : editDescription,
         occurredAt: new Date(editOccurredAt).toISOString(),
         startTime: isAppt ? new Date(editStartTime).toISOString() : null,
         contactId: editContactId === 'none' ? null : editContactId,
@@ -184,7 +185,11 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
             </div>
             <div className="col-span-2 space-y-1">
               <Label>Description</Label>
-              <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={6} className="min-h-[160px] resize-y" />
+              <RichTextEditor
+                value={editDescription}
+                onChange={setEditDescription}
+                editorClassName="min-h-[200px]"
+              />
             </div>
             {(editType === 'meeting' || editType === 'visit') ? (
               <>

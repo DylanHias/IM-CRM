@@ -12,8 +12,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -26,6 +27,7 @@ import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useActivities } from '@/hooks/useActivities';
@@ -53,6 +55,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
 
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
   const [filteredActivityCount, setFilteredActivityCount] = useState<number | null>(null);
@@ -174,7 +177,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         ...editingActivity,
         type: editType,
         subject: editSubject.trim(),
-        description: editDescription.trim() || null,
+        description: htmlIsEmpty(editDescription) ? null : editDescription,
         occurredAt: new Date(editOccurredAt).toISOString(),
         startTime: isAppt ? new Date(editStartTime).toISOString() : null,
         contactId: editContactId === 'none' ? null : editContactId,
@@ -211,7 +214,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         contactId: newActContactId === 'none' ? null : newActContactId,
         type: actType,
         subject: newActSubject.trim(),
-        description: newActDescription.trim() || null,
+        description: htmlIsEmpty(newActDescription) ? null : newActDescription,
         occurredAt: new Date(newActDate).toISOString(),
         startTime: isAppt ? new Date(newActStartTime).toISOString() : null,
         activityStatus: 'open',
@@ -241,7 +244,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         customerId,
         activityId: null,
         title: newFuTitle.trim(),
-        description: newFuDescription.trim() || null,
+        description: htmlIsEmpty(newFuDescription) ? null : newFuDescription,
         dueDate: newFuDueDate,
       });
       setAddFollowUpOpen(false);
@@ -298,8 +301,10 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     { key: 'activities', label: 'Activities', icon: Clock, count: filteredActivityCount ?? activities.length },
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
-    { key: 'opportunities', label: 'Opportunities', icon: Target, disabled: true },
-  ], [activities.length, filteredActivityCount, contacts.length, followUps.length]);
+    ...(isAdmin
+      ? [{ key: 'opportunities' as ProfileTab, label: 'Opportunities', icon: Target, count: customerOpportunities.length }]
+      : []),
+  ], [activities.length, filteredActivityCount, contacts.length, followUps.length, isAdmin, customerOpportunities.length]);
 
 
   if (!customer) {
@@ -635,82 +640,90 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
               {/* Edit Activity Dialog */}
               <Dialog open={!!editingActivity} onOpenChange={(open) => !open && setEditingActivity(null)}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Edit Activity</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSaveActivity} className="space-y-4">
-                    <div className="space-y-1">
-                      <Label>Type</Label>
-                      <Select value={editType} onValueChange={(v) => {
-                        const newType = v as Activity['type'];
-                        const wasAppt = editType === 'meeting' || editType === 'visit';
-                        const isNowAppt = newType === 'meeting' || newType === 'visit';
-                        setEditType(newType);
-                        if (wasAppt !== isNowAppt) {
-                          const now = nowDatetimeLocal();
-                          setEditStartTime(now);
-                          setEditOccurredAt(isNowAppt ? addHoursLocal(now, 1) : todayISO());
-                        }
-                      }}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="meeting">Meeting</SelectItem>
-                          <SelectItem value="visit">Visit</SelectItem>
-                          <SelectItem value="call">Call</SelectItem>
-                          <SelectItem value="note">Note</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {editType === 'call' && (
-                      <div className="space-y-1">
-                        <Label>Direction</Label>
-                        <Select value={editDirection} onValueChange={(v) => setEditDirection(v as 'outgoing' | 'incoming')}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="outgoing">Outgoing</SelectItem>
-                            <SelectItem value="incoming">Incoming</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label>Subject *</Label>
-                      <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} required />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Description</Label>
-                      <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
-                    </div>
-                    {(editType === 'meeting' || editType === 'visit') ? (
-                      <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-4">
                         <div className="space-y-1">
-                          <Label>Start *</Label>
-                          <DateTimePicker value={editStartTime} onChange={handleEditStartChange} />
+                          <Label>Type</Label>
+                          <Select value={editType} onValueChange={(v) => {
+                            const newType = v as Activity['type'];
+                            const wasAppt = editType === 'meeting' || editType === 'visit';
+                            const isNowAppt = newType === 'meeting' || newType === 'visit';
+                            setEditType(newType);
+                            if (wasAppt !== isNowAppt) {
+                              const now = nowDatetimeLocal();
+                              setEditStartTime(now);
+                              setEditOccurredAt(isNowAppt ? addHoursLocal(now, 1) : todayISO());
+                            }
+                          }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="meeting">Meeting</SelectItem>
+                              <SelectItem value="visit">Visit</SelectItem>
+                              <SelectItem value="call">Call</SelectItem>
+                              <SelectItem value="note">Note</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
+                        {editType === 'call' && (
+                          <div className="space-y-1">
+                            <Label>Direction</Label>
+                            <Select value={editDirection} onValueChange={(v) => setEditDirection(v as 'outgoing' | 'incoming')}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="outgoing">Outgoing</SelectItem>
+                                <SelectItem value="incoming">Incoming</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {(editType === 'meeting' || editType === 'visit') ? (
+                          <>
+                            <div className="space-y-1">
+                              <Label>Start *</Label>
+                              <DateTimePicker value={editStartTime} onChange={handleEditStartChange} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>End *</Label>
+                              <DateTimePicker value={editOccurredAt} onChange={handleEditEndChange} minValue={editStartTime} />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-1">
+                            <Label>Date *</Label>
+                            <DatePicker value={editOccurredAt} onChange={setEditOccurredAt} maxDate={new Date()} />
+                          </div>
+                        )}
                         <div className="space-y-1">
-                          <Label>End *</Label>
-                          <DateTimePicker value={editOccurredAt} onChange={handleEditEndChange} minValue={editStartTime} />
+                          <Label>Contact</Label>
+                          <Select value={editContactId} onValueChange={setEditContactId}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No contact</SelectItem>
+                              {contacts.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </>
-                    ) : (
-                      <div className="space-y-1">
-                        <Label>Date *</Label>
-                        <DatePicker value={editOccurredAt} onChange={setEditOccurredAt} maxDate={new Date()} />
                       </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label>Contact</Label>
-                        <Select value={editContactId} onValueChange={setEditContactId}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No contact</SelectItem>
-                            {contacts.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-1">
+                          <Label>Subject *</Label>
+                          <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1 flex flex-col flex-1">
+                          <Label>Description</Label>
+                          <RichTextEditor
+                            value={editDescription}
+                            onChange={setEditDescription}
+                            editorClassName="min-h-[240px]"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-3 pt-1">
@@ -725,87 +738,95 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
               {/* Add Activity Dialog */}
               <Dialog open={addActivityOpen} onOpenChange={setAddActivityOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Add Activity</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleCreateActivity} className="space-y-4">
-                    <div className="space-y-1">
-                      <Label>Type</Label>
-                      <Select value={newActType ?? defaultActivityType} onValueChange={(v) => {
-                        const newType = v as Activity['type'];
-                        const prevType = newActType ?? defaultActivityType;
-                        const wasAppt = prevType === 'meeting' || prevType === 'visit';
-                        const isNowAppt = newType === 'meeting' || newType === 'visit';
-                        setNewActType(newType);
-                        if (wasAppt !== isNowAppt) {
-                          const now = nowDatetimeLocal();
-                          setNewActStartTime(now);
-                          setNewActDate(isNowAppt ? addHoursLocal(now, 1) : todayISO());
-                        }
-                      }}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="meeting">Meeting</SelectItem>
-                          <SelectItem value="visit">Visit</SelectItem>
-                          <SelectItem value="call">Call</SelectItem>
-                          <SelectItem value="note">Note</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {(newActType ?? defaultActivityType) === 'call' && (
-                      <div className="space-y-1">
-                        <Label>Direction</Label>
-                        <Select value={newActDirection} onValueChange={(v) => setNewActDirection(v as 'outgoing' | 'incoming')}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="outgoing">Outgoing</SelectItem>
-                            <SelectItem value="incoming">Incoming</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label>Subject *</Label>
-                      <Input value={newActSubject} onChange={(e) => setNewActSubject(e.target.value)} required />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Description</Label>
-                      <Textarea value={newActDescription} onChange={(e) => setNewActDescription(e.target.value)} rows={3} />
-                    </div>
-                    {((newActType ?? defaultActivityType) === 'meeting' || (newActType ?? defaultActivityType) === 'visit') ? (
-                      <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-4">
                         <div className="space-y-1">
-                          <Label>Start *</Label>
-                          <DateTimePicker value={newActStartTime} onChange={handleNewActStartChange} />
+                          <Label>Type</Label>
+                          <Select value={newActType ?? defaultActivityType} onValueChange={(v) => {
+                            const newType = v as Activity['type'];
+                            const prevType = newActType ?? defaultActivityType;
+                            const wasAppt = prevType === 'meeting' || prevType === 'visit';
+                            const isNowAppt = newType === 'meeting' || newType === 'visit';
+                            setNewActType(newType);
+                            if (wasAppt !== isNowAppt) {
+                              const now = nowDatetimeLocal();
+                              setNewActStartTime(now);
+                              setNewActDate(isNowAppt ? addHoursLocal(now, 1) : todayISO());
+                            }
+                          }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="meeting">Meeting</SelectItem>
+                              <SelectItem value="visit">Visit</SelectItem>
+                              <SelectItem value="call">Call</SelectItem>
+                              <SelectItem value="note">Note</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
+                        {(newActType ?? defaultActivityType) === 'call' && (
+                          <div className="space-y-1">
+                            <Label>Direction</Label>
+                            <Select value={newActDirection} onValueChange={(v) => setNewActDirection(v as 'outgoing' | 'incoming')}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="outgoing">Outgoing</SelectItem>
+                                <SelectItem value="incoming">Incoming</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {((newActType ?? defaultActivityType) === 'meeting' || (newActType ?? defaultActivityType) === 'visit') ? (
+                          <>
+                            <div className="space-y-1">
+                              <Label>Start *</Label>
+                              <DateTimePicker value={newActStartTime} onChange={handleNewActStartChange} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>End *</Label>
+                              <DateTimePicker value={newActDate} onChange={handleNewActEndChange} minValue={newActStartTime} />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-1">
+                            <Label>Date *</Label>
+                            <DatePicker value={newActDate} onChange={setNewActDate} maxDate={new Date()} />
+                          </div>
+                        )}
                         <div className="space-y-1">
-                          <Label>End *</Label>
-                          <DateTimePicker value={newActDate} onChange={handleNewActEndChange} minValue={newActStartTime} />
+                          <Label>Contact</Label>
+                          <Combobox
+                            value={newActContactId}
+                            onValueChange={setNewActContactId}
+                            searchPlaceholder="Search contacts..."
+                            emptyText="No contacts found."
+                            options={[
+                              { value: 'none', label: 'No contact' },
+                              ...contacts.map((c) => ({
+                                value: c.id,
+                                label: `${c.firstName} ${c.lastName}`,
+                              })),
+                            ]}
+                          />
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <Label>Date *</Label>
-                        <DatePicker value={newActDate} onChange={setNewActDate} maxDate={new Date()} />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label>Contact</Label>
-                        <Combobox
-                          value={newActContactId}
-                          onValueChange={setNewActContactId}
-                          searchPlaceholder="Search contacts..."
-                          emptyText="No contacts found."
-                          options={[
-                            { value: 'none', label: 'No contact' },
-                            ...contacts.map((c) => ({
-                              value: c.id,
-                              label: `${c.firstName} ${c.lastName}`,
-                            })),
-                          ]}
-                        />
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-1">
+                          <Label>Subject *</Label>
+                          <Input value={newActSubject} onChange={(e) => setNewActSubject(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1 flex flex-col flex-1">
+                          <Label>Description</Label>
+                          <RichTextEditor
+                            value={newActDescription}
+                            onChange={setNewActDescription}
+                            editorClassName="min-h-[240px]"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-3 pt-1">
@@ -831,7 +852,11 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     </div>
                     <div className="space-y-1">
                       <Label>Description</Label>
-                      <Textarea value={newFuDescription} onChange={(e) => setNewFuDescription(e.target.value)} rows={3} />
+                      <RichTextEditor
+                        value={newFuDescription}
+                        onChange={setNewFuDescription}
+                        editorClassName="min-h-[180px]"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label>Due Date *</Label>

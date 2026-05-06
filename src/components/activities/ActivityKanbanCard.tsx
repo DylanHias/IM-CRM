@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { ACTIVITY_ICONS } from './ActivityItem';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
+import { stripHtml } from '@/lib/utils/htmlUtils';
 import type { Activity } from '@/types/entities';
 
 interface ActivityKanbanCardProps {
@@ -111,7 +112,7 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: 
 
         {activity.description && (
           <KanbanBoardCardDescription className="line-clamp-2 text-muted-foreground">
-            {activity.description}
+            {stripHtml(activity.description)}
           </KanbanBoardCardDescription>
         )}
 

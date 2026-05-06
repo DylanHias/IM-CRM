@@ -4,6 +4,7 @@ import type {
   D365PhoneCall, D365Appointment, D365Annotation, D365Task, D365Opportunity,
 } from '@/types/api';
 import { v4 as uuidv4 } from 'uuid';
+import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
 import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
@@ -140,17 +141,6 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
   };
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 function activityStatusToD365State(
   status: Activity['activityStatus'],
@@ -194,8 +184,6 @@ function mapD365PhoneCallToActivity(d365: D365PhoneCall, now: string): Activity 
 
 function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activity {
   const type: ActivityType = d365.im360_appointmenttype === 2 ? 'visit' : 'meeting';
-  const rawDesc = d365.description ?? '';
-  const description = rawDesc.includes('<') ? stripHtml(rawDesc) : rawDesc;
 
   return {
     id: uuidv4(),
@@ -203,7 +191,7 @@ function mapD365AppointmentToActivity(d365: D365Appointment, now: string): Activ
     contactId: d365._im360_contact_value ?? null,
     type,
     subject: d365.subject ?? 'Appointment',
-    description: description || null,
+    description: d365.description ?? null,
     occurredAt: d365.scheduledend ?? d365.createdon,
     startTime: d365.scheduledstart ?? null,
     activityStatus: mapD365StateToActivityStatus(d365.statecode),
@@ -309,6 +297,7 @@ async function fetchAllPages<T>(
 function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Opportunity {
   const statusMap: Record<number, OpportunityStatus> = { 0: 'Open', 1: 'Won', 2: 'Lost' };
   return {
+    ...EMPTY_OPP_EXTRA_FIELDS,
     id: uuidv4(),
     customerId: r._parentaccountid_value ?? '',
     contactId: r._parentcontactid_value ?? null,
