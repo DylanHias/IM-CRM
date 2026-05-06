@@ -39,6 +39,9 @@ next-env.d.ts
 .playwright-mcp/
 .superpowers/
 
+# screen recording artifacts
+.video-frames/
+
 # tauri
 /src-tauri/target
 /src-tauri/binaries

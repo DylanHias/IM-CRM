@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Plus, Search, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
-import type { OpportunityFormData } from '@/components/opportunities/OpportunityForm';
+import { OpportunityWizard } from '@/components/opportunities/OpportunityWizard';
+import type { WizardFormData } from '@/components/opportunities/OpportunityWizard';
+import { CloseOpportunityDialog } from '@/components/opportunities/CloseOpportunityDialog';
+import type { CloseFormData } from '@/components/opportunities/CloseOpportunityDialog';
 import { OpportunitiesFilters } from '@/components/opportunities/OpportunitiesFilters';
 import { OpportunitiesTable } from '@/components/opportunities/OpportunitiesTable';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -26,11 +28,17 @@ import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
+import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OpportunitiesPage() {
-  const { account } = useAuthStore();
+  const router = useRouter();
+  const { account, isAdmin, isLoading: authLoading } = useAuthStore();
   const d365UserId = useD365UserId();
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) router.replace('/dashboard');
+  }, [isAdmin, authLoading, router]);
   const {
     opportunities: allOpportunities,
     customerMap,
@@ -49,8 +57,7 @@ export default function OpportunitiesPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [customerSearch, setCustomerSearch] = useState('');
+  const [closeOutcome, setCloseOutcome] = useState<'Won' | 'Lost' | null>(null);
   const loadGenRef = useRef(0);
 
   useShortcutListener('new-item', useCallback(() => setAddOpen(true), []));
@@ -95,12 +102,16 @@ export default function OpportunitiesPage() {
     });
   }, [loadData]);
 
+  const activeCustomerId = editing?.customerId ?? null;
   useEffect(() => {
-    if (!selectedCustomerId) return;
+    if (!activeCustomerId) {
+      setContacts([]);
+      return;
+    }
     const load = async () => {
       try {
         if (isTauriApp()) {
-          const c = await queryContactsByCustomer(selectedCustomerId);
+          const c = await queryContactsByCustomer(activeCustomerId);
           setContacts(c);
         } else {
           setContacts([]);
@@ -111,57 +122,125 @@ export default function OpportunitiesPage() {
       }
     };
     load();
-  }, [selectedCustomerId]);
+  }, [activeCustomerId]);
 
-  const handleCreate = async (data: OpportunityFormData) => {
-    if (!selectedCustomerId) return;
-    const customerId = selectedCustomerId;
+  const buildFromWizard = (data: WizardFormData, base: Opportunity): Opportunity => ({
+    ...base,
+    customerId: data.customerId,
+    contactId: data.contactId,
+    subject: data.subject,
+    bcn: data.bcn,
+    multiVendorOpportunity: false,
+    sellType: data.sellType,
+    primaryVendor: data.primaryVendor,
+    opportunityType: data.opportunityType,
+    stage: data.stage,
+    probability: data.probability,
+    expirationDate: data.expirationDate,
+    estimatedRevenue: data.estimatedRevenue,
+    currency: data.currency,
+    country: data.country,
+    customerNeed: data.customerNeed,
+    singleOrCrossSell: data.singleOrCrossSell,
+    estimatedMRR: data.estimatedMRR,
+    annualRevenue: data.annualRevenue,
+    apnId: data.apnId,
+    awsPartnerType: data.awsPartnerType,
+    awsServiceType: data.awsServiceType,
+    apnTagging: data.apnTagging,
+    endUserType: data.endUserType,
+    supportType: data.supportType,
+    payerAccount: data.payerAccount,
+    existingPayeeAccount: data.existingPayeeAccount,
+    consolidationAcceptanceDate: data.consolidationAcceptanceDate,
+    msCspTenant: data.msCspTenant,
+    mpnId: data.mpnId,
+    migrationType: data.migrationType,
+    serviceName: data.serviceName,
+    competitiveWinback: data.competitiveWinback,
+    publicSectorSegment: data.publicSectorSegment,
+    syncStatus: 'pending',
+    updatedAt: new Date().toISOString(),
+  });
+
+  const handleCreate = async (data: WizardFormData) => {
+    if (!data.customerId) return;
     const now = new Date().toISOString();
-    const opp: Opportunity = {
-      ...data,
+    const newOpp: Opportunity = {
+      ...EMPTY_OPP_EXTRA_FIELDS,
       id: uuidv4(),
-      customerId,
-      createdById: d365UserId ?? account?.localAccountId ?? 'unknown',
-      createdByName: account?.name ?? 'Unknown User',
+      customerId: data.customerId,
+      contactId: data.contactId,
+      status: 'Open',
+      subject: data.subject,
+      bcn: data.bcn,
+      multiVendorOpportunity: false,
+      sellType: data.sellType,
+      primaryVendor: data.primaryVendor,
+      opportunityType: data.opportunityType,
+      stage: data.stage,
+      probability: data.probability,
+      expirationDate: data.expirationDate,
+      estimatedRevenue: data.estimatedRevenue,
+      currency: data.currency,
+      country: data.country,
+      source: 'cloud',
+      recordType: 'Sales',
+      customerNeed: data.customerNeed,
       syncStatus: 'pending',
       remoteId: null,
+      createdById: d365UserId ?? account?.localAccountId ?? 'unknown',
+      createdByName: account?.name ?? 'Unknown User',
       createdAt: now,
       updatedAt: now,
+      singleOrCrossSell: data.singleOrCrossSell,
+      estimatedMRR: data.estimatedMRR,
+      annualRevenue: data.annualRevenue,
+      apnId: data.apnId,
+      awsPartnerType: data.awsPartnerType,
+      awsServiceType: data.awsServiceType,
+      apnTagging: data.apnTagging,
+      endUserType: data.endUserType,
+      supportType: data.supportType,
+      payerAccount: data.payerAccount,
+      existingPayeeAccount: data.existingPayeeAccount,
+      consolidationAcceptanceDate: data.consolidationAcceptanceDate,
+      msCspTenant: data.msCspTenant,
+      mpnId: data.mpnId,
+      migrationType: data.migrationType,
+      serviceName: data.serviceName,
+      competitiveWinback: data.competitiveWinback,
+      publicSectorSegment: data.publicSectorSegment,
+      statusReason: null,
+      actualRevenue: null,
+      closeDate: null,
+      competitorId: null,
+      closeDescription: null,
     };
     if (isTauriApp()) {
       try {
-        await insertOpportunity(opp);
-        directPushOpportunity(opp).then((result) => {
-          if (result) {
-            emitDataEvent('opportunity', 'updated', customerId);
-          }
+        await insertOpportunity(newOpp);
+        directPushOpportunity(newOpp).then((result) => {
+          if (result) emitDataEvent('opportunity', 'updated', newOpp.customerId);
         });
       } catch (err) {
         console.error('[opportunity] DB insert failed:', err);
       }
     }
-    setOpportunities([opp, ...allOpportunities]);
-    emitDataEvent('opportunity', 'created', customerId);
+    setOpportunities([newOpp, ...allOpportunities]);
+    emitDataEvent('opportunity', 'created', newOpp.customerId);
     setAddOpen(false);
-    setSelectedCustomerId(null);
   };
 
-  const handleEdit = async (data: OpportunityFormData) => {
+  const handleEdit = async (data: WizardFormData) => {
     if (!editing) return;
     const currentOpp = allOpportunities.find((o) => o.id === editing.id) ?? editing;
-    const updated: Opportunity = {
-      ...currentOpp,
-      ...data,
-      syncStatus: 'pending',
-      updatedAt: new Date().toISOString(),
-    };
+    const updated = buildFromWizard(data, currentOpp);
     if (isTauriApp()) {
       try {
         await dbUpdateOpportunity(updated);
         directPushOpportunity(updated).then((result) => {
-          if (result) {
-            emitDataEvent('opportunity', 'updated', updated.customerId);
-          }
+          if (result) emitDataEvent('opportunity', 'updated', updated.customerId);
         });
       } catch (err) {
         console.error('[opportunity] DB update failed:', err);
@@ -170,13 +249,39 @@ export default function OpportunitiesPage() {
     setOpportunities(allOpportunities.map((o) => (o.id === updated.id ? updated : o)));
     emitDataEvent('opportunity', 'updated', editing.customerId);
     setEditing(null);
-    setSelectedCustomerId(null);
   };
 
-  const openEdit = (opp: Opportunity) => {
-    setSelectedCustomerId(opp.customerId);
-    setEditing(opp);
+  const handleClose = async (data: CloseFormData) => {
+    if (!editing) return;
+    const currentOpp = allOpportunities.find((o) => o.id === editing.id) ?? editing;
+    const updated: Opportunity = {
+      ...currentOpp,
+      status: data.outcome,
+      statusReason: data.statusReason,
+      actualRevenue: data.actualRevenue,
+      closeDate: data.closeDate,
+      competitorId: data.competitorId,
+      closeDescription: data.closeDescription,
+      syncStatus: 'pending',
+      updatedAt: new Date().toISOString(),
+    };
+    if (isTauriApp()) {
+      try {
+        await dbUpdateOpportunity(updated);
+        directPushOpportunity(updated).then((result) => {
+          if (result) emitDataEvent('opportunity', 'updated', updated.customerId);
+        });
+      } catch (err) {
+        console.error('[opportunity] DB close failed:', err);
+      }
+    }
+    setOpportunities(allOpportunities.map((o) => (o.id === updated.id ? updated : o)));
+    emitDataEvent('opportunity', 'updated', updated.customerId);
+    setCloseOutcome(null);
+    setEditing(null);
   };
+
+  const openEdit = (opp: Opportunity) => setEditing(opp);
 
   const filtered = getFilteredOpportunities();
 
@@ -227,72 +332,40 @@ export default function OpportunitiesPage() {
         </>
       )}
 
-      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedCustomerId(null); setCustomerSearch(''); } }}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Opportunity</DialogTitle>
-          </DialogHeader>
-          {!selectedCustomerId ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Select a customer:</p>
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, BCN, or account number..."
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  className="pl-9"
-                  autoFocus
-                />
-              </div>
-              <div className="max-h-60 overflow-y-auto border border-border rounded-lg divide-y divide-border/50">
-                {customers
-                  .filter((c) => {
-                    if (!customerSearch.trim()) return true;
-                    const q = customerSearch.toLowerCase();
-                    return c.name.toLowerCase().includes(q)
-                      || (c.bcn && c.bcn.toLowerCase().includes(q))
-                      || (c.accountNumber && c.accountNumber.toLowerCase().includes(q));
-                  })
-                  .map((c) => (
-                    <button
-                      key={c.id}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-accent transition-colors"
-                      onClick={() => { setSelectedCustomerId(c.id); setCustomerSearch(''); }}
-                    >
-                      <span className="font-medium">{c.name}</span>
-                      {c.bcn && <span className="text-xs text-muted-foreground ml-2">BCN: {c.bcn}</span>}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          ) : (
-            <OpportunityForm
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); }}>
+        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+          <OpportunityWizard
+            customers={customers}
+            contacts={contacts}
+            onSave={handleCreate}
+            onCancel={() => setAddOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
+        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+          {editing && (
+            <OpportunityWizard
+              opportunity={editing}
               contacts={contacts}
-              customer={customers.find((c) => c.id === selectedCustomerId)}
-              onSubmit={handleCreate}
-              onCancel={() => { setAddOpen(false); setSelectedCustomerId(null); }}
+              customer={customers.find((c) => c.id === editing.customerId)}
+              onSave={handleEdit}
+              onCloseWon={() => setCloseOutcome('Won')}
+              onCloseLost={() => setCloseOutcome('Lost')}
+              onCancel={() => setEditing(null)}
             />
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editing} onOpenChange={(open) => { if (!open) { setEditing(null); setSelectedCustomerId(null); } }}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Opportunity</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <OpportunityForm
-              opportunity={editing}
-              contacts={contacts}
-              customer={customers.find((c) => c.id === editing.customerId)}
-              onSubmit={handleEdit}
-              onCancel={() => { setEditing(null); setSelectedCustomerId(null); }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <CloseOpportunityDialog
+        open={!!closeOutcome}
+        outcome={closeOutcome ?? 'Won'}
+        currency={editing?.currency ?? 'USD'}
+        onClose={() => setCloseOutcome(null)}
+        onConfirm={handleClose}
+      />
     </div>
   );
 }

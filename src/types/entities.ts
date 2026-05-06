@@ -124,6 +124,29 @@ export interface Opportunity {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
+  singleOrCrossSell: string | null;
+  estimatedMRR: number | null;
+  annualRevenue: number | null;
+  apnId: string | null;
+  awsPartnerType: string | null;
+  awsServiceType: string | null;
+  apnTagging: string | null;
+  endUserType: string | null;
+  supportType: string | null;
+  payerAccount: string | null;
+  existingPayeeAccount: string | null;
+  consolidationAcceptanceDate: string | null;
+  msCspTenant: string | null;
+  mpnId: string | null;
+  migrationType: string | null;
+  serviceName: string | null;
+  competitiveWinback: boolean | null;
+  publicSectorSegment: string | null;
+  statusReason: string | null;
+  actualRevenue: number | null;
+  closeDate: string | null;
+  competitorId: string | null;
+  closeDescription: string | null;
 }
 
 export type TimelineEvent =

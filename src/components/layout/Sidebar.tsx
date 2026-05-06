@@ -126,7 +126,9 @@ export function AppSidebar() {
       badgeVariant: 'destructive',
       badgeStyle: 'count',
     },
-    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target, disabled: true, disabledTooltip: 'Coming soon' },
+    ...(isAdmin
+      ? { '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target } }
+      : {}),
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },

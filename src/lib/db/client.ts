@@ -274,6 +274,29 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['follow_ups', 'source',          "TEXT DEFAULT 'local'"],
     ['users',      'title',           'TEXT'],
     ['users',      'profile_photo',   'TEXT'],
+    ['opportunities', 'single_or_cross_sell',          'TEXT'],
+    ['opportunities', 'estimated_mrr',                 'REAL'],
+    ['opportunities', 'annual_revenue',                'REAL'],
+    ['opportunities', 'apn_id',                        'TEXT'],
+    ['opportunities', 'aws_partner_type',              'TEXT'],
+    ['opportunities', 'aws_service_type',              'TEXT'],
+    ['opportunities', 'apn_tagging',                   'TEXT'],
+    ['opportunities', 'end_user_type',                 'TEXT'],
+    ['opportunities', 'support_type',                  'TEXT'],
+    ['opportunities', 'payer_account',                 'TEXT'],
+    ['opportunities', 'existing_payee_account',        'TEXT'],
+    ['opportunities', 'consolidation_acceptance_date', 'TEXT'],
+    ['opportunities', 'ms_csp_tenant',                 'TEXT'],
+    ['opportunities', 'mpn_id',                        'TEXT'],
+    ['opportunities', 'migration_type',                'TEXT'],
+    ['opportunities', 'service_name',                  'TEXT'],
+    ['opportunities', 'competitive_winback',           'INTEGER'],
+    ['opportunities', 'public_sector_segment',         'TEXT'],
+    ['opportunities', 'status_reason',                 'TEXT'],
+    ['opportunities', 'actual_revenue',                'REAL'],
+    ['opportunities', 'close_date',                    'TEXT'],
+    ['opportunities', 'competitor_id',                 'TEXT'],
+    ['opportunities', 'close_description',             'TEXT'],
   ];
   for (const [table, col, def] of cols) {
     try { await db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); } catch { /* column already exists */ }
@@ -298,7 +321,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '28')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '30')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -719,6 +742,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     );
     await db.execute(
       `UPDATE app_settings SET value = '29', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 30) {
+    // Opportunity rebuild (v2.9.0): expand schema with vendor-specific fields
+    // and close-as-won/lost fields. ensureAllColumns handles the actual ALTERs idempotently.
+    await db.execute(
+      `UPDATE app_settings SET value = '30', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

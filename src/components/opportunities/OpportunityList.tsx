@@ -6,14 +6,17 @@ import { rowSlideIn } from '@/lib/motion';
 import { Plus, Target, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { OpportunityForm } from './OpportunityForm';
-import type { OpportunityFormData } from './OpportunityForm';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { OpportunityWizard } from './OpportunityWizard';
+import type { WizardFormData } from './OpportunityWizard';
+import { CloseOpportunityDialog } from './CloseOpportunityDialog';
+import type { CloseFormData } from './CloseOpportunityDialog';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
 import type { Opportunity, Contact } from '@/types/entities';
 
 interface OpportunityListProps {
@@ -30,6 +33,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
+  const [closeOutcome, setCloseOutcome] = useState<'Won' | 'Lost' | null>(null);
 
   useEffect(() => {
     if (triggerAdd && triggerAdd > 0) setAddOpen(true);
@@ -53,27 +57,101 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
     load();
   }, [customerId]);
 
-  const handleCreate = async (data: OpportunityFormData) => {
+  const wizardToInsertInput = (data: WizardFormData) => ({
+    ...EMPTY_OPP_EXTRA_FIELDS,
+    customerId: data.customerId,
+    contactId: data.contactId,
+    status: 'Open' as const,
+    subject: data.subject,
+    bcn: data.bcn,
+    multiVendorOpportunity: false,
+    sellType: data.sellType,
+    primaryVendor: data.primaryVendor,
+    opportunityType: data.opportunityType,
+    stage: data.stage,
+    probability: data.probability,
+    expirationDate: data.expirationDate,
+    estimatedRevenue: data.estimatedRevenue,
+    currency: data.currency,
+    country: data.country,
+    source: 'cloud',
+    recordType: 'Sales',
+    customerNeed: data.customerNeed,
+    singleOrCrossSell: data.singleOrCrossSell,
+    estimatedMRR: data.estimatedMRR,
+    annualRevenue: data.annualRevenue,
+    apnId: data.apnId,
+    awsPartnerType: data.awsPartnerType,
+    awsServiceType: data.awsServiceType,
+    apnTagging: data.apnTagging,
+    endUserType: data.endUserType,
+    supportType: data.supportType,
+    payerAccount: data.payerAccount,
+    existingPayeeAccount: data.existingPayeeAccount,
+    consolidationAcceptanceDate: data.consolidationAcceptanceDate,
+    msCspTenant: data.msCspTenant,
+    mpnId: data.mpnId,
+    migrationType: data.migrationType,
+    serviceName: data.serviceName,
+    competitiveWinback: data.competitiveWinback,
+    publicSectorSegment: data.publicSectorSegment,
+    statusReason: null,
+    actualRevenue: null,
+    closeDate: null,
+    competitorId: null,
+    closeDescription: null,
+  });
+
+  const handleCreate = async (data: WizardFormData) => {
     try {
-      await createOpportunity({ ...data, customerId });
+      await createOpportunity(wizardToInsertInput(data));
       setAddOpen(false);
     } catch (err) {
       console.error('[opportunity] Failed to create:', err);
     }
   };
 
-  const handleEdit = async (data: OpportunityFormData) => {
+  const handleEdit = async (data: WizardFormData) => {
     if (!editing) return;
     try {
       const currentOpp = opportunities.find((o) => o.id === editing.id) ?? editing;
       await editOpportunity({
         ...currentOpp,
-        ...data,
+        ...wizardToInsertInput(data),
+        id: currentOpp.id,
+        createdById: currentOpp.createdById,
+        createdByName: currentOpp.createdByName,
+        syncStatus: 'pending',
+        remoteId: currentOpp.remoteId,
+        createdAt: currentOpp.createdAt,
         updatedAt: new Date().toISOString(),
+        status: currentOpp.status,
       });
       setEditing(null);
     } catch (err) {
       console.error('[opportunity] Failed to edit:', err);
+    }
+  };
+
+  const handleClose = async (data: CloseFormData) => {
+    if (!editing) return;
+    try {
+      const currentOpp = opportunities.find((o) => o.id === editing.id) ?? editing;
+      await editOpportunity({
+        ...currentOpp,
+        status: data.outcome,
+        statusReason: data.statusReason,
+        actualRevenue: data.actualRevenue,
+        closeDate: data.closeDate,
+        competitorId: data.competitorId,
+        closeDescription: data.closeDescription,
+        syncStatus: 'pending',
+        updatedAt: new Date().toISOString(),
+      });
+      setCloseOutcome(null);
+      setEditing(null);
+    } catch (err) {
+      console.error('[opportunity] Failed to close:', err);
     }
   };
 
@@ -139,35 +217,39 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Opportunity</DialogTitle>
-          </DialogHeader>
-          <OpportunityForm
-            contacts={contacts}
+        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
+          <OpportunityWizard
             customer={customer}
-            onSubmit={handleCreate}
+            contacts={contacts}
+            onSave={handleCreate}
             onCancel={() => setAddOpen(false)}
           />
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Opportunity</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-4xl p-0 max-h-[90vh]">
           {editing && (
-            <OpportunityForm
+            <OpportunityWizard
               opportunity={editing}
               contacts={contacts}
               customer={customer}
-              onSubmit={handleEdit}
+              onSave={handleEdit}
+              onCloseWon={() => setCloseOutcome('Won')}
+              onCloseLost={() => setCloseOutcome('Lost')}
               onCancel={() => setEditing(null)}
             />
           )}
         </DialogContent>
       </Dialog>
+
+      <CloseOpportunityDialog
+        open={!!closeOutcome}
+        outcome={closeOutcome ?? 'Won'}
+        currency={editing?.currency ?? 'USD'}
+        onClose={() => setCloseOutcome(null)}
+        onConfirm={handleClose}
+      />
     </div>
   );
 }

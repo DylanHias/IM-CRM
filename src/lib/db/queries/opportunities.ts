@@ -30,6 +30,29 @@ function rowToOpportunity(row: OpportunityRow): Opportunity {
     createdByName: row.created_by_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    singleOrCrossSell: row.single_or_cross_sell ?? null,
+    estimatedMRR: row.estimated_mrr ?? null,
+    annualRevenue: row.annual_revenue ?? null,
+    apnId: row.apn_id ?? null,
+    awsPartnerType: row.aws_partner_type ?? null,
+    awsServiceType: row.aws_service_type ?? null,
+    apnTagging: row.apn_tagging ?? null,
+    endUserType: row.end_user_type ?? null,
+    supportType: row.support_type ?? null,
+    payerAccount: row.payer_account ?? null,
+    existingPayeeAccount: row.existing_payee_account ?? null,
+    consolidationAcceptanceDate: row.consolidation_acceptance_date ?? null,
+    msCspTenant: row.ms_csp_tenant ?? null,
+    mpnId: row.mpn_id ?? null,
+    migrationType: row.migration_type ?? null,
+    serviceName: row.service_name ?? null,
+    competitiveWinback: row.competitive_winback == null ? null : row.competitive_winback === 1,
+    publicSectorSegment: row.public_sector_segment ?? null,
+    statusReason: row.status_reason ?? null,
+    actualRevenue: row.actual_revenue ?? null,
+    closeDate: row.close_date ?? null,
+    competitorId: row.competitor_id ?? null,
+    closeDescription: row.close_description ?? null,
   };
 }
 
@@ -58,8 +81,15 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       sell_type, primary_vendor, opportunity_type, stage, probability,
       expiration_date, estimated_revenue, currency, country, source, record_type,
       customer_need, sync_status, remote_id, created_by_id, created_by_name,
-      created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+      created_at, updated_at,
+      single_or_cross_sell, estimated_mrr, annual_revenue,
+      apn_id, aws_partner_type, aws_service_type, apn_tagging, end_user_type,
+      support_type, payer_account, existing_payee_account, consolidation_acceptance_date,
+      ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
+      public_sector_segment, status_reason, actual_revenue, close_date,
+      competitor_id, close_description
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,
+              $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47)`,
     [
       opp.id, opp.customerId, opp.contactId, opp.status, opp.subject, opp.bcn,
       opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -67,9 +97,15 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       opp.estimatedRevenue, opp.currency, opp.country, opp.source, opp.recordType,
       opp.customerNeed, opp.syncStatus, opp.remoteId, opp.createdById,
       opp.createdByName, opp.createdAt, opp.updatedAt,
+      opp.singleOrCrossSell, opp.estimatedMRR, opp.annualRevenue,
+      opp.apnId, opp.awsPartnerType, opp.awsServiceType, opp.apnTagging, opp.endUserType,
+      opp.supportType, opp.payerAccount, opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
+      opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName,
+      opp.competitiveWinback == null ? null : (opp.competitiveWinback ? 1 : 0),
+      opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
+      opp.competitorId, opp.closeDescription,
     ]
   );
-
 }
 
 export async function updateOpportunity(opp: Opportunity): Promise<void> {
@@ -80,17 +116,32 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
       sell_type=$6, primary_vendor=$7, opportunity_type=$8, stage=$9, probability=$10,
       expiration_date=$11, estimated_revenue=$12, currency=$13, country=$14,
       source=$15, record_type=$16, customer_need=$17, sync_status='pending',
-      updated_at=$18
-    WHERE id=$19`,
+      updated_at=$18,
+      single_or_cross_sell=$19, estimated_mrr=$20, annual_revenue=$21,
+      apn_id=$22, aws_partner_type=$23, aws_service_type=$24, apn_tagging=$25,
+      end_user_type=$26, support_type=$27, payer_account=$28,
+      existing_payee_account=$29, consolidation_acceptance_date=$30,
+      ms_csp_tenant=$31, mpn_id=$32, migration_type=$33, service_name=$34,
+      competitive_winback=$35, public_sector_segment=$36,
+      status_reason=$37, actual_revenue=$38, close_date=$39,
+      competitor_id=$40, close_description=$41
+    WHERE id=$42`,
     [
       opp.contactId, opp.status, opp.subject, opp.bcn,
       opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
       opp.opportunityType, opp.stage, opp.probability, opp.expirationDate,
       opp.estimatedRevenue, opp.currency, opp.country, opp.source, opp.recordType,
-      opp.customerNeed, new Date().toISOString(), opp.id,
+      opp.customerNeed, new Date().toISOString(),
+      opp.singleOrCrossSell, opp.estimatedMRR, opp.annualRevenue,
+      opp.apnId, opp.awsPartnerType, opp.awsServiceType, opp.apnTagging,
+      opp.endUserType, opp.supportType, opp.payerAccount,
+      opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
+      opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName,
+      opp.competitiveWinback == null ? null : (opp.competitiveWinback ? 1 : 0),
+      opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
+      opp.competitorId, opp.closeDescription, opp.id,
     ]
   );
-
 }
 
 export async function queryUniqueVendors(): Promise<string[]> {

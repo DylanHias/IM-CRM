@@ -6,7 +6,33 @@ const ago = (days: number) =>
 const SYSTEM_USER_ID = 'mock-user-001';
 const SYSTEM_USER_NAME = 'Jan De Vries';
 
-export const mockOpportunities: Opportunity[] = [
+const NEW_FIELD_DEFAULTS = {
+  singleOrCrossSell: null,
+  estimatedMRR: null,
+  annualRevenue: null,
+  apnId: null,
+  awsPartnerType: null,
+  awsServiceType: null,
+  apnTagging: null,
+  endUserType: null,
+  supportType: null,
+  payerAccount: null,
+  existingPayeeAccount: null,
+  consolidationAcceptanceDate: null,
+  msCspTenant: null,
+  mpnId: null,
+  migrationType: null,
+  serviceName: null,
+  competitiveWinback: null,
+  publicSectorSegment: null,
+  statusReason: null,
+  actualRevenue: null,
+  closeDate: null,
+  competitorId: null,
+  closeDescription: null,
+} as const;
+
+export const mockOpportunities: Opportunity[] = ([
   {
     id: 'opp-001',
     customerId: 'cust-001',
@@ -412,4 +438,4 @@ export const mockOpportunities: Opportunity[] = [
     createdAt: ago(8),
     updatedAt: ago(1),
   },
-];
+] as Omit<Opportunity, keyof typeof NEW_FIELD_DEFAULTS>[]).map((o) => ({ ...o, ...NEW_FIELD_DEFAULTS }));

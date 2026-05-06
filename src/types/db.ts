@@ -111,6 +111,29 @@ export interface OpportunityRow {
   created_by_name: string;
   created_at: string;
   updated_at: string;
+  single_or_cross_sell: string | null;
+  estimated_mrr: number | null;
+  annual_revenue: number | null;
+  apn_id: string | null;
+  aws_partner_type: string | null;
+  aws_service_type: string | null;
+  apn_tagging: string | null;
+  end_user_type: string | null;
+  support_type: string | null;
+  payer_account: string | null;
+  existing_payee_account: string | null;
+  consolidation_acceptance_date: string | null;
+  ms_csp_tenant: string | null;
+  mpn_id: string | null;
+  migration_type: string | null;
+  service_name: string | null;
+  competitive_winback: number | null;
+  public_sector_segment: string | null;
+  status_reason: string | null;
+  actual_revenue: number | null;
+  close_date: string | null;
+  competitor_id: string | null;
+  close_description: string | null;
 }
 
 export interface SyncRecordRow {
