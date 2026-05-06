@@ -1,5 +1,16 @@
 const POWERBI_API_BASE = 'https://api.powerbi.com/v1.0/myorg';
 
+export class PowerBiAccessError extends Error {
+  readonly status: number;
+  constructor(status: number, datasetId: string) {
+    super(
+      `Power BI dataset is not accessible — ask the dataset owner to grant your account Build permission on dataset ${datasetId} (consuming a published app is not enough; REST queries need direct dataset access)`,
+    );
+    this.name = 'PowerBiAccessError';
+    this.status = status;
+  }
+}
+
 export interface DaxQueryResult {
   rows: Record<string, unknown>[];
 }
@@ -32,6 +43,13 @@ export async function executeDaxQuery(
 
   if (!res.ok) {
     const body = await res.text();
+    if (
+      res.status === 401 ||
+      res.status === 403 ||
+      (res.status === 404 && (body.includes('PowerBIEntityNotFound') || body.includes('ItemNotFound')))
+    ) {
+      throw new PowerBiAccessError(res.status, datasetId);
+    }
     throw new Error(`PowerBI DAX query failed: ${res.status} ${res.statusText} — ${body.slice(0, 500)}`);
   }
 

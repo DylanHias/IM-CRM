@@ -1,6 +1,7 @@
 import { getD365Adapter } from './d365Adapter';
 import { fetchD365TeamUserIds } from './d365UserAdapter';
 import { fetchArrByBcn } from '@/lib/integrations/powerbi/arrAdapter';
+import { PowerBiAccessError } from '@/lib/integrations/powerbi/client';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
 import { useAuthStore } from '@/store/authStore';
@@ -314,6 +315,16 @@ export async function syncPowerBiArr(): Promise<void> {
     console.log(`[sync] PowerBI ARR: ${updated} customers updated, ${cleared} cleared`);
     await updateSyncRecord(recordId, 'success', updated, 0, null);
   } catch (err) {
+    if (err instanceof PowerBiAccessError) {
+      console.warn(`[sync] PowerBI ARR skipped: ${err.message}`);
+      try {
+        await updateSyncRecord(recordId, 'error', updated, 0, err.message);
+      } catch (recordErr) {
+        console.error('[sync] Failed to update sync record after PowerBI access error:', recordErr instanceof Error ? recordErr.message : recordErr);
+      }
+      store.addSyncError({ id: uuidv4(), syncType: 'powerbi_arr', message: `ARR: ${err.message}`, occurredAt: new Date().toISOString() });
+      return;
+    }
     const message = err instanceof Error ? err.message : 'PowerBI ARR sync failed';
     console.error(`[sync] PowerBI ARR error: ${message}`, err);
     try {

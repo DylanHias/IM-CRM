@@ -1,7 +1,6 @@
 import { executeDaxQuery, type DaxQueryResult } from './client';
 
-const WORKSPACE_ID =
-  process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? 'abf433e0-0d86-4fef-ad42-5431e350f410';
+const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
@@ -115,27 +114,53 @@ function readBool(row: Record<string, unknown>, ...keys: string[]): boolean {
   return false;
 }
 
-async function tryEvaluate(token: string, dax: string): Promise<DaxQueryResult | null> {
+interface EvalOutcome {
+  result: DaxQueryResult | null;
+  error: string | null;
+}
+
+async function tryEvaluate(token: string, dax: string): Promise<EvalOutcome> {
   try {
-    return await executeDaxQuery(token, WORKSPACE_ID, DATASET_ID, dax);
+    return { result: await executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, dax), error: null };
   } catch (err) {
-    console.warn(`[powerbi-schema] Query failed: ${dax.slice(0, 60)}…`, err instanceof Error ? err.message : err);
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[powerbi-schema] Query failed: ${dax.slice(0, 60)}…`, msg);
+    return { result: null, error: msg };
   }
 }
 
+function isCompatLevelError(err: string): boolean {
+  const lower = err.toLowerCase();
+  return (
+    lower.includes('info.tables') ||
+    lower.includes('not recognized') ||
+    lower.includes('compatibility level') ||
+    lower.includes('cannot find') ||
+    lower.includes('undefined function')
+  );
+}
+
 export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
-  const [tablesRes, columnsRes, measuresRes, relRes] = await Promise.all([
+  const [tablesOut, columnsOut, measuresOut, relOut] = await Promise.all([
     tryEvaluate(token, 'EVALUATE INFO.TABLES()'),
     tryEvaluate(token, 'EVALUATE INFO.COLUMNS()'),
     tryEvaluate(token, 'EVALUATE INFO.MEASURES()'),
     tryEvaluate(token, 'EVALUATE INFO.RELATIONSHIPS()'),
   ]);
 
+  const { result: tablesRes, error: tablesErr } = tablesOut;
+  const { result: columnsRes } = columnsOut;
+  const { result: measuresRes } = measuresOut;
+  const { result: relRes } = relOut;
+
   if (!tablesRes) {
-    throw new Error(
-      'INFO.TABLES() not supported by this dataset (compatibility level too low). Cannot scan schema.',
-    );
+    const detail = tablesErr ?? 'unknown error';
+    if (tablesErr && isCompatLevelError(tablesErr)) {
+      throw new Error(
+        `INFO.TABLES() not supported by this dataset (compatibility level below 1604). Upgrade the model in Power BI Desktop or use an XMLA endpoint to scan schema. Underlying error: ${detail}`,
+      );
+    }
+    throw new Error(`Schema scan failed: ${detail}`);
   }
 
   const tables: SchemaTable[] = (tablesRes.rows ?? []).map((row) => ({
@@ -205,7 +230,7 @@ export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
   return {
     scannedAt: new Date().toISOString(),
     datasetId: DATASET_ID,
-    workspaceId: WORKSPACE_ID,
+    workspaceId: WORKSPACE_ID || null,
     tables,
     columns,
     measures,
