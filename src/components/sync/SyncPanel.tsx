@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock, ShieldAlert, Copy, Check, Mail, X } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Upload, Clock, ShieldAlert, Copy, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -157,27 +157,15 @@ function PowerBiConsentBanner() {
 }
 
 function PowerBiAccessBanner({ onDismiss }: { onDismiss: () => void }) {
-  const datasetId =
-    process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
-  const subject = 'IM-CRM: Power BI dataset Build permission request';
-  const body =
-    `Hi,\n\nThe IM-CRM app needs Build permission on the Power BI dataset to read ARR data.` +
-    `\n\nDataset ID: ${datasetId}` +
-    `\nDataset name: Global Dashboard by CSM` +
-    `\n\nCould you share this dataset with our CRM users group with Build permission? In Power BI: open the dataset → Manage permissions → add the group with the "Build" checkbox enabled.` +
-    `\n\nThanks!`;
-  const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
   return (
-    <div className="border border-warning/40 bg-warning/10 rounded-lg p-4 space-y-3">
+    <div className="border border-warning/40 bg-warning/10 rounded-lg p-4">
       <div className="flex items-start gap-3">
         <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" />
         <div className="space-y-1 flex-1">
           <p className="text-sm font-semibold text-foreground">Power BI ARR data is unavailable</p>
           <p className="text-xs text-muted-foreground">
             Your account doesn&apos;t have Build permission on the Power BI dataset. ARR sync is paused until the dataset
-            owner grants access. Use the button below to email a pre-written request — set the recipient to the dataset
-            owner (e.g. CO Dixit) or your IT admin.
+            owner grants access.
           </p>
         </div>
         <button
@@ -187,14 +175,6 @@ function PowerBiAccessBanner({ onDismiss }: { onDismiss: () => void }) {
         >
           <X size={16} />
         </button>
-      </div>
-      <div className="flex gap-2">
-        <Button asChild size="sm" className="gap-1.5">
-          <a href={mailto}>
-            <Mail size={13} />
-            Email request
-          </a>
-        </Button>
       </div>
     </div>
   );
