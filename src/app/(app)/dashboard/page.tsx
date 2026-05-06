@@ -164,7 +164,7 @@ export default function DashboardPage() {
         {/* Left column: Belgium map + KPI cards */}
         <div className="space-y-4">
           <motion.div {...sectionReveal(0)}>
-            <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />
+            <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} className="max-w-[75%]" />
           </motion.div>
 
           <motion.div
