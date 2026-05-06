@@ -1,7 +1,8 @@
 import { executeDaxQuery } from './client';
 import type { ArrUpdate } from '@/lib/db/queries/customers';
 
-const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
+const WORKSPACE_ID =
+  process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? 'abf433e0-0d86-4fef-ad42-5431e350f410';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
@@ -25,7 +26,7 @@ function extractColumn(row: Record<string, unknown>, column: string): unknown {
 
 export async function fetchArrByBcn(token: string): Promise<ArrUpdate[]> {
   const dax = buildArrDax();
-  const { rows } = await executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, dax);
+  const { rows } = await executeDaxQuery(token, WORKSPACE_ID, DATASET_ID, dax);
 
   const results: ArrUpdate[] = [];
   for (const row of rows) {
