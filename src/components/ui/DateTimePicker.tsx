@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 interface DateTimePickerProps {
   value: string;
@@ -86,6 +87,38 @@ export function DateTimePicker({
     onChange(`${getOrTodayDate()}T${hour}:${m}`);
   };
 
+  const [timeInput, setTimeInput] = React.useState(`${hour}:${minute}`);
+
+  React.useEffect(() => {
+    setTimeInput(`${hour}:${minute}`);
+  }, [hour, minute]);
+
+  const commitTimeInput = (raw: string) => {
+    const match = raw.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (!match) {
+      setTimeInput(`${hour}:${minute}`);
+      return;
+    }
+    const h = Math.min(23, parseInt(match[1], 10));
+    const m = Math.min(59, parseInt(match[2], 10));
+    const hStr = String(h).padStart(2, '0');
+    const mStr = String(m).padStart(2, '0');
+
+    if (minValue && datePart) {
+      if (datePart === minDatePart) {
+        if (hStr < minHour || (hStr === minHour && mStr < minMinute)) {
+          setTimeInput(`${hour}:${minute}`);
+          return;
+        }
+      } else if (datePart < minDatePart) {
+        setTimeInput(`${hour}:${minute}`);
+        return;
+      }
+    }
+
+    onChange(`${getOrTodayDate()}T${hStr}:${mStr}`);
+  };
+
   return (
     <div className={cn('flex gap-2', className)}>
       <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -117,16 +150,35 @@ export function DateTimePicker({
       </Popover>
 
       <Popover open={timeOpen} onOpenChange={setTimeOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
+        <div className="relative w-[110px]">
+          <Input
+            type="text"
+            inputMode="numeric"
             disabled={disabled}
-            className="w-[110px] justify-start text-left font-normal"
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            {hour}:{minute}
-          </Button>
-        </PopoverTrigger>
+            value={timeInput}
+            onChange={(e) => setTimeInput(e.target.value)}
+            onBlur={(e) => commitTimeInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitTimeInput(e.currentTarget.value);
+              }
+            }}
+            placeholder="HH:MM"
+            className="pr-8 font-normal"
+            aria-label="Time"
+          />
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              aria-label="Open time picker"
+              className="absolute right-0 top-0 h-10 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Clock className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+        </div>
         <PopoverContent className="w-auto p-2" align="start">
           <div className="flex gap-1">
             <ScrollArea className="h-48 w-14">
