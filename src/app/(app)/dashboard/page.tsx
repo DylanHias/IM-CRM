@@ -160,47 +160,46 @@ export default function DashboardPage() {
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-6 items-start">
-        {/* Left column: Belgium map + KPI cards */}
-        <div className="space-y-4">
-          <motion.div {...sectionReveal(0)}>
-            <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} className="max-w-[75%]" />
-          </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Column 1: Belgium map */}
+        <motion.div {...sectionReveal(0)}>
+          <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />
+        </motion.div>
 
-          <motion.div
-            className="grid grid-cols-2 lg:grid-cols-3 gap-3"
-            variants={listContainerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={listItemVariants}>
-              <MetricCard
-                label="Total Activities"
-                value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
-                icon={Activity}
-                sub="All time"
-              />
-            </motion.div>
-            <motion.div variants={listItemVariants}>
-              <MetricCard
-                label="Opportunities"
-                value={loading || opportunitiesCount === null ? '—' : fmt(opportunitiesCount)}
-                icon={Target}
-                sub="All time"
-              />
-            </motion.div>
-            <motion.div variants={listItemVariants}>
-              <MetricCard
-                label="Open Pipeline"
-                value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
-                icon={Wallet}
-                sub="Your open deals"
-              />
-            </motion.div>
+        {/* Column 2: KPI cards stacked vertically */}
+        <motion.div
+          className="flex flex-col gap-3"
+          variants={listContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={listItemVariants}>
+            <MetricCard
+              label="Total Activities"
+              value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
+              icon={Activity}
+              sub="All time"
+            />
           </motion.div>
-        </div>
+          <motion.div variants={listItemVariants}>
+            <MetricCard
+              label="Opportunities"
+              value={loading || opportunitiesCount === null ? '—' : fmt(opportunitiesCount)}
+              icon={Target}
+              sub="All time"
+            />
+          </motion.div>
+          <motion.div variants={listItemVariants}>
+            <MetricCard
+              label="Open Pipeline"
+              value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
+              icon={Wallet}
+              sub="Your open deals"
+            />
+          </motion.div>
+        </motion.div>
 
-        {/* Right column: Recent Activity + Due Today */}
+        {/* Column 3: Recent Activity + Due Today */}
         <div className="flex flex-col gap-4">
           <motion.div {...sectionReveal(0.08)}>
             <RecentActivityPanel activities={recentActivities} loading={loading} />
