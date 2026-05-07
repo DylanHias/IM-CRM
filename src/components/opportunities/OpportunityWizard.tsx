@@ -64,6 +64,7 @@ interface Props {
   customers?: Customer[];
   contacts: Contact[];
   onSave: (data: WizardFormData) => Promise<void>;
+  onCustomerChange?: (customerId: string) => void;
   onCloseWon?: () => void;
   onCloseLost?: () => void;
   onCancel: () => void;
@@ -77,7 +78,7 @@ function defaultExpiration(): string {
 
 export function OpportunityWizard({
   opportunity, customer, customers, contacts,
-  onSave, onCloseWon, onCloseLost, onCancel,
+  onSave, onCustomerChange, onCloseWon, onCloseLost, onCancel,
 }: Props) {
   const isEditing = !!opportunity;
   const [saving, setSaving] = useState(false);
@@ -119,7 +120,9 @@ export function OpportunityWizard({
   // D365-synced lookup tables (vendors, services, countries, currencies)
   const lookupTables = useLookupTableStore((s) => s.lookupTables);
   const vendorOptions = useMemo(
-    () => (lookupTables['opportunity.primaryvendor'] ?? []).map((v) => ({ value: v.label, label: v.label })),
+    () => (lookupTables['opportunity.primaryvendor'] ?? [])
+      .filter((v) => isAwsVendor(v.label) || isMicrosoftVendor(v.label))
+      .map((v) => ({ value: v.label, label: v.label })),
     [lookupTables],
   );
   const serviceNameOptions = useMemo(
@@ -135,7 +138,9 @@ export function OpportunityWizard({
   );
   const currencyList = useMemo(
     () => {
-      const synced = (lookupTables['opportunity.currency'] ?? []).map((v) => v.label);
+      const synced = (lookupTables['opportunity.currency'] ?? [])
+        .map((v) => v.label)
+        .filter((c) => c === 'EUR' || c === 'USD');
       return synced.length > 0 ? synced : ['EUR', 'USD'];
     },
     [lookupTables],
@@ -175,12 +180,16 @@ export function OpportunityWizard({
     publicSectorSegment,
   ]);
 
-  const filledRequiredCount = requiredFields.filter((f) => {
+  const isFieldFilled = (f: FieldKey): boolean => {
     const v = fieldValueMap[f];
     if (typeof v === 'boolean') return true;
     if (typeof v === 'number') return !Number.isNaN(v);
     return v != null && String(v).trim() !== '';
-  }).length;
+  };
+  const missingFields = requiredFields.filter((f) => !isFieldFilled(f));
+  const filledRequiredCount = requiredFields.length - missingFields.length;
+  const allRequiredFilled = missingFields.length === 0;
+  const [showErrors, setShowErrors] = useState(false);
 
   // Auto-fill BCN from customer when customer changes
   useEffect(() => {
@@ -190,8 +199,16 @@ export function OpportunityWizard({
     }
   }, [customerId, customers, opportunity, bcn]);
 
+  // Notify parent so it can load contacts for the picked customer
+  useEffect(() => {
+    if (onCustomerChange) onCustomerChange(customerId);
+  }, [customerId, onCustomerChange]);
+
   const handleSave = async () => {
-    if (!subject.trim() || !customerId) return;
+    if (!allRequiredFilled) {
+      setShowErrors(true);
+      return;
+    }
     setSaving(true);
     try {
       await onSave({
@@ -234,7 +251,7 @@ export function OpportunityWizard({
   };
 
   const customerOptions = (customers ?? []).map((c) => ({ value: c.id, label: c.name }));
-  const contactOptions = [{ value: '', label: 'No contact' }, ...contacts.map((c) => ({ value: c.id, label: `${c.firstName} ${c.lastName}` }))];
+  const contactOptions = contacts.map((c) => ({ value: c.id, label: `${c.firstName} ${c.lastName}` }));
   const opportunityTypeOptions = isMs ? OPP_TYPES_AZURE : (isAws ? ['Trad', 'Services', 'SPA', 'CMP'] : OPP_TYPES_AZURE);
 
   return (
@@ -313,12 +330,13 @@ export function OpportunityWizard({
             )}
 
             <Field label="Contact *">
-              <Select value={contactId} onValueChange={setContactId}>
-                <SelectTrigger><SelectValue placeholder="Select contact" /></SelectTrigger>
-                <SelectContent>
-                  {contactOptions.map((c) => <SelectItem key={c.value || 'none'} value={c.value || '__none'}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={contactOptions}
+                value={contactId === '__none' ? '' : contactId}
+                onValueChange={(v) => setContactId(v || '__none')}
+                placeholder={customerId ? 'Select contact' : 'Pick a customer first'}
+                emptyText={customerId ? 'No contacts for this customer' : 'Pick a customer first'}
+              />
             </Field>
 
             <Field label="BCN *">
@@ -571,21 +589,49 @@ export function OpportunityWizard({
 
       {/* Footer — sticky save bar */}
       <div className="px-6 py-3 border-t bg-card flex items-center justify-between gap-4">
-        <div className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{filledRequiredCount}</span>
-          <span> / {requiredFields.length} required filled</span>
-          <span className="mx-2">·</span>
-          <span>Stage: <span className="font-medium text-foreground">{stage}</span> ({probability}%)</span>
+        <div className="text-xs">
+          <span className={`font-medium ${allRequiredFilled ? 'text-foreground' : 'text-rose-600'}`}>{filledRequiredCount}</span>
+          <span className="text-muted-foreground"> / {requiredFields.length} required filled</span>
+          <span className="mx-2 text-muted-foreground">·</span>
+          <span className="text-muted-foreground">Stage: <span className="font-medium text-foreground">{stage}</span> ({probability}%)</span>
+          {showErrors && !allRequiredFilled && (
+            <div className="mt-1 text-rose-600">
+              Missing: {missingFields.map(fieldLabel).join(', ')}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
-          <Button type="button" onClick={handleSave} disabled={saving || !subject.trim() || !customerId}>
+          <Button type="button" onClick={handleSave} disabled={saving}>
             {saving ? <><Loader2 size={14} className="animate-spin mr-2" />Saving…</> : <><Save size={14} className="mr-2" />Save</>}
           </Button>
         </div>
       </div>
     </div>
   );
+}
+
+const FIELD_LABELS: Record<FieldKey, string> = {
+  subject: 'Subject', accountId: 'Customer', contactId: 'Contact',
+  singleOrCrossSell: 'Single or Cross Sell', type: 'Type',
+  primaryVendor: 'Primary Vendor', opportunityType: 'Opp Type',
+  country: 'Country', currency: 'Currency', stage: 'Stage',
+  bcn: 'BCN', recordType: 'Record Type', source: 'Source',
+  customerNeed: 'Customer Need', estimatedMRR: 'Estimated MRR',
+  annualRevenue: 'Annual Revenue', expirationDate: 'Expiration Date',
+  apnId: 'APN ID', awsPartnerType: 'AWS Partner Type',
+  awsServiceType: 'AWS Service Type', apnTagging: 'APN Tagging',
+  endUserType: 'End User Type', supportType: 'Support Type',
+  payerAccount: 'Payer Account', existingPayeeAccount: 'Existing Payee Account',
+  consolidationAcceptanceDate: 'Consolidation Acceptance Date',
+  msCspTenant: 'MS CSP Tenant', mpnId: 'MPN ID',
+  migrationType: 'Migration Type', serviceName: 'Service Name',
+  competitiveWinback: 'Competitive Winback',
+  publicSectorSegment: 'Public Sector Segment',
+};
+
+function fieldLabel(f: FieldKey): string {
+  return FIELD_LABELS[f] ?? f;
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {

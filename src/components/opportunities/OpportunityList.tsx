@@ -6,7 +6,7 @@ import { rowSlideIn } from '@/lib/motion';
 import { Plus, Target, Pencil, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityWizard } from './OpportunityWizard';
 import type { WizardFormData } from './OpportunityWizard';
 import { CloseOpportunityDialog } from './CloseOpportunityDialog';
@@ -218,6 +218,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+          <DialogTitle className="sr-only">New Opportunity</DialogTitle>
           <OpportunityWizard
             customer={customer}
             contacts={contacts}
@@ -229,6 +230,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+          <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
           {editing && (
             <OpportunityWizard
               opportunity={editing}

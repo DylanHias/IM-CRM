@@ -82,17 +82,20 @@ describe('OpportunityWizard', () => {
     expect(screen.queryByText('Close as Lost')).not.toBeInTheDocument();
   });
 
-  it('disables Save when required minimums (subject + customer) missing', () => {
+  it('blocks save and shows error list when required fields missing', async () => {
+    const onSave = vi.fn();
     render(
       <OpportunityWizard
         customer={createCustomer()}
         contacts={[]}
-        onSave={vi.fn()}
+        onSave={onSave}
         onCancel={vi.fn()}
       />
     );
     const saveBtn = screen.getByRole('button', { name: /save/i });
-    expect(saveBtn).toBeDisabled();
+    saveBtn.click();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Missing:/i)).toBeInTheDocument();
   });
 
   it('renders pre-filled subject from existing opportunity', () => {

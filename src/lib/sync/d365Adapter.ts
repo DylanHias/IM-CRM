@@ -980,11 +980,15 @@ class RealD365Adapter implements ID365Adapter {
         .filter((x) => x.remoteId && x.label);
     };
 
+    // Only fetch cloud vendors (AWS / Microsoft / Azure) — the full im360_vendors table has hundreds of hardware vendors
+    const vendorFilter = encodeURIComponent(
+      "contains(im360_name,'AWS') or contains(im360_name,'AZURE') or contains(im360_name,'MICROSOFT') or contains(im360_name,'Microsoft')",
+    );
     const [vendors, serviceNames, countries, currencies] = await Promise.all([
-      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_vendors?$select=im360_vendorid,im360_name`, 'im360_vendorid', 'im360_name'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_vendors?$select=im360_vendorid,im360_name&$filter=${vendorFilter}`, 'im360_vendorid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_servicenames?$select=im360_servicenameid,im360_name`, 'im360_servicenameid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_countries?$select=im360_countryid,im360_name`, 'im360_countryid', 'im360_name'),
-      fetchOne(`${this.baseUrl}/api/data/v9.2/transactioncurrencies?$select=transactioncurrencyid,isocurrencycode`, 'transactioncurrencyid', 'isocurrencycode'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/transactioncurrencies?$select=transactioncurrencyid,isocurrencycode&$filter=isocurrencycode eq 'EUR' or isocurrencycode eq 'USD'`, 'transactioncurrencyid', 'isocurrencycode'),
     ]);
 
     return [

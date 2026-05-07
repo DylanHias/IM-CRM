@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { OpportunityWizard } from '@/components/opportunities/OpportunityWizard';
 import type { WizardFormData } from '@/components/opportunities/OpportunityWizard';
@@ -102,7 +102,8 @@ export default function OpportunitiesPage() {
     });
   }, [loadData]);
 
-  const activeCustomerId = editing?.customerId ?? null;
+  const [wizardCustomerId, setWizardCustomerId] = useState<string | null>(null);
+  const activeCustomerId = editing?.customerId ?? wizardCustomerId;
   useEffect(() => {
     if (!activeCustomerId) {
       setContacts([]);
@@ -123,6 +124,11 @@ export default function OpportunitiesPage() {
     };
     load();
   }, [activeCustomerId]);
+
+  // Reset wizard's tracked customer when the Add dialog closes
+  useEffect(() => {
+    if (!addOpen) setWizardCustomerId(null);
+  }, [addOpen]);
 
   const buildFromWizard = (data: WizardFormData, base: Opportunity): Opportunity => ({
     ...base,
@@ -334,10 +340,12 @@ export default function OpportunitiesPage() {
 
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); }}>
         <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+          <DialogTitle className="sr-only">New Opportunity</DialogTitle>
           <OpportunityWizard
             customers={customers}
             contacts={contacts}
             onSave={handleCreate}
+            onCustomerChange={setWizardCustomerId}
             onCancel={() => setAddOpen(false)}
           />
         </DialogContent>
@@ -345,6 +353,7 @@ export default function OpportunitiesPage() {
 
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
         <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+          <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
           {editing && (
             <OpportunityWizard
               opportunity={editing}
