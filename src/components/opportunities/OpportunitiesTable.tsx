@@ -1,12 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Target, ChevronRight, Pencil, AlertTriangle } from 'lucide-react';
+import { Target, ChevronRight, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
 import styled from 'styled-components';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Opportunity } from '@/types/entities';
 
@@ -54,10 +52,6 @@ const Row = styled.div`
 
   &:hover {
     background-color: hsl(var(--muted) / 0.6);
-  }
-
-  &:hover .row-actions {
-    opacity: 1;
   }
 `;
 
@@ -135,7 +129,6 @@ interface OpportunitiesTableProps {
 }
 
 export function OpportunitiesTable({ opportunities, customerMap, onEdit }: OpportunitiesTableProps) {
-  const router = useRouter();
   const staleDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
 
   const isStale = (opp: Opportunity) =>
@@ -161,7 +154,7 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
           const stale = isStale(opp);
           return (
             <motion.div key={opp.id} variants={itemVariants}>
-              <Row onClick={() => router.push(`/customers?id=${opp.customerId}`)}>
+              <Row onClick={() => onEdit(opp)}>
                 <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
                   <Target size={16} />
                 </Icon>
@@ -189,15 +182,6 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                     )}
                   </Meta>
                 </Info>
-
-                <div
-                  className="row-actions flex gap-1 opacity-0 transition-opacity mr-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(opp)}>
-                    <Pencil size={13} />
-                  </Button>
-                </div>
 
                 <Right>
                   <Badge variant={statusVariant(opp.status)} className="text-[10px]">{opp.status}</Badge>

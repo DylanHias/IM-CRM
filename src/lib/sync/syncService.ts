@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { bulkUpsertCustomers, bulkUpdateCustomerArrByBcn, clearStaleCustomerArr, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
 import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
-import { queryPendingFollowUps, markFollowUpSynced, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
+import { queryPendingFollowUps, markFollowUpSynced, markFollowUpSyncError, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
 import {
   queryPendingOpportunities,
   markOpportunitySynced,
@@ -415,6 +415,7 @@ async function pushPendingFollowUps(token: string): Promise<void> {
       pushed++;
     } catch (err) {
       console.error(`[sync] Failed to push follow-up "${followUp.title}" (${followUp.id}):`, err instanceof Error ? err.message : err);
+      await markFollowUpSyncError(followUp.id);
       store.addSyncError({
         id: uuidv4(),
         syncType: 'push_followups',

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -226,11 +227,10 @@ export default function OpportunitiesPage() {
     if (isTauriApp()) {
       try {
         await insertOpportunity(newOpp);
-        directPushOpportunity(newOpp).then((result) => {
-          if (result) emitDataEvent('opportunity', 'updated', newOpp.customerId);
-        });
+        pushAndNotify(newOpp, 'created');
       } catch (err) {
         console.error('[opportunity] DB insert failed:', err);
+        toast.error('Could not save opportunity', { description: err instanceof Error ? err.message : String(err) });
       }
     }
     setOpportunities([newOpp, ...allOpportunities]);
@@ -245,11 +245,10 @@ export default function OpportunitiesPage() {
     if (isTauriApp()) {
       try {
         await dbUpdateOpportunity(updated);
-        directPushOpportunity(updated).then((result) => {
-          if (result) emitDataEvent('opportunity', 'updated', updated.customerId);
-        });
+        pushAndNotify(updated, 'updated');
       } catch (err) {
         console.error('[opportunity] DB update failed:', err);
+        toast.error('Could not update opportunity', { description: err instanceof Error ? err.message : String(err) });
       }
     }
     setOpportunities(allOpportunities.map((o) => (o.id === updated.id ? updated : o)));
@@ -274,17 +273,37 @@ export default function OpportunitiesPage() {
     if (isTauriApp()) {
       try {
         await dbUpdateOpportunity(updated);
-        directPushOpportunity(updated).then((result) => {
-          if (result) emitDataEvent('opportunity', 'updated', updated.customerId);
-        });
+        pushAndNotify(updated, `closed as ${data.outcome.toLowerCase()}`);
       } catch (err) {
         console.error('[opportunity] DB close failed:', err);
+        toast.error('Could not close opportunity', { description: err instanceof Error ? err.message : String(err) });
       }
     }
     setOpportunities(allOpportunities.map((o) => (o.id === updated.id ? updated : o)));
     emitDataEvent('opportunity', 'updated', updated.customerId);
     setCloseOutcome(null);
     setEditing(null);
+  };
+
+  /** Fire-and-forget D365 push that surfaces success/error via toast and rebroadcasts data event. */
+  const pushAndNotify = (opp: Opportunity, action: string): void => {
+    const toastId = toast.loading(`Saving "${opp.subject}" to Dynamics 365…`);
+    directPushOpportunity(opp).then((result) => {
+      if (result && 'remoteId' in result) {
+        toast.success(`Opportunity ${action} in Dynamics 365`, { id: toastId });
+        emitDataEvent('opportunity', 'updated', opp.customerId);
+      } else if (result && 'error' in result) {
+        toast.error('Could not push to Dynamics 365', {
+          id: toastId,
+          description: result.error,
+        });
+      } else {
+        toast.error('Could not push to Dynamics 365', {
+          id: toastId,
+          description: 'Unknown error — check the logs',
+        });
+      }
+    });
   };
 
   const openEdit = (opp: Opportunity) => setEditing(opp);

@@ -217,6 +217,14 @@ export async function markFollowUpSynced(id: string, remoteId: string): Promise<
   );
 }
 
+export async function markFollowUpSyncError(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE follow_ups SET sync_status = 'error', updated_at = $1 WHERE id = $2`,
+    [new Date().toISOString(), id]
+  );
+}
+
 export async function upsertPulledFollowUp(followUp: FollowUp): Promise<boolean> {
   const db = await getDb();
 

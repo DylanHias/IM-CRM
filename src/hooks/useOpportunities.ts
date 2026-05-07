@@ -75,7 +75,7 @@ export function useOpportunities(customerId: string) {
         await updateCustomerLastActivity(customerId, now);
         refreshCustomerHealth(customerId);
         directPushOpportunity(opportunity).then((result) => {
-          if (result) {
+          if (result && 'remoteId' in result) {
             updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });
             emitDataEvent('opportunity', 'updated', customerId);
           }
@@ -94,7 +94,7 @@ export function useOpportunities(customerId: string) {
         await dbUpdateOpportunity(opportunity);
         refreshCustomerHealth(customerId);
         directPushOpportunity(opportunity).then((result) => {
-          if (result) {
+          if (result && 'remoteId' in result) {
             updateOpportunity({ ...opportunity, syncStatus: 'synced', remoteId: result.remoteId });
             emitDataEvent('opportunity', 'updated', customerId);
           }

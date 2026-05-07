@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { rowSlideIn } from '@/lib/motion';
-import { Plus, Target, Pencil, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { OpportunitiesTable } from './OpportunitiesTable';
 import { OpportunityWizard } from './OpportunityWizard';
 import type { WizardFormData } from './OpportunityWizard';
 import { CloseOpportunityDialog } from './CloseOpportunityDialog';
@@ -15,7 +13,6 @@ import { useOpportunities } from '@/hooks/useOpportunities';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { useCustomerStore } from '@/store/customerStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
 import type { Opportunity, Contact } from '@/types/entities';
 
@@ -29,19 +26,19 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
 
-  const staleDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [closeOutcome, setCloseOutcome] = useState<'Won' | 'Lost' | null>(null);
 
+  const customerMap = useMemo(
+    () => new Map(customer ? [[customer.id, customer.name]] : []),
+    [customer]
+  );
+
   useEffect(() => {
     if (triggerAdd && triggerAdd > 0) setAddOpen(true);
   }, [triggerAdd]);
-
-  const isStale = (opp: Opportunity) =>
-    opp.status === 'Open' &&
-    (Date.now() - new Date(opp.updatedAt).getTime()) > staleDays * 86400000;
 
   useEffect(() => {
     const load = async () => {
@@ -155,14 +152,6 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
     }
   };
 
-  const statusVariant = (status: Opportunity['status']) => {
-    switch (status) {
-      case 'Open': return 'default' as const;
-      case 'Won': return 'success' as const;
-      case 'Lost': return 'destructive' as const;
-    }
-  };
-
   return (
     <div>
       <div className="flex justify-end mb-3">
@@ -178,42 +167,11 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
           <p className="text-sm text-muted-foreground">No opportunities yet</p>
         </div>
       ) : (
-        <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
-          {opportunities.map((opp, i) => (
-            <motion.div
-              key={opp.id}
-              className="px-5 py-3.5 flex items-start justify-between gap-3 group"
-              {...rowSlideIn(i)}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[13px] font-medium text-foreground truncate">{opp.subject}</span>
-                  <Badge variant={statusVariant(opp.status)} className="text-[10px] shrink-0">{opp.status}</Badge>
-                  {isStale(opp) && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 shrink-0" title={`No updates in ${staleDays}+ days`}>
-                      <AlertTriangle size={11} />
-                      Stale
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                  <span>{opp.stage} ({opp.probability}%)</span>
-                  {opp.primaryVendor && <span>{opp.primaryVendor}</span>}
-                  {opp.opportunityType && <span>{opp.opportunityType}</span>}
-                  {opp.estimatedRevenue != null && (
-                    <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: opp.currency, maximumFractionDigits: 0 }).format(opp.estimatedRevenue)}</span>
-                  )}
-                  {opp.expirationDate && <span>Exp: {opp.expirationDate}</span>}
-                </div>
-              </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(opp)}>
-                  <Pencil size={13} />
-                </Button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        <OpportunitiesTable
+          opportunities={opportunities}
+          customerMap={customerMap}
+          onEdit={setEditing}
+        />
       )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

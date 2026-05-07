@@ -14,26 +14,27 @@ import type { OpportunityOptionValues, OpportunityLookupValues } from '@/lib/syn
 
 async function tryDirectPush<T>(
   pushFn: (token: string) => Promise<T>,
-): Promise<{ success: true; result: T } | { success: false }> {
+): Promise<{ success: true; result: T } | { success: false; error?: string }> {
   if (!isOnline()) {
     console.warn('[sync] Direct push skipped: offline');
-    return { success: false };
+    return { success: false, error: 'Offline — will sync when connection returns' };
   }
   if (!isTauriApp()) {
     console.warn('[sync] Direct push skipped: not Tauri app');
-    return { success: false };
+    return { success: false, error: 'Not running as Tauri app' };
   }
   try {
     const token = await getAccessToken(d365Request.scopes);
     if (!token) {
       console.warn('[sync] Direct push skipped: no access token');
-      return { success: false };
+      return { success: false, error: 'No D365 access token — sign in again' };
     }
     const result = await pushFn(token);
     return { success: true, result };
   } catch (err) {
-    console.warn('[sync] Direct push failed, will sync later:', err instanceof Error ? err.message : err);
-    return { success: false };
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[sync] Direct push failed:', message);
+    return { success: false, error: message };
   }
 }
 
@@ -174,7 +175,7 @@ export async function resolveOpportunityLookupValues(opportunity: Opportunity): 
 
 export async function directPushOpportunity(
   opportunity: Opportunity,
-): Promise<{ remoteId: string } | null> {
+): Promise<{ remoteId: string } | { error: string } | null> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
     const [optionValues, lookupValues] = await Promise.all([
@@ -188,6 +189,7 @@ export async function directPushOpportunity(
     await markOpportunitySynced(opportunity.id, result.result);
     return { remoteId: result.result };
   }
+  if (result.error) return { error: result.error };
   return null;
 }
 
