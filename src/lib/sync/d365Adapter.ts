@@ -316,6 +316,39 @@ async function fetchAllPages<T>(
   return results;
 }
 
+/** D365's @OData.Community.Display.V1.FormattedValue for a currency lookup is the
+ *  human-readable currencyname (e.g. "US Dollar", "Euro"). The local Opportunity stores
+ *  ISO code (USD, EUR) so Intl.NumberFormat works. Map the few names we expect. */
+function currencyNameToIso(name: string | undefined): string {
+  if (!name) return 'EUR';
+  const trimmed = name.trim();
+  if (/^[A-Z]{3}$/.test(trimmed)) return trimmed; // already ISO
+  const map: Record<string, string> = {
+    'us dollar': 'USD',
+    'euro': 'EUR',
+    'pound sterling': 'GBP',
+    'swiss franc': 'CHF',
+    'schweizer franken': 'CHF',
+    'danish kroner': 'DKK',
+    'norwegian kroner': 'NOK',
+    'swedish kronor': 'SEK',
+    'czech koruna': 'CZK',
+    'česká koruna': 'CZK',
+    'polish zloty': 'PLN',
+    'złoty polski': 'PLN',
+    'forint': 'HUF',
+    'turkish lira': 'TRY',
+    'saudi riyal': 'SAR',
+    'qatari riyal': 'QAR',
+    'united arab emirates dirham': 'AED',
+    'bahraini dinar': 'BHD',
+    'kuwaiti dinar': 'KWD',
+    'omani rial': 'OMR',
+    'egyptian pound': 'EGP',
+  };
+  return map[trimmed.toLowerCase()] ?? 'EUR';
+}
+
 function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Opportunity {
   const statusMap: Record<number, OpportunityStatus> = { 0: 'Open', 1: 'Won', 2: 'Lost' };
   const status = statusMap[r.statecode] ?? 'Open';
@@ -341,7 +374,7 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     probability: r.closeprobability ?? 5,
     expirationDate: expiration ? expiration.split('T')[0] : null,
     estimatedRevenue: r.estimatedvalue ?? null,
-    currency: r['_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue'] ?? 'EUR',
+    currency: currencyNameToIso(r['_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue']),
     country: r['_im360_country_value@OData.Community.Display.V1.FormattedValue'] ?? 'Belgium',
     source: r['im360_source@OData.Community.Display.V1.FormattedValue'] ?? 'cloud',
     recordType: r['im360_recordtype@OData.Community.Display.V1.FormattedValue'] ?? 'Sales',

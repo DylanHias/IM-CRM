@@ -6,6 +6,7 @@ import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { stripHtml } from '@/lib/utils/htmlUtils';
+import { formatCurrency } from '@/lib/utils/currencyUtils';
 import type { TimelineEvent } from '@/types/entities';
 
 const ACTIVITY_CONFIG = {
@@ -167,7 +168,7 @@ export function TimelineItem({ event, isLast, onEdit, onDelete, customerName, on
               {event.stage && <span>{event.stage}</span>}
               {event.primaryVendor && <span className="text-muted-foreground/70">· {event.primaryVendor}</span>}
               {event.estimatedRevenue != null && (
-                <span>· {new Intl.NumberFormat('en-US', { style: 'currency', currency: event.currency || 'USD', maximumFractionDigits: 0 }).format(event.estimatedRevenue)}</span>
+                <span>· {formatCurrency(event.estimatedRevenue, event.currency || 'USD')}</span>
               )}
             </p>
           </div>

@@ -6,6 +6,7 @@ import { listContainerVariants as containerVariants, listItemVariants as itemVar
 import styled from 'styled-components';
 import { Badge } from '@/components/ui/badge';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatCurrency } from '@/lib/utils/currencyUtils';
 import type { Opportunity } from '@/types/entities';
 
 const ICON_COLORS = [
@@ -188,7 +189,7 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                   <SubMeta>
                     {opp.estimatedRevenue != null && (
                       <>
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: opp.currency, maximumFractionDigits: 0 }).format(opp.estimatedRevenue)}
+                        {formatCurrency(opp.estimatedRevenue, opp.currency)}
                         {opp.expirationDate && ' · '}
                       </>
                     )}
