@@ -18,8 +18,8 @@ import {
   MIGRATION_TYPES, END_USER_TYPES, PUBLIC_SECTOR_SEGMENTS,
   SINGLE_OR_CROSS_SELL, SELL_TYPES, OPP_TYPES_AZURE,
   COMPETITIVE_WINBACK_OPTIONS,
-  isAwsVendor, isMicrosoftVendor, isConsolidatedAwsServiceType,
-  getRequiredFields, type Stage, type FieldKey,
+  isAwsVendor, isMicrosoftVendor, isSupportedVendor, isConsolidatedAwsServiceType,
+  getRequiredFields, SUPPORTED_VENDORS, type Stage, type FieldKey,
 } from '@/lib/opportunityRules';
 import { useLookupTableStore } from '@/store/lookupTableStore';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
@@ -94,7 +94,7 @@ export function OpportunityWizard({
   const [opportunityType, setOpportunityType] = useState(opportunity?.opportunityType ?? '');
   const [stage, setStage] = useState<Stage>((opportunity?.stage as Stage) ?? 'Prospecting');
   const [expirationDate, setExpirationDate] = useState(opportunity?.expirationDate ?? defaultExpiration());
-  const [estimatedRevenue, setEstimatedRevenue] = useState(opportunity?.estimatedRevenue?.toString() ?? '');
+  const estimatedRevenue = opportunity?.estimatedRevenue?.toString() ?? '';
   const [estimatedMRR, setEstimatedMRR] = useState(opportunity?.estimatedMRR?.toString() ?? '');
   const [annualRevenue, setAnnualRevenue] = useState(opportunity?.annualRevenue?.toString() ?? '');
   const [currency, setCurrency] = useState(opportunity?.currency ?? 'USD');
@@ -122,16 +122,22 @@ export function OpportunityWizard({
   const lookupTables = useLookupTableStore((s) => s.lookupTables);
   const vendorOptions = useMemo(
     () => {
+      const synced = (lookupTables['opportunity.primaryvendor'] ?? [])
+        .filter((v) => isSupportedVendor(v.label));
       const seen = new Set<string>();
-      return (lookupTables['opportunity.primaryvendor'] ?? [])
-        .filter((v) => isAwsVendor(v.label) || isMicrosoftVendor(v.label))
-        .filter((v) => {
-          const key = v.label.trim().toUpperCase();
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        })
-        .map((v) => ({ value: v.label, label: v.label }));
+      const list: { value: string; label: string }[] = [];
+      const pickSynced = (target: string) => {
+        const match = synced.find((v) => v.label.trim().toUpperCase() === target.toUpperCase());
+        return match?.label ?? target;
+      };
+      for (const target of SUPPORTED_VENDORS) {
+        const label = pickSynced(target);
+        const key = label.trim().toUpperCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        list.push({ value: label, label });
+      }
+      return list;
     },
     [lookupTables],
   );
@@ -167,9 +173,12 @@ export function OpportunityWizard({
     primaryVendor: primaryVendor || null,
     awsServiceType: awsServiceType || null,
     endUserType: endUserType || null,
-  }), [primaryVendor, awsServiceType, endUserType]);
+    stage,
+  }), [primaryVendor, awsServiceType, endUserType, stage]);
 
   const requiredFields = useMemo(() => getRequiredFields(formState), [formState]);
+  const requiredSet = useMemo(() => new Set<FieldKey>(requiredFields), [requiredFields]);
+  const isReq = (f: FieldKey) => requiredSet.has(f);
 
   const fieldValueMap = useMemo<Record<FieldKey, unknown>>(() => ({
     subject, accountId: customerId, contactId, singleOrCrossSell, type: sellType,
@@ -317,12 +326,12 @@ export function OpportunityWizard({
         {/* Section: Basics */}
         <Section title="Basics" subtitle="Core details about this opportunity">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Subject *" wide>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Cloud migration project" required />
+            <Field label="Subject" wide required>
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Cloud migration project" />
             </Field>
 
             {customers ? (
-              <Field label="Customer *" wide>
+              <Field label="Customer" wide required>
                 <Combobox
                   options={customerOptions}
                   value={customerId}
@@ -339,7 +348,7 @@ export function OpportunityWizard({
               </Field>
             )}
 
-            <Field label="Contact *">
+            <Field label="Contact" required>
               <Combobox
                 options={contactOptions}
                 value={contactId === '__none' ? '' : contactId}
@@ -349,11 +358,11 @@ export function OpportunityWizard({
               />
             </Field>
 
-            <Field label="BCN *">
+            <Field label="BCN" required>
               <Input value={bcn} onChange={(e) => setBcn(e.target.value)} placeholder="Auto-filled from customer" />
             </Field>
 
-            <Field label="Single or Cross Sell *">
+            <Field label="Single or Cross Sell" required>
               <Select value={singleOrCrossSell} onValueChange={setSingleOrCrossSell}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -362,7 +371,7 @@ export function OpportunityWizard({
               </Select>
             </Field>
 
-            <Field label="Type *">
+            <Field label="Type" required>
               <Select value={sellType} onValueChange={setSellType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -371,7 +380,7 @@ export function OpportunityWizard({
               </Select>
             </Field>
 
-            <Field label="Primary Vendor *" wide>
+            <Field label="Primary Vendor" wide required>
               <Combobox
                 options={vendorOptions}
                 value={primaryVendor}
@@ -381,7 +390,7 @@ export function OpportunityWizard({
               />
             </Field>
 
-            <Field label="Opp Type *">
+            <Field label="Opp Type" required>
               <Select value={opportunityType} onValueChange={setOpportunityType}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
@@ -390,7 +399,7 @@ export function OpportunityWizard({
               </Select>
             </Field>
 
-            <Field label="Country *">
+            <Field label="Country" required>
               <Select value={country} onValueChange={setCountry}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -399,7 +408,7 @@ export function OpportunityWizard({
               </Select>
             </Field>
 
-            <Field label="Currency *">
+            <Field label="Currency" required>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -408,7 +417,7 @@ export function OpportunityWizard({
               </Select>
             </Field>
 
-            <Field label="Customer Need *" wide colSpan={2}>
+            <Field label="Customer Need" wide colSpan={2} required>
               <Textarea
                 value={customerNeed}
                 onChange={(e) => setCustomerNeed(e.target.value)}
@@ -431,10 +440,10 @@ export function OpportunityWizard({
             >
               <Section title="AWS configuration" subtitle="Required when selling AWS">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="APN ID *">
+                  <Field label="APN ID" required={isReq('apnId')}>
                     <Input value={apnId} onChange={(e) => setApnId(e.target.value)} />
                   </Field>
-                  <Field label="AWS Partner Type *">
+                  <Field label="AWS Partner Type" required={isReq('awsPartnerType')}>
                     <Select value={awsPartnerType} onValueChange={setAwsPartnerType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -442,7 +451,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="AWS Service Type *" wide>
+                  <Field label="AWS Service Type" wide required={isReq('awsServiceType')}>
                     <Select value={awsServiceType} onValueChange={setAwsServiceType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -450,7 +459,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="APN Tagging *">
+                  <Field label="APN Tagging" required={isReq('apnTagging')}>
                     <Select value={apnTagging} onValueChange={setApnTagging}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -458,7 +467,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="End User Type *">
+                  <Field label="End User Type" required={isReq('endUserType')}>
                     <Select value={endUserType} onValueChange={setEndUserType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -466,7 +475,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Support Type *">
+                  <Field label="Support Type" required={isReq('supportType')}>
                     <Select value={supportType} onValueChange={setSupportType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -474,7 +483,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Payer Account *">
+                  <Field label="Payer Account" required={isReq('payerAccount')}>
                     <Input value={payerAccount} onChange={(e) => setPayerAccount(e.target.value)} />
                   </Field>
 
@@ -487,10 +496,10 @@ export function OpportunityWizard({
                           exit={{ opacity: 0, height: 0 }}
                           className="col-span-2 grid grid-cols-2 gap-4 pt-2 border-t"
                         >
-                          <Field label="Existing Payee Account *">
+                          <Field label="Existing Payee Account" required={isReq('existingPayeeAccount')}>
                             <Input value={existingPayeeAccount} onChange={(e) => setExistingPayeeAccount(e.target.value)} />
                           </Field>
-                          <Field label="Consolidation Acceptance Date *">
+                          <Field label="Consolidation Acceptance Date">
                             <DatePicker value={consolidationAcceptanceDate} onChange={setConsolidationAcceptanceDate} />
                           </Field>
                         </motion.div>
@@ -512,13 +521,13 @@ export function OpportunityWizard({
             >
               <Section title="Microsoft configuration" subtitle="Required when selling Microsoft Azure or Cloud">
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="MS CSP Tenant *">
+                  <Field label="MS CSP Tenant" required={isReq('msCspTenant')}>
                     <Input value={msCspTenant} onChange={(e) => setMsCspTenant(e.target.value)} />
                   </Field>
-                  <Field label="MPN ID *">
+                  <Field label="MPN ID" required={isReq('mpnId')}>
                     <Input value={mpnId} onChange={(e) => setMpnId(e.target.value)} />
                   </Field>
-                  <Field label="Migration Type *">
+                  <Field label="Migration Type" required={isReq('migrationType')}>
                     <Select value={migrationType} onValueChange={setMigrationType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -526,7 +535,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="End User Type *">
+                  <Field label="End User Type" required={isReq('endUserType')}>
                     <Select value={endUserType} onValueChange={setEndUserType}>
                       <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -534,7 +543,7 @@ export function OpportunityWizard({
                       </SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Service Name *" wide>
+                  <Field label="Service Name" wide required={isReq('serviceName')}>
                     <Combobox
                       options={serviceNameOptions}
                       value={serviceName ?? ''}
@@ -543,7 +552,7 @@ export function OpportunityWizard({
                       emptyText="No service found — sync to load D365 services"
                     />
                   </Field>
-                  <Field label="Competitive Winback *" wide>
+                  <Field label="Competitive Winback" wide required={isReq('competitiveWinback')}>
                     <Select value={competitiveWinback} onValueChange={setCompetitiveWinback}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -565,7 +574,7 @@ export function OpportunityWizard({
               transition={{ duration: 0.18 }}
             >
               <Section title="Public sector" subtitle="Required for public sector deals">
-                <Field label="Public Sector Segment *">
+                <Field label="Public Sector Segment">
                   <Select value={publicSectorSegment} onValueChange={setPublicSectorSegment}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
@@ -581,14 +590,11 @@ export function OpportunityWizard({
         {/* Section: Financials */}
         <Section title="Financials" subtitle="Revenue projections and timing">
           <div className="grid grid-cols-2 gap-4">
-            <Field label={`Estimated MRR * (${currency})`}>
+            <Field label={`Estimated MRR (${currency})`} required>
               <MoneyInput value={estimatedMRR} onValueChange={setEstimatedMRR} currency={currency} />
             </Field>
-            <Field label={`Annual Revenue * (${currency})`}>
+            <Field label={`Annual Revenue (${currency})`} required>
               <MoneyInput value={annualRevenue} onValueChange={setAnnualRevenue} currency={currency} />
-            </Field>
-            <Field label={`Estimated Revenue (${currency})`}>
-              <MoneyInput value={estimatedRevenue} onValueChange={setEstimatedRevenue} currency={currency} placeholder="Total deal value" />
             </Field>
             <Field label="Expiration Date">
               <DatePicker value={expirationDate} onChange={setExpirationDate} />
@@ -656,11 +662,14 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   );
 }
 
-function Field({ label, children, wide, colSpan }: { label: string; children: React.ReactNode; wide?: boolean; colSpan?: number }) {
+function Field({ label, children, wide, colSpan, required }: { label: string; children: React.ReactNode; wide?: boolean; colSpan?: number; required?: boolean }) {
   void wide;
   return (
     <div className={`space-y-1 ${colSpan === 2 ? 'col-span-2' : ''}`}>
-      <Label className="text-xs">{label}</Label>
+      <Label className="text-xs">
+        {label}
+        {required && <span className="ml-1 text-[10px] font-normal text-muted-foreground">(required)</span>}
+      </Label>
       {children}
     </div>
   );

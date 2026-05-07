@@ -21,12 +21,21 @@ export const STAGE_PROBABILITY: Record<Stage, number> = {
   'Purchased': 100,
 };
 
-/** Legacy static lists — vendors are now sourced from D365's im360_vendors table.
- *  Kept only as a hint for tests / fallback display. Use isAwsVendor/isMicrosoftVendor for gating logic. */
 export const AWS_VENDORS = ['AWS - CONSOLIDATED', 'AWS - STANDALONE'] as const;
-export const MICROSOFT_VENDORS = ['MICROSOFT - AZURE', 'MICROSOFT - CLOUD'] as const;
+export const MICROSOFT_VENDORS = [
+  'MICROSOFT - AZURE',
+  'MICROSOFT - CLOUD',
+  'MICROSOFT - DYNAMICS 365 NCE',
+  'MICROSOFT - MODERN WORKPLACE',
+] as const;
 export const SUPPORTED_VENDORS = [...AWS_VENDORS, ...MICROSOFT_VENDORS] as const;
 export type SupportedVendor = typeof SUPPORTED_VENDORS[number];
+
+const SUPPORTED_VENDOR_SET = new Set<string>(SUPPORTED_VENDORS.map((v) => v.toUpperCase()));
+export function isSupportedVendor(label: string | null | undefined): boolean {
+  if (!label) return false;
+  return SUPPORTED_VENDOR_SET.has(label.trim().toUpperCase());
+}
 
 export const AWS_SERVICE_TYPES = [
   'Direct Consolidation',
@@ -174,6 +183,17 @@ export interface OpportunityRulesState {
   primaryVendor?: string | null;
   awsServiceType?: string | null;
   endUserType?: string | null;
+  stage?: Stage | null;
+}
+
+const STAGES_REQUIRING_VENDOR_FIELDS: readonly Stage[] = [
+  'Qualified', 'Verbal Received', 'Contract Received',
+  'Billing Rejection', 'Pending Vendor Confirmation', 'Purchased',
+] as const;
+
+export function stageRequiresVendorFields(stage: Stage | null | undefined): boolean {
+  if (!stage) return false;
+  return (STAGES_REQUIRING_VENDOR_FIELDS as readonly Stage[]).includes(stage);
 }
 
 export function isAwsVendor(vendor: string | null | undefined): boolean {
@@ -193,19 +213,17 @@ export function isConsolidatedAwsServiceType(value: string | null | undefined): 
 export function getRequiredFields(state: OpportunityRulesState): FieldKey[] {
   const fields: FieldKey[] = [...BASE_REQUIRED];
 
+  if (!stageRequiresVendorFields(state.stage)) return fields;
+
   if (isAwsVendor(state.primaryVendor)) {
     fields.push(...AWS_REQUIRED);
     if (isConsolidatedAwsServiceType(state.awsServiceType)) {
-      fields.push('existingPayeeAccount', 'consolidationAcceptanceDate');
+      fields.push('existingPayeeAccount');
     }
   }
 
   if (isMicrosoftVendor(state.primaryVendor)) {
     fields.push(...MICROSOFT_REQUIRED);
-  }
-
-  if (state.endUserType === 'Public Sector') {
-    fields.push('publicSectorSegment');
   }
 
   return fields;
