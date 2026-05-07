@@ -4,8 +4,9 @@ import type {
   D365PhoneCall, D365Appointment, D365Annotation, D365Task, D365Opportunity,
 } from '@/types/api';
 import { v4 as uuidv4 } from 'uuid';
-import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
+import { EMPTY_OPP_EXTRA_FIELDS, getStatusReasonCode as getStatusReasonCodeForPush } from '@/lib/opportunityRules';
 import { OPTION_SET_FIELDS, type OptionSetFieldKey } from '@/lib/sync/optionSetConfig';
+import type { LookupTableItem, LookupTableKey } from '@/types/lookupTable';
 import { mockCustomers } from '@/lib/mock/customers';
 import { mockContacts } from '@/lib/mock/contacts';
 
@@ -21,6 +22,26 @@ export interface OpportunityOptionValues {
   opportunityType: number | null;
   recordType: number | null;
   source: number | null;
+  singleOrCrossSell: number | null;
+  awsPartnerType: number | null;
+  awsServiceType: number | null;
+  apnTagging: number | null;
+  endUserType: number | null;
+  supportType: number | null;
+  migrationType: number | null;
+  publicSectorSegment: number | null;
+}
+
+export interface OpportunityLookupValues {
+  primaryVendorId: string | null;
+  serviceNameId: string | null;
+  countryId: string | null;
+  currencyId: string | null;
+}
+
+export interface LookupTableFetchResult {
+  key: LookupTableKey;
+  items: LookupTableItem[];
 }
 
 export interface ID365Adapter {
@@ -37,8 +58,9 @@ export interface ID365Adapter {
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
   fetchOpportunities(token: string, customerIds: Set<string>, ownerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
-  pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string>;
+  pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues, lookupValues: OpportunityLookupValues): Promise<string>;
   deleteOpportunity(token: string, remoteId: string): Promise<void>;
+  fetchLookupTables(token: string): Promise<LookupTableFetchResult[]>;
   pushContact(token: string, contact: Contact): Promise<string>;
   deleteContact(token: string, remoteId: string): Promise<void>;
   setPrimaryContact(token: string, accountId: string, contactRemoteId: string): Promise<void>;
@@ -296,24 +318,31 @@ async function fetchAllPages<T>(
 
 function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Opportunity {
   const statusMap: Record<number, OpportunityStatus> = { 0: 'Open', 1: 'Won', 2: 'Lost' };
+  const status = statusMap[r.statecode] ?? 'Open';
+  const expiration = r.im360_expirydate ?? r.estimatedclosedate;
+  // Prefer im360_primaryvendorid (the populated lookup), fallback to legacy im360_primaryvendor
+  const primaryVendor =
+    r['_im360_primaryvendorid_value@OData.Community.Display.V1.FormattedValue']
+    ?? r['_im360_primaryvendor_value@OData.Community.Display.V1.FormattedValue']
+    ?? null;
   return {
     ...EMPTY_OPP_EXTRA_FIELDS,
     id: uuidv4(),
     customerId: r._parentaccountid_value ?? '',
     contactId: r._parentcontactid_value ?? null,
-    status: statusMap[r.statecode] ?? 'Open',
+    status,
     subject: r.name ?? '',
     bcn: r.im360_bcn ?? null,
     multiVendorOpportunity: r.im360_multivendoropportunity ?? false,
     sellType: r['im360_opptype@OData.Community.Display.V1.FormattedValue'] ?? '',
-    primaryVendor: r['_im360_primaryvendor_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    primaryVendor,
     opportunityType: r['im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'] ?? null,
     stage: r['im360_oppstage@OData.Community.Display.V1.FormattedValue'] ?? 'Prospecting',
     probability: r.closeprobability ?? 5,
-    expirationDate: r.estimatedclosedate ? r.estimatedclosedate.split('T')[0] : null,
+    expirationDate: expiration ? expiration.split('T')[0] : null,
     estimatedRevenue: r.estimatedvalue ?? null,
-    currency: 'EUR',
-    country: 'Belgium',
+    currency: r['_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue'] ?? 'EUR',
+    country: r['_im360_country_value@OData.Community.Display.V1.FormattedValue'] ?? 'Belgium',
     source: r['im360_source@OData.Community.Display.V1.FormattedValue'] ?? 'cloud',
     recordType: r['im360_recordtype@OData.Community.Display.V1.FormattedValue'] ?? 'Sales',
     customerNeed: r.customerneed ?? null,
@@ -323,6 +352,29 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     createdByName: r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     createdAt: r.createdon ?? now,
     updatedAt: r.modifiedon ?? now,
+    singleOrCrossSell: r['im360_singleorcrosssell@OData.Community.Display.V1.FormattedValue'] ?? null,
+    estimatedMRR: r.im360_estimatedmrr ?? null,
+    annualRevenue: r.im360_annualrevenue ?? null,
+    apnId: r.im360_apnid ?? null,
+    awsPartnerType: r['im360_awspartnertype1@OData.Community.Display.V1.FormattedValue'] ?? null,
+    awsServiceType: r['im360_awsservicetype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    apnTagging: r['im360_apntagging@OData.Community.Display.V1.FormattedValue'] ?? null,
+    endUserType: r['im360_endusertype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    supportType: r['im360_supporttype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    payerAccount: r.im360_payeraccount ?? null,
+    existingPayeeAccount: r.im360_existingpayeeaccount ?? null,
+    consolidationAcceptanceDate: r.im360_consolidationacceptancedate ? r.im360_consolidationacceptancedate.split('T')[0] : null,
+    msCspTenant: r.im360_mscsptenant ?? null,
+    mpnId: r.im360_mpnid ?? null,
+    migrationType: r['im360_migrationtype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    serviceName: r['_im360_servicename1_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    competitiveWinback: r.im360_competitivewinback ?? null,
+    publicSectorSegment: r['im360_publicsectorsegment@OData.Community.Display.V1.FormattedValue'] ?? null,
+    statusReason: status === 'Open' ? null : (r['statuscode@OData.Community.Display.V1.FormattedValue'] ?? null),
+    actualRevenue: r.actualvalue ?? null,
+    closeDate: status === 'Open' ? null : (r.actualclosedate ? r.actualclosedate.split('T')[0] : null),
+    competitorId: null,
+    closeDescription: status === 'Open' ? null : (r.description ?? null),
   };
 }
 
@@ -487,10 +539,20 @@ class RealD365Adapter implements ID365Adapter {
     }
 
     const select = [
-      'opportunityid', 'name', 'statecode', 'estimatedvalue', 'estimatedclosedate',
-      'closeprobability', 'customerneed', 'im360_bcn', 'im360_multivendoropportunity',
+      'opportunityid', 'name', 'statecode', 'statuscode',
+      'estimatedvalue', 'estimatedclosedate', 'actualvalue', 'actualclosedate',
+      'closeprobability', 'customerneed', 'description',
+      'im360_bcn', 'im360_multivendoropportunity',
       'im360_oppstage', 'im360_opptype', 'im360_drpboxopptype', 'im360_recordtype',
-      'im360_source', '_im360_primaryvendor_value',
+      'im360_source', 'im360_singleorcrosssell',
+      'im360_apnid', 'im360_awspartnertype1', 'im360_awsservicetype', 'im360_apntagging',
+      'im360_endusertype', 'im360_supporttype', 'im360_payeraccount',
+      'im360_existingpayeeaccount', 'im360_consolidationacceptancedate',
+      'im360_mscsptenant', 'im360_mpnid', 'im360_migrationtype',
+      'im360_competitivewinback', 'im360_publicsectorsegment',
+      'im360_estimatedmrr', 'im360_annualrevenue', 'im360_expirydate',
+      '_im360_primaryvendor_value', '_im360_primaryvendorid_value',
+      '_im360_servicename1_value', '_im360_country_value', '_transactioncurrencyid_value',
       '_parentaccountid_value', '_parentcontactid_value', '_ownerid_value',
       'createdon', 'modifiedon',
     ].join(',');
@@ -752,7 +814,12 @@ class RealD365Adapter implements ID365Adapter {
     return resolvedId;
   }
 
-  async pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues): Promise<string> {
+  async pushOpportunity(
+    token: string,
+    opportunity: Opportunity,
+    optionValues: OpportunityOptionValues,
+    lookupValues: OpportunityLookupValues,
+  ): Promise<string> {
     const isUpdate = !!opportunity.remoteId;
 
     const body: Record<string, unknown> = {
@@ -763,16 +830,53 @@ class RealD365Adapter implements ID365Adapter {
     };
 
     if (opportunity.estimatedRevenue != null) body.estimatedvalue = opportunity.estimatedRevenue;
-    if (opportunity.expirationDate) body.estimatedclosedate = opportunity.expirationDate;
+    if (opportunity.expirationDate) {
+      body.im360_expirydate = opportunity.expirationDate;
+      body.estimatedclosedate = opportunity.expirationDate;
+    }
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
     if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
-    // primaryVendor is a D365 lookup to account — read-only from local since we only store the vendor name, not the account GUID
     if (opportunity.contactId) body['parentcontactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
+
+    // Picklists (numeric option set values)
     if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
     if (optionValues.sellType != null) body.im360_opptype = optionValues.sellType;
     if (optionValues.opportunityType != null) body.im360_drpboxopptype = optionValues.opportunityType;
     if (optionValues.recordType != null) body.im360_recordtype = optionValues.recordType;
     if (optionValues.source != null) body.im360_source = optionValues.source;
+    if (optionValues.singleOrCrossSell != null) body.im360_singleorcrosssell = optionValues.singleOrCrossSell;
+    if (optionValues.awsPartnerType != null) body.im360_awspartnertype1 = optionValues.awsPartnerType;
+    if (optionValues.awsServiceType != null) body.im360_awsservicetype = optionValues.awsServiceType;
+    if (optionValues.apnTagging != null) body.im360_apntagging = optionValues.apnTagging;
+    if (optionValues.endUserType != null) body.im360_endusertype = optionValues.endUserType;
+    if (optionValues.supportType != null) body.im360_supporttype = optionValues.supportType;
+    if (optionValues.migrationType != null) body.im360_migrationtype = optionValues.migrationType;
+    if (optionValues.publicSectorSegment != null) body.im360_publicsectorsegment = optionValues.publicSectorSegment;
+
+    // Strings + scalars
+    if (opportunity.estimatedMRR != null) body.im360_estimatedmrr = opportunity.estimatedMRR;
+    if (opportunity.annualRevenue != null) body.im360_annualrevenue = opportunity.annualRevenue;
+    if (opportunity.apnId) body.im360_apnid = opportunity.apnId;
+    if (opportunity.payerAccount) body.im360_payeraccount = opportunity.payerAccount;
+    if (opportunity.existingPayeeAccount) body.im360_existingpayeeaccount = opportunity.existingPayeeAccount;
+    if (opportunity.consolidationAcceptanceDate) body.im360_consolidationacceptancedate = opportunity.consolidationAcceptanceDate;
+    if (opportunity.msCspTenant) body.im360_mscsptenant = opportunity.msCspTenant;
+    if (opportunity.mpnId) body.im360_mpnid = opportunity.mpnId;
+    if (opportunity.competitiveWinback) body.im360_competitivewinback = opportunity.competitiveWinback;
+
+    // Lookups
+    if (lookupValues.primaryVendorId) {
+      body['im360_primaryvendorid@odata.bind'] = `/im360_vendors(${lookupValues.primaryVendorId})`;
+    }
+    if (lookupValues.serviceNameId) {
+      body['im360_ServiceName1@odata.bind'] = `/im360_servicenames(${lookupValues.serviceNameId})`;
+    }
+    if (lookupValues.countryId) {
+      body['im360_Country@odata.bind'] = `/im360_countries(${lookupValues.countryId})`;
+    }
+    if (lookupValues.currencyId) {
+      body['transactioncurrencyid@odata.bind'] = `/transactioncurrencies(${lookupValues.currencyId})`;
+    }
 
     const endpoint = isUpdate
       ? `${this.baseUrl}/api/data/v9.2/opportunities(${opportunity.remoteId})`
@@ -799,12 +903,38 @@ class RealD365Adapter implements ID365Adapter {
       ? opportunity.remoteId!
       : parseEntityIdHeader(res.headers.get('OData-EntityId'));
 
-    // D365 won't accept statecode in the main body for opportunities — set via separate PATCH
-    // Open is the default; only patch if Won or Lost
+    // Close-as-won/lost flow: set actualvalue/actualclosedate/description first,
+    // then statecode/statuscode in a separate PATCH (D365 rejects statecode in create body).
     if (opportunity.status !== 'Open') {
+      const closeBody: Record<string, unknown> = {};
+      if (opportunity.actualRevenue != null) closeBody.actualvalue = opportunity.actualRevenue;
+      if (opportunity.closeDate) closeBody.actualclosedate = opportunity.closeDate;
+      if (opportunity.closeDescription) closeBody.description = opportunity.closeDescription;
+      if (Object.keys(closeBody).length > 0) {
+        const closeRes = await fetch(
+          `${this.baseUrl}/api/data/v9.2/opportunities(${resolvedId})`,
+          {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'OData-MaxVersion': '4.0',
+              'OData-Version': '4.0',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(closeBody),
+          },
+        );
+        if (!closeRes.ok) {
+          console.error(`[opportunity] Failed to set close fields for ${resolvedId}:`, await closeRes.text());
+        }
+      }
+
+      const statusReason = opportunity.statusReason
+        ? getStatusReasonCodeForPush(opportunity.statusReason, opportunity.status)
+        : null;
       const stateBody = opportunity.status === 'Won'
-        ? { statecode: 1, statuscode: 3 }
-        : { statecode: 2, statuscode: 4 };
+        ? { statecode: 1, statuscode: statusReason ?? 3 }
+        : { statecode: 2, statuscode: statusReason ?? 4 };
       const stateRes = await fetch(
         `${this.baseUrl}/api/data/v9.2/opportunities(${resolvedId})`,
         {
@@ -824,6 +954,45 @@ class RealD365Adapter implements ID365Adapter {
     }
 
     return resolvedId;
+  }
+
+  async fetchLookupTables(token: string): Promise<LookupTableFetchResult[]> {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'OData-MaxVersion': '4.0',
+      'OData-Version': '4.0',
+      Accept: 'application/json',
+    };
+
+    const fetchOne = async (
+      url: string,
+      idField: string,
+      nameField: string,
+    ): Promise<LookupTableItem[]> => {
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        console.error(`[sync] Lookup fetch failed ${res.status}: ${url}`);
+        return [];
+      }
+      const json = (await res.json()) as { value: Array<Record<string, unknown>> };
+      return json.value
+        .map((r) => ({ remoteId: String(r[idField] ?? ''), label: String(r[nameField] ?? '') }))
+        .filter((x) => x.remoteId && x.label);
+    };
+
+    const [vendors, serviceNames, countries, currencies] = await Promise.all([
+      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_vendors?$select=im360_vendorid,im360_name`, 'im360_vendorid', 'im360_name'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_servicenames?$select=im360_servicenameid,im360_name`, 'im360_servicenameid', 'im360_name'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_countries?$select=im360_countryid,im360_name`, 'im360_countryid', 'im360_name'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/transactioncurrencies?$select=transactioncurrencyid,isocurrencycode`, 'transactioncurrencyid', 'isocurrencycode'),
+    ]);
+
+    return [
+      { key: 'opportunity.primaryvendor', items: vendors },
+      { key: 'opportunity.servicename', items: serviceNames },
+      { key: 'opportunity.country', items: countries },
+      { key: 'opportunity.currency', items: currencies },
+    ];
   }
 
   async pushContact(token: string, contact: Contact): Promise<string> {
@@ -1035,9 +1204,25 @@ class MockD365Adapter implements ID365Adapter {
     return [];
   }
 
-  async pushOpportunity(_token: string, opportunity: Opportunity, _optionValues: OpportunityOptionValues): Promise<string> {
+  async pushOpportunity(_token: string, opportunity: Opportunity, _optionValues: OpportunityOptionValues, _lookupValues: OpportunityLookupValues): Promise<string> {
     await delay(200);
     return `D365-OPP-${opportunity.id.slice(0, 8).toUpperCase()}`;
+  }
+
+  async fetchLookupTables(_token: string): Promise<LookupTableFetchResult[]> {
+    await delay(100);
+    return [
+      { key: 'opportunity.primaryvendor', items: [] },
+      { key: 'opportunity.servicename', items: [] },
+      { key: 'opportunity.country', items: [
+        { remoteId: '49b13989-71a5-e911-a97c-000d3a38c0ab', label: 'Belgium' },
+        { remoteId: 'f3c312b9-71a5-e911-a97c-000d3a38c0ab', label: 'Netherlands' },
+      ] },
+      { key: 'opportunity.currency', items: [
+        { remoteId: '364a4125-d95d-e811-a956-000d3a38c01d', label: 'EUR' },
+        { remoteId: '0fd21096-6859-e811-a95f-000d3a2760f2', label: 'USD' },
+      ] },
+    ];
   }
 
   async deleteOpportunity(_token: string, _remoteId: string): Promise<void> {

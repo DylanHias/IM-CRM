@@ -16,28 +16,17 @@ import {
   preloadOpportunityState,
   bulkUpsertOpportunities,
 } from '@/lib/db/queries/opportunities';
-import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
 import { queryPendingDeletes, removePendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { upsertOptionSet } from '@/lib/db/queries/optionSets';
+import { upsertLookupTable } from '@/lib/db/queries/lookupTables';
 import { insertSyncRecord, updateSyncRecord, getAppSetting, setAppSetting, queryRecentSyncRecords } from '@/lib/db/queries/sync';
 import { useSyncStore } from '@/store/syncStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
+import { useLookupTableStore } from '@/store/lookupTableStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { v4 as uuidv4 } from 'uuid';
 import type { Activity, FollowUp, Opportunity } from '@/types/entities';
-import type { OpportunityOptionValues } from '@/lib/sync/d365Adapter';
-
-
-async function resolveOpportunityOptionValues(opportunity: Opportunity): Promise<OpportunityOptionValues> {
-  const [stage, sellType, opportunityType, recordType, source] = await Promise.all([
-    opportunity.stage ? queryOptionSetValue('opportunity', 'im360_oppstage', opportunity.stage) : Promise.resolve(null),
-    opportunity.sellType ? queryOptionSetValue('opportunity', 'im360_opptype', opportunity.sellType) : Promise.resolve(null),
-    opportunity.opportunityType ? queryOptionSetValue('opportunity', 'im360_drpboxopptype', opportunity.opportunityType) : Promise.resolve(null),
-    opportunity.recordType ? queryOptionSetValue('opportunity', 'im360_recordtype', opportunity.recordType) : Promise.resolve(null),
-    opportunity.source ? queryOptionSetValue('opportunity', 'im360_source', opportunity.source) : Promise.resolve(null),
-  ]);
-  return { stage, sellType, opportunityType, recordType, source };
-}
+import { resolveOpportunityOptionValues, resolveOpportunityLookupValues } from '@/lib/sync/directPushService';
 
 export async function resetSyncWatermark(): Promise<void> {
   await setAppSetting('last_d365_sync', '');
@@ -96,7 +85,7 @@ export async function runFullSync(token: string): Promise<void> {
   console.log('[sync] Starting full sync');
 
   try {
-    await syncOptionSets(token);
+    await Promise.all([syncOptionSets(token), syncLookupTables(token)]);
 
     // Resolve the caller's D365 system user ID once and persist it so analytics
     // queries can match D365-synced activities (which store the D365 GUID as created_by_id).
@@ -454,8 +443,11 @@ async function pushPendingOpportunities(token: string): Promise<void> {
   const adapter = getD365Adapter();
   for (const opportunity of pending) {
     try {
-      const optionValues = await resolveOpportunityOptionValues(opportunity);
-      const remoteId = await adapter.pushOpportunity(token, opportunity, optionValues);
+      const [optionValues, lookupValues] = await Promise.all([
+        resolveOpportunityOptionValues(opportunity),
+        resolveOpportunityLookupValues(opportunity),
+      ]);
+      const remoteId = await adapter.pushOpportunity(token, opportunity, optionValues, lookupValues);
       await markOpportunitySynced(opportunity.id, remoteId);
       pushed++;
     } catch (err) {
@@ -524,5 +516,28 @@ async function syncOptionSets(token: string): Promise<void> {
     console.log('[sync] Option sets synced');
   } catch (err) {
     console.error('[sync] Option set sync error:', err instanceof Error ? err.message : err);
+  }
+}
+
+async function syncLookupTables(token: string): Promise<void> {
+  try {
+    const adapter = getD365Adapter();
+    const tables = await adapter.fetchLookupTables(token);
+    const now = new Date().toISOString();
+    let total = 0;
+
+    for (const table of tables) {
+      try {
+        await upsertLookupTable(table.key, table.items, now);
+        total += table.items.length;
+      } catch (err) {
+        console.error(`[sync] Failed to upsert lookup table ${table.key}:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    await useLookupTableStore.getState().hydrateFromDb();
+    console.log(`[sync] Lookup tables synced (${total} records across ${tables.length} tables)`);
+  } catch (err) {
+    console.error('[sync] Lookup table sync error:', err instanceof Error ? err.message : err);
   }
 }

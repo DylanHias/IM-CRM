@@ -46,7 +46,11 @@ function rowToOpportunity(row: OpportunityRow): Opportunity {
     mpnId: row.mpn_id ?? null,
     migrationType: row.migration_type ?? null,
     serviceName: row.service_name ?? null,
-    competitiveWinback: row.competitive_winback == null ? null : row.competitive_winback === 1,
+    competitiveWinback: row.competitive_winback == null
+      ? null
+      : typeof row.competitive_winback === 'string'
+        ? row.competitive_winback
+        : (row.competitive_winback === 1 ? 'Yes' : 'No'),
     publicSectorSegment: row.public_sector_segment ?? null,
     statusReason: row.status_reason ?? null,
     actualRevenue: row.actual_revenue ?? null,
@@ -101,7 +105,7 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       opp.apnId, opp.awsPartnerType, opp.awsServiceType, opp.apnTagging, opp.endUserType,
       opp.supportType, opp.payerAccount, opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
       opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName,
-      opp.competitiveWinback == null ? null : (opp.competitiveWinback ? 1 : 0),
+      opp.competitiveWinback,
       opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
       opp.competitorId, opp.closeDescription,
     ]
@@ -137,7 +141,7 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
       opp.endUserType, opp.supportType, opp.payerAccount,
       opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
       opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName,
-      opp.competitiveWinback == null ? null : (opp.competitiveWinback ? 1 : 0),
+      opp.competitiveWinback,
       opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
       opp.competitorId, opp.closeDescription, opp.id,
     ]

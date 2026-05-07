@@ -127,7 +127,7 @@ export interface OpportunityRow {
   mpn_id: string | null;
   migration_type: string | null;
   service_name: string | null;
-  competitive_winback: number | null;
+  competitive_winback: number | string | null;
   public_sector_segment: string | null;
   status_reason: string | null;
   actual_revenue: number | null;

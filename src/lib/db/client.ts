@@ -232,6 +232,18 @@ async function ensureTablesExist(db: Database): Promise<void> {
   `);
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS lookup_tables (
+      table_key  TEXT NOT NULL,
+      remote_id  TEXT NOT NULL,
+      label      TEXT NOT NULL,
+      synced_at  TEXT NOT NULL,
+      PRIMARY KEY (table_key, remote_id)
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_lookup_tables_key ON lookup_tables(table_key)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_lookup_tables_label ON lookup_tables(table_key, label COLLATE NOCASE)`);
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS customer_favorites (
       customer_id TEXT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -321,7 +333,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '30')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '31')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -750,6 +762,23 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     // and close-as-won/lost fields. ensureAllColumns handles the actual ALTERs idempotently.
     await db.execute(
       `UPDATE app_settings SET value = '30', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 31) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS lookup_tables (
+        table_key  TEXT NOT NULL,
+        remote_id  TEXT NOT NULL,
+        label      TEXT NOT NULL,
+        synced_at  TEXT NOT NULL,
+        PRIMARY KEY (table_key, remote_id)
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_lookup_tables_key ON lookup_tables(table_key)`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_lookup_tables_label ON lookup_tables(table_key, label COLLATE NOCASE)`);
+    await db.execute(
+      `UPDATE app_settings SET value = '31', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

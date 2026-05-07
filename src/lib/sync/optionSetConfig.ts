@@ -12,7 +12,15 @@ export type OptionSetFieldKey =
   | 'opportunity.selltype'
   | 'opportunity.opptype'
   | 'opportunity.recordtype'
-  | 'opportunity.source';
+  | 'opportunity.source'
+  | 'opportunity.singleorcrosssell'
+  | 'opportunity.awspartnertype'
+  | 'opportunity.awsservicetype'
+  | 'opportunity.apntagging'
+  | 'opportunity.endusertype'
+  | 'opportunity.supporttype'
+  | 'opportunity.migrationtype'
+  | 'opportunity.publicsectorsegment';
 
 export const OPTION_SET_FIELDS: Record<OptionSetFieldKey, OptionSetFieldConfig> = {
   'account.industrycode': {
@@ -102,6 +110,95 @@ export const OPTION_SET_FIELDS: Record<OptionSetFieldKey, OptionSetFieldConfig> 
     attributeName: 'im360_source',
     fallbackOptions: [
       { value: 0, label: 'cloud' },
+    ],
+  },
+  'opportunity.singleorcrosssell': {
+    entityName: 'opportunity',
+    attributeName: 'im360_singleorcrosssell',
+    fallbackOptions: [
+      { value: 100000000, label: 'Single' },
+      { value: 100000001, label: 'Cross Sell' },
+    ],
+  },
+  'opportunity.awspartnertype': {
+    entityName: 'opportunity',
+    attributeName: 'im360_awspartnertype1',
+    fallbackOptions: [
+      { value: 100000000, label: 'Service' },
+      { value: 100000001, label: 'Software' },
+    ],
+  },
+  'opportunity.awsservicetype': {
+    entityName: 'opportunity',
+    attributeName: 'im360_awsservicetype',
+    fallbackOptions: [
+      { value: 100000000, label: 'Direct Consolidation' },
+      { value: 100000001, label: 'Direct Consolidation – Cloud Marketplace (CMP)' },
+      { value: 100000002, label: 'New Reseller Account – No Root Access' },
+      { value: 100000003, label: 'New Sub Account – No Root Access' },
+      { value: 100000004, label: 'RI Program Management' },
+    ],
+  },
+  'opportunity.apntagging': {
+    entityName: 'opportunity',
+    attributeName: 'im360_apntagging',
+    fallbackOptions: [
+      { value: 100000000, label: 'Internal' },
+      { value: 100000001, label: 'End User' },
+    ],
+  },
+  'opportunity.endusertype': {
+    entityName: 'opportunity',
+    attributeName: 'im360_endusertype',
+    fallbackOptions: [
+      { value: 100000000, label: 'Commercial' },
+      { value: 100000001, label: 'Public Sector' },
+    ],
+  },
+  'opportunity.supporttype': {
+    entityName: 'opportunity',
+    attributeName: 'im360_supporttype',
+    fallbackOptions: [
+      { value: 100000000, label: 'Developer' },
+      { value: 100000001, label: 'Business' },
+      { value: 100000002, label: 'Enterprise' },
+      { value: 100000003, label: 'Partner Led' },
+      { value: 100000004, label: 'Basic' },
+    ],
+  },
+  'opportunity.migrationtype': {
+    entityName: 'opportunity',
+    attributeName: 'im360_migrationtype',
+    fallbackOptions: [
+      { value: 100000000, label: 'CSP to CSP' },
+      { value: 100000001, label: 'Current Partner Growth Transition' },
+      { value: 100000002, label: 'EA to CSP' },
+      { value: 100000003, label: 'ISV' },
+      { value: 100000004, label: 'New Reseller' },
+      { value: 100000005, label: 'PAYG' },
+      { value: 100000006, label: 'Tier 1' },
+    ],
+  },
+  'opportunity.publicsectorsegment': {
+    entityName: 'opportunity',
+    attributeName: 'im360_publicsectorsegment',
+    fallbackOptions: [
+      { value: 100000000, label: 'SLG – IMGSA' },
+      { value: 100000001, label: 'EDU – IMGSA' },
+      { value: 100000002, label: 'Federal – IMGSA' },
+      { value: 100000003, label: 'Healthcare – IMGSA' },
+      { value: 100000004, label: 'SLG – IMNCPA' },
+      { value: 100000005, label: 'EDU – IMNCPA' },
+      { value: 100000006, label: 'Federal – IMNCPA' },
+      { value: 100000007, label: 'Healthcare – IMNCPA' },
+      { value: 100000008, label: 'SLG – No Contract' },
+      { value: 100000009, label: 'EDU – No Contract' },
+      { value: 100000010, label: 'Federal – No Contract' },
+      { value: 100000011, label: 'Healthcare – No Contract' },
+      { value: 100000012, label: 'Non-Profit' },
+      { value: 100000013, label: 'SLG – IM OMNIA' },
+      { value: 100000014, label: 'EDU – IM OMNIA' },
+      { value: 100000015, label: 'Healthcare – IM OMNIA' },
     ],
   },
 };

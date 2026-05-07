@@ -140,7 +140,7 @@ export interface Opportunity {
   mpnId: string | null;
   migrationType: string | null;
   serviceName: string | null;
-  competitiveWinback: boolean | null;
+  competitiveWinback: string | null;
   publicSectorSegment: string | null;
   statusReason: string | null;
   actualRevenue: number | null;

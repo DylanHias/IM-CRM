@@ -116,10 +116,14 @@ export interface D365Opportunity {
   opportunityid: string;
   name: string | null;
   statecode: number;
+  statuscode: number | null;
   estimatedvalue: number | null;
   estimatedclosedate: string | null;
+  actualvalue: number | null;
+  actualclosedate: string | null;
   closeprobability: number | null;
   customerneed: string | null;
+  description: string | null;
   im360_bcn: string | null;
   im360_multivendoropportunity: boolean | null;
   im360_oppstage: number | null;
@@ -127,19 +131,59 @@ export interface D365Opportunity {
   im360_drpboxopptype: number | null;
   im360_recordtype: number | null;
   im360_source: number | null;
+  im360_singleorcrosssell: number | null;
+  im360_apnid: string | null;
+  im360_awspartnertype1: number | null;
+  im360_awsservicetype: number | null;
+  im360_apntagging: number | null;
+  im360_endusertype: number | null;
+  im360_supporttype: number | null;
+  im360_payeraccount: string | null;
+  im360_existingpayeeaccount: string | null;
+  im360_consolidationacceptancedate: string | null;
+  im360_mscsptenant: string | null;
+  im360_mpnid: string | null;
+  im360_migrationtype: number | null;
+  im360_competitivewinback: string | null;
+  im360_publicsectorsegment: number | null;
+  im360_estimatedmrr: number | null;
+  im360_annualrevenue: number | null;
+  im360_expirydate: string | null;
   _im360_primaryvendor_value: string | null;
+  _im360_primaryvendorid_value: string | null;
+  _im360_servicename1_value: string | null;
+  _im360_country_value: string | null;
+  _transactioncurrencyid_value: string | null;
   _parentaccountid_value: string | null;
   _parentcontactid_value: string | null;
   _ownerid_value: string | null;
+  'statuscode@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_oppstage@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_opptype@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_drpboxopptype@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_recordtype@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_source@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_singleorcrosssell@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_awspartnertype1@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_awsservicetype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_apntagging@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_endusertype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_supporttype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_migrationtype@OData.Community.Display.V1.FormattedValue'?: string;
+  'im360_publicsectorsegment@OData.Community.Display.V1.FormattedValue'?: string;
   '_im360_primaryvendor_value@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_primaryvendorid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_servicename1_value@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_country_value@OData.Community.Display.V1.FormattedValue'?: string;
+  '_transactioncurrencyid_value@OData.Community.Display.V1.FormattedValue'?: string;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
   createdon: string;
   modifiedon: string;
+}
+
+export interface D365LookupRecord {
+  id: string;
+  name: string;
 }
 
 

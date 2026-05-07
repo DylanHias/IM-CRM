@@ -8,8 +8,9 @@ import { markOpportunitySynced } from '@/lib/db/queries/opportunities';
 import { markContactSynced, queryContactPhone } from '@/lib/db/queries/contacts';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
+import { queryLookupTableId } from '@/lib/db/queries/lookupTables';
 import type { Activity, Contact, FollowUp, Opportunity } from '@/types/entities';
-import type { OpportunityOptionValues } from '@/lib/sync/d365Adapter';
+import type { OpportunityOptionValues, OpportunityLookupValues } from '@/lib/sync/d365Adapter';
 
 async function tryDirectPush<T>(
   pushFn: (token: string) => Promise<T>,
@@ -132,15 +133,43 @@ export async function directDeleteFollowUp(
   return result.success;
 }
 
-async function resolveOpportunityOptionValues(opportunity: Opportunity): Promise<OpportunityOptionValues> {
-  const [stage, sellType, opportunityType, recordType, source] = await Promise.all([
-    opportunity.stage ? queryOptionSetValue('opportunity', 'im360_oppstage', opportunity.stage) : Promise.resolve(null),
-    opportunity.sellType ? queryOptionSetValue('opportunity', 'im360_opptype', opportunity.sellType) : Promise.resolve(null),
-    opportunity.opportunityType ? queryOptionSetValue('opportunity', 'im360_drpboxopptype', opportunity.opportunityType) : Promise.resolve(null),
-    opportunity.recordType ? queryOptionSetValue('opportunity', 'im360_recordtype', opportunity.recordType) : Promise.resolve(null),
-    opportunity.source ? queryOptionSetValue('opportunity', 'im360_source', opportunity.source) : Promise.resolve(null),
+export async function resolveOpportunityOptionValues(opportunity: Opportunity): Promise<OpportunityOptionValues> {
+  const opt = (attr: string, label: string | null | undefined) =>
+    label ? queryOptionSetValue('opportunity', attr, label) : Promise.resolve(null);
+  const [stage, sellType, opportunityType, recordType, source,
+    singleOrCrossSell, awsPartnerType, awsServiceType, apnTagging, endUserType,
+    supportType, migrationType, publicSectorSegment] = await Promise.all([
+    opt('im360_oppstage', opportunity.stage),
+    opt('im360_opptype', opportunity.sellType),
+    opt('im360_drpboxopptype', opportunity.opportunityType),
+    opt('im360_recordtype', opportunity.recordType),
+    opt('im360_source', opportunity.source),
+    opt('im360_singleorcrosssell', opportunity.singleOrCrossSell),
+    opt('im360_awspartnertype1', opportunity.awsPartnerType),
+    opt('im360_awsservicetype', opportunity.awsServiceType),
+    opt('im360_apntagging', opportunity.apnTagging),
+    opt('im360_endusertype', opportunity.endUserType),
+    opt('im360_supporttype', opportunity.supportType),
+    opt('im360_migrationtype', opportunity.migrationType),
+    opt('im360_publicsectorsegment', opportunity.publicSectorSegment),
   ]);
-  return { stage, sellType, opportunityType, recordType, source };
+  return {
+    stage, sellType, opportunityType, recordType, source,
+    singleOrCrossSell, awsPartnerType, awsServiceType, apnTagging, endUserType,
+    supportType, migrationType, publicSectorSegment,
+  };
+}
+
+export async function resolveOpportunityLookupValues(opportunity: Opportunity): Promise<OpportunityLookupValues> {
+  const lookup = (key: 'opportunity.primaryvendor' | 'opportunity.servicename' | 'opportunity.country' | 'opportunity.currency', label: string | null | undefined) =>
+    label ? queryLookupTableId(key, label) : Promise.resolve(null);
+  const [primaryVendorId, serviceNameId, countryId, currencyId] = await Promise.all([
+    lookup('opportunity.primaryvendor', opportunity.primaryVendor),
+    lookup('opportunity.servicename', opportunity.serviceName),
+    lookup('opportunity.country', opportunity.country),
+    lookup('opportunity.currency', opportunity.currency),
+  ]);
+  return { primaryVendorId, serviceNameId, countryId, currencyId };
 }
 
 export async function directPushOpportunity(
@@ -148,8 +177,11 @@ export async function directPushOpportunity(
 ): Promise<{ remoteId: string } | null> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
-    const optionValues = await resolveOpportunityOptionValues(opportunity);
-    return adapter.pushOpportunity(token, opportunity, optionValues);
+    const [optionValues, lookupValues] = await Promise.all([
+      resolveOpportunityOptionValues(opportunity),
+      resolveOpportunityLookupValues(opportunity),
+    ]);
+    return adapter.pushOpportunity(token, opportunity, optionValues, lookupValues);
   });
 
   if (result.success) {

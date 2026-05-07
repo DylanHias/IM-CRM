@@ -13,15 +13,14 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { Combobox } from '@/components/ui/combobox';
 import {
   STAGES, STAGE_PROBABILITY,
-  AWS_VENDORS, MICROSOFT_VENDORS,
   AWS_SERVICE_TYPES, AWS_PARTNER_TYPES, APN_TAGGING_OPTIONS, SUPPORT_TYPES,
   MIGRATION_TYPES, END_USER_TYPES, PUBLIC_SECTOR_SEGMENTS,
   SINGLE_OR_CROSS_SELL, SELL_TYPES, OPP_TYPES_AZURE,
-  COUNTRIES, CURRENCIES,
+  COMPETITIVE_WINBACK_OPTIONS,
   isAwsVendor, isMicrosoftVendor, isConsolidatedAwsServiceType,
   getRequiredFields, type Stage, type FieldKey,
 } from '@/lib/opportunityRules';
-import { todayISO } from '@/lib/utils/dateUtils';
+import { useLookupTableStore } from '@/store/lookupTableStore';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 
 export interface WizardFormData {
@@ -55,7 +54,7 @@ export interface WizardFormData {
   mpnId: string | null;
   migrationType: string | null;
   serviceName: string | null;
-  competitiveWinback: boolean | null;
+  competitiveWinback: string | null;
   publicSectorSegment: string | null;
 }
 
@@ -69,8 +68,6 @@ interface Props {
   onCloseLost?: () => void;
   onCancel: () => void;
 }
-
-const ALL_VENDORS = [...AWS_VENDORS, ...MICROSOFT_VENDORS];
 
 function defaultExpiration(): string {
   const d = new Date();
@@ -116,8 +113,33 @@ export function OpportunityWizard({
   const [mpnId, setMpnId] = useState(opportunity?.mpnId ?? '');
   const [migrationType, setMigrationType] = useState(opportunity?.migrationType ?? '');
   const [serviceName, setServiceName] = useState(opportunity?.serviceName ?? '');
-  const [competitiveWinback, setCompetitiveWinback] = useState<boolean>(opportunity?.competitiveWinback ?? false);
+  const [competitiveWinback, setCompetitiveWinback] = useState<string>(opportunity?.competitiveWinback ?? 'Unknown');
   const [publicSectorSegment, setPublicSectorSegment] = useState(opportunity?.publicSectorSegment ?? '');
+
+  // D365-synced lookup tables (vendors, services, countries, currencies)
+  const lookupTables = useLookupTableStore((s) => s.lookupTables);
+  const vendorOptions = useMemo(
+    () => (lookupTables['opportunity.primaryvendor'] ?? []).map((v) => ({ value: v.label, label: v.label })),
+    [lookupTables],
+  );
+  const serviceNameOptions = useMemo(
+    () => (lookupTables['opportunity.servicename'] ?? []).map((v) => ({ value: v.label, label: v.label })),
+    [lookupTables],
+  );
+  const countryList = useMemo(
+    () => {
+      const synced = (lookupTables['opportunity.country'] ?? []).map((v) => v.label);
+      return synced.length > 0 ? synced : ['Belgium', 'Netherlands'];
+    },
+    [lookupTables],
+  );
+  const currencyList = useMemo(
+    () => {
+      const synced = (lookupTables['opportunity.currency'] ?? []).map((v) => v.label);
+      return synced.length > 0 ? synced : ['EUR', 'USD'];
+    },
+    [lookupTables],
+  );
 
   const isAws = isAwsVendor(primaryVendor);
   const isMs = isMicrosoftVendor(primaryVendor);
@@ -322,12 +344,13 @@ export function OpportunityWizard({
             </Field>
 
             <Field label="Primary Vendor *" wide>
-              <Select value={primaryVendor} onValueChange={setPrimaryVendor}>
-                <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                <SelectContent>
-                  {ALL_VENDORS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={vendorOptions}
+                value={primaryVendor}
+                onValueChange={setPrimaryVendor}
+                placeholder="Select vendor"
+                emptyText="No vendor found — sync to load D365 vendors"
+              />
             </Field>
 
             <Field label="Opp Type *">
@@ -343,7 +366,7 @@ export function OpportunityWizard({
               <Select value={country} onValueChange={setCountry}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {COUNTRIES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {countryList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -352,7 +375,7 @@ export function OpportunityWizard({
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {currencyList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -484,18 +507,21 @@ export function OpportunityWizard({
                     </Select>
                   </Field>
                   <Field label="Service Name *" wide>
-                    <Input value={serviceName} onChange={(e) => setServiceName(e.target.value)} />
+                    <Combobox
+                      options={serviceNameOptions}
+                      value={serviceName ?? ''}
+                      onValueChange={setServiceName}
+                      placeholder="Select service"
+                      emptyText="No service found — sync to load D365 services"
+                    />
                   </Field>
                   <Field label="Competitive Winback *" wide>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={competitiveWinback}
-                        onChange={(e) => setCompetitiveWinback(e.target.checked)}
-                        className="h-4 w-4 rounded border-border"
-                      />
-                      Mark as competitive winback
-                    </label>
+                    <Select value={competitiveWinback} onValueChange={setCompetitiveWinback}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {COMPETITIVE_WINBACK_OPTIONS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </Field>
                 </div>
               </Section>

@@ -21,6 +21,8 @@ export const STAGE_PROBABILITY: Record<Stage, number> = {
   'Purchased': 100,
 };
 
+/** Legacy static lists — vendors are now sourced from D365's im360_vendors table.
+ *  Kept only as a hint for tests / fallback display. Use isAwsVendor/isMicrosoftVendor for gating logic. */
 export const AWS_VENDORS = ['AWS - CONSOLIDATED', 'AWS - STANDALONE'] as const;
 export const MICROSOFT_VENDORS = ['MICROSOFT - AZURE', 'MICROSOFT - CLOUD'] as const;
 export const SUPPORTED_VENDORS = [...AWS_VENDORS, ...MICROSOFT_VENDORS] as const;
@@ -40,13 +42,13 @@ export const CONSOLIDATED_AWS_SERVICE_TYPES: readonly AwsServiceType[] = [
   'Direct Consolidation – Cloud Marketplace (CMP)',
 ];
 
-export const AWS_PARTNER_TYPES = ['Software', 'Services', 'Hardware'] as const;
-export const APN_TAGGING_OPTIONS = ['Internal', 'External'] as const;
-export const SUPPORT_TYPES = ['Developer', 'Business', 'Enterprise', 'Basic'] as const;
+export const AWS_PARTNER_TYPES = ['Service', 'Software'] as const;
+export const APN_TAGGING_OPTIONS = ['Internal', 'End User'] as const;
+export const SUPPORT_TYPES = ['Developer', 'Business', 'Enterprise', 'Partner Led', 'Basic'] as const;
 
 export const MIGRATION_TYPES = [
   'CSP to CSP',
-  'Current Partner with Transition',
+  'Current Partner Growth Transition',
   'EA to CSP',
   'ISV',
   'New Reseller',
@@ -68,12 +70,15 @@ export const PUBLIC_SECTOR_SEGMENTS = [
 export type PublicSectorSegment = typeof PUBLIC_SECTOR_SEGMENTS[number];
 
 export const SINGLE_OR_CROSS_SELL = ['Single', 'Cross Sell'] as const;
-export const SELL_TYPES = ['New', 'Renewal', 'Add-on'] as const;
+export const SELL_TYPES = ['New', 'Install'] as const;
 export const OPP_TYPES_AZURE = [
   'Services', 'SPA', 'SPA - Partner Agreement', 'CMP', 'Trad', 'MPO2Connect', 'Azure Private Offer', 'Breath',
 ] as const;
 
-export const COUNTRIES = ['Belgium', 'Luxembourg', 'Netherlands'] as const;
+export const COMPETITIVE_WINBACK_OPTIONS = ['Yes', 'No', 'Unknown'] as const;
+export type CompetitiveWinback = typeof COMPETITIVE_WINBACK_OPTIONS[number];
+
+export const COUNTRIES = ['Belgium', 'Netherlands'] as const;
 export type Country = typeof COUNTRIES[number];
 
 export const CURRENCIES = ['USD', 'EUR'] as const;
@@ -89,11 +94,55 @@ export const LOST_STATUS_REASONS = [
   'Duplicate Opportunity', 'Reseller / Partner Lost Opportunity', 'Duplicate Vendor',
   'Not Interested', 'Won with Another Reseller', 'Gone Direct', 'Won by Cloud',
   'No Feedback from Customer', 'Lack of Credit', 'Bulk Closed', 'Declined',
-  'Cancelled', 'Out Sold', 'Lost to IM Competitor', 'Postponed / Put On Hold',
+  'Canceled', 'Out-Sold', 'Lost to IM Competitor', 'Postponed / Put On Hold',
   'Price', 'Solution', 'Partner Taken In house', 'Service not Required',
-  'Kit Decommissioned', 'System Bulk Close Job', 'Deal Analyzer Rejected',
+  'Kit Decommissioned', 'System Bulk Close Job', 'Deal Analyzer-Rejected',
 ] as const;
 export type LostStatusReason = typeof LOST_STATUS_REASONS[number];
+
+/** D365 statuscode values for opportunity won/lost reasons. */
+export const STATUS_REASON_CODES: Record<string, number> = {
+  // Won (statecode=1)
+  'Purchased': 100000004,
+  'Bulk Closed': 700910001,
+  'Won': 3,
+  'PO received': 756150003,
+  'Invoiced to Reseller': 756150004,
+  'Deal Analyzer-Approved': 756150025,
+  // Lost (statecode=2)
+  'Returned': 100000005,
+  'Auto-Created': 100000008,
+  'Budgetary Only': 100000009,
+  'No Stock': 700910003,
+  'Lost/Not Pursued': 100000010,
+  'Duplicate Opportunity': 100000011,
+  'Reseller / Partner Lost Opportunity': 756150005,
+  'Duplicate Vendor': 100000012,
+  'Not Interested': 756150013,
+  'Won with Another Reseller': 756150006,
+  'Gone Direct': 756150007,
+  'Won by Cloud': 756150008,
+  'No Feedback from Customer': 756150009,
+  'Lack of Credit': 756150010,
+  'Declined': 700910002,
+  'Canceled': 4,
+  'Out-Sold': 5,
+  'Lost to IM Competitor': 756150002,
+  'Postponed / Put On Hold': 756150011,
+  'Price': 756150018,
+  'Solution': 756150019,
+  'Partner Taken In house': 756150020,
+  'Service not Required': 756150021,
+  'Kit Decommissioned': 756150022,
+  'System Bulk Close Job': 336770001,
+  'Deal Analyzer-Rejected': 756150026,
+};
+
+/** Special-case 'Bulk Closed' has different codes per state (won=700910001, lost=700910000). */
+export function getStatusReasonCode(label: string, status: 'Won' | 'Lost'): number | null {
+  if (label === 'Bulk Closed' && status === 'Lost') return 700910000;
+  return STATUS_REASON_CODES[label] ?? null;
+}
 
 export type FieldKey =
   | 'subject' | 'accountId' | 'contactId' | 'singleOrCrossSell' | 'type'
@@ -128,11 +177,13 @@ export interface OpportunityRulesState {
 }
 
 export function isAwsVendor(vendor: string | null | undefined): boolean {
-  return !!vendor && (AWS_VENDORS as readonly string[]).includes(vendor);
+  if (!vendor) return false;
+  return /\baws\b/i.test(vendor);
 }
 
 export function isMicrosoftVendor(vendor: string | null | undefined): boolean {
-  return !!vendor && (MICROSOFT_VENDORS as readonly string[]).includes(vendor);
+  if (!vendor) return false;
+  return /\b(microsoft|azure)\b/i.test(vendor);
 }
 
 export function isConsolidatedAwsServiceType(value: string | null | undefined): boolean {

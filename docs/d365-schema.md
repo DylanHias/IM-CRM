@@ -241,46 +241,62 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 |---|---|
 | `opportunityid` | Primary key |
 | `name` | Subject |
-| `statecode` | Status (0=open, 1=won, 2=lost) |
+| `statecode` | State (0=open, 1=won, 2=lost) |
+| `statuscode` | Status reason (formatted on close) |
 | `estimatedvalue` | Estimated revenue |
-| `estimatedclosedate` | Expiration/close date |
+| `estimatedclosedate` | Standard close date |
+| `actualvalue` | Actual revenue at close (won only) |
+| `actualclosedate` | Actual close date |
 | `closeprobability` | Probability % |
 | `customerneed` | Customer need |
+| `description` | Description / close notes |
 | `im360_bcn` | BCN (custom) |
-| `im360_multivendoropportunity` | Multi-vendor flag (custom) |
-| `im360_oppstage` | Stage (custom option set) |
-| `im360_opptype` | Sell type (custom option set) |
-| `im360_drpboxopptype` | Opportunity type (custom option set) |
-| `im360_recordtype` | Record type (custom option set) |
-| `im360_source` | Source (custom option set) |
-| `_im360_primaryvendor_value` | Primary vendor account ID (custom) |
+| `im360_expirydate` | Expiration date (preferred over `estimatedclosedate`) |
+| `im360_multivendoropportunity` | Multi-vendor flag |
+| `im360_oppstage` | Stage (picklist) |
+| `im360_opptype` | Sell type — `New` / `Install` (picklist) |
+| `im360_drpboxopptype` | Opportunity type (picklist) |
+| `im360_recordtype` | Record type (picklist) |
+| `im360_source` | Source (picklist) |
+| `im360_singleorcrosssell` | Single / Cross Sell (picklist) |
+| `im360_apnid` | APN ID (text) |
+| `im360_awspartnertype1` | AWS Partner Type (picklist) |
+| `im360_awsservicetype` | AWS Service Type (picklist) |
+| `im360_apntagging` | APN Tagging (picklist) |
+| `im360_endusertype` | End User Type (picklist) |
+| `im360_supporttype` | Support Type (picklist) |
+| `im360_payeraccount` | Payer Account (text) |
+| `im360_existingpayeeaccount` | Existing Payee Account (text) |
+| `im360_consolidationacceptancedate` | Consolidation Acceptance Date |
+| `im360_mscsptenant` | MS CSP Tenant (text) |
+| `im360_mpnid` | MPN ID (text) |
+| `im360_migrationtype` | Migration Type (picklist) |
+| `im360_competitivewinback` | Competitive Winback — string `Yes`/`No`/`Unknown` |
+| `im360_publicsectorsegment` | Public Sector Segment (picklist) |
+| `im360_estimatedmrr` | Estimated MRR (money) |
+| `im360_annualrevenue` | Annual Revenue (money) |
+| `_im360_primaryvendor_value` | Legacy primary vendor lookup |
+| `_im360_primaryvendorid_value` | Primary vendor → `im360_vendor` lookup (preferred) |
+| `_im360_servicename1_value` | Service Name → `im360_servicename` lookup |
+| `_im360_country_value` | Country → `im360_country` lookup |
+| `_transactioncurrencyid_value` | Currency lookup |
 | `_parentaccountid_value` | Parent account ID |
 | `_parentcontactid_value` | Contact ID |
 | `_ownerid_value` | Owner system user ID |
-| `createdon` | Created |
-| `modifiedon` | Last modified |
+| `createdon` / `modifiedon` | Timestamps |
 
 ### Push Fields
-| Field | Description |
-|---|---|
-| `name` | Subject |
-| `closeprobability` | Probability % |
-| `im360_multivendoropportunity` | Multi-vendor flag |
-| `estimatedvalue` | Estimated revenue (if set) |
-| `estimatedclosedate` | Expiration date (if set) |
-| `customerneed` | Customer need (if set) |
-| `im360_bcn` | BCN (if set) |
-| `im360_oppstage` | Stage option value |
-| `im360_opptype` | Sell type option value |
-| `im360_drpboxopptype` | Opportunity type option value |
-| `im360_recordtype` | Record type option value |
-| `im360_source` | Source option value |
+All pull fields above are pushed (when set). Lookups push as `@odata.bind` (see below). Close-as-won/lost issues two PATCHes after the create/update: first writes `actualvalue` / `actualclosedate` / `description`, then `statecode` + `statuscode` (status reason).
 
 ### Push OData Bindings
 | Binding | Target |
 |---|---|
 | `parentaccountid@odata.bind` | `/accounts({id})` |
 | `parentcontactid@odata.bind` | `/contacts({id})` |
+| `im360_primaryvendorid@odata.bind` | `/im360_vendors({id})` |
+| `im360_ServiceName1@odata.bind` | `/im360_servicenames({id})` |
+| `im360_Country@odata.bind` | `/im360_countries({id})` |
+| `transactioncurrencyid@odata.bind` | `/transactioncurrencies({id})` |
 
 ---
 
@@ -296,6 +312,27 @@ Fetched from `EntityDefinitions(LogicalName='{entity}')/Attributes(LogicalName='
 | `opportunity.opptype` | `opportunity` | `im360_drpboxopptype` |
 | `opportunity.recordtype` | `opportunity` | `im360_recordtype` |
 | `opportunity.source` | `opportunity` | `im360_source` |
+| `opportunity.singleorcrosssell` | `opportunity` | `im360_singleorcrosssell` |
+| `opportunity.awspartnertype` | `opportunity` | `im360_awspartnertype1` |
+| `opportunity.awsservicetype` | `opportunity` | `im360_awsservicetype` |
+| `opportunity.apntagging` | `opportunity` | `im360_apntagging` |
+| `opportunity.endusertype` | `opportunity` | `im360_endusertype` |
+| `opportunity.supporttype` | `opportunity` | `im360_supporttype` |
+| `opportunity.migrationtype` | `opportunity` | `im360_migrationtype` |
+| `opportunity.publicsectorsegment` | `opportunity` | `im360_publicsectorsegment` |
+
+---
+
+## Lookup Tables (cached locally for name → GUID resolution on push)
+
+Cached during full sync via `fetchLookupTables` and stored in the `lookup_tables` SQLite table.
+
+| Key | D365 entity set | Select |
+|---|---|---|
+| `opportunity.primaryvendor` | `im360_vendors` | `im360_vendorid,im360_name` |
+| `opportunity.servicename` | `im360_servicenames` | `im360_servicenameid,im360_name` |
+| `opportunity.country` | `im360_countries` | `im360_countryid,im360_name` |
+| `opportunity.currency` | `transactioncurrencies` | `transactioncurrencyid,isocurrencycode` |
 
 ---
 
