@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
   Bold,
@@ -61,6 +61,7 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
     ],
     content: value || '',
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: {
         class: cn(
@@ -74,31 +75,12 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
   });
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     if (editor.getHTML() === value) return;
     editor.commands.setContent(value || '', { emitUpdate: false });
   }, [value, editor]);
 
-  const state = useEditorState({
-    editor,
-    selector: ({ editor }) => {
-      if (!editor) return null;
-      return {
-        isBold: editor.isActive('bold'),
-        isItalic: editor.isActive('italic'),
-        isStrike: editor.isActive('strike'),
-        isBulletList: editor.isActive('bulletList'),
-        isOrderedList: editor.isActive('orderedList'),
-        isH1: editor.isActive('heading', { level: 1 }),
-        isH2: editor.isActive('heading', { level: 2 }),
-        isH3: editor.isActive('heading', { level: 3 }),
-        canUndo: editor.can().undo(),
-        canRedo: editor.can().redo(),
-      };
-    },
-  });
-
-  if (!editor || !state) {
+  if (!editor) {
     return (
       <div
         className={cn(
@@ -122,21 +104,21 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
       <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-1 py-1">
         <ToolbarButton
           label="Heading 1"
-          active={state.isH1}
+          active={editor.isActive('heading', { level: 1 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         >
           <Heading1 size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Heading 2"
-          active={state.isH2}
+          active={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         >
           <Heading2 size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Heading 3"
-          active={state.isH3}
+          active={editor.isActive('heading', { level: 3 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         >
           <Heading3 size={14} />
@@ -144,21 +126,21 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
         <div className="w-px h-4 bg-border mx-1" />
         <ToolbarButton
           label="Bold"
-          active={state.isBold}
+          active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <Bold size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Italic"
-          active={state.isItalic}
+          active={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <Italic size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Strikethrough"
-          active={state.isStrike}
+          active={editor.isActive('strike')}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <Strikethrough size={14} />
@@ -166,14 +148,14 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
         <div className="w-px h-4 bg-border mx-1" />
         <ToolbarButton
           label="Bullet list"
-          active={state.isBulletList}
+          active={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           <List size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Numbered list"
-          active={state.isOrderedList}
+          active={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrdered size={14} />
@@ -181,14 +163,14 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
         <div className="w-px h-4 bg-border mx-1" />
         <ToolbarButton
           label="Undo"
-          disabled={!state.canUndo}
+          disabled={!editor.can().undo()}
           onClick={() => editor.chain().focus().undo().run()}
         >
           <Undo2 size={14} />
         </ToolbarButton>
         <ToolbarButton
           label="Redo"
-          disabled={!state.canRedo}
+          disabled={!editor.can().redo()}
           onClick={() => editor.chain().focus().redo().run()}
         >
           <Redo2 size={14} />
