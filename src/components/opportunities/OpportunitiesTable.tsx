@@ -77,7 +77,7 @@ const Card = styled.div`
   grid-template-columns: 32px 1fr auto 14px;
   grid-template-rows: auto auto;
   column-gap: 12px;
-  row-gap: 2px;
+  row-gap: 5px;
   align-items: center;
   padding: 10px 16px;
   cursor: pointer;
@@ -179,22 +179,6 @@ const MetaSep = styled.span`
   font-size: 10px;
 `;
 
-const VendorChip = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 7px;
-  border-radius: 5px;
-  background: hsl(var(--muted) / 0.7);
-  color: hsl(var(--foreground) / 0.8);
-  font-size: 10.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
 const ExpiryChip = styled.span<{ $tone: 'overdue' | 'soon' | 'near' | 'neutral' }>`
   display: inline-flex;
   align-items: center;
@@ -254,7 +238,7 @@ const Right = styled.div`
 
 const Value = styled.div`
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: hsl(var(--foreground));
   letter-spacing: -0.01em;
@@ -317,24 +301,19 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                 </IconWrap>
 
                 <HeaderRow>
-                  <CompanyEyebrow>
-                    <Building2 size={10} strokeWidth={2.5} />
-                    <span className="name">{companyName}</span>
-                  </CompanyEyebrow>
                   <Subject>{opp.subject}</Subject>
                 </HeaderRow>
 
                 <MetaRow>
+                  <CompanyEyebrow>
+                    <Building2 size={10} strokeWidth={2.5} />
+                    <span className="name">{companyName}</span>
+                  </CompanyEyebrow>
+                  <MetaSep>·</MetaSep>
                   <StageLabel>
                     <span className="stage">{opp.stage}</span>
                     <span className="pct">{opp.probability ?? 0}%</span>
                   </StageLabel>
-                  {opp.primaryVendor && (
-                    <>
-                      <MetaSep>·</MetaSep>
-                      <VendorChip title={opp.primaryVendor}>{opp.primaryVendor}</VendorChip>
-                    </>
-                  )}
                   {exp && (
                     <>
                       <MetaSep>·</MetaSep>
