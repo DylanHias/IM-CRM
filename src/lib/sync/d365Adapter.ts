@@ -936,53 +936,39 @@ class RealD365Adapter implements ID365Adapter {
       ? opportunity.remoteId!
       : parseEntityIdHeader(res.headers.get('OData-EntityId'));
 
-    // Close-as-won/lost flow: set actualvalue/actualclosedate/description first,
-    // then statecode/statuscode in a separate PATCH (D365 rejects statecode in create body).
+    // Close-as-won/lost flow: D365 rejects PATCH on statecode for opportunities — must use
+    // the dedicated WinOpportunity/LoseOpportunity actions, which take the close activity inline
+    // and set actualvalue/actualclosedate on the opportunity automatically.
     if (opportunity.status !== 'Open') {
-      const closeBody: Record<string, unknown> = {};
-      if (opportunity.actualRevenue != null) closeBody.actualvalue = opportunity.actualRevenue;
-      if (opportunity.closeDate) closeBody.actualclosedate = opportunity.closeDate;
-      if (opportunity.closeDescription) closeBody.description = opportunity.closeDescription;
-      if (Object.keys(closeBody).length > 0) {
-        const closeRes = await fetch(
-          `${this.baseUrl}/api/data/v9.2/opportunities(${resolvedId})`,
-          {
-            method: 'PATCH',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'OData-MaxVersion': '4.0',
-              'OData-Version': '4.0',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(closeBody),
-          },
-        );
-        if (!closeRes.ok) {
-          console.error(`[opportunity] Failed to set close fields for ${resolvedId}:`, await closeRes.text());
-        }
-      }
-
       const statusReason = opportunity.statusReason
         ? getStatusReasonCodeForPush(opportunity.statusReason, opportunity.status)
         : null;
-      const stateBody = opportunity.status === 'Won'
-        ? { statecode: 1, statuscode: statusReason ?? 3 }
-        : { statecode: 2, statuscode: statusReason ?? 4 };
-      const stateRes = await fetch(
-        `${this.baseUrl}/api/data/v9.2/opportunities(${resolvedId})`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'OData-MaxVersion': '4.0',
-            'OData-Version': '4.0',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(stateBody),
+      const action = opportunity.status === 'Won' ? 'WinOpportunity' : 'LoseOpportunity';
+      const defaultStatus = opportunity.status === 'Won' ? 3 : 4;
+
+      const opportunityClose: Record<string, unknown> = {
+        subject: `${opportunity.status}: ${opportunity.subject}`.slice(0, 200),
+        'opportunityid@odata.bind': `/opportunities(${resolvedId})`,
+      };
+      if (opportunity.actualRevenue != null) opportunityClose.actualrevenue = opportunity.actualRevenue;
+      if (opportunity.closeDate) opportunityClose.actualend = opportunity.closeDate;
+      if (opportunity.closeDescription) opportunityClose.description = opportunity.closeDescription;
+
+      const actionRes = await fetch(`${this.baseUrl}/api/data/v9.2/${action}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Content-Type': 'application/json',
         },
-      );
-      if (!stateRes.ok) {
-        console.error(`[opportunity] Failed to set opportunity status to ${opportunity.status} (${resolvedId}):`, await stateRes.text());
+        body: JSON.stringify({
+          Status: statusReason ?? defaultStatus,
+          OpportunityClose: opportunityClose,
+        }),
+      });
+      if (!actionRes.ok) {
+        console.error(`[opportunity] Failed to set opportunity status to ${opportunity.status} (${resolvedId}):`, await actionRes.text());
       }
     }
 
