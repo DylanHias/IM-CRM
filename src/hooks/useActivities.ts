@@ -9,6 +9,8 @@ import { refreshCustomerHealth } from '@/lib/customers/refreshHealth';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import { directPushActivity, directDeleteActivity } from '@/lib/sync/directPushService';
+import { notifyPush } from '@/lib/sync/pushToast';
+import { toast } from 'sonner';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -66,11 +68,14 @@ export function useActivities(customerId: string) {
           await updateCustomerLastActivity(customerId, activity.occurredAt);
         }
         refreshCustomerHealth(customerId);
-        directPushActivity(activity).then((result) => {
-          if (result) {
-            updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+        notifyPush(() => directPushActivity(activity), {
+          entity: activity.type === 'note' ? 'note' : activity.type,
+          action: 'created',
+          label: activity.subject,
+          onSuccess: (remoteId) => {
+            updateActivity({ ...activity, syncStatus: 'synced', remoteId });
             emitDataEvent('activity', 'updated', customerId);
-          }
+          },
         });
       }
       addActivity(activity);
@@ -85,11 +90,14 @@ export function useActivities(customerId: string) {
       if (isTauriApp()) {
         await dbUpdateActivity(activity);
         refreshCustomerHealth(customerId);
-        directPushActivity(activity).then((result) => {
-          if (result) {
-            updateActivity({ ...activity, syncStatus: 'synced', remoteId: result.remoteId });
+        notifyPush(() => directPushActivity(activity), {
+          entity: activity.type === 'note' ? 'note' : activity.type,
+          action: 'updated',
+          label: activity.subject,
+          onSuccess: (remoteId) => {
+            updateActivity({ ...activity, syncStatus: 'synced', remoteId });
             emitDataEvent('activity', 'updated', customerId);
-          }
+          },
         });
       }
       updateActivity({ ...activity, syncStatus: 'pending' });
@@ -108,16 +116,18 @@ export function useActivities(customerId: string) {
         if (deleted?.remoteId) {
           const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
           const d365Type = deleted.type === 'call' ? 'call' : deleted.type === 'note' ? 'note' : 'meeting';
-          console.log(`[activity] Deleting from D365: remoteId=${deleted.remoteId}, type=${d365Type}`);
+          const noun = deleted.type === 'note' ? 'note' : deleted.type;
+          const toastId = toast.loading(`Removing ${noun} from Dynamics 365…`);
           const directDeleted = await directDeleteActivity(deleted.remoteId, d365Type);
           if (!directDeleted) {
-            console.log(`[activity] Direct D365 delete failed, queuing pending delete: ${entityType}/${deleted.remoteId}`);
             await insertPendingDelete(entityType, deleted.remoteId);
+            toast.error(`Could not remove ${noun} from Dynamics 365`, {
+              id: toastId,
+              description: 'Queued for retry on next sync',
+            });
           } else {
-            console.log(`[activity] D365 delete succeeded for ${deleted.remoteId}`);
+            toast.success(`${noun.charAt(0).toUpperCase() + noun.slice(1)} removed from Dynamics 365`, { id: toastId });
           }
-        } else {
-          console.log(`[activity] No remoteId for activity ${id}, skipping D365 delete (type=${deleted?.type})`);
         }
       }
     },

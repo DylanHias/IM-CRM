@@ -52,9 +52,11 @@ async function getCallerD365Id(token: string): Promise<string | undefined> {
   }
 }
 
+export type DirectPushResult = { remoteId: string } | { error: string } | null;
+
 export async function directPushActivity(
   activity: Activity,
-): Promise<{ remoteId: string } | null> {
+): Promise<DirectPushResult> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
     const d365Id = await getCallerD365Id(token);
@@ -66,12 +68,13 @@ export async function directPushActivity(
     await markActivitySynced(activity.id, result.result);
     return { remoteId: result.result };
   }
+  if (result.error) return { error: result.error };
   return null;
 }
 
 export async function directPushFollowUp(
   followUp: FollowUp,
-): Promise<{ remoteId: string } | null> {
+): Promise<DirectPushResult> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
     return adapter.pushFollowUp(token, followUp);
@@ -81,6 +84,7 @@ export async function directPushFollowUp(
     await markFollowUpSynced(followUp.id, result.result);
     return { remoteId: result.result };
   }
+  if (result.error) return { error: result.error };
   return null;
 }
 
@@ -175,7 +179,7 @@ export async function resolveOpportunityLookupValues(opportunity: Opportunity): 
 
 export async function directPushOpportunity(
   opportunity: Opportunity,
-): Promise<{ remoteId: string } | { error: string } | null> {
+): Promise<DirectPushResult> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
     const [optionValues, lookupValues] = await Promise.all([

@@ -5,6 +5,12 @@ vi.mock('@/lib/sync/directPushService', () => ({
   directPushActivity: vi.fn().mockResolvedValue(null),
   directDeleteActivity: vi.fn().mockResolvedValue(false),
 }));
+vi.mock('@/lib/sync/pushToast', () => ({
+  notifyPush: vi.fn((fn: () => Promise<unknown>) => fn()),
+}));
+vi.mock('sonner', () => ({
+  toast: { loading: vi.fn(), success: vi.fn(), error: vi.fn() },
+}));
 
 import { useActivities } from '@/hooks/useActivities';
 import { useActivityStore } from '@/store/activityStore';

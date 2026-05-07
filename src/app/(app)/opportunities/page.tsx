@@ -22,6 +22,7 @@ import {
 import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { directPushOpportunity } from '@/lib/sync/directPushService';
+import { notifyPush } from '@/lib/sync/pushToast';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
@@ -285,24 +286,12 @@ export default function OpportunitiesPage() {
     setEditing(null);
   };
 
-  /** Fire-and-forget D365 push that surfaces success/error via toast and rebroadcasts data event. */
   const pushAndNotify = (opp: Opportunity, action: string): void => {
-    const toastId = toast.loading(`Saving "${opp.subject}" to Dynamics 365…`);
-    directPushOpportunity(opp).then((result) => {
-      if (result && 'remoteId' in result) {
-        toast.success(`Opportunity ${action} in Dynamics 365`, { id: toastId });
-        emitDataEvent('opportunity', 'updated', opp.customerId);
-      } else if (result && 'error' in result) {
-        toast.error('Could not push to Dynamics 365', {
-          id: toastId,
-          description: result.error,
-        });
-      } else {
-        toast.error('Could not push to Dynamics 365', {
-          id: toastId,
-          description: 'Unknown error — check the logs',
-        });
-      }
+    notifyPush(() => directPushOpportunity(opp), {
+      entity: 'opportunity',
+      action,
+      label: opp.subject,
+      onSuccess: () => emitDataEvent('opportunity', 'updated', opp.customerId),
     });
   };
 
