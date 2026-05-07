@@ -48,8 +48,15 @@ describe('opportunityRules', () => {
       expect(fields).not.toContain('msCspTenant');
     });
 
-    it('adds AWS fields when AWS vendor selected', () => {
-      const fields = getRequiredFields({ primaryVendor: 'AWS - CONSOLIDATED' });
+    it('does NOT add vendor-specific fields below Qualified stage', () => {
+      const validated = getRequiredFields({ primaryVendor: 'AWS - CONSOLIDATED', stage: 'Validated' });
+      expect(validated).not.toContain('apnId');
+      const ms = getRequiredFields({ primaryVendor: 'MICROSOFT - AZURE', stage: 'Prospecting' });
+      expect(ms).not.toContain('msCspTenant');
+    });
+
+    it('adds AWS fields when AWS vendor selected at Qualified or beyond', () => {
+      const fields = getRequiredFields({ primaryVendor: 'AWS - CONSOLIDATED', stage: 'Qualified' });
       expect(fields).toContain('apnId');
       expect(fields).toContain('awsPartnerType');
       expect(fields).toContain('awsServiceType');
@@ -60,35 +67,44 @@ describe('opportunityRules', () => {
       expect(fields).not.toContain('msCspTenant');
     });
 
-    it('adds Existing Payee Account + Consolidation Acceptance Date when AWS Service Type is consolidated', () => {
+    it('adds Existing Payee Account when AWS Service Type is consolidated at Qualified+', () => {
       const fields = getRequiredFields({
         primaryVendor: 'AWS - CONSOLIDATED',
         awsServiceType: 'Direct Consolidation',
+        stage: 'Qualified',
       });
       expect(fields).toContain('existingPayeeAccount');
-      expect(fields).toContain('consolidationAcceptanceDate');
     });
 
-    it('adds those same fields for CMP consolidation', () => {
+    it('adds Existing Payee Account for CMP consolidation at Qualified+', () => {
       const fields = getRequiredFields({
         primaryVendor: 'AWS - STANDALONE',
         awsServiceType: 'Direct Consolidation – Cloud Marketplace (CMP)',
+        stage: 'Verbal Received',
       });
       expect(fields).toContain('existingPayeeAccount');
-      expect(fields).toContain('consolidationAcceptanceDate');
     });
 
-    it('does NOT add consolidation fields for non-consolidated AWS service types', () => {
+    it('never requires Consolidation Acceptance Date', () => {
       const fields = getRequiredFields({
         primaryVendor: 'AWS - CONSOLIDATED',
-        awsServiceType: 'New Reseller Account – No Root Access',
+        awsServiceType: 'Direct Consolidation',
+        stage: 'Purchased',
       });
-      expect(fields).not.toContain('existingPayeeAccount');
       expect(fields).not.toContain('consolidationAcceptanceDate');
     });
 
-    it('adds Microsoft fields when Microsoft vendor selected', () => {
-      const fields = getRequiredFields({ primaryVendor: 'MICROSOFT - AZURE' });
+    it('does NOT add existingPayeeAccount for non-consolidated AWS service types', () => {
+      const fields = getRequiredFields({
+        primaryVendor: 'AWS - CONSOLIDATED',
+        awsServiceType: 'New Reseller Account – No Root Access',
+        stage: 'Qualified',
+      });
+      expect(fields).not.toContain('existingPayeeAccount');
+    });
+
+    it('adds Microsoft fields when Microsoft vendor selected at Qualified+', () => {
+      const fields = getRequiredFields({ primaryVendor: 'MICROSOFT - AZURE', stage: 'Qualified' });
       expect(fields).toContain('msCspTenant');
       expect(fields).toContain('mpnId');
       expect(fields).toContain('migrationType');
@@ -98,24 +114,17 @@ describe('opportunityRules', () => {
       expect(fields).not.toContain('apnId');
     });
 
-    it('treats MICROSOFT - CLOUD identically to MICROSOFT - AZURE', () => {
-      const azure = getRequiredFields({ primaryVendor: 'MICROSOFT - AZURE' });
-      const cloud = getRequiredFields({ primaryVendor: 'MICROSOFT - CLOUD' });
+    it('treats MICROSOFT - CLOUD identically to MICROSOFT - AZURE at Qualified+', () => {
+      const azure = getRequiredFields({ primaryVendor: 'MICROSOFT - AZURE', stage: 'Qualified' });
+      const cloud = getRequiredFields({ primaryVendor: 'MICROSOFT - CLOUD', stage: 'Qualified' });
       expect(azure.sort()).toEqual(cloud.sort());
     });
 
-    it('adds Public Sector Segment when End User Type = Public Sector', () => {
+    it('never requires Public Sector Segment', () => {
       const fields = getRequiredFields({
         primaryVendor: 'AWS - CONSOLIDATED',
         endUserType: 'Public Sector',
-      });
-      expect(fields).toContain('publicSectorSegment');
-    });
-
-    it('does NOT add Public Sector Segment when End User Type = Commercial', () => {
-      const fields = getRequiredFields({
-        primaryVendor: 'AWS - CONSOLIDATED',
-        endUserType: 'Commercial',
+        stage: 'Qualified',
       });
       expect(fields).not.toContain('publicSectorSegment');
     });

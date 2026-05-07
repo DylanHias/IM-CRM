@@ -16,9 +16,9 @@ describe('OpportunityWizard', () => {
     );
 
     expect(screen.getByText('New opportunity')).toBeInTheDocument();
-    expect(screen.getByText(/Subject \*/)).toBeInTheDocument();
-    expect(screen.getByText(/Single or Cross Sell \*/)).toBeInTheDocument();
-    expect(screen.getByText(/Customer Need \*/)).toBeInTheDocument();
+    expect(screen.getByText(/Subject/)).toBeInTheDocument();
+    expect(screen.getByText(/Single or Cross Sell/)).toBeInTheDocument();
+    expect(screen.getByText(/Customer Need/)).toBeInTheDocument();
   });
 
   it('renders 8 stages in stepper', () => {
