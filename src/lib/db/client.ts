@@ -333,7 +333,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '31')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '32')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -779,6 +779,18 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_lookup_tables_label ON lookup_tables(table_key, label COLLATE NOCASE)`);
     await db.execute(
       `UPDATE app_settings SET value = '31', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 32) {
+    // Reset opportunity sync watermark — new fields (MRR, annualRevenue, vendor-specific)
+    // weren't persisted before v2.12.2's bulkUpsert fix, so existing rows have NULL.
+    // Forcing a re-pull restores them.
+    await db.execute(
+      `UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '32', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

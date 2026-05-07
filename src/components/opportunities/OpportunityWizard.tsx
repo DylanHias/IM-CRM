@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Combobox } from '@/components/ui/combobox';
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import {
   STAGES, STAGE_PROBABILITY,
   AWS_SERVICE_TYPES, AWS_PARTNER_TYPES, APN_TAGGING_OPTIONS, SUPPORT_TYPES,
@@ -285,7 +286,7 @@ export function OpportunityWizard({
             )}
           </div>
           {isEditing && opportunity?.status === 'Open' && (
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 mr-8">
               <Button type="button" size="sm" variant="outline" onClick={onCloseWon} className="text-emerald-600 hover:text-emerald-700">
                 <Trophy size={14} className="mr-1.5" />Close as Won
               </Button>
@@ -572,13 +573,13 @@ export function OpportunityWizard({
         <Section title="Financials" subtitle="Revenue projections and timing">
           <div className="grid grid-cols-2 gap-4">
             <Field label={`Estimated MRR * (${currency})`}>
-              <Input type="number" step="0.01" min="0" value={estimatedMRR} onChange={(e) => setEstimatedMRR(e.target.value)} placeholder="0.00" />
+              <MoneyInput value={estimatedMRR} onValueChange={setEstimatedMRR} currency={currency} />
             </Field>
             <Field label={`Annual Revenue * (${currency})`}>
-              <Input type="number" step="0.01" min="0" value={annualRevenue} onChange={(e) => setAnnualRevenue(e.target.value)} placeholder="0.00" />
+              <MoneyInput value={annualRevenue} onValueChange={setAnnualRevenue} currency={currency} />
             </Field>
             <Field label={`Estimated Revenue (${currency})`}>
-              <Input type="number" step="0.01" min="0" value={estimatedRevenue} onChange={(e) => setEstimatedRevenue(e.target.value)} placeholder="Total deal value" />
+              <MoneyInput value={estimatedRevenue} onValueChange={setEstimatedRevenue} currency={currency} placeholder="Total deal value" />
             </Field>
             <Field label="Expiration Date">
               <DatePicker value={expirationDate} onChange={setExpirationDate} />

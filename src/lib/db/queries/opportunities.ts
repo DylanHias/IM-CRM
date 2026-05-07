@@ -233,24 +233,32 @@ export async function bulkUpsertOpportunities(
     }
   }
 
-  const COLS = 25;
-  const CHUNK = Math.floor(999 / COLS); // 39 rows per batch
+  const COLS = 48;
+  const CHUNK = Math.floor(999 / COLS); // ~20 rows per batch
   let inserted = 0;
   let errors = 0;
+
+  const insertValuesFor = (o: Opportunity): unknown[] => [
+    o.id, o.customerId, o.contactId, o.status, o.subject, o.bcn,
+    o.multiVendorOpportunity ? 1 : 0, o.sellType, o.primaryVendor,
+    o.opportunityType, o.stage, o.probability, o.expirationDate,
+    o.estimatedRevenue, o.currency, o.country, o.source, o.recordType,
+    o.customerNeed, 'synced', o.remoteId, o.createdById, o.createdByName,
+    o.createdAt, o.updatedAt,
+    o.singleOrCrossSell, o.estimatedMRR, o.annualRevenue,
+    o.apnId, o.awsPartnerType, o.awsServiceType, o.apnTagging, o.endUserType,
+    o.supportType, o.payerAccount, o.existingPayeeAccount, o.consolidationAcceptanceDate,
+    o.msCspTenant, o.mpnId, o.migrationType, o.serviceName, o.competitiveWinback,
+    o.publicSectorSegment, o.statusReason, o.actualRevenue, o.closeDate,
+    o.competitorId, o.closeDescription,
+  ];
 
   for (let i = 0; i < toInsert.length; i += CHUNK) {
     const chunk = toInsert.slice(i, i + CHUNK);
     const placeholders = chunk
       .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
       .join(',');
-    const values = chunk.flatMap((o) => [
-      o.id, o.customerId, o.contactId, o.status, o.subject, o.bcn,
-      o.multiVendorOpportunity ? 1 : 0, o.sellType, o.primaryVendor,
-      o.opportunityType, o.stage, o.probability, o.expirationDate,
-      o.estimatedRevenue, o.currency, o.country, o.source, o.recordType,
-      o.customerNeed, 'synced', o.remoteId, o.createdById, o.createdByName,
-      o.createdAt, o.updatedAt,
-    ]);
+    const values = chunk.flatMap(insertValuesFor);
     try {
       const result = await db.execute(
         `INSERT OR IGNORE INTO opportunities (
@@ -258,7 +266,13 @@ export async function bulkUpsertOpportunities(
           sell_type, primary_vendor, opportunity_type, stage, probability,
           expiration_date, estimated_revenue, currency, country, source, record_type,
           customer_need, sync_status, remote_id, created_by_id, created_by_name,
-          created_at, updated_at
+          created_at, updated_at,
+          single_or_cross_sell, estimated_mrr, annual_revenue,
+          apn_id, aws_partner_type, aws_service_type, apn_tagging, end_user_type,
+          support_type, payer_account, existing_payee_account, consolidation_acceptance_date,
+          ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
+          public_sector_segment, status_reason, actual_revenue, close_date,
+          competitor_id, close_description
         ) VALUES ${placeholders}`,
         values,
       );
@@ -277,15 +291,32 @@ export async function bulkUpsertOpportunities(
           customer_id=$1, contact_id=$2, status=$3, subject=$4, bcn=$5,
           multi_vendor_opportunity=$6, sell_type=$7, primary_vendor=$8,
           opportunity_type=$9, stage=$10, probability=$11, expiration_date=$12,
-          estimated_revenue=$13, source=$14, record_type=$15, customer_need=$16,
-          sync_status='synced', updated_at=$17
-         WHERE remote_id=$18`,
+          estimated_revenue=$13, currency=$14, country=$15, source=$16, record_type=$17,
+          customer_need=$18, sync_status='synced', updated_at=$19,
+          single_or_cross_sell=$20, estimated_mrr=$21, annual_revenue=$22,
+          apn_id=$23, aws_partner_type=$24, aws_service_type=$25, apn_tagging=$26,
+          end_user_type=$27, support_type=$28, payer_account=$29,
+          existing_payee_account=$30, consolidation_acceptance_date=$31,
+          ms_csp_tenant=$32, mpn_id=$33, migration_type=$34, service_name=$35,
+          competitive_winback=$36, public_sector_segment=$37,
+          status_reason=$38, actual_revenue=$39, close_date=$40,
+          competitor_id=$41, close_description=$42
+         WHERE remote_id=$43`,
         [
           o.customerId, o.contactId, o.status, o.subject, o.bcn,
           o.multiVendorOpportunity ? 1 : 0, o.sellType, o.primaryVendor,
           o.opportunityType, o.stage, o.probability, o.expirationDate,
-          o.estimatedRevenue, o.source, o.recordType, o.customerNeed,
-          o.updatedAt, o.remoteId,
+          o.estimatedRevenue, o.currency, o.country, o.source, o.recordType, o.customerNeed,
+          o.updatedAt,
+          o.singleOrCrossSell, o.estimatedMRR, o.annualRevenue,
+          o.apnId, o.awsPartnerType, o.awsServiceType, o.apnTagging,
+          o.endUserType, o.supportType, o.payerAccount,
+          o.existingPayeeAccount, o.consolidationAcceptanceDate,
+          o.msCspTenant, o.mpnId, o.migrationType, o.serviceName,
+          o.competitiveWinback, o.publicSectorSegment,
+          o.statusReason, o.actualRevenue, o.closeDate,
+          o.competitorId, o.closeDescription,
+          o.remoteId,
         ],
       );
       updated++;
@@ -328,15 +359,32 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         customer_id=$1, contact_id=$2, status=$3, subject=$4, bcn=$5,
         multi_vendor_opportunity=$6, sell_type=$7, primary_vendor=$8,
         opportunity_type=$9, stage=$10, probability=$11, expiration_date=$12,
-        estimated_revenue=$13, source=$14, record_type=$15, customer_need=$16,
-        sync_status='synced', updated_at=$17
-       WHERE remote_id=$18`,
+        estimated_revenue=$13, currency=$14, country=$15, source=$16, record_type=$17,
+        customer_need=$18, sync_status='synced', updated_at=$19,
+        single_or_cross_sell=$20, estimated_mrr=$21, annual_revenue=$22,
+        apn_id=$23, aws_partner_type=$24, aws_service_type=$25, apn_tagging=$26,
+        end_user_type=$27, support_type=$28, payer_account=$29,
+        existing_payee_account=$30, consolidation_acceptance_date=$31,
+        ms_csp_tenant=$32, mpn_id=$33, migration_type=$34, service_name=$35,
+        competitive_winback=$36, public_sector_segment=$37,
+        status_reason=$38, actual_revenue=$39, close_date=$40,
+        competitor_id=$41, close_description=$42
+       WHERE remote_id=$43`,
       [
         opp.customerId, contactId, opp.status, opp.subject, opp.bcn,
         opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
         opp.opportunityType, opp.stage, opp.probability, opp.expirationDate,
-        opp.estimatedRevenue, opp.source, opp.recordType, opp.customerNeed,
-        opp.updatedAt, opp.remoteId,
+        opp.estimatedRevenue, opp.currency, opp.country, opp.source, opp.recordType, opp.customerNeed,
+        opp.updatedAt,
+        opp.singleOrCrossSell, opp.estimatedMRR, opp.annualRevenue,
+        opp.apnId, opp.awsPartnerType, opp.awsServiceType, opp.apnTagging,
+        opp.endUserType, opp.supportType, opp.payerAccount,
+        opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
+        opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName,
+        opp.competitiveWinback, opp.publicSectorSegment,
+        opp.statusReason, opp.actualRevenue, opp.closeDate,
+        opp.competitorId, opp.closeDescription,
+        opp.remoteId,
       ]
     );
   } else {
@@ -346,8 +394,15 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         sell_type, primary_vendor, opportunity_type, stage, probability,
         expiration_date, estimated_revenue, currency, country, source, record_type,
         customer_need, sync_status, remote_id, created_by_id, created_by_name,
-        created_at, updated_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)`,
+        created_at, updated_at,
+        single_or_cross_sell, estimated_mrr, annual_revenue,
+        apn_id, aws_partner_type, aws_service_type, apn_tagging, end_user_type,
+        support_type, payer_account, existing_payee_account, consolidation_acceptance_date,
+        ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
+        public_sector_segment, status_reason, actual_revenue, close_date,
+        competitor_id, close_description
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,
+                $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48)`,
       [
         opp.id, opp.customerId, contactId, opp.status, opp.subject, opp.bcn,
         opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -355,6 +410,12 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         opp.estimatedRevenue, opp.currency, opp.country, opp.source, opp.recordType,
         opp.customerNeed, 'synced', opp.remoteId, opp.createdById, opp.createdByName,
         opp.createdAt, opp.updatedAt,
+        opp.singleOrCrossSell, opp.estimatedMRR, opp.annualRevenue,
+        opp.apnId, opp.awsPartnerType, opp.awsServiceType, opp.apnTagging, opp.endUserType,
+        opp.supportType, opp.payerAccount, opp.existingPayeeAccount, opp.consolidationAcceptanceDate,
+        opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName, opp.competitiveWinback,
+        opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
+        opp.competitorId, opp.closeDescription,
       ]
     );
   }
