@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
+import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
@@ -39,7 +38,7 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
         customerId,
         activityId: activityId ?? null,
         title: title.trim(),
-        description: htmlIsEmpty(description) ? null : description,
+        description: description.trim() || null,
         dueDate,
       });
       setSuccess(true);
@@ -90,10 +89,12 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
 
       <div className="space-y-1">
         <Label htmlFor="description">Description</Label>
-        <RichTextEditor
+        <Textarea
+          id="description"
           value={description}
-          onChange={setDescription}
-          editorClassName="min-h-[160px]"
+          onChange={(e) => setDescription(e.target.value)}
+          rows={6}
+          className="min-h-[160px] resize-y"
         />
       </div>
 

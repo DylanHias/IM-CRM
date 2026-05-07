@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -718,11 +719,20 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         </div>
                         <div className="space-y-1 flex flex-col flex-1">
                           <Label>Description</Label>
-                          <RichTextEditor
-                            value={editDescription}
-                            onChange={setEditDescription}
-                            editorClassName="min-h-[240px]"
-                          />
+                          {editType === 'call' ? (
+                            <Textarea
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              rows={10}
+                              className="min-h-[240px] resize-y flex-1"
+                            />
+                          ) : (
+                            <RichTextEditor
+                              value={editDescription}
+                              onChange={setEditDescription}
+                              editorClassName="min-h-[240px]"
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -821,11 +831,20 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                         </div>
                         <div className="space-y-1 flex flex-col flex-1">
                           <Label>Description</Label>
-                          <RichTextEditor
-                            value={newActDescription}
-                            onChange={setNewActDescription}
-                            editorClassName="min-h-[240px]"
-                          />
+                          {(newActType ?? defaultActivityType) === 'call' ? (
+                            <Textarea
+                              value={newActDescription}
+                              onChange={(e) => setNewActDescription(e.target.value)}
+                              rows={10}
+                              className="min-h-[240px] resize-y flex-1"
+                            />
+                          ) : (
+                            <RichTextEditor
+                              value={newActDescription}
+                              onChange={setNewActDescription}
+                              editorClassName="min-h-[240px]"
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -852,10 +871,11 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     </div>
                     <div className="space-y-1">
                       <Label>Description</Label>
-                      <RichTextEditor
+                      <Textarea
                         value={newFuDescription}
-                        onChange={setNewFuDescription}
-                        editorClassName="min-h-[180px]"
+                        onChange={(e) => setNewFuDescription(e.target.value)}
+                        rows={7}
+                        className="min-h-[180px] resize-y"
                       />
                     </div>
                     <div className="space-y-1">

@@ -5,6 +5,7 @@ import { Plus, Inbox, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -185,11 +186,20 @@ export function ActivityList({ activities, contacts, customerId }: ActivityListP
             </div>
             <div className="col-span-2 space-y-1">
               <Label>Description</Label>
-              <RichTextEditor
-                value={editDescription}
-                onChange={setEditDescription}
-                editorClassName="min-h-[200px]"
-              />
+              {editType === 'call' ? (
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={8}
+                  className="min-h-[200px] resize-y"
+                />
+              ) : (
+                <RichTextEditor
+                  value={editDescription}
+                  onChange={setEditDescription}
+                  editorClassName="min-h-[200px]"
+                />
+              )}
             </div>
             {(editType === 'meeting' || editType === 'visit') ? (
               <>

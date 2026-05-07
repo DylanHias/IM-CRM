@@ -9,8 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -131,7 +130,7 @@ export default function FollowUpsPage() {
       const updated: FollowUp = {
         ...editing,
         title: editTitle.trim(),
-        description: htmlIsEmpty(editDescription) ? null : editDescription,
+        description: editDescription.trim() || null,
         dueDate: editDueDate,
         updatedAt: new Date().toISOString(),
       };
@@ -304,10 +303,11 @@ export default function FollowUpsPage() {
             </div>
             <div className="space-y-1">
               <Label>Description</Label>
-              <RichTextEditor
+              <Textarea
                 value={editDescription}
-                onChange={setEditDescription}
-                editorClassName="min-h-[180px]"
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={7}
+                className="min-h-[180px] resize-y"
               />
             </div>
             <div className="space-y-1">
