@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
@@ -24,15 +25,16 @@ import { directPushFollowUp, directDeleteFollowUp } from '@/lib/sync/directPushS
 import type { FollowUp } from '@/types/entities';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useAuthStore } from '@/store/authStore';
-import { useD365UserId } from '@/hooks/useD365UserId';
+import { useD365UserIdResolved } from '@/hooks/useD365UserId';
 
 export default function FollowUpsPage() {
   const router = useRouter();
   const { markComplete, setOverdueCount } = useFollowUpStore();
   const account = useAuthStore((s) => s.account);
-  const d365UserId = useD365UserId();
+  const { id: d365UserId, isResolved: isUserIdResolved } = useD365UserIdResolved();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [customerMap, setCustomerMap] = useState<Map<string, string>>(new Map());
+  const [isLoading, setIsLoading] = useState(true);
 
   const [editing, setEditing] = useState<FollowUp | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -51,6 +53,7 @@ export default function FollowUpsPage() {
   const userId = d365UserId ?? account?.localAccountId;
 
   const loadData = useCallback(async () => {
+    if (!isUserIdResolved) return;
     try {
       if (isTauriApp() && userId) {
         const [fups, customers] = await Promise.all([
@@ -67,8 +70,10 @@ export default function FollowUpsPage() {
       console.error('[followup] Failed to load follow-ups:', err);
       setFollowUps([]);
       setCustomerMap(new Map());
+    } finally {
+      setIsLoading(false);
     }
-  }, [userId, account?.localAccountId]);
+  }, [userId, account?.localAccountId, isUserIdResolved]);
 
   useEffect(() => {
     loadData();
@@ -185,6 +190,31 @@ export default function FollowUpsPage() {
 
   const getCustomerName = (customerId: string) =>
     customerMap.get(customerId) ?? customerId;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div data-tour="page-followups">
+          <h2 className="text-xl font-semibold text-foreground">Your Follow-Ups</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Track your open tasks and next actions across all customers.
+          </p>
+        </div>
+        <section className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <div className="bg-card rounded-xl px-4 py-2 shadow-sm border border-border/60 space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="py-2 space-y-2">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

@@ -15,37 +15,50 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
  * 1. `callerD365UserId` persisted in syncStore (set during D365 sync via WhoAmI)
  * 2. DB lookup by email (falls back to `localAccountId` before first sync)
  */
-export function useD365UserId(): string | null {
+export interface ResolvedD365UserId {
+  id: string | null;
+  isResolved: boolean;
+}
+
+export function useD365UserIdResolved(): ResolvedD365UserId {
   const account = useAuthStore((s) => s.account);
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
-  const [d365UserId, setD365UserId] = useState<string | null>(null);
+  const [fallbackId, setFallbackId] = useState<string | null>(null);
+  const [fallbackResolved, setFallbackResolved] = useState(false);
 
   useEffect(() => {
-    // Use the D365 system GUID persisted from WhoAmI during sync when available.
-    // This is the correct ID that matches `created_by_id` on D365-synced records.
     if (callerD365UserId) {
-      setD365UserId(callerD365UserId);
+      setFallbackResolved(true);
       return;
     }
-
     if (!account?.username || !isTauriApp()) {
-      setD365UserId(null);
+      setFallbackResolved(true);
       return;
     }
 
+    setFallbackResolved(false);
     const resolve = async () => {
       try {
         const { queryD365UserIdByEmail } = await import('@/lib/db/queries/users');
         const id = await queryD365UserIdByEmail(account.username);
-        setD365UserId(id);
+        setFallbackId(id);
       } catch (err) {
         console.error('[auth] Failed to resolve D365 user ID:', err);
-        setD365UserId(null);
+        setFallbackId(null);
+      } finally {
+        setFallbackResolved(true);
       }
     };
     resolve();
   }, [account?.username, lastD365SyncAt, callerD365UserId]);
 
-  return d365UserId;
+  return {
+    id: callerD365UserId ?? fallbackId,
+    isResolved: !!callerD365UserId || fallbackResolved,
+  };
+}
+
+export function useD365UserId(): string | null {
+  return useD365UserIdResolved().id;
 }
