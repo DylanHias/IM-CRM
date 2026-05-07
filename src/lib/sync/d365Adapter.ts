@@ -914,6 +914,10 @@ class RealD365Adapter implements ID365Adapter {
       },
     });
 
+    if (res.status === 403) {
+      console.warn(`[sync] Cannot delete ${entitySet}(${remoteId}) — record owned by another user, skipping`);
+      return;
+    }
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`D365 delete activity failed ${res.status}: ${text}`);
@@ -930,6 +934,10 @@ class RealD365Adapter implements ID365Adapter {
       },
     });
 
+    if (res.status === 403) {
+      console.warn(`[sync] Cannot delete tasks(${remoteId}) — record owned by another user, skipping`);
+      return;
+    }
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`D365 delete follow-up failed ${res.status}: ${text}`);
@@ -945,6 +953,10 @@ class RealD365Adapter implements ID365Adapter {
         'OData-Version': '4.0',
       },
     });
+    if (res.status === 403) {
+      console.warn(`[sync] Cannot delete opportunities(${remoteId}) — record owned by another user, skipping`);
+      return;
+    }
     if (!res.ok && res.status !== 404) {
       const text = await res.text();
       throw new Error(`D365 delete opportunity failed ${res.status}: ${text}`);
