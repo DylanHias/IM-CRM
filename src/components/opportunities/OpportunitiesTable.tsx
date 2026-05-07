@@ -30,22 +30,7 @@ function getIconColor(key: string) {
   return ICON_COLORS[Math.abs(hash) % ICON_COLORS.length];
 }
 
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
 type StatusKey = Opportunity['status'];
-
-function statusColor(status: StatusKey) {
-  switch (status) {
-    case 'Open': return 'hsl(var(--primary))';
-    case 'Won': return 'hsl(var(--success))';
-    case 'Lost': return 'hsl(var(--destructive))';
-  }
-}
 
 function statusVariant(status: StatusKey) {
   switch (status) {
@@ -86,168 +71,126 @@ const List = styled.div`
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
 `;
 
-const Card = styled.div<{ $status: StatusKey }>`
+const Card = styled.div`
   position: relative;
   display: grid;
-  grid-template-columns: 4px 44px 1fr auto 16px;
-  grid-template-rows: auto auto auto;
-  column-gap: 14px;
-  row-gap: 6px;
+  grid-template-columns: 32px 1fr auto 14px;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 2px;
   align-items: center;
-  padding: 16px 20px 16px 0;
+  padding: 10px 16px;
   cursor: pointer;
-  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
   transition: background-color 0.12s ease;
-
-  &:last-child {
-    border-bottom: none;
-  }
 
   &:hover {
     background-color: hsl(var(--muted) / 0.45);
   }
 `;
 
-const Accent = styled.div<{ $status: StatusKey }>`
-  grid-row: 1 / -1;
-  grid-column: 1;
-  align-self: stretch;
-  width: 4px;
-  background: ${(p) => statusColor(p.$status)};
-  opacity: 0.85;
-`;
-
 const IconWrap = styled.div<{ $bg: string; $fg: string }>`
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   background-color: ${(p) => p.$bg};
   color: ${(p) => p.$fg};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
   flex-shrink: 0;
-  align-self: start;
-  margin-top: 2px;
+  align-self: center;
 `;
 
 const HeaderRow = styled.div`
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 8px;
   min-width: 0;
-  gap: 2px;
 `;
 
 const CompanyEyebrow = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
+  gap: 4px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: hsl(var(--muted-foreground));
-  min-width: 0;
+  flex-shrink: 0;
+  max-width: 30%;
 
   & > .name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 0;
   }
 `;
 
 const Subject = styled.div`
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
   color: hsl(var(--foreground));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
+  line-height: 1.25;
+  min-width: 0;
+  flex: 1;
 `;
 
-const StageRow = styled.div`
-  grid-column: 3;
+const MetaRow = styled.div`
+  grid-column: 2;
   grid-row: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
-  margin-top: 4px;
-`;
-
-const ProgressTrack = styled.div`
-  position: relative;
-  height: 4px;
-  width: 100%;
-  max-width: 180px;
-  background: hsl(var(--muted));
-  border-radius: 999px;
+  flex-wrap: nowrap;
   overflow: hidden;
-  flex-shrink: 1;
-  min-width: 60px;
-`;
-
-const ProgressFill = styled.div<{ $value: number; $status: StatusKey }>`
-  height: 100%;
-  width: ${(p) => Math.max(2, Math.min(100, p.$value))}%;
-  background: ${(p) => statusColor(p.$status)};
-  border-radius: 999px;
-  transition: width 0.3s ease;
 `;
 
 const StageLabel = styled.div`
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11.5px;
   color: hsl(var(--foreground));
   white-space: nowrap;
-  min-width: 0;
 
   & > .stage {
     font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   & > .pct {
     font-weight: 600;
     color: hsl(var(--muted-foreground));
     font-variant-numeric: tabular-nums;
-    font-size: 11px;
+    font-size: 10.5px;
   }
 `;
 
-const FooterRow = styled.div`
-  grid-column: 3;
-  grid-row: 3;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  margin-top: 2px;
+const MetaSep = styled.span`
+  color: hsl(var(--muted-foreground) / 0.5);
+  font-size: 10px;
 `;
 
 const VendorChip = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 5px;
   background: hsl(var(--muted) / 0.7);
   color: hsl(var(--foreground) / 0.8);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   white-space: nowrap;
-  max-width: 240px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
@@ -298,19 +241,19 @@ const StaleChip = styled.span`
 `;
 
 const Right = styled.div`
-  grid-column: 4;
-  grid-row: 1 / span 3;
+  grid-column: 3;
+  grid-row: 1 / span 2;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  gap: 6px;
+  gap: 3px;
   flex-shrink: 0;
   padding-left: 12px;
 `;
 
 const Value = styled.div`
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: hsl(var(--foreground));
@@ -320,14 +263,14 @@ const Value = styled.div`
 `;
 
 const ValuePlaceholder = styled.div`
-  font-size: 13px;
+  font-size: 11px;
   color: hsl(var(--muted-foreground) / 0.6);
   font-style: italic;
 `;
 
 const Chevron = styled.div`
-  grid-column: 5;
-  grid-row: 1 / span 3;
+  grid-column: 4;
+  grid-row: 1 / span 2;
   display: flex;
   align-items: center;
   color: hsl(var(--muted-foreground) / 0.7);
@@ -368,11 +311,9 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
 
           return (
             <motion.div key={opp.id} variants={itemVariants}>
-              <Card $status={opp.status} onClick={() => onEdit(opp)}>
-                <Accent $status={opp.status} />
-
+              <Card onClick={() => onEdit(opp)}>
                 <IconWrap $bg={iconColor.bg} $fg={iconColor.fg} aria-hidden>
-                  {getInitials(companyName)}
+                  <Target size={16} strokeWidth={2.25} />
                 </IconWrap>
 
                 <HeaderRow>
@@ -383,35 +324,42 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                   <Subject>{opp.subject}</Subject>
                 </HeaderRow>
 
-                <StageRow>
-                  <ProgressTrack>
-                    <ProgressFill $value={opp.probability ?? 0} $status={opp.status} />
-                  </ProgressTrack>
+                <MetaRow>
                   <StageLabel>
                     <span className="stage">{opp.stage}</span>
                     <span className="pct">{opp.probability ?? 0}%</span>
                   </StageLabel>
-                </StageRow>
-
-                <FooterRow>
                   {opp.primaryVendor && (
-                    <VendorChip title={opp.primaryVendor}>{opp.primaryVendor}</VendorChip>
+                    <>
+                      <MetaSep>·</MetaSep>
+                      <VendorChip title={opp.primaryVendor}>{opp.primaryVendor}</VendorChip>
+                    </>
                   )}
                   {exp && (
-                    <ExpiryChip $tone={exp.tone}>
-                      <Calendar size={10} strokeWidth={2.5} />
-                      <span className="date">{formatExpDate(opp.expirationDate!)}</span>
-                      <span className="sep">·</span>
-                      <span>{exp.label}</span>
-                    </ExpiryChip>
+                    <>
+                      <MetaSep>·</MetaSep>
+                      <ExpiryChip $tone={opp.status === 'Open' ? exp.tone : 'neutral'}>
+                        <Calendar size={10} strokeWidth={2.5} />
+                        <span className="date">{formatExpDate(opp.expirationDate!)}</span>
+                        {opp.status === 'Open' && (
+                          <>
+                            <span className="sep">·</span>
+                            <span>{exp.label}</span>
+                          </>
+                        )}
+                      </ExpiryChip>
+                    </>
                   )}
                   {stale && (
-                    <StaleChip title={`No updates in ${staleDays}+ days`}>
-                      <AlertTriangle size={10} strokeWidth={2.5} />
-                      Stale
-                    </StaleChip>
+                    <>
+                      <MetaSep>·</MetaSep>
+                      <StaleChip title={`No updates in ${staleDays}+ days`}>
+                        <AlertTriangle size={10} strokeWidth={2.5} />
+                        Stale
+                      </StaleChip>
+                    </>
                   )}
-                </FooterRow>
+                </MetaRow>
 
                 <Right>
                   <Badge variant={statusVariant(opp.status)} className="text-[10px] px-2 py-0.5">

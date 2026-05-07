@@ -248,13 +248,13 @@ export default function FollowUpsPage() {
             <Badge variant="destructive">{overdue.length}</Badge>
           </div>
           <motion.div
-            className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60"
+            className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border-l-4 border-l-destructive/60 border border-border/60 overflow-hidden"
             variants={listContainerVariants}
             initial="hidden"
             animate="visible"
           >
             {overdueSlice.map((f) => (
-              <motion.div key={f.id} variants={listItemVariants}>
+              <motion.div key={f.id} variants={listItemVariants} className="px-4">
                 <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                   {getCustomerName(f.customerId)}
                 </p>
@@ -277,13 +277,13 @@ export default function FollowUpsPage() {
         <section className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Upcoming ({upcoming.length})</h3>
           <motion.div
-            className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60"
+            className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border border-border/60 overflow-hidden"
             variants={listContainerVariants}
             initial="hidden"
             animate="visible"
           >
             {upcomingSlice.map((f) => (
-              <motion.div key={f.id} variants={listItemVariants}>
+              <motion.div key={f.id} variants={listItemVariants} className="px-4">
                 <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                   {getCustomerName(f.customerId)}
                 </p>
@@ -311,13 +311,13 @@ export default function FollowUpsPage() {
         ) : (
           <>
             <motion.div
-              className="bg-card rounded-xl px-4 divide-y divide-border/70 shadow-sm border border-border/60"
+              className="bg-card rounded-xl divide-y divide-border/70 shadow-sm border border-border/60 overflow-hidden"
               variants={listContainerVariants}
               initial="hidden"
               animate="visible"
             >
               {doneSlice.map((f) => (
-                <motion.div key={f.id} variants={listItemVariants}>
+                <motion.div key={f.id} variants={listItemVariants} className="px-4">
                   <p className="text-xs text-muted-foreground pt-2 cursor-pointer hover:underline" onClick={() => router.push(`/customers?id=${f.customerId}`)}>
                     {getCustomerName(f.customerId)}
                   </p>
