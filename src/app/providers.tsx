@@ -12,7 +12,6 @@ import { useOptionSetStore } from '@/store/optionSetStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { Toaster } from 'sonner';
-import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
 function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -113,7 +112,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           closeButton
           theme={resolved}
           duration={10000}
-          style={isTauriApp() ? { right: '84px' } : undefined}
         />
         {children}
       </ThemeProvider>

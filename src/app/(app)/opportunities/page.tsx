@@ -48,10 +48,16 @@ export default function OpportunitiesPage() {
     isLoading,
     setOpportunities,
     setCustomerMap,
+    setCurrentUserIds,
     setPage,
     setLoading,
     getFilteredOpportunities,
   } = useOpportunityListStore();
+
+  useEffect(() => {
+    const ids = [d365UserId, account?.localAccountId].filter((v): v is string => Boolean(v));
+    setCurrentUserIds(ids);
+  }, [d365UserId, account?.localAccountId, setCurrentUserIds]);
 
   const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('opportunities');
 

@@ -20,6 +20,7 @@ const STAGE_ORDER: Record<string, number> = {
 interface OpportunityListState {
   opportunities: Opportunity[];
   customerMap: Map<string, string>;
+  currentUserIds: string[];
   searchQuery: string;
   sortBy: OppSortBy;
   sortDir: SortDir;
@@ -27,11 +28,13 @@ interface OpportunityListState {
   filterStage: string | null;
   filterStatus: OpportunityStatus | null;
   filterExpired: ExpiredFilter;
+  filterMineOnly: boolean;
   page: number;
   isLoading: boolean;
 
   setOpportunities: (opps: Opportunity[]) => void;
   setCustomerMap: (map: Map<string, string>) => void;
+  setCurrentUserIds: (ids: string[]) => void;
   setSearchQuery: (q: string) => void;
   setSortBy: (s: OppSortBy) => void;
   setSortDir: (d: SortDir) => void;
@@ -39,6 +42,7 @@ interface OpportunityListState {
   setFilterStage: (s: string | null) => void;
   setFilterStatus: (s: OpportunityStatus | null) => void;
   setFilterExpired: (f: ExpiredFilter) => void;
+  toggleMineOnly: () => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -51,6 +55,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
     (set, get) => ({
       opportunities: [],
       customerMap: new Map(),
+      currentUserIds: [],
       searchQuery: '',
       sortBy: 'createdAt',
       sortDir: 'desc',
@@ -58,11 +63,13 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       filterStage: null,
       filterStatus: null,
       filterExpired: 'all',
+      filterMineOnly: false,
       page: 1,
       isLoading: false,
 
       setOpportunities: (opportunities) => set({ opportunities }),
       setCustomerMap: (customerMap) => set({ customerMap }),
+      setCurrentUserIds: (currentUserIds) => set({ currentUserIds }),
       setSearchQuery: (searchQuery) => set({ searchQuery, page: 1 }),
       setSortBy: (sortBy) => set({ sortBy, page: 1 }),
       setSortDir: (sortDir) => set({ sortDir, page: 1 }),
@@ -70,6 +77,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       setFilterStage: (filterStage) => set({ filterStage, page: 1 }),
       setFilterStatus: (filterStatus) => set({ filterStatus, page: 1 }),
       setFilterExpired: (filterExpired) => set({ filterExpired, page: 1 }),
+      toggleMineOnly: () => set({ filterMineOnly: !get().filterMineOnly, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -78,21 +86,23 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterStage: null,
         filterStatus: null,
         filterExpired: 'all',
+        filterMineOnly: false,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterCustomerId, filterStage, filterStatus, filterExpired } = get();
+        const { filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly } = get();
         return [
           filterCustomerId,
           filterStage,
           filterStatus,
           filterExpired !== 'all' ? filterExpired : null,
+          filterMineOnly ? 'mine' : null,
         ].filter(Boolean).length;
       },
 
       getFilteredOpportunities: () => {
-        const { opportunities, customerMap, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired } = get();
+        const { opportunities, customerMap, currentUserIds, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly } = get();
 
         let result = opportunities;
 
@@ -108,6 +118,10 @@ export const useOpportunityListStore = create<OpportunityListState>()(
           });
         }
 
+        if (filterMineOnly && currentUserIds.length > 0) {
+          const ids = new Set(currentUserIds);
+          result = result.filter((o) => ids.has(o.createdById));
+        }
         if (filterCustomerId) {
           result = result.filter((o) => o.customerId === filterCustomerId);
         }
@@ -156,6 +170,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterStage: state.filterStage,
         filterStatus: state.filterStatus,
         filterExpired: state.filterExpired,
+        filterMineOnly: state.filterMineOnly,
       }),
     }
   )

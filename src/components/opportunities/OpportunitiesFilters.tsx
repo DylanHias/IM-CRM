@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,13 +34,14 @@ const STAGE_ORDER = [
 
 export function OpportunitiesFilters() {
   const {
-    opportunities, customerMap,
+    opportunities, customerMap, currentUserIds,
     searchQuery, sortBy, sortDir,
-    filterCustomerId, filterStage, filterStatus, filterExpired,
+    filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly,
     setSearchQuery, setSortBy, setSortDir,
-    setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired,
+    setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired, toggleMineOnly,
     clearFilters, getActiveFilterCount,
   } = useOpportunityListStore();
+  const canFilterMine = currentUserIds.length > 0;
 
   const [showFilters, setShowFilters] = useState(false);
   const activeFilterCount = getActiveFilterCount();
@@ -106,6 +107,18 @@ export function OpportunitiesFilters() {
             {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
           </Button>
         </div>
+
+        <Button
+          variant={filterMineOnly ? 'default' : 'outline'}
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={toggleMineOnly}
+          disabled={!canFilterMine}
+          title={canFilterMine ? 'Show only opportunities you created' : 'Resolving your user ID...'}
+        >
+          <User size={13} />
+          My opportunities
+        </Button>
 
         <Button
           variant={showFilters || activeFilterCount > 0 ? 'default' : 'outline'}
@@ -187,6 +200,11 @@ export function OpportunitiesFilters() {
       {/* Active filter badges */}
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
+          {filterMineOnly && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={toggleMineOnly}>
+              My opportunities <X size={10} />
+            </Badge>
+          )}
           {filterCustomerId && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCustomerId(null)}>
               {selectedCompanyName ?? 'Company'} <X size={10} />

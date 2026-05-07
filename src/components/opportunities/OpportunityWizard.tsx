@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Trophy, XOctagon, ChevronRight, Check, Save, Copy, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,30 @@ export function OpportunityWizard({
   const estimatedRevenue = opportunity?.estimatedRevenue?.toString() ?? '';
   const [estimatedMRR, setEstimatedMRR] = useState(opportunity?.estimatedMRR?.toString() ?? '');
   const [annualRevenue, setAnnualRevenue] = useState(opportunity?.annualRevenue?.toString() ?? '');
+
+  const updateEstimatedMRR = (raw: string) => {
+    setEstimatedMRR(raw);
+    if (raw === '') {
+      setAnnualRevenue('');
+      return;
+    }
+    const n = parseFloat(raw);
+    if (!Number.isNaN(n)) {
+      setAnnualRevenue((Math.round(n * 12 * 100) / 100).toString());
+    }
+  };
+
+  const updateAnnualRevenue = (raw: string) => {
+    setAnnualRevenue(raw);
+    if (raw === '') {
+      setEstimatedMRR('');
+      return;
+    }
+    const n = parseFloat(raw);
+    if (!Number.isNaN(n)) {
+      setEstimatedMRR((Math.round((n / 12) * 100) / 100).toString());
+    }
+  };
   const [currency, setCurrency] = useState(opportunity?.currency ?? 'USD');
   const [country, setCountry] = useState(opportunity?.country ?? 'Belgium');
   const [customerNeed, setCustomerNeed] = useState(opportunity?.customerNeed ?? '');
@@ -591,10 +615,10 @@ export function OpportunityWizard({
         <Section title="Financials" subtitle="Revenue projections and timing">
           <div className="grid grid-cols-2 gap-4">
             <Field label={`Estimated MRR (${currency})`} required>
-              <MoneyInput value={estimatedMRR} onValueChange={setEstimatedMRR} currency={currency} />
+              <MoneyInput value={estimatedMRR} onValueChange={updateEstimatedMRR} currency={currency} />
             </Field>
             <Field label={`Annual Revenue (${currency})`} required>
-              <MoneyInput value={annualRevenue} onValueChange={setAnnualRevenue} currency={currency} />
+              <MoneyInput value={annualRevenue} onValueChange={updateAnnualRevenue} currency={currency} />
             </Field>
             <Field label="Expiration Date">
               <DatePicker value={expirationDate} onChange={setExpirationDate} />
@@ -683,9 +707,24 @@ interface StageStepperProps {
 function StageStepper({ currentStage, onSelect }: StageStepperProps) {
   const currentIdx = STAGES.indexOf(currentStage);
   const isBillingRejection = currentStage === 'Billing Rejection';
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (e.deltaY === 0) return;
+    const canScroll = el.scrollWidth > el.clientWidth;
+    if (!canScroll) return;
+    e.preventDefault();
+    el.scrollLeft += e.deltaY;
+  };
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto pb-1">
+    <div
+      ref={scrollRef}
+      onWheel={handleWheel}
+      className="flex items-center gap-1 overflow-x-auto pb-1"
+    >
       {STAGES.map((s, i) => {
         const isActive = s === currentStage;
         const isPast = !isBillingRejection && i < currentIdx;
