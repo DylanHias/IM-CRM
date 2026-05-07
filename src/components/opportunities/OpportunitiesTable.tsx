@@ -1,9 +1,9 @@
 'use client';
 
-import { Target, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Target, ChevronRight, AlertTriangle, Calendar, Building2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { Badge } from '@/components/ui/badge';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatCurrency } from '@/lib/utils/currencyUtils';
@@ -30,98 +30,308 @@ function getIconColor(key: string) {
   return ICON_COLORS[Math.abs(hash) % ICON_COLORS.length];
 }
 
-const List = styled.div`
-  display: flex;
-  flex-direction: column;
-  border-radius: 12px;
-  overflow: hidden;
-  background: hsl(var(--card));
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-`;
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
-const Row = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 13px 18px;
-  cursor: pointer;
-  border-bottom: 1px solid hsl(var(--border) / 0.7);
-  transition: background-color 0.1s ease;
+type StatusKey = Opportunity['status'];
 
-  &:last-child {
-    border-bottom: none;
+function statusColor(status: StatusKey) {
+  switch (status) {
+    case 'Open': return 'hsl(var(--primary))';
+    case 'Won': return 'hsl(var(--success))';
+    case 'Lost': return 'hsl(var(--destructive))';
   }
+}
 
-  &:hover {
-    background-color: hsl(var(--muted) / 0.6);
-  }
-`;
-
-const Icon = styled.div<{ $bg: string; $fg: string }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background-color: ${(p) => p.$bg};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${(p) => p.$fg};
-  margin-right: 14px;
-  flex-shrink: 0;
-`;
-
-const Info = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-const Subject = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const Meta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 3px;
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-  min-width: 0;
-
-  & > span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-`;
-
-const Right = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  margin-left: 12px;
-  flex-shrink: 0;
-`;
-
-const SubMeta = styled.div`
-  font-size: 11px;
-  color: hsl(var(--muted-foreground));
-  white-space: nowrap;
-`;
-
-
-function statusVariant(status: Opportunity['status']) {
+function statusVariant(status: StatusKey) {
   switch (status) {
     case 'Open': return 'default' as const;
     case 'Won': return 'success' as const;
     case 'Lost': return 'destructive' as const;
   }
 }
+
+function relativeExpiration(dateStr: string | null): { label: string; tone: 'overdue' | 'soon' | 'near' | 'neutral' } | null {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  if (isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const t = new Date(target);
+  t.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((t.getTime() - today.getTime()) / 86400000);
+  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, tone: 'overdue' };
+  if (diffDays === 0) return { label: 'today', tone: 'soon' };
+  if (diffDays <= 7) return { label: `in ${diffDays}d`, tone: 'soon' };
+  if (diffDays <= 30) return { label: `in ${diffDays}d`, tone: 'near' };
+  return { label: `in ${diffDays}d`, tone: 'neutral' };
+}
+
+function formatExpDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const List = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  background: hsl(var(--card));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+`;
+
+const Card = styled.div<{ $status: StatusKey }>`
+  position: relative;
+  display: grid;
+  grid-template-columns: 4px 44px 1fr auto 16px;
+  grid-template-rows: auto auto auto;
+  column-gap: 14px;
+  row-gap: 6px;
+  align-items: center;
+  padding: 16px 20px 16px 0;
+  cursor: pointer;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  transition: background-color 0.12s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: hsl(var(--muted) / 0.45);
+  }
+`;
+
+const Accent = styled.div<{ $status: StatusKey }>`
+  grid-row: 1 / -1;
+  grid-column: 1;
+  align-self: stretch;
+  width: 4px;
+  background: ${(p) => statusColor(p.$status)};
+  opacity: 0.85;
+`;
+
+const IconWrap = styled.div<{ $bg: string; $fg: string }>`
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: ${(p) => p.$bg};
+  color: ${(p) => p.$fg};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  align-self: start;
+  margin-top: 2px;
+`;
+
+const HeaderRow = styled.div`
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+`;
+
+const CompanyEyebrow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  min-width: 0;
+
+  & > .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+`;
+
+const Subject = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+`;
+
+const StageRow = styled.div`
+  grid-column: 3;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 4px;
+`;
+
+const ProgressTrack = styled.div`
+  position: relative;
+  height: 4px;
+  width: 100%;
+  max-width: 180px;
+  background: hsl(var(--muted));
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 1;
+  min-width: 60px;
+`;
+
+const ProgressFill = styled.div<{ $value: number; $status: StatusKey }>`
+  height: 100%;
+  width: ${(p) => Math.max(2, Math.min(100, p.$value))}%;
+  background: ${(p) => statusColor(p.$status)};
+  border-radius: 999px;
+  transition: width 0.3s ease;
+`;
+
+const StageLabel = styled.div`
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  min-width: 0;
+
+  & > .stage {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & > .pct {
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+  }
+`;
+
+const FooterRow = styled.div`
+  grid-column: 3;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 2px;
+`;
+
+const VendorChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: hsl(var(--muted) / 0.7);
+  color: hsl(var(--foreground) / 0.8);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ExpiryChip = styled.span<{ $tone: 'overdue' | 'soon' | 'near' | 'neutral' }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  ${(p) => p.$tone === 'overdue' && css`
+    color: hsl(var(--destructive));
+    font-weight: 600;
+  `}
+  ${(p) => p.$tone === 'soon' && css`
+    color: hsl(var(--warning));
+    font-weight: 600;
+  `}
+  ${(p) => p.$tone === 'near' && css`
+    color: hsl(var(--muted-foreground));
+  `}
+  ${(p) => p.$tone === 'neutral' && css`
+    color: hsl(var(--muted-foreground));
+  `}
+
+  & > .date {
+    color: hsl(var(--foreground) / 0.7);
+    font-weight: 500;
+  }
+  & > .sep {
+    opacity: 0.4;
+  }
+`;
+
+const StaleChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: hsl(var(--warning) / 0.12);
+  color: hsl(var(--warning));
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
+const Right = styled.div`
+  grid-column: 4;
+  grid-row: 1 / span 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-left: 12px;
+`;
+
+const Value = styled.div`
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+`;
+
+const ValuePlaceholder = styled.div`
+  font-size: 13px;
+  color: hsl(var(--muted-foreground) / 0.6);
+  font-style: italic;
+`;
+
+const Chevron = styled.div`
+  grid-column: 5;
+  grid-row: 1 / span 3;
+  display: flex;
+  align-items: center;
+  color: hsl(var(--muted-foreground) / 0.7);
+`;
 
 interface OpportunitiesTableProps {
   opportunities: Opportunity[];
@@ -153,52 +363,71 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
           const companyName = customerMap.get(opp.customerId) ?? 'Unknown company';
           const iconColor = getIconColor(companyName);
           const stale = isStale(opp);
+          const exp = relativeExpiration(opp.expirationDate);
+          const hasValue = opp.estimatedRevenue != null && opp.estimatedRevenue > 0;
+
           return (
             <motion.div key={opp.id} variants={itemVariants}>
-              <Row onClick={() => onEdit(opp)}>
-                <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
-                  <Target size={16} />
-                </Icon>
+              <Card $status={opp.status} onClick={() => onEdit(opp)}>
+                <Accent $status={opp.status} />
 
-                <Info>
+                <IconWrap $bg={iconColor.bg} $fg={iconColor.fg} aria-hidden>
+                  {getInitials(companyName)}
+                </IconWrap>
+
+                <HeaderRow>
+                  <CompanyEyebrow>
+                    <Building2 size={10} strokeWidth={2.5} />
+                    <span className="name">{companyName}</span>
+                  </CompanyEyebrow>
                   <Subject>{opp.subject}</Subject>
-                  <Meta>
-                    <span>{companyName}</span>
-                    <span>·</span>
-                    <span>{opp.stage} ({opp.probability}%)</span>
-                    {opp.primaryVendor && (
-                      <>
-                        <span>·</span>
-                        <span>{opp.primaryVendor}</span>
-                      </>
-                    )}
-                    {stale && (
-                      <span
-                        className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400"
-                        title={`No updates in ${staleDays}+ days`}
-                      >
-                        <AlertTriangle size={11} />
-                        Stale
-                      </span>
-                    )}
-                  </Meta>
-                </Info>
+                </HeaderRow>
+
+                <StageRow>
+                  <ProgressTrack>
+                    <ProgressFill $value={opp.probability ?? 0} $status={opp.status} />
+                  </ProgressTrack>
+                  <StageLabel>
+                    <span className="stage">{opp.stage}</span>
+                    <span className="pct">{opp.probability ?? 0}%</span>
+                  </StageLabel>
+                </StageRow>
+
+                <FooterRow>
+                  {opp.primaryVendor && (
+                    <VendorChip title={opp.primaryVendor}>{opp.primaryVendor}</VendorChip>
+                  )}
+                  {exp && (
+                    <ExpiryChip $tone={exp.tone}>
+                      <Calendar size={10} strokeWidth={2.5} />
+                      <span className="date">{formatExpDate(opp.expirationDate!)}</span>
+                      <span className="sep">·</span>
+                      <span>{exp.label}</span>
+                    </ExpiryChip>
+                  )}
+                  {stale && (
+                    <StaleChip title={`No updates in ${staleDays}+ days`}>
+                      <AlertTriangle size={10} strokeWidth={2.5} />
+                      Stale
+                    </StaleChip>
+                  )}
+                </FooterRow>
 
                 <Right>
-                  <Badge variant={statusVariant(opp.status)} className="text-[10px]">{opp.status}</Badge>
-                  <SubMeta>
-                    {opp.estimatedRevenue != null && (
-                      <>
-                        {formatCurrency(opp.estimatedRevenue, opp.currency)}
-                        {opp.expirationDate && ' · '}
-                      </>
-                    )}
-                    {opp.expirationDate && `Exp ${opp.expirationDate}`}
-                  </SubMeta>
+                  <Badge variant={statusVariant(opp.status)} className="text-[10px] px-2 py-0.5">
+                    {opp.status}
+                  </Badge>
+                  {hasValue ? (
+                    <Value>{formatCurrency(opp.estimatedRevenue!, opp.currency)}</Value>
+                  ) : (
+                    <ValuePlaceholder>No value</ValuePlaceholder>
+                  )}
                 </Right>
 
-                <ChevronRight size={14} className="text-muted-foreground ml-2" />
-              </Row>
+                <Chevron>
+                  <ChevronRight size={16} />
+                </Chevron>
+              </Card>
             </motion.div>
           );
         })}
