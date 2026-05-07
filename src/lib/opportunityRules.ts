@@ -178,12 +178,12 @@ export interface OpportunityRulesState {
 
 export function isAwsVendor(vendor: string | null | undefined): boolean {
   if (!vendor) return false;
-  return /\baws\b/i.test(vendor);
+  return /^aws\b/i.test(vendor.trim());
 }
 
 export function isMicrosoftVendor(vendor: string | null | undefined): boolean {
   if (!vendor) return false;
-  return /\b(microsoft|azure)\b/i.test(vendor);
+  return /^(microsoft|azure)\b/i.test(vendor.trim());
 }
 
 export function isConsolidatedAwsServiceType(value: string | null | undefined): boolean {

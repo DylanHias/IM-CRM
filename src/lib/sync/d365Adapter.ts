@@ -980,9 +980,10 @@ class RealD365Adapter implements ID365Adapter {
         .filter((x) => x.remoteId && x.label);
     };
 
-    // Only fetch cloud vendors (AWS / Microsoft / Azure) — the full im360_vendors table has hundreds of hardware vendors
+    // Only fetch cloud vendors whose name STARTS with AWS / MICROSOFT / Azure — full table has hundreds of hardware vendors,
+    // and substring matches like "A&C - MICROSOFT SMARTPHONE" leak through `contains`.
     const vendorFilter = encodeURIComponent(
-      "contains(im360_name,'AWS') or contains(im360_name,'AZURE') or contains(im360_name,'MICROSOFT') or contains(im360_name,'Microsoft')",
+      "startswith(im360_name,'AWS') or startswith(im360_name,'MICROSOFT') or startswith(im360_name,'Microsoft') or startswith(im360_name,'AZURE') or startswith(im360_name,'Azure')",
     );
     const [vendors, serviceNames, countries, currencies] = await Promise.all([
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_vendors?$select=im360_vendorid,im360_name&$filter=${vendorFilter}`, 'im360_vendorid', 'im360_name'),

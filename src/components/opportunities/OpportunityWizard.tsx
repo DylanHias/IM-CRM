@@ -121,9 +121,18 @@ export function OpportunityWizard({
   // D365-synced lookup tables (vendors, services, countries, currencies)
   const lookupTables = useLookupTableStore((s) => s.lookupTables);
   const vendorOptions = useMemo(
-    () => (lookupTables['opportunity.primaryvendor'] ?? [])
-      .filter((v) => isAwsVendor(v.label) || isMicrosoftVendor(v.label))
-      .map((v) => ({ value: v.label, label: v.label })),
+    () => {
+      const seen = new Set<string>();
+      return (lookupTables['opportunity.primaryvendor'] ?? [])
+        .filter((v) => isAwsVendor(v.label) || isMicrosoftVendor(v.label))
+        .filter((v) => {
+          const key = v.label.trim().toUpperCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .map((v) => ({ value: v.label, label: v.label }));
+    },
     [lookupTables],
   );
   const serviceNameOptions = useMemo(
