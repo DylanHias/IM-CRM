@@ -3,83 +3,92 @@
 import { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
-import { useD365UserId } from '@/hooks/useD365UserId';
+import { useD365UserIdResolved } from '@/hooks/useD365UserId';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { toast } from 'sonner';
 
 let didRun = false;
 
 export function useLaunchAlerts() {
-
   const followUpReminderDays = useSettingsStore((s) => s.followUpReminderDays);
   const overdueAlertsOnLaunch = useSettingsStore((s) => s.overdueAlertsOnLaunch);
   const dueTodayAlertsOnLaunch = useSettingsStore((s) => s.dueTodayAlertsOnLaunch);
   const opportunityStaleReminderDays = useSettingsStore((s) => s.opportunityStaleReminderDays);
-  const { account } = useAuthStore();
-  const d365UserId = useD365UserId();
+  const account = useAuthStore((s) => s.account);
+  const { id: d365UserId, isResolved } = useD365UserIdResolved();
+
   useEffect(() => {
     if (didRun) return;
+    if (!isTauriApp()) return;
+    if (!account?.localAccountId) return;
+    if (!isResolved) return;
+
     didRun = true;
 
     const run = async () => {
-      if (!isTauriApp()) return;
-
       const { queryOverdueFollowUpCount, queryUpcomingFollowUpCount, queryDueTodayFollowUpCount } = await import(
         '@/lib/db/queries/followups'
       );
 
-      const userId = d365UserId ?? account?.localAccountId ?? undefined;
-      const altUserId = account?.localAccountId ?? undefined;
-      const overdueCount = await queryOverdueFollowUpCount(userId, altUserId);
-      const dueTodayCount = await queryDueTodayFollowUpCount(userId, altUserId);
-      const upcomingCount = followUpReminderDays > 0
-        ? await queryUpcomingFollowUpCount(followUpReminderDays, userId, altUserId)
-        : 0;
+      const userId = d365UserId ?? account.localAccountId;
+      const altUserId = account.localAccountId;
 
-      // Overdue follow-up alerts
-      if (overdueAlertsOnLaunch && overdueCount > 0) {
-        toast.warning(`${overdueCount} overdue follow-up${overdueCount > 1 ? 's' : ''}`, {
-          description: 'Check your follow-ups to stay on track',
-        });
-      }
-
-      // Follow-ups due today
-      if (dueTodayAlertsOnLaunch && dueTodayCount > 0) {
-        toast.info(
-          `${dueTodayCount} follow-up${dueTodayCount > 1 ? 's' : ''} due today`,
-          { description: 'Stay on top of your day' },
-        );
-      }
-
-      // Upcoming follow-up reminders
-      if (followUpReminderDays > 0 && upcomingCount > 0) {
-        toast.info(
-          `${upcomingCount} follow-up${upcomingCount > 1 ? 's' : ''} due within ${followUpReminderDays} day${followUpReminderDays > 1 ? 's' : ''}`,
-        );
-      }
-
-      // Stale opportunity detection
       try {
-        const opportunities = await (await import('@/lib/db/queries/opportunities')).queryAllOpportunities();
-        const cutoff = new Date(
-          Date.now() - opportunityStaleReminderDays * 86400000,
-        ).toISOString();
-        const staleCount = opportunities.filter(
-          (o) => o.status === 'Open' && o.updatedAt < cutoff,
-        ).length;
+        const overdueCount = await queryOverdueFollowUpCount(userId, altUserId);
+        const dueTodayCount = await queryDueTodayFollowUpCount(userId, altUserId);
+        const upcomingCount = followUpReminderDays > 0
+          ? await queryUpcomingFollowUpCount(followUpReminderDays, userId, altUserId)
+          : 0;
+
+        if (overdueAlertsOnLaunch && overdueCount > 0) {
+          toast.warning(`${overdueCount} overdue follow-up${overdueCount > 1 ? 's' : ''}`, {
+            description: 'Check your follow-ups to stay on track',
+          });
+        }
+
+        if (dueTodayAlertsOnLaunch && dueTodayCount > 0) {
+          toast.info(
+            `${dueTodayCount} follow-up${dueTodayCount > 1 ? 's' : ''} due today`,
+            { description: 'Stay on top of your day' },
+          );
+        }
+
+        if (followUpReminderDays > 0 && upcomingCount > 0) {
+          toast.info(
+            `${upcomingCount} follow-up${upcomingCount > 1 ? 's' : ''} due within ${followUpReminderDays} day${followUpReminderDays > 1 ? 's' : ''}`,
+          );
+        }
+      } catch (err) {
+        console.error('[followup] Failed to compute launch alerts:', err);
+      }
+
+      try {
+        const { queryStaleOpportunityCount } = await import('@/lib/db/queries/opportunities');
+        const staleCount = await queryStaleOpportunityCount(
+          opportunityStaleReminderDays,
+          userId,
+          altUserId,
+        );
         if (staleCount > 0) {
           toast.warning(
             `${staleCount} stale opportunit${staleCount > 1 ? 'ies' : 'y'}`,
             { description: `No updates in ${opportunityStaleReminderDays}+ days` },
           );
         }
-      } catch {
-        // opportunities table may not exist yet
+      } catch (err) {
+        console.error('[opportunity] Failed to compute stale opportunity count:', err);
       }
     };
 
-    // Delay alerts slightly so the UI settles first
-    const timer = setTimeout(run, 2000);
+    const timer = setTimeout(run, 1500);
     return () => clearTimeout(timer);
-  }, [followUpReminderDays, overdueAlertsOnLaunch, dueTodayAlertsOnLaunch, opportunityStaleReminderDays, d365UserId, account?.localAccountId]);
+  }, [
+    followUpReminderDays,
+    overdueAlertsOnLaunch,
+    dueTodayAlertsOnLaunch,
+    opportunityStaleReminderDays,
+    d365UserId,
+    isResolved,
+    account?.localAccountId,
+  ]);
 }

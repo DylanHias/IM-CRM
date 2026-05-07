@@ -77,6 +77,26 @@ export async function queryAllOpportunities(): Promise<Opportunity[]> {
   return rows.map(rowToOpportunity);
 }
 
+export async function queryStaleOpportunityCount(staleDays: number, userId?: string, altUserId?: string): Promise<number> {
+  const db = await getDb();
+  const cutoff = new Date(Date.now() - staleDays * 86400000).toISOString();
+  if (userId && altUserId && altUserId !== userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND updated_at < $1 AND created_by_id IN ($2, $3)`,
+      [cutoff, userId, altUserId]
+    );
+    return rows[0]?.count ?? 0;
+  }
+  if (userId) {
+    const rows = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND updated_at < $1 AND created_by_id = $2`,
+      [cutoff, userId]
+    );
+    return rows[0]?.count ?? 0;
+  }
+  return 0;
+}
+
 export async function insertOpportunity(opp: Opportunity): Promise<void> {
   const db = await getDb();
   await db.execute(
