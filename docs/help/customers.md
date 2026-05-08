@@ -78,6 +78,8 @@ A **Health** card shows the current score and tier alongside the three component
 
 If the account is flagged as a **Cloud Customer** in D365, you'll see a **Cloud Customer: Yes** indicator in the Company Details card.
 
+The **Cloud and Services Contacts** card lets you assign a **Customer Success Manager**, **AWS Owner**, and **Azure Owner** for the account. Click the pencil icon to pick from the Cloud Belux Sales team — your changes save back to Dynamics 365 immediately.
+
 ### Activities
 See all logged interactions with this customer. Read more in the **Activities** help section.
 

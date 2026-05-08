@@ -8,6 +8,14 @@ export interface Customer {
   segment: string | null;
   ownerId: string | null;
   ownerName: string | null;
+  customerSuccessManagerId: string | null;
+  customerSuccessManagerName: string | null;
+  awsOwnerId: string | null;
+  awsOwnerName: string | null;
+  azureOwnerId: string | null;
+  azureOwnerName: string | null;
+  mpnId: string | null;
+  apnId: string | null;
   phone: string | null;
   email: string | null;
   addressStreet: string | null;

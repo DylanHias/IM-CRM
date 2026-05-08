@@ -7,6 +7,14 @@ export interface D365Customer {
   'industrycode@OData.Community.Display.V1.FormattedValue'?: string;
   '_ownerid_value@OData.Community.Display.V1.FormattedValue'?: string;
   _ownerid_value: string | null;
+  _im360_cloudowner_value: string | null;
+  '_im360_cloudowner_value@OData.Community.Display.V1.FormattedValue'?: string;
+  _im360_awsowneruser_value: string | null;
+  '_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'?: string;
+  _im360_azureowneruyser_value: string | null;
+  '_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'?: string;
+  im360_mpnid: string | null;
+  im360_apnid: string | null;
   telephone1: string | null;
   emailaddress1: string | null;
   address1_line1: string | null;

@@ -54,6 +54,14 @@ async function ensureTablesExist(db: Database): Promise<void> {
       segment         TEXT,
       owner_id        TEXT,
       owner_name      TEXT,
+      customer_success_manager_id   TEXT,
+      customer_success_manager_name TEXT,
+      aws_owner_id    TEXT,
+      aws_owner_name  TEXT,
+      azure_owner_id  TEXT,
+      azure_owner_name TEXT,
+      mpn_id          TEXT,
+      apn_id          TEXT,
       phone           TEXT,
       email           TEXT,
       address_street  TEXT,
@@ -259,6 +267,17 @@ async function ensureTablesExist(db: Database): Promise<void> {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS cloud_belux_users (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      email      TEXT,
+      job_title  TEXT,
+      synced_at  TEXT NOT NULL
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_cloud_belux_users_name ON cloud_belux_users(name COLLATE NOCASE)`);
 }
 
 // Idempotent column backfill — runs every startup after ensureTablesExist.
@@ -273,6 +292,14 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'arr',             'REAL'],
     ['customers',  'arr_currency',    'TEXT'],
     ['customers',  'health_score',    'INTEGER'],
+    ['customers',  'customer_success_manager_id',   'TEXT'],
+    ['customers',  'customer_success_manager_name', 'TEXT'],
+    ['customers',  'aws_owner_id',    'TEXT'],
+    ['customers',  'aws_owner_name',  'TEXT'],
+    ['customers',  'azure_owner_id',  'TEXT'],
+    ['customers',  'azure_owner_name','TEXT'],
+    ['customers',  'mpn_id',          'TEXT'],
+    ['customers',  'apn_id',          'TEXT'],
     ['contacts',   'contact_type',    'TEXT'],
     ['contacts',   'cloud_contact',   'INTEGER'],
     ['contacts',   'sync_status',     "TEXT NOT NULL DEFAULT 'synced'"],
@@ -333,7 +360,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '32')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '34')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -791,6 +818,32 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     );
     await db.execute(
       `UPDATE app_settings SET value = '32', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 33) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS cloud_belux_users (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        email      TEXT,
+        job_title  TEXT,
+        synced_at  TEXT NOT NULL
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_cloud_belux_users_name ON cloud_belux_users(name COLLATE NOCASE)`);
+    // Reset watermark so the new CSM/AWS/Azure owner columns backfill on the next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '33', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 34) {
+    // Reset watermark so the new mpn_id/apn_id columns backfill on the next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '34', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

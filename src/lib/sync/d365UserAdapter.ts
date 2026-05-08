@@ -1,7 +1,9 @@
 import type { D365SystemUser, D365ODataResponse } from '@/types/api';
 import type { CrmUser } from '@/types/admin';
+import type { CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
 
 const TEAM_NAME = 'Cloud Users - Belgium';
+const CLOUD_BELUX_SALES_TEAM_ID = '40140e17-2db8-ed11-83ff-6045bd8f90b6';
 
 const LAST_ACTION_ENTITIES = ['phonecalls', 'appointments', 'annotations', 'tasks', 'opportunities'] as const;
 
@@ -138,4 +140,41 @@ export async function fetchD365Users(token: string): Promise<CrmUser[]> {
 export async function fetchD365TeamUserIds(token: string): Promise<Set<string>> {
   const results = await fetchTeamMembers(token);
   return new Set(results.map((r) => r.systemuserid));
+}
+
+/** Fetches all members of the Cloud Belux Sales team — used to populate the Customer Success
+ *  Manager / AWS Owner / Azure Owner lookups on a customer record. */
+export async function fetchCloudBeluxSalesUsers(token: string): Promise<CloudBeluxUser[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_D365_BASE_URL;
+  if (!baseUrl) return [];
+
+  const select = ['systemuserid', 'fullname', 'internalemailaddress', 'jobtitle', 'isdisabled'].join(',');
+  const results: D365SystemUser[] = [];
+  let url: string | undefined =
+    `${baseUrl}/api/data/v9.2/teams(${CLOUD_BELUX_SALES_TEAM_ID})/teammembership_association?$select=${select}&$filter=isdisabled eq false`;
+
+  while (url) {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        Accept: 'application/json',
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 Cloud Belux Sales team members error ${res.status}: ${text}`);
+    }
+    const json: D365ODataResponse<D365SystemUser> = await res.json();
+    results.push(...json.value);
+    url = json['@odata.nextLink'];
+  }
+
+  return results.map((r) => ({
+    id: r.systemuserid,
+    name: r.fullname,
+    email: r.internalemailaddress,
+    jobTitle: r.jobtitle,
+  }));
 }

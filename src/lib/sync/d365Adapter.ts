@@ -64,6 +64,19 @@ export interface ID365Adapter {
   pushContact(token: string, contact: Contact): Promise<string>;
   deleteContact(token: string, remoteId: string): Promise<void>;
   setPrimaryContact(token: string, accountId: string, contactRemoteId: string): Promise<void>;
+  pushAccountCloudOwners(token: string, accountId: string, owners: AccountCloudOwners): Promise<void>;
+  pushAccountVendorIds(token: string, accountId: string, vendorIds: AccountVendorIds): Promise<void>;
+}
+
+export interface AccountCloudOwners {
+  customerSuccessManagerId: string | null;
+  awsOwnerId: string | null;
+  azureOwnerId: string | null;
+}
+
+export interface AccountVendorIds {
+  mpnId: string | null;
+  apnId: string | null;
 }
 
 // D365 standard industry code → label mapping
@@ -122,6 +135,14 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     segment: d365['im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'] ?? null,
     ownerId: d365._ownerid_value,
     ownerName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    customerSuccessManagerId: d365._im360_cloudowner_value ?? null,
+    customerSuccessManagerName: d365['_im360_cloudowner_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    awsOwnerId: d365._im360_awsowneruser_value ?? null,
+    awsOwnerName: d365['_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    azureOwnerId: d365._im360_azureowneruyser_value ?? null,
+    azureOwnerName: d365['_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    mpnId: d365.im360_mpnid ?? null,
+    apnId: d365.im360_apnid ?? null,
     phone: d365.telephone1,
     email: d365.emailaddress1,
     addressStreet: d365.address1_line1,
@@ -458,6 +479,8 @@ class RealD365Adapter implements ID365Adapter {
     const select = [
       'accountid', 'name', 'accountnumber', 'im360_bcn', 'industrycode',
       '_ownerid_value',
+      '_im360_cloudowner_value', '_im360_awsowneruser_value', '_im360_azureowneruyser_value',
+      'im360_mpnid', 'im360_apnid',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
       'im360_mainsegmentation',
@@ -1102,6 +1125,67 @@ class RealD365Adapter implements ID365Adapter {
     }
   }
 
+  /** Patch the three cloud-services owner lookups on an account.
+   *  Setting an id assigns the systemuser; passing null clears the lookup via @odata.bind=null. */
+  async pushAccountCloudOwners(token: string, accountId: string, owners: AccountCloudOwners): Promise<void> {
+    // Custom-prefix lookups need their nav property name resolved from D365 metadata —
+    // OData binding uses the navigation property, which can differ from the logical name.
+    const [csmNav, awsNav, azureNav] = await Promise.all([
+      this.resolveNavProperty(token, 'account', 'im360_cloudowner'),
+      this.resolveNavProperty(token, 'account', 'im360_awsowneruser'),
+      this.resolveNavProperty(token, 'account', 'im360_azureowneruyser'),
+    ]);
+
+    const body: Record<string, unknown> = {};
+    const setBinding = (nav: string | null, fallbackLogicalName: string, id: string | null) => {
+      const navName = nav ?? fallbackLogicalName;
+      body[`${navName}@odata.bind`] = id ? `/systemusers(${id})` : null;
+    };
+    setBinding(csmNav, 'im360_cloudowner', owners.customerSuccessManagerId);
+    setBinding(awsNav, 'im360_awsowneruser', owners.awsOwnerId);
+    setBinding(azureNav, 'im360_azureowneruyser', owners.azureOwnerId);
+
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 push account cloud owners failed ${res.status}: ${text}`);
+    }
+  }
+
+  /** Patch MPN ID / APN ID text fields on an account. Empty/null clears the field. */
+  async pushAccountVendorIds(token: string, accountId: string, vendorIds: AccountVendorIds): Promise<void> {
+    const body: Record<string, unknown> = {
+      im360_mpnid: vendorIds.mpnId ?? null,
+      im360_apnid: vendorIds.apnId ?? null,
+    };
+
+    const res = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 push account vendor IDs failed ${res.status}: ${text}`);
+    }
+  }
+
   async deleteActivity(token: string, remoteId: string, type: string): Promise<void> {
     let entitySet: string;
     if (type === 'call') entitySet = 'phonecalls';
@@ -1273,6 +1357,14 @@ class MockD365Adapter implements ID365Adapter {
   }
 
   async setPrimaryContact(_token: string, _accountId: string, _contactRemoteId: string): Promise<void> {
+    await delay(200);
+  }
+
+  async pushAccountCloudOwners(_token: string, _accountId: string, _owners: AccountCloudOwners): Promise<void> {
+    await delay(200);
+  }
+
+  async pushAccountVendorIds(_token: string, _accountId: string, _vendorIds: AccountVendorIds): Promise<void> {
     await delay(200);
   }
 }

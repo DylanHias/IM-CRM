@@ -3,7 +3,27 @@ import type { Customer } from '@/types/entities';
 const now = new Date().toISOString();
 const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
 
-export const mockCustomers: Customer[] = [
+const EXTRA_DEFAULTS = {
+  customerSuccessManagerId: null,
+  customerSuccessManagerName: null,
+  awsOwnerId: null,
+  awsOwnerName: null,
+  azureOwnerId: null,
+  azureOwnerName: null,
+  mpnId: null,
+  apnId: null,
+} satisfies Pick<
+  Customer,
+  'customerSuccessManagerId' | 'customerSuccessManagerName' |
+  'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'mpnId' | 'apnId'
+>;
+
+const RAW_CUSTOMERS: Omit<Customer,
+  'customerSuccessManagerId' | 'customerSuccessManagerName' |
+  'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'mpnId' | 'apnId'
+>[] = [
   {
     id: 'cust-001', name: 'Technocom Solutions BV', accountNumber: 'ACC-10001', bcn: 'BCN-001',
     industry: 'Technology', segment: 'Enterprise', ownerId: 'owner-1', ownerName: 'Jan De Vries',
@@ -325,3 +345,5 @@ export const mockCustomers: Customer[] = [
     status: 'active', lastActivityAt: ago(5), healthScore: null, syncedAt: now, createdAt: now, updatedAt: now,
   },
 ];
+
+export const mockCustomers: Customer[] = RAW_CUSTOMERS.map((c) => ({ ...EXTRA_DEFAULTS, ...c }));

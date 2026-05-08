@@ -7,6 +7,14 @@ export interface CustomerRow {
   segment: string | null;
   owner_id: string | null;
   owner_name: string | null;
+  customer_success_manager_id: string | null;
+  customer_success_manager_name: string | null;
+  aws_owner_id: string | null;
+  aws_owner_name: string | null;
+  azure_owner_id: string | null;
+  azure_owner_name: string | null;
+  mpn_id: string | null;
+  apn_id: string | null;
   phone: string | null;
   email: string | null;
   address_street: string | null;
@@ -159,5 +167,13 @@ export interface UserRow {
   profile_photo: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CloudBeluxUserRow {
+  id: string;
+  name: string;
+  email: string | null;
+  job_title: string | null;
+  synced_at: string;
 }
 

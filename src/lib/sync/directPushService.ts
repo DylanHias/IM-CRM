@@ -10,7 +10,7 @@ import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
 import { queryLookupTableId } from '@/lib/db/queries/lookupTables';
 import type { Activity, Contact, FollowUp, Opportunity } from '@/types/entities';
-import type { OpportunityOptionValues, OpportunityLookupValues } from '@/lib/sync/d365Adapter';
+import type { OpportunityOptionValues, OpportunityLookupValues, AccountCloudOwners, AccountVendorIds } from '@/lib/sync/d365Adapter';
 
 async function tryDirectPush<T>(
   pushFn: (token: string) => Promise<T>,
@@ -215,4 +215,28 @@ export async function directPushPrimaryContact(
     await adapter.setPrimaryContact(token, accountId, contactRemoteId);
   });
   return result.success;
+}
+
+export async function directPushAccountCloudOwners(
+  accountId: string,
+  owners: AccountCloudOwners,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const result = await tryDirectPush(async (token) => {
+    const adapter = getD365Adapter();
+    await adapter.pushAccountCloudOwners(token, accountId, owners);
+  });
+  if (result.success) return { success: true };
+  return { success: false, error: result.error ?? 'Push failed' };
+}
+
+export async function directPushAccountVendorIds(
+  accountId: string,
+  vendorIds: AccountVendorIds,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const result = await tryDirectPush(async (token) => {
+    const adapter = getD365Adapter();
+    await adapter.pushAccountVendorIds(token, accountId, vendorIds);
+  });
+  if (result.success) return { success: true };
+  return { success: false, error: result.error ?? 'Push failed' };
 }

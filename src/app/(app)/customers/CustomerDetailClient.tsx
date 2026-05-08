@@ -23,6 +23,8 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { ContactList } from '@/components/contacts/ContactList';
 import { OpportunityList } from '@/components/opportunities/OpportunityList';
+import { CloudServicesContactsCard } from '@/components/customers/CloudServicesContactsCard';
+import { VendorRelatedCard } from '@/components/customers/VendorRelatedCard';
 import { ActivitiesTabContent } from '@/components/activities/ActivitiesTabContent';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
@@ -433,6 +435,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                   )}
                 </div>
               </div>
+
+              {/* Vendor Related */}
+              <VendorRelatedCard customer={customer} />
+
+              {/* Cloud and Services Contacts */}
+              <CloudServicesContactsCard customer={customer} />
 
               {/* Owner info */}
               {customer.ownerName && (
