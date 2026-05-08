@@ -26,7 +26,7 @@ const STATUS_CONFIG = {
 
 const SYNC_TYPE_LABELS: Record<string, string> = {
   d365: 'Dynamics 365',
-  powerbi_arr: 'Power BI ARR',
+  powerbi_arr: 'Power BI',
   push_activities: 'Push Activities',
   push_followups: 'Push Follow-Ups',
   push_opportunities: 'Push Opportunities',
@@ -173,7 +173,7 @@ function PowerBiAccessBanner({ onDismiss }: { onDismiss: () => void }) {
       <div className="flex items-start gap-3">
         <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" />
         <div className="space-y-1 flex-1">
-          <p className="text-sm font-semibold text-foreground">Power BI ARR data is unavailable</p>
+          <p className="text-sm font-semibold text-foreground">Power BI data is unavailable</p>
           <p className="text-xs text-muted-foreground">
             Your account doesn&apos;t have Build permission on the Power BI dataset. ARR sync is paused until the dataset
             owner grants access.
