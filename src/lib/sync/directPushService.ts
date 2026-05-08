@@ -5,7 +5,7 @@ import { getD365Adapter } from '@/lib/sync/d365Adapter';
 import { markActivitySynced } from '@/lib/db/queries/activities';
 import { markFollowUpSynced } from '@/lib/db/queries/followups';
 import { markOpportunitySynced } from '@/lib/db/queries/opportunities';
-import { markContactSynced, queryContactPhone } from '@/lib/db/queries/contacts';
+import { markContactSynced, queryContactPushInfo } from '@/lib/db/queries/contacts';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
 import { queryOptionSetValue } from '@/lib/db/queries/optionSets';
 import { queryLookupTableId } from '@/lib/db/queries/lookupTables';
@@ -60,8 +60,8 @@ export async function directPushActivity(
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
     const d365Id = await getCallerD365Id(token);
-    const contactPhone = activity.contactId ? await queryContactPhone(activity.contactId) : null;
-    return adapter.pushActivity(token, activity, d365Id, contactPhone);
+    const contactInfo = activity.contactId ? await queryContactPushInfo(activity.contactId) : null;
+    return adapter.pushActivity(token, activity, d365Id, contactInfo?.phone ?? null, contactInfo?.remoteId ?? null);
   });
 
   if (result.success) {
@@ -182,11 +182,12 @@ export async function directPushOpportunity(
 ): Promise<DirectPushResult> {
   const result = await tryDirectPush(async (token) => {
     const adapter = getD365Adapter();
-    const [optionValues, lookupValues] = await Promise.all([
+    const [optionValues, lookupValues, contactInfo] = await Promise.all([
       resolveOpportunityOptionValues(opportunity),
       resolveOpportunityLookupValues(opportunity),
+      opportunity.contactId ? queryContactPushInfo(opportunity.contactId) : Promise.resolve(null),
     ]);
-    return adapter.pushOpportunity(token, opportunity, optionValues, lookupValues);
+    return adapter.pushOpportunity(token, opportunity, optionValues, lookupValues, contactInfo?.remoteId ?? null);
   });
 
   if (result.success) {

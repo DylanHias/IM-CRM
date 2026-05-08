@@ -6,7 +6,7 @@ import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
 import { useAuthStore } from '@/store/authStore';
 import { bulkUpsertCustomers, bulkUpdateCustomerArrByBcn, clearStaleCustomerArr, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
-import { bulkUpsertContacts, queryAllContactIds, queryContactPhone, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
+import { bulkUpsertContacts, queryAllContactIds, queryContactPushInfo, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, markFollowUpSyncError, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
 import {
@@ -375,8 +375,8 @@ async function pushPendingActivities(token: string, callerD365Id?: string): Prom
   }
   for (const activity of pending) {
     try {
-      const contactPhone = activity.contactId ? await queryContactPhone(activity.contactId) : null;
-      const remoteId = await adapter.pushActivity(token, activity, callerD365Id, contactPhone);
+      const contactInfo = activity.contactId ? await queryContactPushInfo(activity.contactId) : null;
+      const remoteId = await adapter.pushActivity(token, activity, callerD365Id, contactInfo?.phone ?? null, contactInfo?.remoteId ?? null);
       await markActivitySynced(activity.id, remoteId);
       pushed++;
     } catch (err) {
@@ -444,11 +444,12 @@ async function pushPendingOpportunities(token: string): Promise<void> {
   const adapter = getD365Adapter();
   for (const opportunity of pending) {
     try {
-      const [optionValues, lookupValues] = await Promise.all([
+      const [optionValues, lookupValues, contactInfo] = await Promise.all([
         resolveOpportunityOptionValues(opportunity),
         resolveOpportunityLookupValues(opportunity),
+        opportunity.contactId ? queryContactPushInfo(opportunity.contactId) : Promise.resolve(null),
       ]);
-      const remoteId = await adapter.pushOpportunity(token, opportunity, optionValues, lookupValues);
+      const remoteId = await adapter.pushOpportunity(token, opportunity, optionValues, lookupValues, contactInfo?.remoteId ?? null);
       await markOpportunitySynced(opportunity.id, remoteId);
       pushed++;
     } catch (err) {

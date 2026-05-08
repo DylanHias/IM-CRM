@@ -53,12 +53,12 @@ export interface ID365Adapter {
   fetchTasks(token: string, customerIds: Set<string>, lastSync?: string): Promise<FollowUp[]>;
   fetchOptionSets(token: string): Promise<OptionSetData[]>;
   whoAmI(token: string): Promise<string>;
-  pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null): Promise<string>;
+  pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null, contactRemoteId?: string | null): Promise<string>;
   pushFollowUp(token: string, followUp: FollowUp): Promise<string>;
   deleteActivity(token: string, remoteId: string, type: string): Promise<void>;
   deleteFollowUp(token: string, remoteId: string): Promise<void>;
   fetchOpportunities(token: string, customerIds: Set<string>, ownerIds: Set<string>, lastSync?: string): Promise<Opportunity[]>;
-  pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues, lookupValues: OpportunityLookupValues): Promise<string>;
+  pushOpportunity(token: string, opportunity: Opportunity, optionValues: OpportunityOptionValues, lookupValues: OpportunityLookupValues, contactRemoteId?: string | null): Promise<string>;
   deleteOpportunity(token: string, remoteId: string): Promise<void>;
   fetchLookupTables(token: string): Promise<LookupTableFetchResult[]>;
   pushContact(token: string, contact: Contact): Promise<string>;
@@ -655,11 +655,16 @@ class RealD365Adapter implements ID365Adapter {
     return data.UserId;
   }
 
-  async pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null): Promise<string> {
+  async pushActivity(token: string, activity: Activity, callerD365Id?: string, contactPhone?: string | null, contactRemoteId?: string | null): Promise<string> {
     const isUpdate = !!activity.remoteId;
     const accountBind = `/accounts(${activity.customerId})`;
     let entitySet: string;
     let body: Record<string, unknown>;
+
+    // Activities reference contacts by D365 GUID (remoteId), not local UUID
+    if (activity.contactId && !contactRemoteId) {
+      throw new Error(`Contact ${activity.contactId} not yet synced to D365`);
+    }
 
     // Resolve custom lookup nav property names (cached after first call)
     // Annotations use the standard polymorphic objectid lookup, not custom im360_* lookups
@@ -668,14 +673,14 @@ class RealD365Adapter implements ID365Adapter {
     const isAnnotation = entityLogical === 'annotation';
     const [accountNav, contactNav] = await Promise.all([
       isAnnotation ? Promise.resolve(null) : this.resolveNavProperty(token, entityLogical, 'im360_account'),
-      !isAnnotation && activity.contactId ? this.resolveNavProperty(token, entityLogical, 'im360_contact') : Promise.resolve(null),
+      !isAnnotation && contactRemoteId ? this.resolveNavProperty(token, entityLogical, 'im360_contact') : Promise.resolve(null),
     ]);
 
     // Build custom lookup bindings using the resolved navigation property names
     const customBindings: Record<string, string> = {};
     if (accountNav) customBindings[`${accountNav}@odata.bind`] = accountBind;
-    if (contactNav && activity.contactId) {
-      customBindings[`${contactNav}@odata.bind`] = `/contacts(${activity.contactId})`;
+    if (contactNav && contactRemoteId) {
+      customBindings[`${contactNav}@odata.bind`] = `/contacts(${contactRemoteId})`;
     }
 
     if (activity.type === 'call') {
@@ -684,8 +689,8 @@ class RealD365Adapter implements ID365Adapter {
       const parties: Record<string, unknown>[] = [
         { 'partyid_systemuser@odata.bind': `/systemusers(${callerD365Id})`, participationtypemask: 1 },
       ];
-      if (activity.contactId) {
-        parties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 2 });
+      if (contactRemoteId) {
+        parties.push({ 'partyid_contact@odata.bind': `/contacts(${contactRemoteId})`, participationtypemask: 2 });
       }
       body = {
         subject: activity.subject,
@@ -713,8 +718,8 @@ class RealD365Adapter implements ID365Adapter {
       const apptParties: Record<string, unknown>[] = [
         { 'partyid_systemuser@odata.bind': `/systemusers(${callerD365Id})`, participationtypemask: 7 },
       ];
-      if (activity.contactId) {
-        apptParties.push({ 'partyid_contact@odata.bind': `/contacts(${activity.contactId})`, participationtypemask: 5 });
+      if (contactRemoteId) {
+        apptParties.push({ 'partyid_contact@odata.bind': `/contacts(${contactRemoteId})`, participationtypemask: 5 });
       }
       body = {
         subject: activity.subject,
@@ -852,8 +857,13 @@ class RealD365Adapter implements ID365Adapter {
     opportunity: Opportunity,
     optionValues: OpportunityOptionValues,
     lookupValues: OpportunityLookupValues,
+    contactRemoteId?: string | null,
   ): Promise<string> {
     const isUpdate = !!opportunity.remoteId;
+
+    if (opportunity.contactId && !contactRemoteId) {
+      throw new Error(`Contact ${opportunity.contactId} not yet synced to D365`);
+    }
 
     const body: Record<string, unknown> = {
       name: opportunity.subject,
@@ -869,7 +879,7 @@ class RealD365Adapter implements ID365Adapter {
     }
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
     if (opportunity.bcn) body.im360_bcn = opportunity.bcn;
-    if (opportunity.contactId) body['parentcontactid@odata.bind'] = `/contacts(${opportunity.contactId})`;
+    if (contactRemoteId) body['parentcontactid@odata.bind'] = `/contacts(${contactRemoteId})`;
 
     // Picklists (numeric option set values)
     if (optionValues.stage != null) body.im360_oppstage = optionValues.stage;
@@ -1205,7 +1215,7 @@ class MockD365Adapter implements ID365Adapter {
     return 'mock-system-user-id';
   }
 
-  async pushActivity(_token: string, activity: Activity, _callerD365Id?: string, _contactPhone?: string | null): Promise<string> {
+  async pushActivity(_token: string, activity: Activity, _callerD365Id?: string, _contactPhone?: string | null, _contactRemoteId?: string | null): Promise<string> {
     await delay(200);
     return `D365-ACT-${activity.id.slice(0, 8).toUpperCase()}`;
   }
@@ -1228,7 +1238,7 @@ class MockD365Adapter implements ID365Adapter {
     return [];
   }
 
-  async pushOpportunity(_token: string, opportunity: Opportunity, _optionValues: OpportunityOptionValues, _lookupValues: OpportunityLookupValues): Promise<string> {
+  async pushOpportunity(_token: string, opportunity: Opportunity, _optionValues: OpportunityOptionValues, _lookupValues: OpportunityLookupValues, _contactRemoteId?: string | null): Promise<string> {
     await delay(200);
     return `D365-OPP-${opportunity.id.slice(0, 8).toUpperCase()}`;
   }

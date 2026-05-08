@@ -57,6 +57,19 @@ export async function queryContactPhone(contactId: string): Promise<string | nul
   return rows[0].phone || rows[0].mobile || null;
 }
 
+export async function queryContactPushInfo(contactId: string): Promise<{ phone: string | null; remoteId: string | null } | null> {
+  const db = await getDb();
+  const rows = await db.select<{ phone: string | null; mobile: string | null; remote_id: string | null }[]>(
+    `SELECT phone, mobile, remote_id FROM contacts WHERE id = $1`,
+    [contactId],
+  );
+  if (rows.length === 0) return null;
+  return {
+    phone: rows[0].phone || rows[0].mobile || null,
+    remoteId: rows[0].remote_id,
+  };
+}
+
 export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(
