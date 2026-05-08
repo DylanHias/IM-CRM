@@ -235,18 +235,12 @@ export default function RevenueOverviewPage() {
       const toastId = toast.loading('Exporting…');
       try {
         const { invoke } = await import('@tauri-apps/api/core');
-        // Pass only filter params — Rust queries SQLite directly, no large IPC payload
+        // Pass the already-filtered/sorted IDs so the export is in lockstep with the
+        // visible table — keeps complex filter logic (esp. city normalization) in JS.
         await invoke('export_revenue_overview', {
           params: {
             path: savePath,
-            search: searchQuery.trim(),
-            filter_cloud: filterCloud,
-            filter_country: filterCountry,
-            filter_city: filterCity,
-            arr_min: arrMin !== '' ? Number(arrMin) : null,
-            arr_max: arrMax !== '' ? Number(arrMax) : null,
-            sort_by: sortBy,
-            sort_dir: sortDir,
+            ids: filtered.map((c) => c.id),
           },
         });
         toast.success('Export complete', { id: toastId, description: savePath });

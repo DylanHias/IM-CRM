@@ -224,19 +224,14 @@ async fn export_db_all(app: tauri::AppHandle, path: String) -> Result<(), String
     .map_err(|e| e.to_string())?
 }
 
-/// Export the revenue overview directly from SQLite, applying filters in Rust.
-/// Accepts only small filter params so no large payload crosses the IPC bridge.
+/// Export the revenue overview directly from SQLite for the given customer IDs.
+/// The frontend pre-filters and sorts; we just hydrate rows from SQLite in the
+/// same order. This keeps filter logic (incl. city normalization) authoritative
+/// on the JS side without sending the full customer payload across IPC.
 #[derive(Deserialize)]
 struct RevenueExportParams {
     path: String,
-    search: String,
-    filter_cloud: String, // "all" | "yes" | "no"
-    filter_country: String,
-    filter_city: String,
-    arr_min: Option<f64>,
-    arr_max: Option<f64>,
-    sort_by: String,  // "name" | "cloudCustomer" | "arr"
-    sort_dir: String, // "asc" | "desc"
+    ids: Vec<String>,
 }
 
 #[tauri::command]
@@ -257,24 +252,6 @@ async fn export_revenue_overview(
         )
         .map_err(|e| e.to_string())?;
 
-        // Build most-recent contact per customer via a subquery
-        let mut stmt = conn
-            .prepare(
-                "SELECT
-                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr, c.arr_currency,
-                    c.address_country, c.address_city,
-                    con.first_name, con.last_name, con.phone, con.mobile, con.email
-                 FROM customers c
-                 LEFT JOIN contacts con ON con.id = (
-                     SELECT id FROM contacts
-                     WHERE customer_id = c.id
-                     ORDER BY updated_at DESC
-                     LIMIT 1
-                 )
-                 WHERE c.status = 'active'",
-            )
-            .map_err(|e| e.to_string())?;
-
         struct Row {
             name: String,
             contact_name: String,
@@ -283,99 +260,82 @@ async fn export_revenue_overview(
             cloud: Option<i64>,
             arr: Option<f64>,
             currency: Option<String>,
-            country: Option<String>,
-            city: Option<String>,
         }
 
-        let search_lower = params.search.to_lowercase();
+        let mut row_map: std::collections::HashMap<String, Row> =
+            std::collections::HashMap::with_capacity(params.ids.len());
 
-        let mut rows: Vec<Row> = stmt
-            .query_map([], |r| {
-                let cust_name: String = r.get(1)?;
-                let cust_phone: Option<String> = r.get(2)?;
-                let cust_email: Option<String> = r.get(3)?;
-                let cloud: Option<i64> = r.get(4)?;
-                let arr: Option<f64> = r.get(5)?;
-                let currency: Option<String> = r.get(6)?;
-                let country: Option<String> = r.get(7)?;
-                let city: Option<String> = r.get(8)?;
-                let con_first: Option<String> = r.get(9)?;
-                let con_last: Option<String> = r.get(10)?;
-                let con_phone: Option<String> = r.get(11)?;
-                let con_mobile: Option<String> = r.get(12)?;
-                let con_email: Option<String> = r.get(13)?;
+        // Chunk by SQLite's default parameter limit (999) with headroom.
+        for chunk in params.ids.chunks(500) {
+            if chunk.is_empty() {
+                continue;
+            }
+            let placeholders = std::iter::repeat("?")
+                .take(chunk.len())
+                .collect::<Vec<_>>()
+                .join(",");
+            let sql = format!(
+                "SELECT
+                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr, c.arr_currency,
+                    con.first_name, con.last_name, con.phone, con.mobile, con.email
+                 FROM customers c
+                 LEFT JOIN contacts con ON con.id = (
+                     SELECT id FROM contacts
+                     WHERE customer_id = c.id
+                     ORDER BY updated_at DESC
+                     LIMIT 1
+                 )
+                 WHERE c.id IN ({})",
+                placeholders
+            );
+            let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+            let param_refs: Vec<&dyn rusqlite::ToSql> =
+                chunk.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+            let mapped = stmt
+                .query_map(param_refs.as_slice(), |r| {
+                    let id: String = r.get(0)?;
+                    let cust_name: String = r.get(1)?;
+                    let cust_phone: Option<String> = r.get(2)?;
+                    let cust_email: Option<String> = r.get(3)?;
+                    let cloud: Option<i64> = r.get(4)?;
+                    let arr: Option<f64> = r.get(5)?;
+                    let currency: Option<String> = r.get(6)?;
+                    let con_first: Option<String> = r.get(7)?;
+                    let con_last: Option<String> = r.get(8)?;
+                    let con_phone: Option<String> = r.get(9)?;
+                    let con_mobile: Option<String> = r.get(10)?;
+                    let con_email: Option<String> = r.get(11)?;
 
-                let contact_name = match (&con_first, &con_last) {
-                    (Some(f), Some(l)) => format!("{} {}", f, l),
-                    _ => cust_name.clone(),
-                };
-                let phone = con_phone
-                    .or(con_mobile)
-                    .or(cust_phone)
-                    .unwrap_or_else(|| "—".to_string());
-                let email = con_email.or(cust_email).unwrap_or_else(|| "—".to_string());
+                    let contact_name = match (&con_first, &con_last) {
+                        (Some(f), Some(l)) => format!("{} {}", f, l),
+                        _ => cust_name.clone(),
+                    };
+                    let phone = con_phone
+                        .or(con_mobile)
+                        .or(cust_phone)
+                        .unwrap_or_else(|| "—".to_string());
+                    let email = con_email.or(cust_email).unwrap_or_else(|| "—".to_string());
 
-                Ok(Row { name: cust_name, contact_name, phone, email, cloud, arr, currency, country, city })
-            })
-            .map_err(|e| e.to_string())?
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.to_string())?;
+                    Ok((
+                        id,
+                        Row {
+                            name: cust_name,
+                            contact_name,
+                            phone,
+                            email,
+                            cloud,
+                            arr,
+                            currency,
+                        },
+                    ))
+                })
+                .map_err(|e| e.to_string())?;
 
-        // Apply filters
-        rows.retain(|r| {
-            if !search_lower.is_empty() && !r.name.to_lowercase().contains(&search_lower) {
-                return false;
+            for entry in mapped {
+                let (id, row) = entry.map_err(|e| e.to_string())?;
+                row_map.insert(id, row);
             }
-            match params.filter_cloud.as_str() {
-                "yes" => {
-                    if r.cloud != Some(1) {
-                        return false;
-                    }
-                }
-                "no" => {
-                    if r.cloud != Some(0) {
-                        return false;
-                    }
-                }
-                _ => {}
-            }
-            if !params.filter_country.is_empty()
-                && r.country.as_deref() != Some(params.filter_country.as_str())
-            {
-                return false;
-            }
-            if !params.filter_city.is_empty()
-                && r.city.as_deref() != Some(params.filter_city.as_str())
-            {
-                return false;
-            }
-            if let Some(min) = params.arr_min {
-                if r.arr.map_or(true, |v| v < min) {
-                    return false;
-                }
-            }
-            if let Some(max) = params.arr_max {
-                if r.arr.map_or(true, |v| v > max) {
-                    return false;
-                }
-            }
-            true
-        });
-
-        // Sort
-        let asc = params.sort_dir == "asc";
-        rows.sort_by(|a, b| {
-            let ord = match params.sort_by.as_str() {
-                "name" => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                "cloudCustomer" => a.cloud.cmp(&b.cloud),
-                "arr" => a
-                    .arr
-                    .partial_cmp(&b.arr)
-                    .unwrap_or(std::cmp::Ordering::Equal),
-                _ => std::cmp::Ordering::Equal,
-            };
-            if asc { ord } else { ord.reverse() }
-        });
+        }
 
         let bold = Format::new().set_bold();
         let mut workbook = Workbook::new();
@@ -399,7 +359,9 @@ async fn export_revenue_overview(
                 .map_err(|e| e.to_string())?;
         }
 
-        for (row_idx, row) in rows.iter().enumerate() {
+        let mut out_idx: u32 = 0;
+        for id in &params.ids {
+            let Some(row) = row_map.get(id) else { continue };
             let cloud_str = match row.cloud {
                 Some(1) => "Yes",
                 Some(0) => "No",
@@ -418,9 +380,10 @@ async fn export_revenue_overview(
             ];
             for (col, val) in cells.iter().enumerate() {
                 sheet
-                    .write(row_idx as u32 + 1, col as u16, *val)
+                    .write(out_idx + 1, col as u16, *val)
                     .map_err(|e| e.to_string())?;
             }
+            out_idx += 1;
         }
 
         workbook.save(params.path.as_str()).map_err(|e| e.to_string())
