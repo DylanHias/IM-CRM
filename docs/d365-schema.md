@@ -251,7 +251,6 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `customerneed` | Customer need |
 | `description` | Description / close notes |
 | `im360_bcn` | BCN (custom) |
-| `im360_expirydate` | Expiration date (preferred over `estimatedclosedate`) |
 | `im360_multivendoropportunity` | Multi-vendor flag |
 | `im360_oppstage` | Stage (picklist) |
 | `im360_opptype` | Sell type — `New` / `Install` (picklist) |

@@ -1,4 +1,13 @@
 // Dynamics 365 OData response shapes
+
+export interface D365AccountCloudDetail {
+  im360_accountclouddetailid: string;
+  _im360_awsowneruser_value: string | null;
+  '_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'?: string;
+  _im360_azureowneruyser_value: string | null;
+  '_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'?: string;
+}
+
 export interface D365Customer {
   accountid: string;
   name: string;
@@ -9,10 +18,8 @@ export interface D365Customer {
   _ownerid_value: string | null;
   _im360_cloudowner_value: string | null;
   '_im360_cloudowner_value@OData.Community.Display.V1.FormattedValue'?: string;
-  _im360_awsowneruser_value: string | null;
-  '_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'?: string;
-  _im360_azureowneruyser_value: string | null;
-  '_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'?: string;
+  _im360_clouddetailid_value: string | null;
+  im360_clouddetailId?: D365AccountCloudDetail | null;
   im360_mpnid: string | null;
   im360_apnid: string | null;
   telephone1: string | null;
@@ -156,7 +163,6 @@ export interface D365Opportunity {
   im360_publicsectorsegment: number | null;
   im360_estimatedmrr: number | null;
   im360_annualrevenue: number | null;
-  im360_expirydate: string | null;
   _im360_primaryvendor_value: string | null;
   _im360_primaryvendorid_value: string | null;
   _im360_servicename1_value: string | null;

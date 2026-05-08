@@ -137,10 +137,10 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     ownerName: d365['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     customerSuccessManagerId: d365._im360_cloudowner_value ?? null,
     customerSuccessManagerName: d365['_im360_cloudowner_value@OData.Community.Display.V1.FormattedValue'] ?? null,
-    awsOwnerId: d365._im360_awsowneruser_value ?? null,
-    awsOwnerName: d365['_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
-    azureOwnerId: d365._im360_azureowneruyser_value ?? null,
-    azureOwnerName: d365['_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    awsOwnerId: d365.im360_clouddetailId?._im360_awsowneruser_value ?? null,
+    awsOwnerName: d365.im360_clouddetailId?.['_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    azureOwnerId: d365.im360_clouddetailId?._im360_azureowneruyser_value ?? null,
+    azureOwnerName: d365.im360_clouddetailId?.['_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     mpnId: d365.im360_mpnid ?? null,
     apnId: d365.im360_apnid ?? null,
     phone: d365.telephone1,
@@ -373,7 +373,7 @@ function currencyNameToIso(name: string | undefined): string {
 function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Opportunity {
   const statusMap: Record<number, OpportunityStatus> = { 0: 'Open', 1: 'Won', 2: 'Lost' };
   const status = statusMap[r.statecode] ?? 'Open';
-  const expiration = r.im360_expirydate ?? r.estimatedclosedate;
+  const expiration = r.estimatedclosedate;
   // Prefer im360_primaryvendorid (the populated lookup), fallback to legacy im360_primaryvendor
   const primaryVendor =
     r['_im360_primaryvendorid_value@OData.Community.Display.V1.FormattedValue']
@@ -479,17 +479,18 @@ class RealD365Adapter implements ID365Adapter {
     const select = [
       'accountid', 'name', 'accountnumber', 'im360_bcn', 'industrycode',
       '_ownerid_value',
-      '_im360_cloudowner_value', '_im360_awsowneruser_value', '_im360_azureowneruyser_value',
+      '_im360_cloudowner_value', '_im360_clouddetailid_value',
       'im360_mpnid', 'im360_apnid',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
       'im360_mainsegmentation',
       'statecode', 'modifiedon',
     ].join(',');
+    const expand = 'im360_clouddetailId($select=im360_accountclouddetailid,_im360_awsowneruser_value,_im360_azureowneruyser_value)';
 
     let filter = "statecode eq 0 and (address1_country eq 'BE' or address1_country eq 'NL' or address1_country eq 'LU')";
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
-    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$filter=${encodeURIComponent(filter)}`;
+    const url = `${this.baseUrl}/api/data/v9.2/accounts?$select=${select}&$expand=${encodeURIComponent(expand)}&$filter=${encodeURIComponent(filter)}`;
     const now = new Date().toISOString();
     const records = await fetchAllPages<D365Customer>(url, token, 'Accounts');
     const mapped = records.map((r) => mapD365CustomerToCustomer(r, now));
@@ -606,7 +607,7 @@ class RealD365Adapter implements ID365Adapter {
       'im360_existingpayeeaccount', 'im360_consolidationacceptancedate',
       'im360_mscsptenant', 'im360_mpnid', 'im360_migrationtype',
       'im360_competitivewinback', 'im360_publicsectorsegment',
-      'im360_estimatedmrr', 'im360_annualrevenue', 'im360_expirydate',
+      'im360_estimatedmrr', 'im360_annualrevenue',
       '_im360_primaryvendor_value', '_im360_primaryvendorid_value',
       '_im360_servicename1_value', '_im360_country_value', '_transactioncurrencyid_value',
       '_parentaccountid_value', '_parentcontactid_value', '_ownerid_value',
@@ -897,7 +898,6 @@ class RealD365Adapter implements ID365Adapter {
 
     if (opportunity.estimatedRevenue != null) body.estimatedvalue = opportunity.estimatedRevenue;
     if (opportunity.expirationDate) {
-      body.im360_expirydate = opportunity.expirationDate;
       body.estimatedclosedate = opportunity.expirationDate;
     }
     if (opportunity.customerNeed) body.customerneed = opportunity.customerNeed;
@@ -1125,27 +1125,18 @@ class RealD365Adapter implements ID365Adapter {
     }
   }
 
-  /** Patch the three cloud-services owner lookups on an account.
-   *  Setting an id assigns the systemuser; passing null clears the lookup via @odata.bind=null. */
+  /** Patch the cloud-services owner lookups for an account.
+   *  CSM (im360_cloudowner) is on the account itself.
+   *  AWS/Azure owners live on the related im360_accountclouddetail record;
+   *  if the account has no clouddetail, one is created and linked. */
   async pushAccountCloudOwners(token: string, accountId: string, owners: AccountCloudOwners): Promise<void> {
-    // Custom-prefix lookups need their nav property name resolved from D365 metadata —
-    // OData binding uses the navigation property, which can differ from the logical name.
-    const [csmNav, awsNav, azureNav] = await Promise.all([
-      this.resolveNavProperty(token, 'account', 'im360_cloudowner'),
-      this.resolveNavProperty(token, 'account', 'im360_awsowneruser'),
-      this.resolveNavProperty(token, 'account', 'im360_azureowneruyser'),
-    ]);
-
-    const body: Record<string, unknown> = {};
-    const setBinding = (nav: string | null, fallbackLogicalName: string, id: string | null) => {
-      const navName = nav ?? fallbackLogicalName;
-      body[`${navName}@odata.bind`] = id ? `/systemusers(${id})` : null;
+    const csmNav = (await this.resolveNavProperty(token, 'account', 'im360_cloudowner')) ?? 'im360_cloudowner';
+    const accountBody: Record<string, unknown> = {
+      [`${csmNav}@odata.bind`]: owners.customerSuccessManagerId
+        ? `/systemusers(${owners.customerSuccessManagerId})`
+        : null,
     };
-    setBinding(csmNav, 'im360_cloudowner', owners.customerSuccessManagerId);
-    setBinding(awsNav, 'im360_awsowneruser', owners.awsOwnerId);
-    setBinding(azureNav, 'im360_azureowneruyser', owners.azureOwnerId);
-
-    const res = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
+    const accountRes = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1154,11 +1145,87 @@ class RealD365Adapter implements ID365Adapter {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(accountBody),
     });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`D365 push account cloud owners failed ${res.status}: ${text}`);
+    if (!accountRes.ok) {
+      const text = await accountRes.text();
+      throw new Error(`D365 push CSM failed ${accountRes.status}: ${text}`);
+    }
+
+    const lookupRes = await fetch(
+      `${this.baseUrl}/api/data/v9.2/accounts(${accountId})?$select=_im360_clouddetailid_value`,
+      { headers: { Authorization: `Bearer ${token}`, 'OData-MaxVersion': '4.0', 'OData-Version': '4.0', Accept: 'application/json' } },
+    );
+    if (!lookupRes.ok) {
+      const text = await lookupRes.text();
+      throw new Error(`D365 fetch clouddetailid failed ${lookupRes.status}: ${text}`);
+    }
+    const lookupJson = (await lookupRes.json()) as { _im360_clouddetailid_value: string | null };
+    let cloudDetailId = lookupJson._im360_clouddetailid_value;
+
+    const [awsNav, azureNav] = await Promise.all([
+      this.resolveNavProperty(token, 'im360_accountclouddetail', 'im360_awsowneruser'),
+      this.resolveNavProperty(token, 'im360_accountclouddetail', 'im360_azureowneruyser'),
+    ]);
+    const awsBindKey = `${awsNav ?? 'im360_awsowneruser'}@odata.bind`;
+    const azureBindKey = `${azureNav ?? 'im360_azureowneruyser'}@odata.bind`;
+    const ownerBody: Record<string, unknown> = {
+      [awsBindKey]: owners.awsOwnerId ? `/systemusers(${owners.awsOwnerId})` : null,
+      [azureBindKey]: owners.azureOwnerId ? `/systemusers(${owners.azureOwnerId})` : null,
+    };
+
+    if (!cloudDetailId) {
+      const createRes = await fetch(`${this.baseUrl}/api/data/v9.2/im360_accountclouddetails`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(ownerBody),
+      });
+      if (!createRes.ok) {
+        const text = await createRes.text();
+        throw new Error(`D365 create clouddetail failed ${createRes.status}: ${text}`);
+      }
+      const created = (await createRes.json()) as { im360_accountclouddetailid: string };
+      cloudDetailId = created.im360_accountclouddetailid;
+
+      const linkNav = (await this.resolveNavProperty(token, 'account', 'im360_clouddetailid')) ?? 'im360_clouddetailId';
+      const linkRes = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ [`${linkNav}@odata.bind`]: `/im360_accountclouddetails(${cloudDetailId})` }),
+      });
+      if (!linkRes.ok) {
+        const text = await linkRes.text();
+        throw new Error(`D365 link clouddetail to account failed ${linkRes.status}: ${text}`);
+      }
+      return;
+    }
+
+    const patchRes = await fetch(`${this.baseUrl}/api/data/v9.2/im360_accountclouddetails(${cloudDetailId})`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(ownerBody),
+    });
+    if (!patchRes.ok) {
+      const text = await patchRes.text();
+      throw new Error(`D365 patch clouddetail failed ${patchRes.status}: ${text}`);
     }
   }
 
