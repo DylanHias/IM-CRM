@@ -10,10 +10,12 @@ import { useSyncStore } from '@/store/syncStore';
 import { useAuthStore } from '@/store/authStore';
 import { buildAdminConsentUrl } from '@/lib/auth/tauriAuth';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
+import { formatCurrency } from '@/lib/utils/currencyUtils';
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
 import type { SyncRecord } from '@/types/sync';
 import type { PendingActivitySyncItem } from '@/lib/db/queries/activities';
 import type { PendingFollowUpSyncItem } from '@/lib/db/queries/followups';
+import type { PendingOpportunitySyncItem } from '@/lib/db/queries/opportunities';
 
 const STATUS_CONFIG = {
   running: { icon: RefreshCw, color: 'text-info', variant: 'info' as const, label: 'Running' },
@@ -41,15 +43,16 @@ interface SyncPanelProps {
   records: SyncRecord[];
   pendingActivities: PendingActivitySyncItem[];
   pendingFollowUps: PendingFollowUpSyncItem[];
+  pendingOpportunities: PendingOpportunitySyncItem[];
 }
 
-export function SyncPanel({ records, pendingActivities, pendingFollowUps }: SyncPanelProps) {
+export function SyncPanel({ records, pendingActivities, pendingFollowUps, pendingOpportunities }: SyncPanelProps) {
   const {
     isSyncing, isOnline, lastD365SyncAt,
-    pendingActivityCount, pendingFollowUpCount, triggerSync, triggerPushPending,
+    pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount, triggerSync, triggerPushPending,
   } = useSync();
 
-  const hasPending = pendingActivityCount > 0 || pendingFollowUpCount > 0;
+  const hasPending = pendingActivityCount > 0 || pendingFollowUpCount > 0 || pendingOpportunityCount > 0;
   const consentRequiredScopes = useAuthStore((s) => s.consentRequiredScopes);
   const powerBiConsentRequired = consentRequiredScopes?.some((s) => s.includes('powerbi')) ?? false;
   const powerBiAccessDenied = useSyncStore((s) => s.powerBiAccessDenied);
@@ -63,7 +66,7 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
       )}
 
       {/* Status overview */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">D365 Last Sync</p>
           <p className="text-sm font-medium mt-1">
@@ -77,6 +80,10 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
         <div className="bg-card border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Pending Follow-Ups</p>
           <p className="text-xl font-bold mt-1 text-warning">{pendingFollowUpCount}</p>
+        </div>
+        <div className="bg-card border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground">Pending Opportunities</p>
+          <p className="text-xl font-bold mt-1 text-warning">{pendingOpportunityCount}</p>
         </div>
       </div>
 
@@ -107,8 +114,12 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps }: Sync
       </div>
 
       {/* Pending queue */}
-      {(pendingActivities.length > 0 || pendingFollowUps.length > 0) && (
-        <PendingQueue activities={pendingActivities} followUps={pendingFollowUps} />
+      {(pendingActivities.length > 0 || pendingFollowUps.length > 0 || pendingOpportunities.length > 0) && (
+        <PendingQueue
+          activities={pendingActivities}
+          followUps={pendingFollowUps}
+          opportunities={pendingOpportunities}
+        />
       )}
 
       {/* Sync history */}
@@ -183,17 +194,22 @@ function PowerBiAccessBanner({ onDismiss }: { onDismiss: () => void }) {
 function PendingQueue({
   activities,
   followUps,
+  opportunities,
 }: {
   activities: PendingActivitySyncItem[];
   followUps: PendingFollowUpSyncItem[];
+  opportunities: PendingOpportunitySyncItem[];
 }) {
   const [activitiesPage, setActivitiesPage] = useState(1);
   const [followUpsPage, setFollowUpsPage] = useState(1);
+  const [opportunitiesPage, setOpportunitiesPage] = useState(1);
   const { pageSize: actPageSize, setPageSize: setActPageSize, pageSizeOptions } = usePaginationPreference('pendingActivities');
   const { pageSize: fuPageSize, setPageSize: setFuPageSize } = usePaginationPreference('pendingFollowUps');
+  const { pageSize: oppPageSize, setPageSize: setOppPageSize } = usePaginationPreference('pendingOpportunities');
 
   const pagedActivities = activities.slice((activitiesPage - 1) * actPageSize, activitiesPage * actPageSize);
   const pagedFollowUps = followUps.slice((followUpsPage - 1) * fuPageSize, followUpsPage * fuPageSize);
+  const pagedOpportunities = opportunities.slice((opportunitiesPage - 1) * oppPageSize, opportunitiesPage * oppPageSize);
 
   return (
     <div className="space-y-4">
@@ -257,6 +273,45 @@ function PendingQueue({
             pageSizeOptions={pageSizeOptions}
             onPageChange={setFollowUpsPage}
             onPageSizeChange={(size) => { setFuPageSize(size); setFollowUpsPage(1); }}
+          />
+        </div>
+      )}
+
+      {opportunities.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Opportunities ({opportunities.length})</p>
+          <div className="bg-card border rounded-lg divide-y">
+            {pagedOpportunities.map((item) => {
+              const revenue = item.estimatedRevenue != null && item.currency
+                ? formatCurrency(item.estimatedRevenue, item.currency)
+                : null;
+              return (
+                <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {item.stage}
+                      </Badge>
+                      <span className="text-sm font-medium truncate">{item.subject}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {item.customerName}
+                      {item.primaryVendor ? ` · ${item.primaryVendor}` : ''}
+                      {revenue ? ` · ${revenue}` : ''}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <TablePagination
+            className="mt-3"
+            totalItems={opportunities.length}
+            page={opportunitiesPage}
+            pageSize={oppPageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageChange={setOpportunitiesPage}
+            onPageSizeChange={(size) => { setOppPageSize(size); setOpportunitiesPage(1); }}
           />
         </div>
       )}

@@ -192,6 +192,57 @@ export async function queryPendingOpportunities(): Promise<Opportunity[]> {
   return rows.map(rowToOpportunity);
 }
 
+export async function countPendingOpportunities(): Promise<number> {
+  const db = await getDb();
+  const rows = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM opportunities WHERE sync_status = 'pending'`
+  );
+  return rows[0]?.count ?? 0;
+}
+
+export interface PendingOpportunitySyncItem {
+  id: string;
+  customerId: string;
+  customerName: string;
+  subject: string;
+  stage: string;
+  primaryVendor: string | null;
+  estimatedRevenue: number | null;
+  currency: string | null;
+  createdAt: string;
+}
+
+export async function queryPendingOpportunitiesForSync(): Promise<PendingOpportunitySyncItem[]> {
+  const db = await getDb();
+  return db.select<PendingOpportunitySyncItem[]>(
+    `SELECT o.id, o.customer_id as customerId, COALESCE(c.name, o.customer_id) as customerName,
+            o.subject, o.stage, o.primary_vendor as primaryVendor,
+            o.estimated_revenue as estimatedRevenue, o.currency, o.created_at as createdAt
+     FROM opportunities o LEFT JOIN customers c ON c.id = o.customer_id
+     WHERE o.sync_status = 'pending' ORDER BY o.created_at ASC`
+  );
+}
+
+export async function queryMyRecentOpportunitiesLatest(
+  userId: string,
+  altUserId: string | null,
+  limit = 15,
+): Promise<Opportunity[]> {
+  const db = await getDb();
+  if (altUserId && altUserId !== userId) {
+    const rows = await db.select<OpportunityRow[]>(
+      `SELECT * FROM opportunities WHERE created_by_id IN ($1, $2) ORDER BY updated_at DESC LIMIT $3`,
+      [userId, altUserId, limit]
+    );
+    return rows.map(rowToOpportunity);
+  }
+  const rows = await db.select<OpportunityRow[]>(
+    `SELECT * FROM opportunities WHERE created_by_id = $1 ORDER BY updated_at DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return rows.map(rowToOpportunity);
+}
+
 export async function markOpportunitySynced(id: string, remoteId: string): Promise<void> {
   const db = await getDb();
   await db.execute(

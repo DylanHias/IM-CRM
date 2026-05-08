@@ -9,7 +9,7 @@ import { d365Request } from '@/lib/auth/msalConfig';
 import { useOnlineStatus } from './useOnlineStatus';
 
 export function useSync() {
-  const { isSyncing, lastD365SyncAt, syncErrors, pendingActivityCount, pendingFollowUpCount } =
+  const { isSyncing, lastD365SyncAt, syncErrors, pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } =
     useSyncStore();
   const { isAuthenticated } = useAuthStore();
   const isOnline = useOnlineStatus();
@@ -40,6 +40,7 @@ export function useSync() {
     syncErrors,
     pendingActivityCount,
     pendingFollowUpCount,
+    pendingOpportunityCount,
     triggerSync,
     triggerPushPending,
   };

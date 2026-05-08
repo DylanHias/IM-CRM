@@ -10,6 +10,7 @@ interface SyncState {
   recentRecords: SyncRecord[];
   pendingActivityCount: number;
   pendingFollowUpCount: number;
+  pendingOpportunityCount: number;
   historyPage: number;
   powerBiAccessDenied: boolean;
   initialSyncProgress: {
@@ -25,7 +26,7 @@ interface SyncState {
   addSyncError: (error: SyncError) => void;
   clearSyncErrors: () => void;
   setRecentRecords: (records: SyncRecord[]) => void;
-  setPendingCounts: (activities: number, followUps: number) => void;
+  setPendingCounts: (activities: number, followUps: number, opportunities: number) => void;
   setHistoryPage: (page: number) => void;
   setPowerBiAccessDenied: (denied: boolean) => void;
 }
@@ -40,6 +41,7 @@ export const useSyncStore = create<SyncState>()(
       recentRecords: [],
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
+      pendingOpportunityCount: 0,
       historyPage: 1,
       powerBiAccessDenied: false,
       initialSyncProgress: null,
@@ -51,8 +53,12 @@ export const useSyncStore = create<SyncState>()(
       clearSyncErrors: () => set({ syncErrors: [] }),
       setRecentRecords: (recentRecords) => set({ recentRecords, historyPage: 1 }),
       setHistoryPage: (historyPage) => set({ historyPage }),
-      setPendingCounts: (activities, followUps) =>
-        set({ pendingActivityCount: activities, pendingFollowUpCount: followUps }),
+      setPendingCounts: (activities, followUps, opportunities) =>
+        set({
+          pendingActivityCount: activities,
+          pendingFollowUpCount: followUps,
+          pendingOpportunityCount: opportunities,
+        }),
       setInitialSyncProgress: (initialSyncProgress) => set({ initialSyncProgress }),
       setPowerBiAccessDenied: (powerBiAccessDenied) => set({ powerBiAccessDenied }),
     }),

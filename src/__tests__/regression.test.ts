@@ -53,6 +53,7 @@ const resetSyncStore = () =>
     recentRecords: [],
     pendingActivityCount: 0,
     pendingFollowUpCount: 0,
+    pendingOpportunityCount: 0,
   });
 
 const resetSettingsStore = () => useSettingsStore.getState().resetAll();

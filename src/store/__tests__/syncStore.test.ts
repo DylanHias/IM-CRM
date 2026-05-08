@@ -11,6 +11,7 @@ describe('syncStore', () => {
       recentRecords: [],
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
+      pendingOpportunityCount: 0,
       initialSyncProgress: null,
     });
   });
@@ -56,9 +57,10 @@ describe('syncStore', () => {
   });
 
   it('setPendingCounts', () => {
-    store().setPendingCounts(3, 5);
+    store().setPendingCounts(3, 5, 2);
     expect(store().pendingActivityCount).toBe(3);
     expect(store().pendingFollowUpCount).toBe(5);
+    expect(store().pendingOpportunityCount).toBe(2);
   });
 
   it('initial state defaults', () => {

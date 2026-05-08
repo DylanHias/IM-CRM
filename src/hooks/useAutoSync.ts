@@ -84,8 +84,8 @@ export function useAutoSync() {
     const ms = syncPendingIntervalMinutes * 60_000;
     pendingIntervalRef.current = setInterval(async () => {
       if (useSyncStore.getState().isSyncing) return;
-      const { pendingActivityCount, pendingFollowUpCount } = useSyncStore.getState();
-      if (pendingActivityCount === 0 && pendingFollowUpCount === 0) return;
+      const { pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } = useSyncStore.getState();
+      if (pendingActivityCount === 0 && pendingFollowUpCount === 0 && pendingOpportunityCount === 0) return;
       try {
         await triggerPushPending();
         const showToasts = useSettingsStore.getState().showSyncToasts;

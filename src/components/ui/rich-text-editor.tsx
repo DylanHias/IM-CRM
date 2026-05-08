@@ -84,12 +84,12 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
     return (
       <div
         className={cn(
-          'rounded-md border border-input bg-background overflow-hidden',
+          'flex flex-col rounded-md border border-input bg-background overflow-hidden',
           className,
         )}
       >
-        <div className="h-[34px] border-b bg-muted/30" />
-        <div className="min-h-[160px]" />
+        <div className="h-[34px] border-b bg-muted/30 flex-shrink-0" />
+        <div className="flex-1 min-h-[160px]" />
       </div>
     );
   }
@@ -97,11 +97,11 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
   return (
     <div
       className={cn(
-        'rounded-md border border-input bg-background overflow-hidden focus-within:ring-1 focus-within:ring-ring focus-within:border-ring',
+        'flex flex-col rounded-md border border-input bg-background overflow-hidden focus-within:ring-1 focus-within:ring-ring focus-within:border-ring',
         className,
       )}
     >
-      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-1 py-1">
+      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-1 py-1 flex-shrink-0">
         <ToolbarButton
           label="Heading 1"
           active={editor.isActive('heading', { level: 1 })}
@@ -176,7 +176,9 @@ export function RichTextEditor({ value, onChange, className, editorClassName }: 
           <Redo2 size={14} />
         </ToolbarButton>
       </div>
-      <EditorContent editor={editor} />
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }

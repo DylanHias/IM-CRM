@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -65,7 +65,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
-  const { pendingActivityCount, pendingFollowUpCount } = useSyncStore();
+  const { pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
   const { account, isAdmin, profilePhoto } = useAuthStore();
   const d365UserId = useD365UserId();
@@ -79,13 +79,15 @@ export function AppSidebar() {
       const { queryOverdueFollowUpCount } = await import('@/lib/db/queries/followups');
       const { countPendingActivities } = await import('@/lib/db/queries/activities');
       const { countPendingFollowUps } = await import('@/lib/db/queries/followups');
-      const [overdue, pendingAct, pendingFu] = await Promise.all([
+      const { countPendingOpportunities } = await import('@/lib/db/queries/opportunities');
+      const [overdue, pendingAct, pendingFu, pendingOpp] = await Promise.all([
         queryOverdueFollowUpCount(d365UserId ?? account?.localAccountId ?? undefined, account?.localAccountId ?? undefined),
         countPendingActivities(),
         countPendingFollowUps(),
+        countPendingOpportunities(),
       ]);
       setOverdueCount(overdue);
-      useSyncStore.getState().setPendingCounts(pendingAct, pendingFu);
+      useSyncStore.getState().setPendingCounts(pendingAct, pendingFu, pendingOpp);
     }
   }, [setOverdueCount, d365UserId, account?.localAccountId]);
 
@@ -95,13 +97,13 @@ export function AppSidebar() {
 
   useEffect(() => {
     return onDataEvent((e) => {
-      if (e.entity === 'followup' || e.entity === 'activity') {
+      if (e.entity === 'followup' || e.entity === 'activity' || e.entity === 'opportunity') {
         refreshCounts();
       }
     });
   }, [refreshCounts]);
 
-  const totalPending = pendingActivityCount + pendingFollowUpCount;
+  const totalPending = pendingActivityCount + pendingFollowUpCount + pendingOpportunityCount;
   const { updateAvailable, downloading, install } = useAppUpdater();
   const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
@@ -361,15 +363,19 @@ export function AppSidebar() {
   );
 }
 
-const customerSubNav = [
+const customerSubNavBase = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'activities', label: 'Activities', icon: Clock },
   { key: 'contacts', label: 'Contacts', icon: User },
   { key: 'followups', label: 'Follow-Ups', icon: Bell },
 ] as const;
 
+const customerSubNavOpportunities = { key: 'opportunities', label: 'Opportunities', icon: Crosshair } as const;
+
 function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
   const [open, setOpen] = useState(false);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const subNav = isAdmin ? [...customerSubNavBase, customerSubNavOpportunities] : customerSubNavBase;
 
   return (
     <Collapsible.Root asChild open={open} onOpenChange={setOpen}>
@@ -383,7 +389,7 @@ function RecentCustomerItem({ customer }: { customer: { id: string; name: string
         </Collapsible.Trigger>
         <Collapsible.Content>
           <SidebarMenuSub>
-            {customerSubNav.map(({ key, label, icon: Icon }) => (
+            {subNav.map(({ key, label, icon: Icon }) => (
               <SidebarMenuSubItem key={key}>
                 <SidebarMenuSubButton asChild size="sm">
                   <Link href={`/customers?id=${customer.id}&tab=${key}`}>

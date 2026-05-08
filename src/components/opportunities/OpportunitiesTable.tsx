@@ -7,6 +7,7 @@ import styled, { css } from 'styled-components';
 import { Badge } from '@/components/ui/badge';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatCurrency } from '@/lib/utils/currencyUtils';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { Opportunity } from '@/types/entities';
 
 const ICON_COLORS = [
@@ -211,6 +212,15 @@ const ExpiryChip = styled.span<{ $tone: 'overdue' | 'soon' | 'near' | 'neutral' 
   }
 `;
 
+const CreatorLabel = styled.span`
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+`;
+
 const StaleChip = styled.span`
   display: inline-flex;
   align-items: center;
@@ -291,7 +301,8 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
           const iconColor = getIconColor(companyName);
           const stale = isStale(opp);
           const exp = relativeExpiration(opp.expirationDate);
-          const hasValue = opp.estimatedRevenue != null && opp.estimatedRevenue > 0;
+          const displayRevenue = opp.annualRevenue ?? opp.estimatedRevenue;
+          const hasValue = displayRevenue != null && displayRevenue > 0;
 
           return (
             <motion.div key={opp.id} variants={itemVariants}>
@@ -338,6 +349,14 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                       </StaleChip>
                     </>
                   )}
+                  {opp.createdByName && (
+                    <>
+                      <MetaSep>·</MetaSep>
+                      <CreatorLabel title={`Created by ${opp.createdByName}`}>
+                        {formatDisplayName(opp.createdByName)}
+                      </CreatorLabel>
+                    </>
+                  )}
                 </MetaRow>
 
                 <Right>
@@ -345,7 +364,7 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                     {opp.status}
                   </Badge>
                   {hasValue ? (
-                    <Value>{formatCurrency(opp.estimatedRevenue!, opp.currency)}</Value>
+                    <Value>{formatCurrency(displayRevenue!, opp.currency)}</Value>
                   ) : (
                     <ValuePlaceholder>No value</ValuePlaceholder>
                   )}

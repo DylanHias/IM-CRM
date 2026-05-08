@@ -16,7 +16,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { normalizeCityKey } from '@/lib/geo/belgianCities';
 import { normalizeCity } from '@/lib/utils/cityProvince';
-import type { Activity as ActivityType, FollowUp } from '@/types/entities';
+import type { Activity as ActivityType, FollowUp, Opportunity } from '@/types/entities';
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -37,6 +37,7 @@ interface CityCount {
 
 interface DashboardCache {
   recentActivities: ActivityType[];
+  recentOpportunities: Opportunity[];
   allFollowUps: FollowUp[];
   activitiesCount: number;
   opportunitiesCount: number;
@@ -61,6 +62,9 @@ export default function DashboardPage() {
 
   const [recentActivities, setRecentActivities] = useState<ActivityType[]>(
     cache?.recentActivities ?? [],
+  );
+  const [recentOpportunities, setRecentOpportunities] = useState<Opportunity[]>(
+    cache?.recentOpportunities ?? [],
   );
   const [allFollowUps, setAllFollowUps] = useState<FollowUp[]>(cache?.allFollowUps ?? []);
   const [activitiesCount, setActivitiesCount] = useState<number | null>(
@@ -95,14 +99,17 @@ export default function DashboardPage() {
           { queryMyActivitiesCountAllTime, queryMyOpportunitiesCountAllTime, queryBelgianCustomersByCity, queryMyPipeline },
           { queryFollowUpsByUser },
           { queryMyRecentActivitiesLatest },
+          { queryMyRecentOpportunitiesLatest },
         ] = await Promise.all([
           import('@/lib/db/queries/analytics'),
           import('@/lib/db/queries/followups'),
           import('@/lib/db/queries/activities'),
+          import('@/lib/db/queries/opportunities'),
         ]);
 
         const [
           recentActs,
+          recentOpps,
           allFUs,
           actCount,
           oppCount,
@@ -110,6 +117,7 @@ export default function DashboardPage() {
           rawCities,
         ] = await Promise.all([
           queryMyRecentActivitiesLatest(userId, altUserId, 15),
+          queryMyRecentOpportunitiesLatest(userId, altUserId, 15),
           queryFollowUpsByUser(userId, altUserId ?? undefined),
           queryMyActivitiesCountAllTime(userIds),
           queryMyOpportunitiesCountAllTime(userIds),
@@ -128,6 +136,7 @@ export default function DashboardPage() {
 
         cache = {
           recentActivities: recentActs,
+          recentOpportunities: recentOpps,
           allFollowUps: allFUs,
           activitiesCount: actCount,
           opportunitiesCount: oppCount,
@@ -139,6 +148,7 @@ export default function DashboardPage() {
         loadedForUserId.current = userId;
 
         setRecentActivities(recentActs);
+        setRecentOpportunities(recentOpps);
         setAllFollowUps(allFUs);
         setActivitiesCount(actCount);
         setOpportunitiesCount(oppCount);
@@ -202,7 +212,11 @@ export default function DashboardPage() {
         {/* Column 3: Recent Activity + Due Today */}
         <div className="flex flex-col gap-4">
           <motion.div {...sectionReveal(0.08)}>
-            <RecentActivityPanel activities={recentActivities} loading={loading} />
+            <RecentActivityPanel
+              activities={recentActivities}
+              opportunities={recentOpportunities}
+              loading={loading}
+            />
           </motion.div>
           <motion.div {...sectionReveal(0.14)}>
             <DueTodayPanel

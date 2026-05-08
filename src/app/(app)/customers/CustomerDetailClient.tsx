@@ -748,12 +748,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
               {/* Add Activity Dialog */}
               <Dialog open={addActivityOpen} onOpenChange={setAddActivityOpen}>
-                <DialogContent className="sm:max-w-3xl">
-                  <DialogHeader>
+                <DialogContent className="sm:max-w-[90vw] w-[90vw] h-[90vh] max-h-[90vh] flex flex-col">
+                  <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Add Activity</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleCreateActivity} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <form onSubmit={handleCreateActivity} className="flex flex-col flex-1 min-h-0 gap-4">
+                    <div className="grid grid-cols-[3fr_7fr] gap-4 flex-1 min-h-0">
                       <div className="space-y-4">
                         <div className="space-y-1">
                           <Label>Type</Label>
@@ -824,31 +824,30 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                           />
                         </div>
                       </div>
-                      <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-4 min-h-0">
                         <div className="space-y-1">
                           <Label>Subject *</Label>
                           <Input value={newActSubject} onChange={(e) => setNewActSubject(e.target.value)} required />
                         </div>
-                        <div className="space-y-1 flex flex-col flex-1">
+                        <div className="space-y-1 flex flex-col flex-1 min-h-0">
                           <Label>Description</Label>
                           {(newActType ?? defaultActivityType) === 'call' ? (
                             <Textarea
                               value={newActDescription}
                               onChange={(e) => setNewActDescription(e.target.value)}
-                              rows={10}
-                              className="min-h-[240px] resize-y flex-1"
+                              className="resize-none flex-1 min-h-0 overflow-y-auto"
                             />
                           ) : (
                             <RichTextEditor
                               value={newActDescription}
                               onChange={setNewActDescription}
-                              editorClassName="min-h-[240px]"
+                              className="flex-1 min-h-0"
                             />
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-3 pt-1">
+                    <div className="flex gap-3 pt-1 flex-shrink-0">
                       <Button type="button" variant="outline" onClick={() => setAddActivityOpen(false)} className="flex-1">Cancel</Button>
                       <Button type="submit" disabled={isCreatingActivity || !newActSubject.trim()} className="flex-1">
                         {isCreatingActivity ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Add Activity'}

@@ -18,6 +18,7 @@ vi.mock('@/hooks/useSync', () => ({
     syncErrors: [],
     pendingActivityCount: 0,
     pendingFollowUpCount: 0,
+    pendingOpportunityCount: 0,
   }),
 }));
 
@@ -40,6 +41,7 @@ describe('InitialSyncDialog', () => {
       recentRecords: [],
       pendingActivityCount: 0,
       pendingFollowUpCount: 0,
+      pendingOpportunityCount: 0,
       initialSyncProgress: null,
     });
     useAuthStore.setState({

@@ -394,7 +394,7 @@ async function pushPendingActivities(token: string, callerD365Id?: string): Prom
   const activityErrors = pending.length - pushed;
   console.log(`[sync] Pushed ${pushed}/${pending.length} activities`);
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, activityErrors > 0 ? `${activityErrors} push errors` : null);
-  store.setPendingCounts(pending.length - pushed, store.pendingFollowUpCount);
+  store.setPendingCounts(pending.length - pushed, store.pendingFollowUpCount, store.pendingOpportunityCount);
 }
 
 async function pushPendingFollowUps(token: string): Promise<void> {
@@ -428,7 +428,7 @@ async function pushPendingFollowUps(token: string): Promise<void> {
   const followUpErrors = pending.length - pushed;
   console.log(`[sync] Pushed ${pushed}/${pending.length} follow-ups`);
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, followUpErrors > 0 ? `${followUpErrors} push errors` : null);
-  store.setPendingCounts(store.pendingActivityCount, pending.length - pushed);
+  store.setPendingCounts(store.pendingActivityCount, pending.length - pushed, store.pendingOpportunityCount);
 }
 
 async function pushPendingOpportunities(token: string): Promise<void> {
@@ -466,6 +466,7 @@ async function pushPendingOpportunities(token: string): Promise<void> {
   const errors = pending.length - pushed;
   console.log(`[sync] Pushed ${pushed}/${pending.length} opportunities`);
   await updateSyncRecord(recordId, pushed === pending.length ? 'success' : 'partial', 0, pushed, errors > 0 ? `${errors} push errors` : null);
+  store.setPendingCounts(store.pendingActivityCount, store.pendingFollowUpCount, pending.length - pushed);
 }
 
 async function pushPendingDeletes(token: string): Promise<void> {
