@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PanelSkeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, CloudLightning, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -80,7 +81,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
   }, [loadCustomers, refreshKey]);
 
   if (isLoadingCustomers && !customers) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
+    return <PanelSkeleton metricCount={3} metricCols={3} charts={2} chartHeight={180} />;
   }
 
   const c = customers;

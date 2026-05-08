@@ -8,7 +8,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { RefreshCw } from 'lucide-react';
+import { ListRowsSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function CustomersPage() {
   const searchParams = useSearchParams();
@@ -35,22 +35,22 @@ function CustomerListView() {
           <div data-tour="page-customers" className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Customer Overview</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {isLoading
-                  ? 'Loading...'
-                  : customers.length === allCustomers.length
+              {isLoading ? (
+                <Skeleton className="h-3.5 w-28 mt-1.5" />
+              ) : (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {customers.length === allCustomers.length
                     ? `${customers.length} customer${customers.length !== 1 ? 's' : ''}`
                     : `${customers.length} of ${allCustomers.length} customers`}
-              </p>
+                </p>
+              )}
             </div>
           </div>
 
           <CustomerFilters />
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <RefreshCw size={24} className="text-muted-foreground animate-spin" />
-            </div>
+            <ListRowsSkeleton rows={pageSize} />
           ) : (
             <>
               <CustomerList customers={pagedCustomers} />

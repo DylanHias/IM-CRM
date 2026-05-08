@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAdminStore } from '@/store/adminStore';
 import { Download, Trash2, Database, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { toast } from 'sonner';
 
@@ -69,20 +70,34 @@ export function DataManagement() {
       <div>
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Table Statistics</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {tableStats.map(({ tableName, rowCount }) => (
-            <div key={tableName} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
-              <Database size={14} className="text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">{tableName}</p>
-                <p className="text-sm font-semibold">{rowCount.toLocaleString()}</p>
-              </div>
-            </div>
-          ))}
-          {tableStats.length === 0 && (
-            <p className="col-span-full py-4 text-center text-sm text-muted-foreground">
-              {isLoading ? 'Loading...' : 'No data'}
-            </p>
-          )}
+          {isLoading && tableStats.length === 0
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
+                  <Skeleton className="h-3.5 w-3.5 rounded shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3.5 w-10" />
+                  </div>
+                </div>
+              ))
+            : (
+              <>
+                {tableStats.map(({ tableName, rowCount }) => (
+                  <div key={tableName} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
+                    <Database size={14} className="text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">{tableName}</p>
+                      <p className="text-sm font-semibold">{rowCount.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+                {tableStats.length === 0 && (
+                  <p className="col-span-full py-4 text-center text-sm text-muted-foreground">
+                    No data
+                  </p>
+                )}
+              </>
+            )}
         </div>
       </div>
 

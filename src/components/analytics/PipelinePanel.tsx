@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { PanelSkeleton } from '@/components/ui/skeleton';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Target, TrendingUp, Layers, Users, RefreshCw } from 'lucide-react';
@@ -71,7 +72,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
   }, [loadPipeline, refreshKey]);
 
   if (isLoadingPipeline && !pipeline) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
+    return <PanelSkeleton metricCount={4} metricCols={4} charts={2} chartHeight={220} />;
   }
 
   const p = pipeline;

@@ -14,7 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ListRowsSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
@@ -218,15 +218,7 @@ export default function FollowUpsPage() {
         </div>
         <section className="space-y-3">
           <Skeleton className="h-4 w-24" />
-          <div className="bg-card rounded-xl px-4 py-2 shadow-sm border border-border/60 space-y-3">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="py-2 space-y-2">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-5 w-2/3" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-            ))}
-          </div>
+          <ListRowsSkeleton rows={overduePageSize} />
         </section>
       </div>
     );

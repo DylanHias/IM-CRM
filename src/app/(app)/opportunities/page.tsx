@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { ListRowsSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { OpportunityWizard } from '@/components/opportunities/OpportunityWizard';
 import type { WizardFormData } from '@/components/opportunities/OpportunityWizard';
 import { CloseOpportunityDialog } from '@/components/opportunities/CloseOpportunityDialog';
@@ -314,13 +315,15 @@ export default function OpportunitiesPage() {
       <div data-tour="page-opportunities" className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-foreground">Opportunity Overview</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {isLoading
-              ? 'Loading...'
-              : filtered.length === allOpportunities.length
+          {isLoading ? (
+            <Skeleton className="h-3.5 w-32 mt-1.5" />
+          ) : (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {filtered.length === allOpportunities.length
                 ? `${filtered.length} opportunit${filtered.length !== 1 ? 'ies' : 'y'}`
                 : `${filtered.length} of ${allOpportunities.length} opportunities`}
-          </p>
+            </p>
+          )}
         </div>
         <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
           <Plus size={13} />
@@ -331,9 +334,7 @@ export default function OpportunitiesPage() {
       <OpportunitiesFilters />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw size={24} className="text-muted-foreground animate-spin" />
-        </div>
+        <ListRowsSkeleton rows={pageSize} />
       ) : (
         <>
           <OpportunitiesTable

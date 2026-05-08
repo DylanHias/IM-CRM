@@ -8,6 +8,7 @@ import { useD365UserId } from '@/hooks/useD365UserId';
 import { MetricCard } from '@/components/analytics/MetricCard';
 import { PeriodPicker, periodToRange, prevPeriodRange } from '@/components/analytics/PeriodPicker';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PanelSkeleton } from '@/components/ui/skeleton';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Activity, CheckSquare, Target, Trophy, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +53,7 @@ export function PersonalPanel({ refreshKey, onRefresh }: Props) {
   }, [d365UserId, account?.localAccountId, period, lastD365SyncAt, loadPersonal, refreshKey]);
 
   if (isLoadingPersonal && !personal) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
+    return <PanelSkeleton metricCount={4} metricCols={4} charts={1} chartHeight={200} />;
   }
 
   if (userIds.length === 0) {

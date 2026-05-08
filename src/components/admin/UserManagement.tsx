@@ -8,6 +8,7 @@ import { RefreshCw, Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TableRowsSkeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 
@@ -175,22 +176,28 @@ export function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {filtered.map((user) => (
-                <tr key={user.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium">{user.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{user.title || '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleDateString() : '—'}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    {isLoading ? 'Loading...' : 'No users found'}
-                  </td>
-                </tr>
+              {isLoading && filtered.length === 0 ? (
+                <TableRowsSkeleton rows={6} cols={4} />
+              ) : (
+                <>
+                  {filtered.map((user) => (
+                    <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3 font-medium">{user.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{user.title || '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {user.lastActiveAt ? new Date(user.lastActiveAt).toLocaleDateString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                        No users found
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>

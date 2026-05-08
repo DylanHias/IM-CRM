@@ -8,6 +8,7 @@ import { PeriodPicker, periodToRange } from '@/components/analytics/PeriodPicker
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { PanelSkeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import type { PeriodKey } from '@/types/analytics';
 
@@ -50,7 +51,7 @@ export function ActivityPanel({ refreshKey, onRefresh }: Props) {
   }, [d365UserId, account?.localAccountId, period, loadActivity, refreshKey]);
 
   if (isLoadingActivity && !activity) {
-    return <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>;
+    return <PanelSkeleton metricCount={0} charts={3} chartHeight={180} />;
   }
 
   if (userIds.length === 0) {
