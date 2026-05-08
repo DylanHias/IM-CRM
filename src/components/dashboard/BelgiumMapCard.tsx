@@ -22,9 +22,10 @@ interface Props {
   cityCounts: CityCount[];
   totalCustomers: number;
   className?: string;
+  onCityClick?: (cityId: string) => void;
 }
 
-export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props) {
+export function BelgiumMapCard({ cityCounts, totalCustomers, className, onCityClick }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const cityMap = new Map(cityCounts.map((c) => [c.cityId, c.n]));
@@ -90,7 +91,8 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className }: Props)
                   key={city.id}
                   onMouseEnter={() => setHovered(city.id)}
                   onMouseLeave={() => setHovered(null)}
-                  style={{ cursor: 'default' }}
+                  onClick={onCityClick ? () => onCityClick(city.id) : undefined}
+                  style={{ cursor: onCityClick ? 'pointer' : 'default' }}
                 >
                   {/* Drop shadow */}
                   <circle

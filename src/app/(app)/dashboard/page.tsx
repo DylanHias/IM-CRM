@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Activity, Target, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listContainerVariants, listItemVariants, sectionReveal } from '@/lib/motion';
@@ -12,9 +13,10 @@ import { RecentActivityPanel } from '@/components/dashboard/RecentActivityPanel'
 import { DueTodayPanel } from '@/components/dashboard/DueTodayPanel';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
+import { useCustomerStore } from '@/store/customerStore';
 import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { normalizeCityKey } from '@/lib/geo/belgianCities';
+import { BELGIAN_CITIES, normalizeCityKey } from '@/lib/geo/belgianCities';
 import { normalizeCity } from '@/lib/utils/cityProvince';
 import type { Activity as ActivityType, FollowUp, Opportunity } from '@/types/entities';
 
@@ -49,6 +51,8 @@ interface DashboardCache {
 let cache: DashboardCache | null = null;
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const setFilterCity = useCustomerStore((s) => s.setFilterCity);
   const account = useAuthStore((s) => s.account);
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
   const userId = callerD365UserId ?? account?.localAccountId ?? null;
@@ -83,6 +87,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(cache === null);
 
   const loadedForUserId = useRef<string | null>(null);
+
+  const handleCityClick = useCallback(
+    (cityId: string) => {
+      const city = BELGIAN_CITIES.find((c) => c.id === cityId);
+      const canonical = city ? normalizeCity(city.displayName) : null;
+      if (canonical) setFilterCity(canonical);
+      router.push('/customers');
+    },
+    [router, setFilterCity],
+  );
 
   useEffect(() => {
     if (!isTauriApp() || !userId) {
@@ -173,7 +187,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-start">
         {/* Column 1: Belgium map */}
         <motion.div {...sectionReveal(0)}>
-          <BelgiumMapCard cityCounts={cityCounts} totalCustomers={totalBelgianCustomers} />
+          <BelgiumMapCard
+            cityCounts={cityCounts}
+            totalCustomers={totalBelgianCustomers}
+            onCityClick={handleCityClick}
+          />
         </motion.div>
 
         {/* Column 2: KPI cards stacked vertically */}
