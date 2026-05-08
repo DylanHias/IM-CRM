@@ -748,7 +748,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
               {/* Add Activity Dialog */}
               <Dialog open={addActivityOpen} onOpenChange={setAddActivityOpen}>
-                <DialogContent className="sm:max-w-[90vw] w-[90vw] h-[90vh] max-h-[90vh] flex flex-col">
+                <DialogContent className="sm:max-w-[80vw] w-[80vw] h-[80vh] max-h-[80vh] flex flex-col">
                   <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Add Activity</DialogTitle>
                   </DialogHeader>
