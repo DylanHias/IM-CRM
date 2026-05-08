@@ -234,18 +234,18 @@ export function OpportunityWizard({
   const allRequiredFilled = missingFields.length === 0;
   const [showErrors, setShowErrors] = useState(false);
 
-  // Auto-fill BCN from customer when customer changes
-  useEffect(() => {
-    if (!opportunity && customers && customerId) {
-      const c = customers.find((x) => x.id === customerId);
-      if (c?.bcn && !bcn) setBcn(c.bcn);
-    }
-  }, [customerId, customers, opportunity, bcn]);
-
   // Notify parent so it can load contacts for the picked customer
   useEffect(() => {
     if (onCustomerChange) onCustomerChange(customerId);
   }, [customerId, onCustomerChange]);
+
+  const handleCustomerChange = (newId: string) => {
+    if (newId === customerId) return;
+    setCustomerId(newId);
+    setContactId('');
+    const c = (customers ?? []).find((x) => x.id === newId);
+    setBcn(c?.bcn ?? '');
+  };
 
   const handleSave = async () => {
     if (!allRequiredFilled) {
@@ -318,10 +318,10 @@ export function OpportunityWizard({
                   <button
                     type="button"
                     className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-                    onClick={() => navigator.clipboard.writeText(opportunity.remoteId!)}
-                    title="Copy D365 ID"
+                    onClick={() => navigator.clipboard.writeText(opportunity.opportunityNumber ?? opportunity.remoteId!)}
+                    title={opportunity.opportunityNumber ? 'Copy opportunity ID' : 'Copy D365 ID'}
                   >
-                    <Copy size={11} /> {opportunity.remoteId.slice(0, 8)}…
+                    <Copy size={11} /> {opportunity.opportunityNumber ?? `${opportunity.remoteId.slice(0, 8)}…`}
                   </button>
                 )}
               </div>
@@ -359,7 +359,7 @@ export function OpportunityWizard({
                 <Combobox
                   options={customerOptions}
                   value={customerId}
-                  onValueChange={setCustomerId}
+                  onValueChange={handleCustomerChange}
                   placeholder="Select customer"
                   emptyText="No customer found"
                 />

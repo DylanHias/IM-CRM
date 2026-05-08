@@ -115,6 +115,7 @@ export interface OpportunityRow {
   customer_need: string | null;
   sync_status: string;
   remote_id: string | null;
+  opportunity_number: string | null;
   created_by_id: string;
   created_by_name: string;
   created_at: string;

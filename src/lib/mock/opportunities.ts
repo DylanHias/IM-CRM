@@ -7,6 +7,7 @@ const SYSTEM_USER_ID = 'mock-user-001';
 const SYSTEM_USER_NAME = 'Jan De Vries';
 
 const NEW_FIELD_DEFAULTS = {
+  opportunityNumber: null,
   singleOrCrossSell: null,
   estimatedMRR: null,
   annualRevenue: null,

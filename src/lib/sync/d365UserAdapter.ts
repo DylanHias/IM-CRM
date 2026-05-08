@@ -178,3 +178,32 @@ export async function fetchCloudBeluxSalesUsers(token: string): Promise<CloudBel
     jobTitle: r.jobtitle,
   }));
 }
+
+export async function fetchCloudBeluxSalesUserIds(token: string): Promise<Set<string>> {
+  const baseUrl = process.env.NEXT_PUBLIC_D365_BASE_URL;
+  if (!baseUrl) return new Set();
+
+  const results: D365SystemUser[] = [];
+  let url: string | undefined =
+    `${baseUrl}/api/data/v9.2/teams(${CLOUD_BELUX_SALES_TEAM_ID})/teammembership_association?$select=systemuserid&$filter=isdisabled eq false`;
+
+  while (url) {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        Accept: 'application/json',
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`D365 Cloud Belux Sales team members error ${res.status}: ${text}`);
+    }
+    const json: D365ODataResponse<D365SystemUser> = await res.json();
+    results.push(...json.value);
+    url = json['@odata.nextLink'];
+  }
+
+  return new Set(results.map((r) => r.systemuserid));
+}

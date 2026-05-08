@@ -1,5 +1,5 @@
 import { getD365Adapter } from './d365Adapter';
-import { fetchD365TeamUserIds, fetchCloudBeluxSalesUsers } from './d365UserAdapter';
+import { fetchD365TeamUserIds, fetchCloudBeluxSalesUsers, fetchCloudBeluxSalesUserIds } from './d365UserAdapter';
 import { replaceCloudBeluxUsers } from '@/lib/db/queries/cloudBeluxUsers';
 import { fetchArrByBcn } from '@/lib/integrations/powerbi/arrAdapter';
 import { PowerBiAccessError } from '@/lib/integrations/powerbi/client';
@@ -175,9 +175,12 @@ async function syncD365(token: string): Promise<void> {
         console.error('[sync] Failed to fetch tasks:', err instanceof Error ? err.message : err);
         return [] as FollowUp[];
       }),
-      fetchD365TeamUserIds(token)
-        .then((teamOwnerIds) => {
-          console.log(`[sync] Resolved ${teamOwnerIds.size} team owner ids for opportunity scope`);
+      Promise.all([fetchD365TeamUserIds(token), fetchCloudBeluxSalesUserIds(token)])
+        .then(([cloudUsersBelgium, cloudBeluxSales]) => {
+          const teamOwnerIds = new Set<string>();
+          cloudUsersBelgium.forEach((id) => teamOwnerIds.add(id));
+          cloudBeluxSales.forEach((id) => teamOwnerIds.add(id));
+          console.log(`[sync] Resolved ${teamOwnerIds.size} team owner ids for opportunity scope (Cloud Users - Belgium: ${cloudUsersBelgium.size}, Cloud Belux Sales: ${cloudBeluxSales.size})`);
           return adapter.fetchOpportunities(token, localCustomerIds, teamOwnerIds, lastSyncTs);
         })
         .catch((err: unknown) => {

@@ -107,7 +107,7 @@ export default function OpportunitiesPage() {
   }, [loadData]);
 
   const [wizardCustomerId, setWizardCustomerId] = useState<string | null>(null);
-  const activeCustomerId = editing?.customerId ?? wizardCustomerId;
+  const activeCustomerId = wizardCustomerId ?? editing?.customerId ?? null;
   useEffect(() => {
     if (!activeCustomerId) {
       setContacts([]);
@@ -129,10 +129,10 @@ export default function OpportunitiesPage() {
     load();
   }, [activeCustomerId]);
 
-  // Reset wizard's tracked customer when the Add dialog closes
+  // Reset wizard's tracked customer when both dialogs are closed
   useEffect(() => {
-    if (!addOpen) setWizardCustomerId(null);
-  }, [addOpen]);
+    if (!addOpen && !editing) setWizardCustomerId(null);
+  }, [addOpen, editing]);
 
   const buildFromWizard = (data: WizardFormData, base: Opportunity): Opportunity => ({
     ...base,
@@ -367,9 +367,10 @@ export default function OpportunitiesPage() {
           {editing && (
             <OpportunityWizard
               opportunity={editing}
+              customers={customers}
               contacts={contacts}
-              customer={customers.find((c) => c.id === editing.customerId)}
               onSave={handleEdit}
+              onCustomerChange={setWizardCustomerId}
               onCloseWon={() => setCloseOutcome('Won')}
               onCloseLost={() => setCloseOutcome('Lost')}
               onCancel={() => setEditing(null)}

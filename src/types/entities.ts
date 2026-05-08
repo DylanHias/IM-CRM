@@ -128,6 +128,7 @@ export interface Opportunity {
   customerNeed: string | null;
   syncStatus: 'pending' | 'synced' | 'error';
   remoteId: string | null;
+  opportunityNumber: string | null;
   createdById: string;
   createdByName: string;
   createdAt: string;

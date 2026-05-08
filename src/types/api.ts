@@ -129,6 +129,7 @@ export interface D365SystemUser {
 
 export interface D365Opportunity {
   opportunityid: string;
+  opportunitynumber: string | null;
   name: string | null;
   statecode: number;
   statuscode: number | null;

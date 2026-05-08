@@ -258,6 +258,7 @@ export function getPreviousStage(stage: Stage): Stage | null {
 }
 
 export const EMPTY_OPP_EXTRA_FIELDS = {
+  opportunityNumber: null,
   singleOrCrossSell: null,
   estimatedMRR: null,
   annualRevenue: null,

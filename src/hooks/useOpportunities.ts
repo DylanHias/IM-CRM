@@ -57,7 +57,7 @@ export function useOpportunities(customerId: string) {
   }, [customerId, currentCustomerId, setOpportunities, setLoading]);
 
   const createOpportunity = useCallback(
-    async (input: Omit<Opportunity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'createdAt' | 'updatedAt'>) => {
+    async (input: Omit<Opportunity, 'id' | 'createdById' | 'createdByName' | 'syncStatus' | 'remoteId' | 'opportunityNumber' | 'createdAt' | 'updatedAt'>) => {
       const now = new Date().toISOString();
       const opportunity: Opportunity = {
         ...input,
@@ -66,6 +66,7 @@ export function useOpportunities(customerId: string) {
         createdByName: account?.name ?? 'Unknown User',
         syncStatus: 'pending',
         remoteId: null,
+        opportunityNumber: null,
         createdAt: now,
         updatedAt: now,
       };

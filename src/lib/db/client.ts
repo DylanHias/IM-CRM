@@ -192,6 +192,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       customer_need            TEXT,
       sync_status              TEXT NOT NULL DEFAULT 'pending' CHECK(sync_status IN ('pending','synced','error')),
       remote_id                TEXT,
+      opportunity_number       TEXT,
       created_by_id            TEXT NOT NULL,
       created_by_name          TEXT NOT NULL,
       created_at               TEXT NOT NULL DEFAULT (datetime('now')),
@@ -360,7 +361,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '34')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '36')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -844,6 +845,26 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '34', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 35) {
+    const cols = await db.select<{ name: string }[]>(`PRAGMA table_info(opportunities)`);
+    if (!cols.some((c) => c.name === 'opportunity_number')) {
+      await db.execute(`ALTER TABLE opportunities ADD COLUMN opportunity_number TEXT`);
+    }
+    // Reset watermark so D365's opportunitynumber backfills on the next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '35', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 36) {
+    // Reset watermark so opportunities owned by Cloud Belux Sales members backfill on the next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '36', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
