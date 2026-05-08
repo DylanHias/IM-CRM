@@ -28,7 +28,6 @@ import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
 import { useUIStore } from '@/store/uiStore';
-import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useActivities } from '@/hooks/useActivities';
@@ -56,7 +55,6 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
   const { customers } = useCustomerStore();
   const customer = customers.find((c) => c.id === customerId);
-  const isAdmin = useAuthStore((s) => s.isAdmin);
 
   const { activities, createActivity, editActivity, deleteActivity } = useActivities(customerId);
   const [filteredActivityCount, setFilteredActivityCount] = useState<number | null>(null);
@@ -302,10 +300,8 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     { key: 'activities', label: 'Activities', icon: Clock, count: filteredActivityCount ?? activities.length },
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
-    ...(isAdmin
-      ? [{ key: 'opportunities' as ProfileTab, label: 'Opportunities', icon: Target, count: customerOpportunities.length }]
-      : []),
-  ], [activities.length, filteredActivityCount, contacts.length, followUps.length, isAdmin, customerOpportunities.length]);
+    { key: 'opportunities' as ProfileTab, label: 'Opportunities', icon: Target, count: customerOpportunities.length },
+  ], [activities.length, filteredActivityCount, contacts.length, followUps.length, customerOpportunities.length]);
 
 
   if (!customer) {

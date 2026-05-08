@@ -128,9 +128,7 @@ export function AppSidebar() {
       badgeVariant: 'destructive',
       badgeStyle: 'count',
     },
-    ...(isAdmin
-      ? { '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target } }
-      : {}),
+    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
@@ -374,8 +372,7 @@ const customerSubNavOpportunities = { key: 'opportunities', label: 'Opportunitie
 
 function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
   const [open, setOpen] = useState(false);
-  const isAdmin = useAuthStore((s) => s.isAdmin);
-  const subNav = isAdmin ? [...customerSubNavBase, customerSubNavOpportunities] : customerSubNavBase;
+  const subNav = [...customerSubNavBase, customerSubNavOpportunities];
 
   return (
     <Collapsible.Root asChild open={open} onOpenChange={setOpen}>

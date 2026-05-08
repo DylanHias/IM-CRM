@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,13 +34,9 @@ import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function OpportunitiesPage() {
-  const router = useRouter();
-  const { account, isAdmin, isLoading: authLoading } = useAuthStore();
+  const { account } = useAuthStore();
   const d365UserId = useD365UserId();
 
-  useEffect(() => {
-    if (!authLoading && !isAdmin) router.replace('/dashboard');
-  }, [isAdmin, authLoading, router]);
   const {
     opportunities: allOpportunities,
     customerMap,
