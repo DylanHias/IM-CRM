@@ -125,7 +125,7 @@ export function OpportunityWizard({
   const [country, setCountry] = useState(opportunity?.country ?? 'Belgium');
   const [customerNeed, setCustomerNeed] = useState(opportunity?.customerNeed ?? '');
 
-  const [apnId, setApnId] = useState(opportunity?.apnId ?? '');
+  const [apnId, setApnId] = useState(opportunity?.apnId ?? customer?.apnId ?? '');
   const [awsPartnerType, setAwsPartnerType] = useState(opportunity?.awsPartnerType ?? '');
   const [awsServiceType, setAwsServiceType] = useState(opportunity?.awsServiceType ?? '');
   const [apnTagging, setApnTagging] = useState(opportunity?.apnTagging ?? '');
@@ -136,7 +136,7 @@ export function OpportunityWizard({
   const [consolidationAcceptanceDate, setConsolidationAcceptanceDate] = useState(opportunity?.consolidationAcceptanceDate ?? '');
 
   const [msCspTenant, setMsCspTenant] = useState(opportunity?.msCspTenant ?? '');
-  const [mpnId, setMpnId] = useState(opportunity?.mpnId ?? '');
+  const [mpnId, setMpnId] = useState(opportunity?.mpnId ?? customer?.mpnId ?? '');
   const [migrationType, setMigrationType] = useState(opportunity?.migrationType ?? '');
   const [serviceName, setServiceName] = useState(opportunity?.serviceName ?? '');
   const [competitiveWinback, setCompetitiveWinback] = useState<string>(opportunity?.competitiveWinback ?? 'Unknown');
@@ -245,6 +245,8 @@ export function OpportunityWizard({
     setContactId('');
     const c = (customers ?? []).find((x) => x.id === newId);
     setBcn(c?.bcn ?? '');
+    setApnId(c?.apnId ?? '');
+    setMpnId(c?.mpnId ?? '');
   };
 
   const handleSave = async () => {
