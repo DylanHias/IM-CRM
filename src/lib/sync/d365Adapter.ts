@@ -402,7 +402,7 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     customerNeed: r.customerneed ?? null,
     syncStatus: 'synced',
     remoteId: r.opportunityid,
-    opportunityNumber: r.opportunitynumber ?? null,
+    opportunityNumber: r.im360_oppid ?? null,
     createdById: r._ownerid_value ?? '',
     createdByName: r['_ownerid_value@OData.Community.Display.V1.FormattedValue'] ?? 'Unknown',
     createdAt: r.createdon ?? now,
@@ -597,7 +597,7 @@ class RealD365Adapter implements ID365Adapter {
     }
 
     const select = [
-      'opportunityid', 'opportunitynumber', 'name', 'statecode', 'statuscode',
+      'opportunityid', 'im360_oppid', 'name', 'statecode', 'statuscode',
       'estimatedvalue', 'estimatedclosedate', 'actualvalue', 'actualclosedate',
       'closeprobability', 'customerneed', 'description',
       'im360_bcn', 'im360_multivendoropportunity',
