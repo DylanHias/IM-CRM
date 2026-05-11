@@ -13,6 +13,9 @@ import {
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { upsertContact } from '@/lib/db/queries/contacts';
 import { directPushContact } from '@/lib/sync/directPushService';
+import { syncLookupTables } from '@/lib/sync/syncService';
+import { getAccessToken } from '@/lib/auth/authHelpers';
+import { d365Request } from '@/lib/auth/msalConfig';
 import { useLookupTableStore } from '@/store/lookupTableStore';
 import type { Contact } from '@/types/entities';
 
@@ -37,6 +40,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
   const [notes, setNotes] = useState('');
   const [countryId, setCountryId] = useState('');
   const [contactTypeId, setContactTypeId] = useState('');
+  const [cloudContact, setCloudContact] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,10 +66,30 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setNotes(initialData?.notes ?? '');
       setCountryId(initialData?.countryId ?? '');
       setContactTypeId(initialData?.contactTypeId ?? '');
+      setCloudContact(initialData?.cloudContact ?? false);
       setSuccess(false);
       setError(null);
     }
   }, [open, initialData]);
+
+  useEffect(() => {
+    if (!open || !isTauriApp()) return;
+    if (contactTypeOptions.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getAccessToken(d365Request.scopes);
+        if (!token) return;
+        await syncLookupTables(token);
+        if (!cancelled) await useLookupTableStore.getState().hydrateFromDb();
+      } catch (err) {
+        console.error('[contact] Lookup table refresh failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, contactTypeOptions.length]);
 
   const handleOpenChange = (value: boolean) => {
     if (!value) setSuccess(false);
@@ -97,7 +121,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       contactTypeId: contactTypeId || null,
       countryId: countryId || null,
       countryName: selectedCountry?.label ?? initialData?.countryName ?? null,
-      cloudContact: initialData?.cloudContact ?? null,
+      cloudContact,
       isPrimary: initialData?.isPrimary ?? false,
       syncStatus: 'pending',
       remoteId: initialData?.remoteId ?? null,
@@ -191,6 +215,19 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="cf-cloudContact">Cloud Contact</Label>
+              <Select value={cloudContact ? 'yes' : 'no'} onValueChange={(v) => setCloudContact(v === 'yes')}>
+                <SelectTrigger id="cf-cloudContact">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1">

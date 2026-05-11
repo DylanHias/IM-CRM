@@ -29,6 +29,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Activity, FollowUp, Opportunity } from '@/types/entities';
 import { resolveOpportunityOptionValues, resolveOpportunityLookupValues } from '@/lib/sync/directPushService';
 
+let syncInFlight = false;
+
 export async function resetSyncWatermark(): Promise<void> {
   await setAppSetting('last_d365_sync', '');
   useSyncStore.getState().setLastD365Sync('');
@@ -40,6 +42,11 @@ export async function pushPendingChanges(token: string): Promise<void> {
     console.warn('[sync] Not in Tauri — skipping push');
     return;
   }
+  if (syncInFlight) {
+    console.warn('[sync] pushPendingChanges skipped — another sync is already running');
+    return;
+  }
+  syncInFlight = true;
 
   const store = useSyncStore.getState();
   store.setSyncing(true);
@@ -71,6 +78,7 @@ export async function pushPendingChanges(token: string): Promise<void> {
     throw err;
   } finally {
     store.setSyncing(false);
+    syncInFlight = false;
   }
 }
 
@@ -79,6 +87,11 @@ export async function runFullSync(token: string): Promise<void> {
     console.warn('[sync] Not in Tauri — skipping sync');
     return;
   }
+  if (syncInFlight) {
+    console.warn('[sync] runFullSync skipped — another sync is already running');
+    return;
+  }
+  syncInFlight = true;
 
   const store = useSyncStore.getState();
   store.setSyncing(true);
@@ -116,6 +129,7 @@ export async function runFullSync(token: string): Promise<void> {
     throw err;
   } finally {
     store.setSyncing(false);
+    syncInFlight = false;
   }
 }
 
@@ -536,7 +550,7 @@ async function syncCloudBeluxUsers(token: string): Promise<void> {
   }
 }
 
-async function syncLookupTables(token: string): Promise<void> {
+export async function syncLookupTables(token: string): Promise<void> {
   try {
     const adapter = getD365Adapter();
     const tables = await adapter.fetchLookupTables(token);

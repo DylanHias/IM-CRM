@@ -22,6 +22,7 @@ Use the search bar to filter contacts by name if the customer has many.
    - **Job Title** — Syncs to the Job Functions field in Dynamics 365
    - **Country** — Belgium, Netherlands, or Luxembourg
    - **Contact Type** — Pulled from Dynamics 365
+   - **Cloud Contact** — Yes/No flag for cloud-focused contacts
    - **Email**
    - **Phone** (office number)
    - **Mobile** (cell number)

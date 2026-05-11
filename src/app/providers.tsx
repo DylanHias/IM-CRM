@@ -9,6 +9,7 @@ import { initDb } from '@/lib/db/client';
 import { lightTheme, darkTheme } from '@/styles/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
+import { useLookupTableStore } from '@/store/lookupTableStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { Toaster } from 'sonner';
@@ -49,10 +50,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         setDbError(err instanceof Error ? err.message : 'Database initialization failed');
       }
 
-      // Hydrate settings and option sets from SQLite after DB is ready
+      // Hydrate settings, option sets, and lookup tables from SQLite after DB is ready
       await Promise.all([
         useSettingsStore.getState().hydrateFromDb(),
         useOptionSetStore.getState().hydrateFromDb(),
+        useLookupTableStore.getState().hydrateFromDb(),
       ]);
 
       // Restore Tauri session from persisted refresh token
