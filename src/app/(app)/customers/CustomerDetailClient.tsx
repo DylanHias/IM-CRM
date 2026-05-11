@@ -645,12 +645,12 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
 
               {/* Edit Activity Dialog */}
               <Dialog open={!!editingActivity} onOpenChange={(open) => !open && setEditingActivity(null)}>
-                <DialogContent className="sm:max-w-3xl">
-                  <DialogHeader>
+                <DialogContent className="sm:max-w-[80vw] w-[80vw] h-[80vh] max-h-[80vh] flex flex-col">
+                  <DialogHeader className="flex-shrink-0">
                     <DialogTitle>Edit Activity</DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleSaveActivity} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <form onSubmit={handleSaveActivity} className="flex flex-col flex-1 min-h-0 gap-4">
+                    <div className="grid grid-cols-[3fr_7fr] gap-4 flex-1 min-h-0">
                       <div className="space-y-4">
                         <div className="space-y-1">
                           <Label>Type</Label>
@@ -716,31 +716,30 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                           </Select>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-4 min-h-0">
                         <div className="space-y-1">
                           <Label>Subject *</Label>
                           <Input value={editSubject} onChange={(e) => setEditSubject(e.target.value)} required />
                         </div>
-                        <div className="space-y-1 flex flex-col flex-1">
+                        <div className="space-y-1 flex flex-col flex-1 min-h-0">
                           <Label>Description</Label>
                           {editType === 'call' ? (
                             <Textarea
                               value={editDescription}
                               onChange={(e) => setEditDescription(e.target.value)}
-                              rows={10}
-                              className="min-h-[240px] resize-y flex-1"
+                              className="resize-none flex-1 min-h-0 overflow-y-auto"
                             />
                           ) : (
                             <RichTextEditor
                               value={editDescription}
                               onChange={setEditDescription}
-                              editorClassName="min-h-[240px]"
+                              className="flex-1 min-h-0"
                             />
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-3 pt-1">
+                    <div className="flex gap-3 pt-1 flex-shrink-0">
                       <Button type="button" variant="outline" onClick={() => setEditingActivity(null)} className="flex-1">Cancel</Button>
                       <Button type="submit" disabled={isSavingActivity || !editSubject.trim()} className="flex-1">
                         {isSavingActivity ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : 'Save Changes'}

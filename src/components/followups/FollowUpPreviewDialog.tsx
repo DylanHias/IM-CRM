@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatDueDate } from '@/lib/utils/dateUtils';
-import { stripHtml } from '@/lib/utils/htmlUtils';
+import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import type { FollowUp } from '@/types/entities';
 
 interface FollowUpPreviewDialogProps {
@@ -52,18 +52,18 @@ export function FollowUpPreviewDialog({ followUp, onClose, onEdit, onDelete }: F
             )}
           </div>
 
-          {followUp.description && (
+          {followUp.description && !htmlIsEmpty(followUp.description) && (
             <div>
               <p className="text-xs text-muted-foreground mb-1">Description</p>
-              <div className="text-sm text-foreground whitespace-pre-wrap max-h-[320px] overflow-y-auto rounded-md border bg-muted/30 p-3">
-                {stripHtml(followUp.description)}
-              </div>
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none text-foreground h-[420px] overflow-y-auto rounded-md border bg-muted/30 p-3 [&_p]:my-1 [&_h1]:my-2 [&_h2]:my-2 [&_h3]:my-2 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0"
+                dangerouslySetInnerHTML={{ __html: followUp.description }}
+              />
             </div>
           )}
 
           {(onEdit || onDelete) && !followUp.completed && (
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={onClose}>Close</Button>
               {onDelete && (
                 <ConfirmPopover
                   message={`Delete "${followUp.title}"?`}
