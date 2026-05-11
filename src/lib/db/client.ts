@@ -361,7 +361,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '36')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '37')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -865,6 +865,15 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '36', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 37) {
+    // Reset watermark again — v2.12.30..v2.12.32 silently 400ed opportunity fetches because of an
+    // invalid select field, but the watermark advanced anyway. Force a full opportunity backfill.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '37', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
