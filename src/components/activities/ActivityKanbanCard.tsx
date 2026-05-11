@@ -12,7 +12,6 @@ import {
   KanbanBoardCardButtonGroup,
   KanbanBoardCardButton,
 } from '@/components/kanban';
-import { cn } from '@/lib/utils';
 import { ACTIVITY_ICONS } from './ActivityItem';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
@@ -24,16 +23,22 @@ interface ActivityKanbanCardProps {
   contactName?: string;
   onEdit: () => void;
   onDelete: () => void;
+  onPreview?: () => void;
 }
 
-export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete }: ActivityKanbanCardProps) {
+export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete, onPreview }: ActivityKanbanCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const config = ACTIVITY_ICONS[activity.type];
   const Icon = config.icon;
   const isTerminal = activity.activityStatus === 'completed' || activity.activityStatus === 'rejected' || activity.activityStatus === 'expired';
 
   return (
-    <KanbanBoardCard data={{ id: activity.id }} draggable={!isTerminal} className={isTerminal ? 'cursor-default' : undefined}>
+    <KanbanBoardCard
+      data={{ id: activity.id }}
+      draggable={!isTerminal}
+      className={isTerminal ? 'cursor-pointer' : undefined}
+      onClick={onPreview}
+    >
       <KanbanBoardCardButtonGroup style={confirmOpen ? { display: 'flex' } : undefined}>
         <KanbanBoardCardButton
           tooltip="Edit"

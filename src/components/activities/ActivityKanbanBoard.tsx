@@ -21,6 +21,7 @@ interface ActivityKanbanBoardProps {
   onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
   onStatusChange: (activity: Activity, newStatus: ActivityStatus) => void;
+  onPreview?: (activity: Activity) => void;
 }
 
 type KanbanColumn = 'open' | 'completed' | 'cancelled';
@@ -33,7 +34,7 @@ const COLUMN_CONFIG: Record<KanbanColumn, (typeof STATUS_CONFIG)[ActivityStatus]
   cancelled: STATUS_CONFIG.rejected,
 };
 
-export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, onStatusChange }: ActivityKanbanBoardProps) {
+export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, onStatusChange, onPreview }: ActivityKanbanBoardProps) {
   const [manualCollapsed, setManualCollapsed] = useState<Set<KanbanColumn>>(new Set());
   const [manualExpanded, setManualExpanded] = useState<Set<KanbanColumn>>(new Set());
 
@@ -153,6 +154,7 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
                       contactName={activity.contactId ? contactMap.get(activity.contactId) : undefined}
                       onEdit={() => onEdit(activity)}
                       onDelete={() => onDelete(activity)}
+                      onPreview={onPreview ? () => onPreview(activity) : undefined}
                     />
                   </KanbanBoardColumnListItem>
                 ))}

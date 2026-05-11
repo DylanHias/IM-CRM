@@ -183,7 +183,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={6}
-          className="min-h-[160px] resize-y"
+          className="h-[160px] resize-none overflow-y-auto"
         />
       </div>
 

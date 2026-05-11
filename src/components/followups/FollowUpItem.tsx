@@ -12,34 +12,40 @@ interface FollowUpItemProps {
   onComplete?: (id: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPreview?: () => void;
 }
 
-export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowUpItemProps) {
+export function FollowUpItem({ followUp, onComplete, onEdit, onDelete, onPreview }: FollowUpItemProps) {
   const { label: dueDateLabel, isOverdue } = formatDueDate(followUp.dueDate);
 
   return (
-    <div className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''}`}>
+    <div
+      className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''} ${onPreview ? 'cursor-pointer hover:bg-muted/30 transition-colors' : ''}`}
+      onClick={onPreview}
+    >
       {followUp.completed ? (
         <span className="mt-0.5 flex-shrink-0">
           <CheckSquare size={18} className="text-success" />
         </span>
       ) : (
-        <ConfirmPopover
-          message={`Mark "${followUp.title}" as complete?`}
-          confirmLabel="Complete"
-          variant="default"
-          onConfirm={() => onComplete?.(followUp.id)}
-          side="bottom"
-          align="start"
-        >
-          <button
-            className="mt-0.5 flex-shrink-0 text-primary hover:text-primary/80 disabled:cursor-not-allowed"
-            disabled={!onComplete}
-            title="Mark as complete"
+        <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+          <ConfirmPopover
+            message={`Mark "${followUp.title}" as complete?`}
+            confirmLabel="Complete"
+            variant="default"
+            onConfirm={() => onComplete?.(followUp.id)}
+            side="bottom"
+            align="start"
           >
-            <Square size={18} />
-          </button>
-        </ConfirmPopover>
+            <button
+              className="mt-0.5 text-primary hover:text-primary/80 disabled:cursor-not-allowed"
+              disabled={!onComplete}
+              title="Mark as complete"
+            >
+              <Square size={18} />
+            </button>
+          </ConfirmPopover>
+        </div>
       )}
 
       <div className="flex-1 min-w-0">
@@ -67,7 +73,10 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete }: FollowU
       </div>
 
       {!followUp.completed && (
-        <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div
+          className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
           {onEdit && (
             <button
               className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"

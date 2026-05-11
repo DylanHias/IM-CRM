@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { NotesTable } from './NotesTable';
 import { ActivityKanbanBoard } from './ActivityKanbanBoard';
 import { ActivityDateFilter } from './ActivityDateFilter';
+import { ActivityPreviewDialog } from './ActivityPreviewDialog';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 import type { ActivityDateRange } from './ActivityDateFilter';
 
@@ -30,6 +31,13 @@ export function ActivitiesTabContent({
 }: ActivitiesTabContentProps) {
   const [dateRange, setDateRange] = useState<ActivityDateRange | null>(null);
   const [rangeLabel, setRangeLabel] = useState<string | null>(null);
+  const [previewActivity, setPreviewActivity] = useState<Activity | null>(null);
+
+  const getContactName = (contactId: string | null) => {
+    if (!contactId) return undefined;
+    const c = contacts.find((ct) => ct.id === contactId);
+    return c ? `${c.firstName} ${c.lastName}` : undefined;
+  };
 
   const handleDateChange = useCallback((range: ActivityDateRange | null, label: string | null) => {
     setDateRange(range);
@@ -58,6 +66,7 @@ export function ActivitiesTabContent({
             contacts={contacts}
             onEdit={onEditActivity}
             onDelete={onDeleteActivity}
+            onPreview={setPreviewActivity}
           />
         </div>
       )}
@@ -84,8 +93,22 @@ export function ActivitiesTabContent({
           onEdit={onEditActivity}
           onDelete={onDeleteActivity}
           onStatusChange={onStatusChange}
+          onPreview={setPreviewActivity}
         />
       </div>
+
+      <ActivityPreviewDialog
+        activity={previewActivity}
+        contactName={previewActivity ? getContactName(previewActivity.contactId) : undefined}
+        onClose={() => setPreviewActivity(null)}
+        onEdit={(activity) => {
+          setPreviewActivity(null);
+          onEditActivity(activity);
+        }}
+        onDelete={(activity) => {
+          onDeleteActivity(activity);
+        }}
+      />
     </div>
   );
 }

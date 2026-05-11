@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FollowUpItem } from './FollowUpItem';
+import { FollowUpPreviewDialog } from './FollowUpPreviewDialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useFollowUps } from '@/hooks/useFollowUps';
 import type { FollowUp } from '@/types/entities';
@@ -29,6 +30,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
   const [editDescription, setEditDescription] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [previewFollowUp, setPreviewFollowUp] = useState<FollowUp | null>(null);
 
   const byDate = (a: FollowUp, b: FollowUp) => b.dueDate.localeCompare(a.dueDate);
   const open = followUps.filter((f) => !f.completed).sort(byDate);
@@ -114,6 +116,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
                     onComplete={onComplete}
                     onEdit={() => openEdit(f)}
                     onDelete={() => handleDelete(f)}
+                    onPreview={() => setPreviewFollowUp(f)}
                   />
                 </motion.div>
               ))}
@@ -129,7 +132,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
                     key={f.id}
                     {...rowSlideIn(i)}
                   >
-                    <FollowUpItem followUp={f} />
+                    <FollowUpItem followUp={f} onPreview={() => setPreviewFollowUp(f)} />
                   </motion.div>
                 ))}
               </div>
@@ -137,6 +140,16 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
           )}
         </div>
       )}
+
+      <FollowUpPreviewDialog
+        followUp={previewFollowUp}
+        onClose={() => setPreviewFollowUp(null)}
+        onEdit={(f) => {
+          setPreviewFollowUp(null);
+          openEdit(f);
+        }}
+        onDelete={(f) => handleDelete(f)}
+      />
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="sm:max-w-2xl">

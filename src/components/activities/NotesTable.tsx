@@ -16,9 +16,10 @@ interface NotesTableProps {
   contacts: Contact[];
   onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
+  onPreview?: (activity: Activity) => void;
 }
 
-export function NotesTable({ notes, contacts, onEdit, onDelete }: NotesTableProps) {
+export function NotesTable({ notes, contacts, onEdit, onDelete, onPreview }: NotesTableProps) {
   const [page, setPage] = useState(1);
   const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('customer-notes', 5);
 
@@ -56,7 +57,11 @@ export function NotesTable({ notes, contacts, onEdit, onDelete }: NotesTableProp
             {visible.map((note) => {
               const contactName = getContactName(note.contactId);
               return (
-                <tr key={note.id} className="group hover:bg-muted/30 transition-colors">
+                <tr
+                key={note.id}
+                className={`group hover:bg-muted/30 transition-colors ${onPreview ? 'cursor-pointer' : ''}`}
+                onClick={onPreview ? () => onPreview(note) : undefined}
+              >
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-activity-note-bg">
@@ -86,7 +91,7 @@ export function NotesTable({ notes, contacts, onEdit, onDelete }: NotesTableProp
                   <td className="px-4 py-2.5 text-muted-foreground truncate">
                     {contactName ?? '—'}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(note)} title="Edit">
                         <Pencil size={13} />
