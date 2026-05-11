@@ -96,6 +96,9 @@ async function ensureTablesExist(db: Database): Promise<void> {
       mobile        TEXT,
       notes         TEXT,
       contact_type  TEXT,
+      contact_type_id TEXT,
+      country_id    TEXT,
+      country_name  TEXT,
       cloud_contact INTEGER,
       is_primary    INTEGER NOT NULL DEFAULT 0,
       sync_status   TEXT NOT NULL DEFAULT 'pending',
@@ -302,6 +305,9 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'mpn_id',          'TEXT'],
     ['customers',  'apn_id',          'TEXT'],
     ['contacts',   'contact_type',    'TEXT'],
+    ['contacts',   'contact_type_id', 'TEXT'],
+    ['contacts',   'country_id',      'TEXT'],
+    ['contacts',   'country_name',    'TEXT'],
     ['contacts',   'cloud_contact',   'INTEGER'],
     ['contacts',   'sync_status',     "TEXT NOT NULL DEFAULT 'synced'"],
     ['contacts',   'remote_id',       'TEXT'],
@@ -361,7 +367,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '37')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '38')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -874,6 +880,17 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '37', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 38) {
+    for (const col of ['contact_type_id TEXT', 'country_id TEXT', 'country_name TEXT']) {
+      try { await db.execute(`ALTER TABLE contacts ADD COLUMN ${col}`); } catch { /* column may already exist */ }
+    }
+    // Reset watermark so existing contacts backfill the new country / contact-type fields on next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '38', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

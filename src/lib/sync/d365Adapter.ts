@@ -167,12 +167,17 @@ function mapD365ContactToContact(d365: D365Contact, now: string): Contact {
     customerId: d365._parentcustomerid_value,
     firstName: d365.firstname ?? '',
     lastName: d365.lastname ?? '',
-    jobTitle: d365.jobtitle,
+    jobTitle: d365.im360_jobfunctions ?? d365.jobtitle,
     email: d365.emailaddress1,
     phone: d365.telephone1,
     mobile: d365.mobilephone,
     notes: null,
-    contactType: d365['im360_contacttype@OData.Community.Display.V1.FormattedValue'] ?? null,
+    contactType: d365['_im360_contacttypes_value@OData.Community.Display.V1.FormattedValue']
+      ?? d365['im360_contacttype@OData.Community.Display.V1.FormattedValue']
+      ?? null,
+    contactTypeId: d365._im360_contacttypes_value ?? null,
+    countryId: d365._im360_countryid_value ?? null,
+    countryName: d365['_im360_countryid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     cloudContact: d365.im360_cloudcontact ?? null,
     isPrimary: false,
     syncStatus: 'synced',
@@ -506,7 +511,9 @@ class RealD365Adapter implements ID365Adapter {
   async fetchContacts(token: string, customerIds: Set<string>, lastSync?: string): Promise<Contact[]> {
     const select = [
       'contactid', '_parentcustomerid_value', 'firstname', 'lastname',
-      'jobtitle', 'emailaddress1', 'telephone1', 'mobilephone', 'im360_contacttype', 'im360_cloudcontact', 'modifiedon',
+      'jobtitle', 'im360_jobfunctions', 'emailaddress1', 'telephone1', 'mobilephone',
+      'im360_contacttype', '_im360_contacttypes_value', '_im360_countryid_value',
+      'im360_cloudcontact', 'modifiedon',
     ].join(',');
 
     let filter = 'statecode eq 0 and _parentcustomerid_value ne null';
@@ -1038,11 +1045,12 @@ class RealD365Adapter implements ID365Adapter {
     const vendorFilter = encodeURIComponent(
       "startswith(im360_name,'AWS') or startswith(im360_name,'MICROSOFT') or startswith(im360_name,'Microsoft') or startswith(im360_name,'AZURE') or startswith(im360_name,'Azure')",
     );
-    const [vendors, serviceNames, countries, currencies] = await Promise.all([
+    const [vendors, serviceNames, countries, currencies, contactTypes] = await Promise.all([
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_vendors?$select=im360_vendorid,im360_name&$filter=${vendorFilter}`, 'im360_vendorid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_servicenames?$select=im360_servicenameid,im360_name`, 'im360_servicenameid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_countries?$select=im360_countryid,im360_name`, 'im360_countryid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/transactioncurrencies?$select=transactioncurrencyid,isocurrencycode&$filter=isocurrencycode eq 'EUR' or isocurrencycode eq 'USD'`, 'transactioncurrencyid', 'isocurrencycode'),
+      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_contacttypes?$select=im360_contacttypeid,im360_name`, 'im360_contacttypeid', 'im360_name'),
     ]);
 
     return [
@@ -1050,6 +1058,7 @@ class RealD365Adapter implements ID365Adapter {
       { key: 'opportunity.servicename', items: serviceNames },
       { key: 'opportunity.country', items: countries },
       { key: 'opportunity.currency', items: currencies },
+      { key: 'contact.contacttype', items: contactTypes },
     ];
   }
 
@@ -1060,11 +1069,13 @@ class RealD365Adapter implements ID365Adapter {
       lastname: contact.lastName,
       'parentcustomerid_account@odata.bind': `/accounts(${contact.customerId})`,
     };
-    if (contact.jobTitle) body.jobtitle = contact.jobTitle;
+    if (contact.jobTitle) body.im360_jobfunctions = contact.jobTitle;
     if (contact.email) body.emailaddress1 = contact.email;
     if (contact.phone) body.telephone1 = contact.phone;
     if (contact.mobile) body.mobilephone = contact.mobile;
     if (contact.cloudContact != null) body.im360_cloudcontact = contact.cloudContact;
+    if (contact.countryId) body['im360_countryId@odata.bind'] = `/im360_countries(${contact.countryId})`;
+    if (contact.contactTypeId) body['im360_contacttypes@odata.bind'] = `/im360_contacttypes(${contact.contactTypeId})`;
 
     const endpoint = isUpdate
       ? `${this.baseUrl}/api/data/v9.2/contacts(${contact.remoteId})`

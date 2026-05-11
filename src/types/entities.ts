@@ -44,6 +44,9 @@ export interface Contact {
   mobile: string | null;
   notes: string | null;
   contactType: string | null;
+  contactTypeId: string | null;
+  countryId: string | null;
+  countryName: string | null;
   cloudContact: boolean | null;
   isPrimary: boolean;
   syncStatus: 'pending' | 'synced' | 'error';

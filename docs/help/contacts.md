@@ -19,7 +19,9 @@ Use the search bar to filter contacts by name if the customer has many.
 3. Fill in the details:
    - **First Name** (required)
    - **Last Name** (required)
-   - **Job Title**
+   - **Job Title** — Syncs to the Job Functions field in Dynamics 365
+   - **Country** — Belgium, Netherlands, or Luxembourg
+   - **Contact Type** — Pulled from Dynamics 365
    - **Email**
    - **Phone** (office number)
    - **Mobile** (cell number)

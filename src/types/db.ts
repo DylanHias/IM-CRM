@@ -45,6 +45,9 @@ export interface ContactRow {
   mobile: string | null;
   notes: string | null;
   contact_type: string | null;
+  contact_type_id: string | null;
+  country_id: string | null;
+  country_name: string | null;
   cloud_contact: number | null;
   is_primary: number;
   sync_status: string;

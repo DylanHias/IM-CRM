@@ -15,6 +15,9 @@ function rowToContact(row: ContactRow): Contact {
     mobile: row.mobile,
     notes: row.notes,
     contactType: row.contact_type,
+    contactTypeId: row.contact_type_id,
+    countryId: row.country_id,
+    countryName: row.country_name,
     cloudContact: row.cloud_contact === 1 ? true : row.cloud_contact === 0 ? false : null,
     isPrimary: row.is_primary === 1,
     syncStatus: (row.sync_status ?? 'synced') as Contact['syncStatus'],
@@ -74,13 +77,15 @@ export async function upsertContact(contact: Contact): Promise<void> {
   const db = await getDb();
   await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact,
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type,
+      contact_type_id, country_id, country_name, cloud_contact,
       is_primary, sync_status, remote_id, source, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      contact_type_id=excluded.contact_type_id, country_id=excluded.country_id, country_name=excluded.country_name,
       cloud_contact=excluded.cloud_contact, is_primary=excluded.is_primary,
       sync_status=excluded.sync_status, remote_id=excluded.remote_id,
       synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
@@ -88,6 +93,7 @@ export async function upsertContact(contact: Contact): Promise<void> {
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
       contact.notes, contact.contactType,
+      contact.contactTypeId, contact.countryId, contact.countryName,
       contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
       contact.isPrimary ? 1 : 0,
       contact.syncStatus, contact.remoteId, contact.source,
@@ -117,13 +123,15 @@ export async function upsertContactBulk(contact: Contact): Promise<boolean> {
 
   const result = await db.execute(
     `INSERT INTO contacts (
-      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type, cloud_contact,
+      id, customer_id, first_name, last_name, job_title, email, phone, mobile, notes, contact_type,
+      contact_type_id, country_id, country_name, cloud_contact,
       is_primary, sync_status, remote_id, source, synced_at, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,0,$12,$13,$14,$15,$16,$17)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,0,$15,$16,$17,$18,$19,$20)
     ON CONFLICT(id) DO UPDATE SET
       first_name=excluded.first_name, last_name=excluded.last_name,
       job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
       mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+      contact_type_id=excluded.contact_type_id, country_id=excluded.country_id, country_name=excluded.country_name,
       cloud_contact=excluded.cloud_contact,
       sync_status=excluded.sync_status, remote_id=excluded.remote_id,
       synced_at=excluded.synced_at, updated_at=excluded.updated_at
@@ -133,6 +141,7 @@ export async function upsertContactBulk(contact: Contact): Promise<boolean> {
       contact.id, contact.customerId, contact.firstName, contact.lastName,
       contact.jobTitle, contact.email, contact.phone, contact.mobile,
       contact.notes, contact.contactType,
+      contact.contactTypeId, contact.countryId, contact.countryName,
       contact.cloudContact === true ? 1 : contact.cloudContact === false ? 0 : null,
       contact.syncStatus, contact.remoteId, contact.source,
       contact.syncedAt, contact.createdAt, contact.updatedAt,
@@ -147,8 +156,8 @@ export async function bulkUpsertContacts(contacts: Contact[], customerIdSet: Set
   if (filtered.length === 0) return 0;
   const db = await getDb();
   // is_primary excluded — defaults to 0 (NOT NULL DEFAULT 0); not set/overwritten during D365 pull
-  const COLS = 17;
-  const CHUNK = Math.floor(999 / COLS); // 58 rows per batch
+  const COLS = 20;
+  const CHUNK = Math.floor(999 / COLS); // ~49 rows per batch
   let changed = 0;
 
   for (let i = 0; i < filtered.length; i += CHUNK) {
@@ -160,6 +169,7 @@ export async function bulkUpsertContacts(contacts: Contact[], customerIdSet: Set
       c.id, c.customerId, c.firstName, c.lastName,
       c.jobTitle, c.email, c.phone, c.mobile,
       c.notes, c.contactType,
+      c.contactTypeId, c.countryId, c.countryName,
       c.cloudContact === true ? 1 : c.cloudContact === false ? 0 : null,
       c.syncStatus, c.remoteId, c.source,
       c.syncedAt, c.createdAt, c.updatedAt,
@@ -167,13 +177,15 @@ export async function bulkUpsertContacts(contacts: Contact[], customerIdSet: Set
     const result = await db.execute(
       `INSERT INTO contacts (
         id, customer_id, first_name, last_name, job_title, email, phone, mobile,
-        notes, contact_type, cloud_contact, sync_status, remote_id, source,
+        notes, contact_type, contact_type_id, country_id, country_name,
+        cloud_contact, sync_status, remote_id, source,
         synced_at, created_at, updated_at
       ) VALUES ${placeholders}
       ON CONFLICT(id) DO UPDATE SET
         first_name=excluded.first_name, last_name=excluded.last_name,
         job_title=excluded.job_title, email=excluded.email, phone=excluded.phone,
         mobile=excluded.mobile, notes=excluded.notes, contact_type=excluded.contact_type,
+        contact_type_id=excluded.contact_type_id, country_id=excluded.country_id, country_name=excluded.country_name,
         cloud_contact=excluded.cloud_contact,
         sync_status=excluded.sync_status, remote_id=excluded.remote_id,
         synced_at=excluded.synced_at, updated_at=excluded.updated_at

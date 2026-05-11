@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { upsertContact } from '@/lib/db/queries/contacts';
 import { directPushContact } from '@/lib/sync/directPushService';
+import { useLookupTableStore } from '@/store/lookupTableStore';
 import type { Contact } from '@/types/entities';
+
+const ALLOWED_COUNTRIES = new Set(['Belgium', 'Netherlands', 'Luxembourg']);
 
 interface ContactFormProps {
   open: boolean;
@@ -31,9 +35,21 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
   const [phone, setPhone] = useState('');
   const [mobile, setMobile] = useState('');
   const [notes, setNotes] = useState('');
+  const [countryId, setCountryId] = useState('');
+  const [contactTypeId, setContactTypeId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const lookupTables = useLookupTableStore((s) => s.lookupTables);
+  const countryOptions = useMemo(
+    () => (lookupTables['opportunity.country'] ?? []).filter((c) => ALLOWED_COUNTRIES.has(c.label)),
+    [lookupTables],
+  );
+  const contactTypeOptions = useMemo(
+    () => lookupTables['contact.contacttype'] ?? [],
+    [lookupTables],
+  );
 
   useEffect(() => {
     if (open) {
@@ -44,6 +60,8 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setPhone(initialData?.phone ?? '');
       setMobile(initialData?.mobile ?? '');
       setNotes(initialData?.notes ?? '');
+      setCountryId(initialData?.countryId ?? '');
+      setContactTypeId(initialData?.contactTypeId ?? '');
       setSuccess(false);
       setError(null);
     }
@@ -62,6 +80,9 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
     setError(null);
     const now = new Date().toISOString();
 
+    const selectedCountry = countryOptions.find((c) => c.remoteId === countryId);
+    const selectedContactType = contactTypeOptions.find((c) => c.remoteId === contactTypeId);
+
     const contact: Contact = {
       id: initialData?.id ?? crypto.randomUUID(),
       customerId,
@@ -72,7 +93,10 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       phone: phone.trim() || null,
       mobile: mobile.trim() || null,
       notes: notes.trim() || null,
-      contactType: initialData?.contactType ?? null,
+      contactType: selectedContactType?.label ?? initialData?.contactType ?? null,
+      contactTypeId: contactTypeId || null,
+      countryId: countryId || null,
+      countryName: selectedCountry?.label ?? initialData?.countryName ?? null,
       cloudContact: initialData?.cloudContact ?? null,
       isPrimary: initialData?.isPrimary ?? false,
       syncStatus: 'pending',
@@ -138,6 +162,35 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
             <div className="space-y-1">
               <Label htmlFor="cf-jobTitle">Job Title</Label>
               <Input id="cf-jobTitle" placeholder="e.g. IT Director" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="cf-country">Country</Label>
+                <Select value={countryId} onValueChange={setCountryId}>
+                  <SelectTrigger id="cf-country">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countryOptions.map((c) => (
+                      <SelectItem key={c.remoteId} value={c.remoteId}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cf-contactType">Contact Type</Label>
+                <Select value={contactTypeId} onValueChange={setContactTypeId}>
+                  <SelectTrigger id="cf-contactType">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactTypeOptions.map((c) => (
+                      <SelectItem key={c.remoteId} value={c.remoteId}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-1">

@@ -14,4 +14,5 @@ export type LookupTableKey =
   | 'opportunity.primaryvendor'
   | 'opportunity.servicename'
   | 'opportunity.country'
-  | 'opportunity.currency';
+  | 'opportunity.currency'
+  | 'contact.contacttype';

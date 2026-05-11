@@ -46,8 +46,13 @@ export interface D365Contact {
   mobilephone: string | null;
   im360_contacttype: number | null;
   im360_cloudcontact: boolean | null;
+  im360_jobfunctions: string | null;
+  _im360_countryid_value: string | null;
+  _im360_contacttypes_value: string | null;
   modifiedon: string;
   'im360_contacttype@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_countryid_value@OData.Community.Display.V1.FormattedValue'?: string;
+  '_im360_contacttypes_value@OData.Community.Display.V1.FormattedValue'?: string;
 }
 
 export interface D365ODataResponse<T> {

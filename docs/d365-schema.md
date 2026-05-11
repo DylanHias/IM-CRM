@@ -42,11 +42,14 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `_parentcustomerid_value` | Parent account ID |
 | `firstname` | First name |
 | `lastname` | Last name |
-| `jobtitle` | Job title |
+| `jobtitle` | Job title (standard, legacy) |
+| `im360_jobfunctions` | Job Functions (custom string — preferred for read/write) |
 | `emailaddress1` | Email |
 | `telephone1` | Phone |
 | `mobilephone` | Mobile |
-| `im360_contacttype` | Contact type (custom option set) |
+| `im360_contacttype` | Legacy Contact Type option set (read-only fallback) |
+| `_im360_contacttypes_value` | Contact Type lookup → `im360_contacttype` |
+| `_im360_countryid_value` | Country lookup → `im360_country` |
 | `im360_cloudcontact` | Cloud Contact flag (custom boolean) |
 | `modifiedon` | Last modified |
 
@@ -55,14 +58,16 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 |---|---|
 | `firstname` | First name |
 | `lastname` | Last name |
-| `jobtitle` | Job title |
+| `im360_jobfunctions` | Job Functions (replaces `jobtitle` — that field is not the one the business uses) |
 | `emailaddress1` | Email |
 | `telephone1` | Phone |
 | `mobilephone` | Mobile |
 | `parentcustomerid_account@odata.bind` | Parent account lookup (`/accounts(id)`) |
+| `im360_countryId@odata.bind` | Country lookup (`/im360_countries(id)`) |
+| `im360_contacttypes@odata.bind` | Contact Type lookup (`/im360_contacttypes(id)`) |
 | `im360_cloudcontact` | Cloud Contact flag (boolean) |
 
-**Note:** `im360_contacttype` is not pushed — only the formatted label is stored locally, not the numeric option set value. `notes` is local-only.
+**Note:** The legacy `im360_contacttype` option set is not pushed — only `_im360_contacttypes_value` (the lookup) is. `notes` is local-only.
 
 ---
 
