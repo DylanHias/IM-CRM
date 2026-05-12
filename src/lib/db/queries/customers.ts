@@ -20,6 +20,8 @@ function rowToCustomer(row: CustomerRow): Customer {
     awsOwnerName: row.aws_owner_name,
     azureOwnerId: row.azure_owner_id,
     azureOwnerName: row.azure_owner_name,
+    accountManagerId: row.account_manager_id,
+    accountManagerName: row.account_manager_name,
     mpnId: row.mpn_id,
     apnId: row.apn_id,
     phone: row.phone,
@@ -73,8 +75,9 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       status, last_activity_at, synced_at, created_at, updated_at,
       customer_success_manager_id, customer_success_manager_name,
       aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+      account_manager_id, account_manager_name,
       mpn_id, apn_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -90,6 +93,8 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       aws_owner_name=excluded.aws_owner_name,
       azure_owner_id=excluded.azure_owner_id,
       azure_owner_name=excluded.azure_owner_name,
+      account_manager_id=excluded.account_manager_id,
+      account_manager_name=excluded.account_manager_name,
       mpn_id=excluded.mpn_id,
       apn_id=excluded.apn_id,
       updated_at=excluded.updated_at`,
@@ -102,6 +107,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
       customer.customerSuccessManagerId, customer.customerSuccessManagerName,
       customer.awsOwnerId, customer.awsOwnerName, customer.azureOwnerId, customer.azureOwnerName,
+      customer.accountManagerId, customer.accountManagerName,
       customer.mpnId, customer.apnId,
     ]
   );
@@ -119,8 +125,9 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       status, last_activity_at, synced_at, created_at, updated_at,
       customer_success_manager_id, customer_success_manager_name,
       aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+      account_manager_id, account_manager_name,
       mpn_id, apn_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -136,6 +143,8 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       aws_owner_name=excluded.aws_owner_name,
       azure_owner_id=excluded.azure_owner_id,
       azure_owner_name=excluded.azure_owner_name,
+      account_manager_id=excluded.account_manager_id,
+      account_manager_name=excluded.account_manager_name,
       mpn_id=excluded.mpn_id,
       apn_id=excluded.apn_id,
       last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
@@ -151,6 +160,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
       customer.customerSuccessManagerId, customer.customerSuccessManagerName,
       customer.awsOwnerId, customer.awsOwnerName, customer.azureOwnerId, customer.azureOwnerName,
+      customer.accountManagerId, customer.accountManagerName,
       customer.mpnId, customer.apnId,
     ]
   );
@@ -360,9 +370,11 @@ export interface CloudOwnerUpdate {
   awsOwnerName: string | null;
   azureOwnerId: string | null;
   azureOwnerName: string | null;
+  accountManagerId: string | null;
+  accountManagerName: string | null;
 }
 
-/** Updates the three cloud-services owner lookups on a customer. */
+/** Updates the four cloud-services owner lookups on a customer. */
 export async function updateCustomerCloudOwners(customerId: string, update: CloudOwnerUpdate): Promise<void> {
   const db = await getDb();
   await db.execute(
@@ -373,12 +385,15 @@ export async function updateCustomerCloudOwners(customerId: string, update: Clou
       aws_owner_name = $4,
       azure_owner_id = $5,
       azure_owner_name = $6,
-      updated_at = $7
-     WHERE id = $8`,
+      account_manager_id = $7,
+      account_manager_name = $8,
+      updated_at = $9
+     WHERE id = $10`,
     [
       update.customerSuccessManagerId, update.customerSuccessManagerName,
       update.awsOwnerId, update.awsOwnerName,
       update.azureOwnerId, update.azureOwnerName,
+      update.accountManagerId, update.accountManagerName,
       new Date().toISOString(), customerId,
     ],
   );

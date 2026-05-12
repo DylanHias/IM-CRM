@@ -14,6 +14,8 @@ export interface Customer {
   awsOwnerName: string | null;
   azureOwnerId: string | null;
   azureOwnerName: string | null;
+  accountManagerId: string | null;
+  accountManagerName: string | null;
   mpnId: string | null;
   apnId: string | null;
   phone: string | null;

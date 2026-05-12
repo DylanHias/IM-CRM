@@ -10,18 +10,22 @@ const EXTRA_DEFAULTS = {
   awsOwnerName: null,
   azureOwnerId: null,
   azureOwnerName: null,
+  accountManagerId: null,
+  accountManagerName: null,
   mpnId: null,
   apnId: null,
 } satisfies Pick<
   Customer,
   'customerSuccessManagerId' | 'customerSuccessManagerName' |
   'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'accountManagerId' | 'accountManagerName' |
   'mpnId' | 'apnId'
 >;
 
 const RAW_CUSTOMERS: Omit<Customer,
   'customerSuccessManagerId' | 'customerSuccessManagerName' |
   'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'accountManagerId' | 'accountManagerName' |
   'mpnId' | 'apnId'
 >[] = [
   {

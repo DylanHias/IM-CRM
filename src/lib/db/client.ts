@@ -60,6 +60,8 @@ async function ensureTablesExist(db: Database): Promise<void> {
       aws_owner_name  TEXT,
       azure_owner_id  TEXT,
       azure_owner_name TEXT,
+      account_manager_id   TEXT,
+      account_manager_name TEXT,
       mpn_id          TEXT,
       apn_id          TEXT,
       phone           TEXT,
@@ -284,6 +286,17 @@ async function ensureTablesExist(db: Database): Promise<void> {
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_cloud_belux_users_name ON cloud_belux_users(name COLLATE NOCASE)`);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS belgium_team_users (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      email      TEXT,
+      job_title  TEXT,
+      synced_at  TEXT NOT NULL
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_belgium_team_users_name ON belgium_team_users(name COLLATE NOCASE)`);
 }
 
 // Idempotent column backfill — runs every startup after ensureTablesExist.
@@ -304,6 +317,8 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'aws_owner_name',  'TEXT'],
     ['customers',  'azure_owner_id',  'TEXT'],
     ['customers',  'azure_owner_name','TEXT'],
+    ['customers',  'account_manager_id',   'TEXT'],
+    ['customers',  'account_manager_name', 'TEXT'],
     ['customers',  'mpn_id',          'TEXT'],
     ['customers',  'apn_id',          'TEXT'],
     ['contacts',   'contact_type',    'TEXT'],
@@ -383,7 +398,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '39')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '40')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -920,6 +935,32 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
     await db.execute(
       `UPDATE app_settings SET value = '39', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 40) {
+    // Account Manager (D365 im360_os1 lookup) on accounts + cache table for the Belgium team users.
+    const customerCols = await db.select<{ name: string }[]>(`PRAGMA table_info(customers)`);
+    if (!customerCols.some((c) => c.name === 'account_manager_id')) {
+      await db.execute(`ALTER TABLE customers ADD COLUMN account_manager_id TEXT`);
+    }
+    if (!customerCols.some((c) => c.name === 'account_manager_name')) {
+      await db.execute(`ALTER TABLE customers ADD COLUMN account_manager_name TEXT`);
+    }
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS belgium_team_users (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        email      TEXT,
+        job_title  TEXT,
+        synced_at  TEXT NOT NULL
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_belgium_team_users_name ON belgium_team_users(name COLLATE NOCASE)`);
+    // Reset watermark so the new account_manager_* columns backfill on the next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '40', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

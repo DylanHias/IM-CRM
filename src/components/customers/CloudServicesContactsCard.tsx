@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryAllCloudBeluxUsers, type CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
+import { queryAllBelgiumTeamUsers, type BelgiumTeamUser } from '@/lib/db/queries/belgiumTeamUsers';
 import { updateCustomerCloudOwners } from '@/lib/db/queries/customers';
 import { directPushAccountCloudOwners } from '@/lib/sync/directPushService';
 import { useCustomerStore } from '@/store/customerStore';
@@ -23,9 +24,11 @@ const NONE = '__none__';
 export function CloudServicesContactsCard({ customer }: Props) {
   const [editing, setEditing] = useState(false);
   const [users, setUsers] = useState<CloudBeluxUser[]>([]);
+  const [belgiumUsers, setBelgiumUsers] = useState<BelgiumTeamUser[]>([]);
   const [csmId, setCsmId] = useState<string>(customer.customerSuccessManagerId ?? NONE);
   const [awsId, setAwsId] = useState<string>(customer.awsOwnerId ?? NONE);
   const [azureId, setAzureId] = useState<string>(customer.azureOwnerId ?? NONE);
+  const [accountManagerId, setAccountManagerId] = useState<string>(customer.accountManagerId ?? NONE);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,10 +36,14 @@ export function CloudServicesContactsCard({ customer }: Props) {
     if (!editing || !isTauriApp()) return;
     const load = async () => {
       try {
-        const list = await queryAllCloudBeluxUsers();
-        setUsers(list);
+        const [cloud, belgium] = await Promise.all([
+          queryAllCloudBeluxUsers(),
+          queryAllBelgiumTeamUsers(),
+        ]);
+        setUsers(cloud);
+        setBelgiumUsers(belgium);
       } catch (err) {
-        console.error('[customer] Failed to load Cloud Belux Sales users:', err);
+        console.error('[customer] Failed to load team users:', err);
       }
     };
     load();
@@ -46,11 +53,17 @@ export function CloudServicesContactsCard({ customer }: Props) {
     setCsmId(customer.customerSuccessManagerId ?? NONE);
     setAwsId(customer.awsOwnerId ?? NONE);
     setAzureId(customer.azureOwnerId ?? NONE);
-  }, [customer.customerSuccessManagerId, customer.awsOwnerId, customer.azureOwnerId]);
+    setAccountManagerId(customer.accountManagerId ?? NONE);
+  }, [customer.customerSuccessManagerId, customer.awsOwnerId, customer.azureOwnerId, customer.accountManagerId]);
 
   const findName = (id: string): string | null => {
     if (id === NONE) return null;
     return users.find((u) => u.id === id)?.name ?? null;
+  };
+
+  const findBelgiumName = (id: string): string | null => {
+    if (id === NONE) return null;
+    return belgiumUsers.find((u) => u.id === id)?.name ?? null;
   };
 
   const handleSave = async () => {
@@ -64,12 +77,15 @@ export function CloudServicesContactsCard({ customer }: Props) {
         awsOwnerName: awsId === NONE ? null : findName(awsId),
         azureOwnerId: azureId === NONE ? null : azureId,
         azureOwnerName: azureId === NONE ? null : findName(azureId),
+        accountManagerId: accountManagerId === NONE ? null : accountManagerId,
+        accountManagerName: accountManagerId === NONE ? null : findBelgiumName(accountManagerId),
       };
 
       const pushResult = await directPushAccountCloudOwners(customer.id, {
         customerSuccessManagerId: update.customerSuccessManagerId,
         awsOwnerId: update.awsOwnerId,
         azureOwnerId: update.azureOwnerId,
+        accountManagerId: update.accountManagerId,
       });
       if (!pushResult.success) {
         setError(pushResult.error);
@@ -98,10 +114,16 @@ export function CloudServicesContactsCard({ customer }: Props) {
     ...users.map((u) => ({ value: u.id, label: formatDisplayName(u.name) })),
   ];
 
+  const belgiumOptions = [
+    { value: NONE, label: '—' },
+    ...belgiumUsers.map((u) => ({ value: u.id, label: formatDisplayName(u.name) })),
+  ];
+
   const rows = [
     { label: 'Customer Success Manager', name: customer.customerSuccessManagerName },
     { label: 'AWS Owner', name: customer.awsOwnerName },
     { label: 'Azure Owner', name: customer.azureOwnerName },
+    { label: 'Account Manager', name: customer.accountManagerName },
   ];
 
   return (
@@ -165,6 +187,16 @@ export function CloudServicesContactsCard({ customer }: Props) {
                 onValueChange={setAzureId}
                 options={options}
                 searchPlaceholder="Search Cloud Belux Sales..."
+                emptyText="No users found."
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Account Manager</Label>
+              <Combobox
+                value={accountManagerId}
+                onValueChange={setAccountManagerId}
+                options={belgiumOptions}
+                searchPlaceholder="Search Belgium team..."
                 emptyText="No users found."
               />
             </div>

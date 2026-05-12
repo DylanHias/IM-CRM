@@ -72,6 +72,7 @@ export interface AccountCloudOwners {
   customerSuccessManagerId: string | null;
   awsOwnerId: string | null;
   azureOwnerId: string | null;
+  accountManagerId: string | null;
 }
 
 export interface AccountVendorIds {
@@ -141,6 +142,8 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     awsOwnerName: d365.im360_clouddetailId?.['_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     azureOwnerId: d365.im360_clouddetailId?._im360_azureowneruyser_value ?? null,
     azureOwnerName: d365.im360_clouddetailId?.['_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    accountManagerId: d365._im360_outsidesales1_value ?? null,
+    accountManagerName: d365['_im360_outsidesales1_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     mpnId: d365.im360_mpnid ?? null,
     apnId: d365.im360_apnid ?? null,
     phone: d365.telephone1,
@@ -486,6 +489,7 @@ class RealD365Adapter implements ID365Adapter {
       'accountid', 'name', 'accountnumber', 'im360_bcn', 'industrycode',
       '_ownerid_value',
       '_im360_cloudowner_value', '_im360_clouddetailid_value',
+      '_im360_outsidesales1_value',
       'im360_mpnid', 'im360_apnid',
       'telephone1', 'emailaddress1', 'address1_line1',
       'address1_city', 'address1_country', 'websiteurl',
@@ -1162,14 +1166,22 @@ class RealD365Adapter implements ID365Adapter {
   }
 
   /** Patch the cloud-services owner lookups for an account.
-   *  CSM (im360_cloudowner) is on the account itself.
+   *  CSM (im360_cloudowner) and Account Manager (im360_outsidesales1) live on the account itself.
    *  AWS/Azure owners live on the related im360_accountclouddetail record;
    *  if the account has no clouddetail, one is created and linked. */
   async pushAccountCloudOwners(token: string, accountId: string, owners: AccountCloudOwners): Promise<void> {
-    const csmNav = (await this.resolveNavProperty(token, 'account', 'im360_cloudowner')) ?? 'im360_cloudowner';
+    const [csmNav, amNav] = await Promise.all([
+      this.resolveNavProperty(token, 'account', 'im360_cloudowner'),
+      this.resolveNavProperty(token, 'account', 'im360_outsidesales1'),
+    ]);
+    const csmKey = `${csmNav ?? 'im360_cloudowner'}@odata.bind`;
+    const amKey = `${amNav ?? 'im360_outsidesales1'}@odata.bind`;
     const accountBody: Record<string, unknown> = {
-      [`${csmNav}@odata.bind`]: owners.customerSuccessManagerId
+      [csmKey]: owners.customerSuccessManagerId
         ? `/systemusers(${owners.customerSuccessManagerId})`
+        : null,
+      [amKey]: owners.accountManagerId
+        ? `/systemusers(${owners.accountManagerId})`
         : null,
     };
     const accountRes = await fetch(`${this.baseUrl}/api/data/v9.2/accounts(${accountId})`, {
@@ -1185,7 +1197,7 @@ class RealD365Adapter implements ID365Adapter {
     });
     if (!accountRes.ok) {
       const text = await accountRes.text();
-      throw new Error(`D365 push CSM failed ${accountRes.status}: ${text}`);
+      throw new Error(`D365 push account owners failed ${accountRes.status}: ${text}`);
     }
 
     const lookupRes = await fetch(

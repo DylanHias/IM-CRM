@@ -13,6 +13,8 @@ export interface CustomerRow {
   aws_owner_name: string | null;
   azure_owner_id: string | null;
   azure_owner_name: string | null;
+  account_manager_id: string | null;
+  account_manager_name: string | null;
   mpn_id: string | null;
   apn_id: string | null;
   phone: string | null;
@@ -175,6 +177,14 @@ export interface UserRow {
 }
 
 export interface CloudBeluxUserRow {
+  id: string;
+  name: string;
+  email: string | null;
+  job_title: string | null;
+  synced_at: string;
+}
+
+export interface BelgiumTeamUserRow {
   id: string;
   name: string;
   email: string | null;

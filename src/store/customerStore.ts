@@ -23,6 +23,10 @@ interface CustomerState {
   filterSegment: string | null;
   filterCountry: string | null;
   filterCity: string | null;
+  filterCsmId: string | null;
+  filterAwsOwnerId: string | null;
+  filterAzureOwnerId: string | null;
+  filterAccountManagerId: string | null;
   filterNoRecentActivity: boolean;
   filterFavorites: boolean;
   filterHealthTier: HealthTier | null;
@@ -43,6 +47,10 @@ interface CustomerState {
   setFilterSegment: (s: string | null) => void;
   setFilterCountry: (c: string | null) => void;
   setFilterCity: (p: string | null) => void;
+  setFilterCsmId: (id: string | null) => void;
+  setFilterAwsOwnerId: (id: string | null) => void;
+  setFilterAzureOwnerId: (id: string | null) => void;
+  setFilterAccountManagerId: (id: string | null) => void;
   toggleNoRecentActivityFilter: () => void;
   toggleFavoritesFilter: () => void;
   setFilterHealthTier: (t: HealthTier | null) => void;
@@ -70,6 +78,10 @@ export const useCustomerStore = create<CustomerState>()(
       filterSegment: null,
       filterCountry: null,
       filterCity: null,
+      filterCsmId: null,
+      filterAwsOwnerId: null,
+      filterAzureOwnerId: null,
+      filterAccountManagerId: null,
       filterNoRecentActivity: false,
       filterFavorites: false,
       filterHealthTier: null,
@@ -105,6 +117,10 @@ export const useCustomerStore = create<CustomerState>()(
       setFilterSegment: (filterSegment) => set({ filterSegment, page: 1 }),
       setFilterCountry: (filterCountry) => set({ filterCountry, filterCity: null, page: 1 }),
       setFilterCity: (filterCity) => set({ filterCity, page: 1 }),
+      setFilterCsmId: (filterCsmId) => set({ filterCsmId, page: 1 }),
+      setFilterAwsOwnerId: (filterAwsOwnerId) => set({ filterAwsOwnerId, page: 1 }),
+      setFilterAzureOwnerId: (filterAzureOwnerId) => set({ filterAzureOwnerId, page: 1 }),
+      setFilterAccountManagerId: (filterAccountManagerId) => set({ filterAccountManagerId, page: 1 }),
       toggleNoRecentActivityFilter: () =>
         set((s) => ({ filterNoRecentActivity: !s.filterNoRecentActivity, page: 1 })),
       toggleFavoritesFilter: () =>
@@ -121,6 +137,10 @@ export const useCustomerStore = create<CustomerState>()(
         filterSegment: null,
         filterCountry: null,
         filterCity: null,
+        filterCsmId: null,
+        filterAwsOwnerId: null,
+        filterAzureOwnerId: null,
+        filterAccountManagerId: null,
         filterNoRecentActivity: false,
         filterFavorites: false,
         filterHealthTier: null,
@@ -128,15 +148,15 @@ export const useCustomerStore = create<CustomerState>()(
       }),
 
       getActiveFilterCount: () => {
-        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier } = get();
-        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier]
+        const { filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier } = get();
+        return [filterOwnerId, filterStatus !== 'all', filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier]
           .filter(Boolean).length;
       },
 
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier,
         } = get();
 
         let result = customers;
@@ -170,6 +190,18 @@ export const useCustomerStore = create<CustomerState>()(
         }
         if (filterCity) {
           result = result.filter((c) => normalizeCity(c.addressCity) === filterCity);
+        }
+        if (filterCsmId) {
+          result = result.filter((c) => c.customerSuccessManagerId === filterCsmId);
+        }
+        if (filterAwsOwnerId) {
+          result = result.filter((c) => c.awsOwnerId === filterAwsOwnerId);
+        }
+        if (filterAzureOwnerId) {
+          result = result.filter((c) => c.azureOwnerId === filterAzureOwnerId);
+        }
+        if (filterAccountManagerId) {
+          result = result.filter((c) => c.accountManagerId === filterAccountManagerId);
         }
         if (filterNoRecentActivity) {
           const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
@@ -222,6 +254,10 @@ export const useCustomerStore = create<CustomerState>()(
         filterSegment: state.filterSegment,
         filterCountry: state.filterCountry,
         filterCity: state.filterCity,
+        filterCsmId: state.filterCsmId,
+        filterAwsOwnerId: state.filterAwsOwnerId,
+        filterAzureOwnerId: state.filterAzureOwnerId,
+        filterAccountManagerId: state.filterAccountManagerId,
         filterNoRecentActivity: state.filterNoRecentActivity,
         filterFavorites: state.filterFavorites,
         filterHealthTier: state.filterHealthTier,

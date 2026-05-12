@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Bookmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useShortcutListener } from '@/hooks/useShortcuts';
@@ -11,6 +11,9 @@ import { useCustomerStore } from '@/store/customerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { getUniqueCities, displayCity } from '@/lib/utils/cityProvince';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { queryAllCloudBeluxUsers, type CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
+import { queryAllBelgiumTeamUsers, type BelgiumTeamUser } from '@/lib/db/queries/belgiumTeamUsers';
 import type { SortBy } from '@/store/customerStore';
 import type { HealthTier } from '@/lib/customers/healthScore';
 
@@ -32,16 +35,48 @@ export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterNoRecentActivity, filterFavorites, filterHealthTier,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier,
     setSearchQuery, setSortBy, setSortDir,
     setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
+    setFilterCsmId, setFilterAwsOwnerId, setFilterAzureOwnerId, setFilterAccountManagerId,
     toggleNoRecentActivityFilter, toggleFavoritesFilter, setFilterHealthTier, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
   const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
   const [showFilters, setShowFilters] = useState(false);
+  const [cloudUsers, setCloudUsers] = useState<CloudBeluxUser[]>([]);
+  const [belgiumUsers, setBelgiumUsers] = useState<BelgiumTeamUser[]>([]);
   const activeFilterCount = getActiveFilterCount();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isTauriApp()) return;
+    const load = async () => {
+      try {
+        const [cloud, belgium] = await Promise.all([
+          queryAllCloudBeluxUsers(),
+          queryAllBelgiumTeamUsers(),
+        ]);
+        setCloudUsers(cloud);
+        setBelgiumUsers(belgium);
+      } catch (err) {
+        console.error('[customer] Failed to load team users for filters:', err);
+      }
+    };
+    load();
+  }, []);
+
+  const cloudUserOptions = useMemo(
+    () => cloudUsers.map((u) => ({ id: u.id, name: formatDisplayName(u.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [cloudUsers],
+  );
+
+  const belgiumUserOptions = useMemo(
+    () => belgiumUsers.map((u) => ({ id: u.id, name: formatDisplayName(u.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [belgiumUsers],
+  );
 
   useShortcutListener('focus-search', useCallback(() => searchInputRef.current?.focus(), []));
   useShortcutListener('toggle-filters', useCallback(() => setShowFilters((v) => !v), []));
@@ -229,6 +264,58 @@ export function CustomerFilters() {
             </div>
           )}
 
+          {cloudUserOptions.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Customer Success Manager</label>
+              <Select value={filterCsmId ?? 'all'} onValueChange={(v) => setFilterCsmId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All CSMs" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All CSMs</SelectItem>
+                  {cloudUserOptions.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {cloudUserOptions.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">AWS Owner</label>
+              <Select value={filterAwsOwnerId ?? 'all'} onValueChange={(v) => setFilterAwsOwnerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All AWS owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All AWS owners</SelectItem>
+                  {cloudUserOptions.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {cloudUserOptions.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Azure Owner</label>
+              <Select value={filterAzureOwnerId ?? 'all'} onValueChange={(v) => setFilterAzureOwnerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All Azure owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Azure owners</SelectItem>
+                  {cloudUserOptions.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {belgiumUserOptions.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Account Manager</label>
+              <Select value={filterAccountManagerId ?? 'all'} onValueChange={(v) => setFilterAccountManagerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All account managers" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All account managers</SelectItem>
+                  {belgiumUserOptions.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">Activity</label>
             <Button
@@ -287,6 +374,26 @@ export function CustomerFilters() {
           {filterCity && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCity(null)}>
               {displayCity(filterCity)} <X size={10} />
+            </Badge>
+          )}
+          {filterCsmId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterCsmId(null)}>
+              CSM: {cloudUserOptions.find((u) => u.id === filterCsmId)?.name ?? 'Unknown'} <X size={10} />
+            </Badge>
+          )}
+          {filterAwsOwnerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterAwsOwnerId(null)}>
+              AWS: {cloudUserOptions.find((u) => u.id === filterAwsOwnerId)?.name ?? 'Unknown'} <X size={10} />
+            </Badge>
+          )}
+          {filterAzureOwnerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterAzureOwnerId(null)}>
+              Azure: {cloudUserOptions.find((u) => u.id === filterAzureOwnerId)?.name ?? 'Unknown'} <X size={10} />
+            </Badge>
+          )}
+          {filterAccountManagerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterAccountManagerId(null)}>
+              AM: {belgiumUserOptions.find((u) => u.id === filterAccountManagerId)?.name ?? 'Unknown'} <X size={10} />
             </Badge>
           )}
           {filterNoRecentActivity && (

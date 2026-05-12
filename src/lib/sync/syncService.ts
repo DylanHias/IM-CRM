@@ -1,6 +1,7 @@
 import { getD365Adapter } from './d365Adapter';
-import { fetchD365TeamUserIds, fetchCloudBeluxSalesUsers, fetchCloudBeluxSalesUserIds } from './d365UserAdapter';
+import { fetchD365TeamUserIds, fetchCloudBeluxSalesUsers, fetchCloudBeluxSalesUserIds, fetchBelgiumTeamUsers } from './d365UserAdapter';
 import { replaceCloudBeluxUsers } from '@/lib/db/queries/cloudBeluxUsers';
+import { replaceBelgiumTeamUsers } from '@/lib/db/queries/belgiumTeamUsers';
 import { fetchArrByBcn } from '@/lib/integrations/powerbi/arrAdapter';
 import { PowerBiAccessError } from '@/lib/integrations/powerbi/client';
 import { getAccessToken } from '@/lib/auth/authHelpers';
@@ -99,7 +100,7 @@ export async function runFullSync(token: string): Promise<void> {
   console.log('[sync] Starting full sync');
 
   try {
-    await Promise.all([syncOptionSets(token), syncLookupTables(token), syncCloudBeluxUsers(token)]);
+    await Promise.all([syncOptionSets(token), syncLookupTables(token), syncCloudBeluxUsers(token), syncBelgiumTeamUsers(token)]);
 
     // Resolve the caller's D365 system user ID once and persist it so analytics
     // queries can match D365-synced activities (which store the D365 GUID as created_by_id).
@@ -548,6 +549,16 @@ async function syncCloudBeluxUsers(token: string): Promise<void> {
     console.log(`[sync] Cloud Belux Sales team: ${users.length} users synced`);
   } catch (err) {
     console.error('[sync] Cloud Belux Sales team sync error:', err instanceof Error ? err.message : err);
+  }
+}
+
+async function syncBelgiumTeamUsers(token: string): Promise<void> {
+  try {
+    const users = await fetchBelgiumTeamUsers(token);
+    await replaceBelgiumTeamUsers(users);
+    console.log(`[sync] Belgium team: ${users.length} users synced`);
+  } catch (err) {
+    console.error('[sync] Belgium team sync error:', err instanceof Error ? err.message : err);
   }
 }
 
