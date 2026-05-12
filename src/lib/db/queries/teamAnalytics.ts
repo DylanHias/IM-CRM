@@ -127,7 +127,7 @@ export async function queryTeamLeaderboard(range: AnalyticsRange): Promise<Leade
              COALESCE(SUM(CASE WHEN status = 'Won' THEN estimated_revenue ELSE 0 END), 0) AS wonValue,
              COUNT(CASE WHEN status = 'Lost' THEN 1 END) AS lost
       FROM opportunities
-      WHERE status IN ('Won','Lost') AND updated_at >= $1 AND updated_at <= $2
+      WHERE status IN ('Won','Lost') AND date(close_date) >= date($1) AND date(close_date) <= date($2)
       GROUP BY created_by_id
     ) w ON w.uid = u.id
     WHERE u.analytics_tracked = 1
