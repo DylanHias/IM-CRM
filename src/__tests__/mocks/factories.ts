@@ -194,6 +194,7 @@ export function createCrmUser(overrides?: Partial<CrmUser>): CrmUser {
     title: 'Technical Account Manager',
     lastActiveAt: NOW,
     profilePhoto: null,
+    analyticsTracked: false,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,

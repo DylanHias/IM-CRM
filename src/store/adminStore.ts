@@ -4,11 +4,13 @@ import type {
   CrmUser,
   UserRole,
   SyncHealthMetrics,
-  DataQualityMetrics,
-  ActivityTimelinePoint,
-  PipelineStats,
   TableStats,
-  UserActivityBreakdown,
+  AnalyticsRange,
+  AnalyticsRangeKey,
+  LeaderboardRow,
+  UserDrilldown,
+  ZeroActivityUser,
+  OverdueFollowupSummary,
 } from '@/types/admin';
 import type { SyncRecord } from '@/types/sync';
 
@@ -16,53 +18,56 @@ interface AdminState {
   users: CrmUser[];
   syncHealth: SyncHealthMetrics | null;
   syncErrors: SyncRecord[];
-  dataQuality: DataQualityMetrics | null;
-  activityTimeline: ActivityTimelinePoint[];
-  activityByUser: UserActivityBreakdown[];
-  pipelineByStage: PipelineStats[];
-  winRate: { won: number; lost: number; open: number } | null;
   tableStats: TableStats[];
   isLoading: boolean;
+
+  // Team Analytics
+  leaderboard: LeaderboardRow[];
+  zeroActivityUsers: ZeroActivityUser[];
+  overdueByUser: OverdueFollowupSummary[];
+  drilldowns: Record<string, UserDrilldown>;
+  analyticsRange: AnalyticsRange | null;
+  isLoadingAnalytics: boolean;
+  isRefreshingFromD365: boolean;
+  drilldownLoading: Record<string, boolean>;
 
   setUsers: (users: CrmUser[]) => void;
   setSyncHealth: (health: SyncHealthMetrics) => void;
   setSyncErrors: (errors: SyncRecord[]) => void;
-  setDataQuality: (quality: DataQualityMetrics) => void;
-  setActivityTimeline: (data: ActivityTimelinePoint[]) => void;
-  setActivityByUser: (data: UserActivityBreakdown[]) => void;
-  setPipelineByStage: (data: PipelineStats[]) => void;
-  setWinRate: (data: { won: number; lost: number; open: number }) => void;
   setTableStats: (data: TableStats[]) => void;
   setLoading: (loading: boolean) => void;
 
   loadUsers: () => Promise<void>;
   refreshUsersFromD365: (token: string) => Promise<void>;
   loadSyncAdmin: () => Promise<void>;
-  loadAnalytics: () => Promise<void>;
+  loadTeamAnalytics: (rangeKey: AnalyticsRangeKey) => Promise<void>;
+  loadUserDrilldown: (userId: string, rangeKey?: AnalyticsRangeKey) => Promise<void>;
+  refreshAnalyticsFromD365: (token: string, rangeKey: AnalyticsRangeKey) => Promise<void>;
   loadDataManagement: () => Promise<void>;
   updateUserRole: (id: string, role: UserRole) => Promise<void>;
+  setUserAnalyticsTracked: (id: string, tracked: boolean) => Promise<void>;
+  bulkSetAnalyticsTracked: (ids: string[], tracked: boolean) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   syncHealth: null,
   syncErrors: [],
-  dataQuality: null,
-  activityTimeline: [],
-  activityByUser: [],
-  pipelineByStage: [],
-  winRate: null,
   tableStats: [],
   isLoading: false,
+
+  leaderboard: [],
+  zeroActivityUsers: [],
+  overdueByUser: [],
+  drilldowns: {},
+  analyticsRange: null,
+  isLoadingAnalytics: false,
+  isRefreshingFromD365: false,
+  drilldownLoading: {},
 
   setUsers: (users) => set({ users }),
   setSyncHealth: (syncHealth) => set({ syncHealth }),
   setSyncErrors: (syncErrors) => set({ syncErrors }),
-  setDataQuality: (dataQuality) => set({ dataQuality }),
-  setActivityTimeline: (activityTimeline) => set({ activityTimeline }),
-  setActivityByUser: (activityByUser) => set({ activityByUser }),
-  setPipelineByStage: (pipelineByStage) => set({ pipelineByStage }),
-  setWinRate: (winRate) => set({ winRate }),
   setTableStats: (tableStats) => set({ tableStats }),
   setLoading: (isLoading) => set({ isLoading }),
 
@@ -112,31 +117,83 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  loadAnalytics: async () => {
-    set({ isLoading: true });
+  loadTeamAnalytics: async (rangeKey: AnalyticsRangeKey) => {
+    set({ isLoadingAnalytics: true });
     try {
-      const {
-        queryDataQualityMetrics,
-        queryActivityTimeline,
-        queryActivityBreakdownByUser,
-        queryPipelineByStage,
-        queryWinRate,
-      } = await import('@/lib/db/queries/adminAnalytics');
-
-      const [dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate] =
-        await Promise.all([
-          queryDataQualityMetrics().catch((e) => { console.error('[admin] dataQuality query failed:', e); return null; }),
-          queryActivityTimeline().catch((e) => { console.error('[admin] activityTimeline query failed:', e); return [] as ActivityTimelinePoint[]; }),
-          queryActivityBreakdownByUser().catch((e) => { console.error('[admin] activityByUser query failed:', e); return [] as UserActivityBreakdown[]; }),
-          queryPipelineByStage().catch((e) => { console.error('[admin] pipelineByStage query failed:', e); return [] as PipelineStats[]; }),
-          queryWinRate().catch((e) => { console.error('[admin] winRate query failed:', e); return null; }),
-        ]);
-
-      set({ dataQuality, activityTimeline, activityByUser, pipelineByStage, winRate });
+      const { buildRange, queryTeamLeaderboard, queryZeroActivityUsers, queryOverdueFollowupsByUser } =
+        await import('@/lib/db/queries/teamAnalytics');
+      const range = buildRange(rangeKey);
+      const [leaderboard, zeroActivityUsers, overdueByUser] = await Promise.all([
+        queryTeamLeaderboard(range).catch((e) => { console.error('[admin] leaderboard query failed:', e); return []; }),
+        queryZeroActivityUsers(range).catch((e) => { console.error('[admin] zeroActivity query failed:', e); return []; }),
+        queryOverdueFollowupsByUser().catch((e) => { console.error('[admin] overdue query failed:', e); return []; }),
+      ]);
+      // Reset drilldowns whenever the range changes so we don't show stale data.
+      set({
+        leaderboard,
+        zeroActivityUsers,
+        overdueByUser,
+        analyticsRange: range,
+        drilldowns: {},
+      });
     } catch (e) {
-      console.error('[admin] loadAnalytics failed:', e);
+      console.error('[admin] loadTeamAnalytics failed:', e);
     } finally {
-      set({ isLoading: false });
+      set({ isLoadingAnalytics: false });
+    }
+  },
+
+  loadUserDrilldown: async (userId: string, rangeKey?: AnalyticsRangeKey) => {
+    const { analyticsRange, drilldownLoading } = get();
+    if (drilldownLoading[userId]) return;
+    set({ drilldownLoading: { ...drilldownLoading, [userId]: true } });
+    try {
+      const { buildRange, queryUserDrilldown } = await import('@/lib/db/queries/teamAnalytics');
+      const range = rangeKey ? buildRange(rangeKey) : (analyticsRange ?? buildRange('30d'));
+      const drilldown = await queryUserDrilldown(userId, range);
+      set((s) => ({ drilldowns: { ...s.drilldowns, [userId]: drilldown } }));
+    } catch (e) {
+      console.error('[admin] loadUserDrilldown failed:', e);
+    } finally {
+      set((s) => {
+        const next = { ...s.drilldownLoading };
+        delete next[userId];
+        return { drilldownLoading: next };
+      });
+    }
+  },
+
+  refreshAnalyticsFromD365: async (token: string, rangeKey: AnalyticsRangeKey) => {
+    if (!isTauriApp()) return;
+    set({ isRefreshingFromD365: true });
+    try {
+      const { runFullSync } = await import('@/lib/sync/syncService');
+      const { fetchD365Users } = await import('@/lib/sync/d365UserAdapter');
+      const { bulkUpsertUsers, queryAllUsers } = await import('@/lib/db/queries/users');
+
+      // 1. Refresh user roster from D365 (keeps analytics_tracked intact)
+      try {
+        const d365Users = await fetchD365Users(token);
+        await bulkUpsertUsers(d365Users);
+      } catch (e) {
+        console.error('[admin] refresh: user fetch failed:', e);
+      }
+
+      // 2. Pull latest activities, opps, follow-ups, customers, contacts
+      try {
+        await runFullSync(token);
+      } catch (e) {
+        console.error('[admin] refresh: full sync failed:', e);
+      }
+
+      // 3. Reload users + analytics from the freshly synced DB
+      const users = await queryAllUsers();
+      set({ users });
+      await get().loadTeamAnalytics(rangeKey);
+    } catch (e) {
+      console.error('[admin] refreshAnalyticsFromD365 failed:', e);
+    } finally {
+      set({ isRefreshingFromD365: false });
     }
   },
 
@@ -161,5 +218,41 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     set((s) => ({
       users: s.users.map((u) => (u.id === id ? { ...u, role } : u)),
     }));
+  },
+
+  setUserAnalyticsTracked: async (id: string, tracked: boolean) => {
+    // Optimistic update
+    set((s) => ({
+      users: s.users.map((u) => (u.id === id ? { ...u, analyticsTracked: tracked } : u)),
+    }));
+    if (!isTauriApp()) return;
+    try {
+      const { setUserAnalyticsTracked } = await import('@/lib/db/queries/users');
+      await setUserAnalyticsTracked(id, tracked);
+    } catch (e) {
+      console.error('[admin] setUserAnalyticsTracked failed:', e);
+      // Roll back on failure
+      set((s) => ({
+        users: s.users.map((u) => (u.id === id ? { ...u, analyticsTracked: !tracked } : u)),
+      }));
+    }
+  },
+
+  bulkSetAnalyticsTracked: async (ids: string[], tracked: boolean) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    // Snapshot for rollback
+    const prev = get().users;
+    set({
+      users: prev.map((u) => (idSet.has(u.id) ? { ...u, analyticsTracked: tracked } : u)),
+    });
+    if (!isTauriApp()) return;
+    try {
+      const { bulkSetAnalyticsTracked } = await import('@/lib/db/queries/users');
+      await bulkSetAnalyticsTracked(ids, tracked);
+    } catch (e) {
+      console.error('[admin] bulkSetAnalyticsTracked failed:', e);
+      set({ users: prev });
+    }
   },
 }));

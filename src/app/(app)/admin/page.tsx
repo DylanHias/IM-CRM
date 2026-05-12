@@ -13,8 +13,8 @@ import { SubSidebar } from '@/components/layout/SubSidebar';
 import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
 const TABS = [
-  { id: 'users', label: 'Users', icon: Users },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'users', label: 'Users', icon: Users, dividerAfter: true },
   { id: 'data', label: 'Data', icon: HardDrive },
   { id: 'database', label: 'Database', icon: TerminalSquare },
   { id: 'powerbi', label: 'PowerBI', icon: PieChart },
@@ -24,7 +24,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('users');
+  const [activeTab, setActiveTab] = useState<TabId>('analytics');
 
   return (
     <AdminGuard>
@@ -35,7 +35,7 @@ export default function AdminPage() {
           <div className="flex-1 min-w-0">
             <AnimatedTabPanels activeKey={activeTab}>
               {activeTab === 'users' && <UserManagement />}
-              {activeTab === 'analytics' && <AnalyticsReports />}
+              {activeTab === 'analytics' && <AnalyticsReports onGoToUsers={() => setActiveTab('users')} />}
               {activeTab === 'data' && <DataManagement />}
               {activeTab === 'database' && <DatabaseExplorer />}
               {activeTab === 'powerbi' && <PowerBiSchemaViewer />}

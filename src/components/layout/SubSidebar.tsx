@@ -9,6 +9,7 @@ interface Tab {
   id: string;
   label: string;
   icon: LucideIcon;
+  dividerAfter?: boolean;
 }
 
 interface SubSidebarProps<T extends string> {
@@ -24,30 +25,32 @@ export function SubSidebar<T extends string>({
 }: SubSidebarProps<T>) {
   return (
     <nav className={cn('flex flex-col gap-0.5 min-w-[180px] flex-shrink-0', className)}>
-      {tabs.map(({ id, label, icon: Icon }) => {
+      {tabs.map(({ id, label, icon: Icon, dividerAfter }) => {
         const isActive = activeTab === id;
         return (
-          <button
-            key={id}
-            onClick={() => onTabChange(id as T)}
-            className={cn(
-              'relative flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium',
-              'outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
-              isActive
-                ? 'text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors duration-150',
-            )}
-          >
-            {isActive && (
-              <motion.span
-                layoutId={`${layoutIdPrefix}-pill`}
-                className="absolute inset-0 bg-sidebar-accent rounded-md -z-10"
-                transition={underlineSpring}
-              />
-            )}
-            <Icon size={15} className="shrink-0 relative z-10" />
-            <span className="relative z-10">{label}</span>
-          </button>
+          <div key={id}>
+            <button
+              onClick={() => onTabChange(id as T)}
+              className={cn(
+                'relative flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium w-full',
+                'outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                isActive
+                  ? 'text-sidebar-accent-foreground'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors duration-150',
+              )}
+            >
+              {isActive && (
+                <motion.span
+                  layoutId={`${layoutIdPrefix}-pill`}
+                  className="absolute inset-0 bg-sidebar-accent rounded-md -z-10"
+                  transition={underlineSpring}
+                />
+              )}
+              <Icon size={15} className="shrink-0 relative z-10" />
+              <span className="relative z-10">{label}</span>
+            </button>
+            {dividerAfter && <div className="my-2 border-t border-sidebar-border/60" />}
+          </div>
         );
       })}
     </nav>

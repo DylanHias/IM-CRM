@@ -169,6 +169,7 @@ export interface UserRow {
   title: string | null;
   last_active_at: string | null;
   profile_photo: string | null;
+  analytics_tracked: number;
   created_at: string;
   updated_at: string;
 }

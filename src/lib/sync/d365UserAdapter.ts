@@ -17,6 +17,7 @@ function mapD365UserToCrmUser(d365: D365SystemUser, now: string, lastActionMap: 
     title: d365.jobtitle ?? null,
     lastActiveAt: lastActionMap.get(d365.systemuserid) ?? d365.modifiedon,
     profilePhoto: null,
+    analyticsTracked: false,
     createdAt: now,
     updatedAt: now,
   };

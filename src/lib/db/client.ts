@@ -215,11 +215,13 @@ async function ensureTablesExist(db: Database): Promise<void> {
       title TEXT,
       last_active_at TEXT,
       profile_photo TEXT,
+      analytics_tracked INTEGER NOT NULL DEFAULT 0 CHECK(analytics_tracked IN (0,1)),
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS option_sets (
@@ -320,6 +322,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['follow_ups', 'source',          "TEXT DEFAULT 'local'"],
     ['users',      'title',           'TEXT'],
     ['users',      'profile_photo',   'TEXT'],
+    ['users',      'analytics_tracked', 'INTEGER NOT NULL DEFAULT 0'],
     ['opportunities', 'single_or_cross_sell',          'TEXT'],
     ['opportunities', 'estimated_mrr',                 'REAL'],
     ['opportunities', 'annual_revenue',                'REAL'],
@@ -367,7 +370,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '38')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '39')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -891,6 +894,16 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '38', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 39) {
+    // Admin-only flag: which users appear in the admin Team Analytics panel.
+    // Local preference, never pushed to D365.
+    try { await db.execute(`ALTER TABLE users ADD COLUMN analytics_tracked INTEGER NOT NULL DEFAULT 0`); } catch { /* column may already exist */ }
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
+    await db.execute(
+      `UPDATE app_settings SET value = '39', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

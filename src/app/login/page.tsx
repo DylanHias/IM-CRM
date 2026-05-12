@@ -172,6 +172,7 @@ export default function LoginPage() {
           title: null,
           lastActiveAt: now,
           profilePhoto: null,
+          analyticsTracked: false,
           createdAt: now,
           updatedAt: now,
         });
@@ -210,6 +211,7 @@ export default function LoginPage() {
               title: null,
               lastActiveAt: now,
               profilePhoto: null,
+              analyticsTracked: false,
               createdAt: now,
               updatedAt: now,
             });

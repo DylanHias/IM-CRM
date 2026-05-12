@@ -12,6 +12,7 @@ function rowToUser(row: UserRow): CrmUser {
     title: row.title ?? null,
     lastActiveAt: row.last_active_at,
     profilePhoto: row.profile_photo ?? null,
+    analyticsTracked: !!row.analytics_tracked,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -19,6 +20,8 @@ function rowToUser(row: UserRow): CrmUser {
 
 export async function upsertUser(user: CrmUser): Promise<void> {
   const db = await getDb();
+  // Note: we deliberately do NOT touch analytics_tracked on upsert — it's a
+  // local admin preference that must survive D365 user refreshes.
   await db.execute(
     `INSERT INTO users (id, email, name, role, business_unit, title, last_active_at, created_at, updated_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
@@ -42,6 +45,30 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
     `UPDATE users SET role = $1, updated_at = datetime('now') WHERE id = $2`,
     [role, id]
   );
+}
+
+export async function setUserAnalyticsTracked(id: string, tracked: boolean): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE users SET analytics_tracked = $1, updated_at = datetime('now') WHERE id = $2`,
+    [tracked ? 1 : 0, id]
+  );
+}
+
+export async function bulkSetAnalyticsTracked(ids: string[], tracked: boolean): Promise<void> {
+  if (ids.length === 0) return;
+  const db = await getDb();
+  const placeholders = ids.map((_, i) => `$${i + 2}`).join(',');
+  await db.execute(
+    `UPDATE users SET analytics_tracked = $1, updated_at = datetime('now') WHERE id IN (${placeholders})`,
+    [tracked ? 1 : 0, ...ids]
+  );
+}
+
+export async function queryTrackedUserIds(): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string }[]>(`SELECT id FROM users WHERE analytics_tracked = 1`);
+  return rows.map((r) => r.id);
 }
 
 export const HARDCODED_ADMIN_EMAILS = ['dylan.hias@ingrammicro.com', 'karim.elouch@ingrammicro.com'];

@@ -109,6 +109,7 @@ async function syncUserToDb(
       title: null,
       lastActiveAt: now,
       profilePhoto: null,
+      analyticsTracked: false,
       createdAt: now,
       updatedAt: now,
     });
