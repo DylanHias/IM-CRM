@@ -79,6 +79,8 @@ export interface DrilldownTimelinePoint {
   call: number;
   visit: number;
   note: number;
+  followup: number;     // follow-ups created on this day
+  opportunity: number;  // opportunities created on this day
 }
 
 export interface DrilldownActivity {

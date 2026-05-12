@@ -14,7 +14,7 @@ function mapD365UserToCrmUser(d365: D365SystemUser, now: string, lastActionMap: 
     name: d365.fullname,
     role: 'user',
     businessUnit: d365['_businessunitid_value@OData.Community.Display.V1.FormattedValue'] ?? null,
-    title: d365.jobtitle ?? null,
+    title: d365.title ?? d365.jobtitle ?? null,
     lastActiveAt: lastActionMap.get(d365.systemuserid) ?? d365.modifiedon,
     profilePhoto: null,
     analyticsTracked: false,
@@ -92,7 +92,7 @@ async function fetchTeamMembers(token: string): Promise<D365SystemUser[]> {
   }
 
   const select = [
-    'systemuserid', 'fullname', 'internalemailaddress', 'jobtitle', 'isdisabled', 'modifiedon',
+    'systemuserid', 'fullname', 'internalemailaddress', 'title', 'jobtitle', 'isdisabled', 'modifiedon',
   ].join(',');
 
   const results: D365SystemUser[] = [];

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useAdminStore } from '@/store/adminStore';
+import { useAuthStore } from '@/store/authStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { d365Request } from '@/lib/auth/msalConfig';
 import { RefreshCw, Search, X, ArrowUpDown, ArrowUp, ArrowDown, BarChart3 } from 'lucide-react';
@@ -22,6 +23,7 @@ export function UserManagement() {
     users, isLoading, loadUsers, refreshUsersFromD365,
     setUserAnalyticsTracked, bulkSetAnalyticsTracked,
   } = useAdminStore();
+  const currentEmail = useAuthStore((s) => s.account?.username?.toLowerCase() ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortField>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -253,7 +255,16 @@ export function UserManagement() {
                   <TooltipProvider delayDuration={200}>
                     {filtered.map((user) => (
                       <tr key={user.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3 font-medium">{user.name}</td>
+                        <td className="px-4 py-3 font-medium">
+                          <span className="inline-flex items-center gap-2">
+                            {user.name}
+                            {currentEmail && user.email?.toLowerCase() === currentEmail && (
+                              <span className="inline-flex items-center rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                You
+                              </span>
+                            )}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
                         <td className="px-4 py-3 text-muted-foreground">{user.title || '—'}</td>
                         <td className="px-4 py-3 text-muted-foreground">

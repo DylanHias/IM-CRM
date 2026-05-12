@@ -47,6 +47,14 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
   );
 }
 
+export async function touchUserLastActive(id: string, isoTimestamp: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE users SET last_active_at = $1, updated_at = $1 WHERE id = $2`,
+    [isoTimestamp, id]
+  );
+}
+
 export async function setUserAnalyticsTracked(id: string, tracked: boolean): Promise<void> {
   const db = await getDb();
   await db.execute(
@@ -98,7 +106,29 @@ export async function queryD365UserIdByEmail(email: string): Promise<string | nu
 }
 
 export async function bulkUpsertUsers(users: CrmUser[]): Promise<void> {
+  const db = await getDb();
   for (const user of users) {
+    // Merge any pre-existing row that shares this user's email but has a different
+    // ID (typically the MSAL-inserted "self" row, which uses a different GUID than
+    // D365's systemuserid). Preserve its analytics_tracked preference and drop it
+    // so we don't end up with the same person twice in the admin list.
+    if (user.email) {
+      const conflicts = await db.select<{ id: string; analytics_tracked: number }[]>(
+        `SELECT id, analytics_tracked FROM users WHERE LOWER(email) = LOWER($1) AND id <> $2`,
+        [user.email, user.id]
+      );
+      if (conflicts.length > 0) {
+        const preservedTracked = conflicts.some((c) => !!c.analytics_tracked);
+        for (const c of conflicts) {
+          await db.execute(`DELETE FROM users WHERE id = $1`, [c.id]);
+        }
+        await upsertUser(user);
+        if (preservedTracked) {
+          await setUserAnalyticsTracked(user.id, true);
+        }
+        continue;
+      }
+    }
     await upsertUser(user);
   }
 }

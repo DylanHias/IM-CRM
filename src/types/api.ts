@@ -125,6 +125,7 @@ export interface D365SystemUser {
   systemuserid: string;
   fullname: string;
   internalemailaddress: string | null;
+  title: string | null;
   jobtitle: string | null;
   isdisabled: boolean;
   '_businessunitid_value': string | null;

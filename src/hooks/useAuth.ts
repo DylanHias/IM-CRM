@@ -90,30 +90,54 @@ export async function loadProfilePhoto(userId: string): Promise<void> {
   }
 }
 
+function normalizeDisplayName(raw: string | undefined): string {
+  const name = (raw ?? '').trim();
+  if (!name) return 'Unknown';
+  // MSAL often returns "Last, First" — flip to "First Last" so it matches D365's fullname format.
+  const commaIdx = name.indexOf(',');
+  if (commaIdx > 0 && commaIdx < name.length - 1) {
+    const last = name.slice(0, commaIdx).trim();
+    const first = name.slice(commaIdx + 1).trim();
+    if (first && last) return `${first} ${last}`;
+  }
+  return name;
+}
+
 async function syncUserToDb(
   account: { localAccountId?: string; username?: string; name?: string },
   setIsAdmin: (isAdmin: boolean) => void,
 ): Promise<void> {
   if (!isTauriApp() || !account.localAccountId) return;
   try {
-    const { upsertUser, isUserAdmin, isHardcodedAdmin } = await import('@/lib/db/queries/users');
+    const { upsertUser, isUserAdmin, isHardcodedAdmin, queryD365UserIdByEmail } = await import('@/lib/db/queries/users');
     const now = new Date().toISOString();
     const email = account.username ?? '';
     const role = isHardcodedAdmin(email) ? 'admin' : 'user';
-    await upsertUser({
-      id: account.localAccountId,
-      email,
-      name: account.name ?? 'Unknown',
-      role,
-      businessUnit: null,
-      title: null,
-      lastActiveAt: now,
-      profilePhoto: null,
-      analyticsTracked: false,
-      createdAt: now,
-      updatedAt: now,
-    });
-    const admin = await isUserAdmin(account.localAccountId);
+
+    // If a row already exists for this email (e.g. previously synced from D365 with
+    // a different systemuserid), just refresh its lastActiveAt — don't clobber the
+    // D365-sourced business_unit/role/title with our MSAL placeholders.
+    const existingId = email ? await queryD365UserIdByEmail(email) : null;
+    if (existingId) {
+      const { touchUserLastActive } = await import('@/lib/db/queries/users');
+      await touchUserLastActive(existingId, now);
+    } else {
+      await upsertUser({
+        id: account.localAccountId,
+        email,
+        name: normalizeDisplayName(account.name),
+        role,
+        businessUnit: null,
+        title: null,
+        lastActiveAt: now,
+        profilePhoto: null,
+        analyticsTracked: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    const idToUse = existingId ?? account.localAccountId;
+    const admin = await isUserAdmin(idToUse);
     setIsAdmin(admin);
   } catch (dbErr) {
     console.error('[auth] DB user sync failed (staying authenticated):', dbErr);

@@ -209,12 +209,28 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
   const db = await getDb();
   const { start, end } = range;
 
-  const [timelineRows, activities, openOpps, staleCustomers, overdueFollowups, openOppsValueRows] = await Promise.all([
+  const [timelineRows, followupTimelineRows, opportunityTimelineRows, activities, openOpps, staleCustomers, overdueFollowups, openOppsValueRows] = await Promise.all([
     db.select<{ date: string; type: string; count: number }[]>(
       `SELECT strftime('%Y-%m-%d', occurred_at) AS date, type, COUNT(*) AS count
        FROM activities
        WHERE created_by_id = $1 AND occurred_at >= $2 AND occurred_at <= $3
        GROUP BY date, type
+       ORDER BY date`,
+      [userId, start, end]
+    ),
+    db.select<{ date: string; count: number }[]>(
+      `SELECT strftime('%Y-%m-%d', created_at) AS date, COUNT(*) AS count
+       FROM follow_ups
+       WHERE created_by_id = $1 AND created_at >= $2 AND created_at <= $3
+       GROUP BY date
+       ORDER BY date`,
+      [userId, start, end]
+    ),
+    db.select<{ date: string; count: number }[]>(
+      `SELECT strftime('%Y-%m-%d', created_at) AS date, COUNT(*) AS count
+       FROM opportunities
+       WHERE created_by_id = $1 AND created_at >= $2 AND created_at <= $3
+       GROUP BY date
        ORDER BY date`,
       [userId, start, end]
     ),
@@ -303,7 +319,7 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
   ]);
 
   // Build a complete timeline so the chart has every day in range (zero-filled gaps)
-  const timeline = buildContinuousTimeline(start, end, timelineRows);
+  const timeline = buildContinuousTimeline(start, end, timelineRows, followupTimelineRows, opportunityTimelineRows);
 
   return {
     userId,
@@ -326,7 +342,9 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
 function buildContinuousTimeline(
   startIso: string,
   endIso: string,
-  rows: { date: string; type: string; count: number }[]
+  rows: { date: string; type: string; count: number }[],
+  followupRows: { date: string; count: number }[],
+  opportunityRows: { date: string; count: number }[]
 ): DrilldownTimelinePoint[] {
   const start = new Date(startIso);
   const end = new Date(endIso);
@@ -336,7 +354,7 @@ function buildContinuousTimeline(
   const map = new Map<string, DrilldownTimelinePoint>();
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const key = d.toISOString().split('T')[0];
-    map.set(key, { date: key, meeting: 0, call: 0, visit: 0, note: 0 });
+    map.set(key, { date: key, meeting: 0, call: 0, visit: 0, note: 0, followup: 0, opportunity: 0 });
   }
   for (const { date, type, count } of rows) {
     const point = map.get(date);
@@ -344,6 +362,14 @@ function buildContinuousTimeline(
     if (type === 'meeting' || type === 'call' || type === 'visit' || type === 'note') {
       point[type] = count;
     }
+  }
+  for (const { date, count } of followupRows) {
+    const point = map.get(date);
+    if (point) point.followup = count;
+  }
+  for (const { date, count } of opportunityRows) {
+    const point = map.get(date);
+    if (point) point.opportunity = count;
   }
   return Array.from(map.values());
 }

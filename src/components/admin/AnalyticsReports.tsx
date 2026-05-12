@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import {
   RefreshCw, Search, X, ArrowUp, ArrowDown,
@@ -64,11 +64,16 @@ const ACTIVITY_LABELS: Record<ActivityType, string> = {
   note: 'Note',
 };
 
-const timelineConfig = {
-  meeting: { label: 'Meeting', color: 'hsl(var(--primary))' },
-  call: { label: 'Call', color: 'hsl(var(--chart-2, 220 70% 50%))' },
-  visit: { label: 'Visit', color: 'hsl(var(--chart-3, 150 60% 40%))' },
-  note: { label: 'Note', color: 'hsl(var(--chart-4, 280 65% 60%))' },
+const TIMELINE_KEYS = ['meeting', 'call', 'visit', 'note', 'followup', 'opportunity'] as const;
+type TimelineKey = (typeof TIMELINE_KEYS)[number];
+
+const timelineConfig: Record<TimelineKey, { label: string; color: string }> = {
+  meeting: { label: 'Meeting', color: 'hsl(217 90% 58%)' },      // blue
+  call: { label: 'Call', color: 'hsl(190 85% 45%)' },             // cyan
+  visit: { label: 'Visit', color: 'hsl(142 65% 42%)' },           // green
+  note: { label: 'Note', color: 'hsl(270 70% 62%)' },             // purple
+  followup: { label: 'Follow-up', color: 'hsl(330 80% 58%)' },    // pink
+  opportunity: { label: 'Opportunity', color: 'hsl(35 95% 55%)' },// amber
 };
 
 function fmt(n: number): string {
@@ -213,13 +218,13 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
           onRefresh={handleRefresh}
         />
 
-        {/* Team totals — sum of every tracked rep */}
+        {/* Team totals — sum of every tracked user */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <MetricCard
             label="Team Activities"
             value={isLoadingAnalytics ? '—' : fmt(teamTotals.activities)}
             icon={Activity}
-            sub={`${leaderboard.length} tracked rep${leaderboard.length !== 1 ? 's' : ''}`}
+            sub={`${leaderboard.length} tracked user${leaderboard.length !== 1 ? 's' : ''}`}
           />
           <MetricCard
             label="Follow-Up Completion"
@@ -253,7 +258,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
             title="Zero activities this period"
             tone={zeroActivityUsers.length > 0 ? 'warning' : 'ok'}
             icon={AlertCircle}
-            emptyText="Every tracked rep logged at least one activity."
+            emptyText="Every tracked user logged at least one activity."
             items={zeroActivityUsers.map((u) => ({
               key: u.userId,
               primary: u.userName,
@@ -262,7 +267,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
             }))}
           />
           <AlertCard
-            title="Overdue follow-ups by rep"
+            title="Overdue follow-ups by user"
             tone={overdueByUser.length > 0 ? 'destructive' : 'ok'}
             icon={AlertTriangle}
             emptyText="No overdue follow-ups across the team."
@@ -288,7 +293,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
             <div className="relative w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
               <Input
-                placeholder="Search rep…"
+                placeholder="Search user…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-8 pr-7 h-8 text-xs bg-card shadow-sm border-border/70 rounded-lg"
@@ -308,7 +313,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/20 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <SortableTh field="name" label="Rep" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} align="left" sticky />
+                  <SortableTh field="name" label="User" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} align="left" sticky />
                   <SortableTh field="activityTotal" label="Total" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} tooltip="All activities logged in range" />
                   <SortableTh field="meetings" label="Mtg" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} tooltip="Meetings" />
                   <SortableTh field="calls" label="Call" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} tooltip="Calls" />
@@ -370,7 +375,7 @@ function Header({
       <div>
         <h2 className="text-sm font-semibold">Team Analytics</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Per-rep activity for {RANGE_LABELS[rangeKey].toLowerCase()}
+          Per-user activity for {RANGE_LABELS[rangeKey].toLowerCase()}
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -483,7 +488,13 @@ function SortableTh({
   sticky?: boolean;
 }) {
   const active = sortBy === field;
-  const content = (
+  const inner = (
+    <span className={cn('inline-flex items-center gap-1', align !== 'left' && 'justify-end w-full')}>
+      {label}
+      {active && (sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+    </span>
+  );
+  return (
     <th
       className={cn(
         'px-2 py-2.5 font-semibold whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors',
@@ -492,21 +503,16 @@ function SortableTh({
       )}
       onClick={() => onToggle(field)}
     >
-      <span className={cn('inline-flex items-center gap-1', align !== 'left' && 'justify-end w-full')}>
-        {label}
-        {active && (sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
-      </span>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{inner}</TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">{tooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        inner
+      )}
     </th>
   );
-  if (tooltip) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">{tooltip}</TooltipContent>
-      </Tooltip>
-    );
-  }
-  return content;
 }
 
 // ── Leaderboard row + drilldown ───────────────────────────────────────────
@@ -645,25 +651,17 @@ function DrilldownPanel({
         />
       </div>
 
-      {/* Activity timeline */}
+      {/* Daily output */}
       <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity Timeline</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Activities per day, stacked by type</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Daily Output</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Activities, follow-ups, and opportunities logged per day</p>
           </div>
         </div>
-        {drilldown.timeline.some((p) => p.meeting + p.call + p.visit + p.note > 0) ? (
-          <ChartContainer config={timelineConfig} className="aspect-auto h-[200px] w-full">
-            <AreaChart data={drilldown.timeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-              <defs>
-                {ACTIVITY_TYPES.map((type) => (
-                  <linearGradient key={type} id={`fill-${type}-${row.userId}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={`var(--color-${type})`} stopOpacity={0.7} />
-                    <stop offset="95%" stopColor={`var(--color-${type})`} stopOpacity={0.05} />
-                  </linearGradient>
-                ))}
-              </defs>
+        {drilldown.timeline.some((p) => p.meeting + p.call + p.visit + p.note + p.followup + p.opportunity > 0) ? (
+          <ChartContainer config={timelineConfig} className="aspect-auto h-[240px] w-full">
+            <BarChart data={drilldown.timeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <CartesianGrid vertical={false} className="stroke-border" />
               <XAxis
                 dataKey="date"
@@ -674,23 +672,20 @@ function DrilldownPanel({
                 interval="preserveStartEnd"
               />
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-              {ACTIVITY_TYPES.map((type) => (
-                <Area
-                  key={type}
-                  dataKey={type}
-                  type="monotone"
-                  stackId="1"
-                  fill={`url(#fill-${type}-${row.userId})`}
-                  stroke={`var(--color-${type})`}
-                  strokeWidth={1.5}
+              <ChartTooltip cursor={{ fill: 'hsl(var(--muted) / 0.4)' }} content={<ChartTooltipContent indicator="dot" />} />
+              {TIMELINE_KEYS.map((key) => (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={`var(--color-${key})`}
+                  radius={[2, 2, 0, 0]}
                 />
               ))}
-              <ChartLegend content={<ChartLegendContent />} />
-            </AreaChart>
+              <ChartLegend verticalAlign="bottom" content={<ChartLegendContent />} />
+            </BarChart>
           </ChartContainer>
         ) : (
-          <p className="py-6 text-center text-sm text-muted-foreground">No activities logged in this period.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Nothing logged in this period.</p>
         )}
       </div>
 
@@ -708,13 +703,19 @@ function DrilldownPanel({
                 <Icon size={13} className="text-muted-foreground mt-0.5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="font-medium truncate">{a.subject || `(${ACTIVITY_LABELS[a.type]})`}</p>
+                    <Link
+                      href={`/customers?id=${a.customerId}&tab=activities`}
+                      className="font-medium truncate hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {a.subject || `(${ACTIVITY_LABELS[a.type]})`}
+                    </Link>
                     <span className="text-muted-foreground text-[10px] shrink-0">
                       {new Date(a.occurredAt).toLocaleDateString('nl-BE', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
                   <Link
-                    href={`/customers/${a.customerId}`}
+                    href={`/customers?id=${a.customerId}`}
                     className="text-muted-foreground hover:text-foreground hover:underline truncate inline-block max-w-full"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -736,14 +737,20 @@ function DrilldownPanel({
               <Target size={13} className="text-muted-foreground mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="font-medium truncate">{o.subject}</p>
+                  <Link
+                    href={`/opportunities?id=${o.id}`}
+                    className="font-medium truncate hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {o.subject}
+                  </Link>
                   <span className="font-semibold tabular-nums shrink-0">
                     {o.estimatedRevenue !== null ? fmtEur(o.estimatedRevenue) : '—'}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Link
-                    href={`/customers/${o.customerId}`}
+                    href={`/customers?id=${o.customerId}`}
                     className="hover:text-foreground hover:underline truncate"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -771,13 +778,19 @@ function DrilldownPanel({
               <AlertTriangle size={13} className="text-destructive mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="font-medium truncate">{f.title}</p>
+                  <Link
+                    href={`/customers?id=${f.customerId}&tab=followups`}
+                    className="font-medium truncate hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {f.title}
+                  </Link>
                   <span className="text-destructive text-[10px] shrink-0 font-medium">
                     {f.daysOverdue}d late
                   </span>
                 </div>
                 <Link
-                  href={`/customers/${f.customerId}`}
+                  href={`/customers?id=${f.customerId}`}
                   className="text-muted-foreground hover:text-foreground hover:underline truncate inline-block max-w-full"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -799,7 +812,7 @@ function DrilldownPanel({
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <Link
-                    href={`/customers/${c.id}`}
+                    href={`/customers?id=${c.id}`}
                     className="font-medium truncate hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
