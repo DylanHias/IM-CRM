@@ -398,7 +398,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '40')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '41')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -961,6 +961,15 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '40', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 41) {
+    // v40 reset the watermark but bulkUpsertCustomers was dropping the new columns, so the
+    // backfill silently no-op'd. Reset again now that bulkUpsertCustomers persists them.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    await db.execute(
+      `UPDATE app_settings SET value = '41', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

@@ -306,8 +306,8 @@ export async function removeCustomerFavorite(customerId: string): Promise<void> 
 export async function bulkUpsertCustomers(customers: Customer[]): Promise<number> {
   if (customers.length === 0) return 0;
   const db = await getDb();
-  const COLS = 30;
-  const CHUNK = Math.floor(999 / COLS); // ~33 rows per batch
+  const COLS = 32;
+  const CHUNK = Math.floor(999 / COLS); // ~31 rows per batch
   let changed = 0;
 
   for (let i = 0; i < customers.length; i += CHUNK) {
@@ -324,6 +324,7 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
       c.lastActivityAt, c.syncedAt, c.createdAt, c.updatedAt,
       c.customerSuccessManagerId, c.customerSuccessManagerName,
       c.awsOwnerId, c.awsOwnerName, c.azureOwnerId, c.azureOwnerName,
+      c.accountManagerId, c.accountManagerName,
       c.mpnId, c.apnId,
     ]);
     const result = await db.execute(
@@ -334,6 +335,7 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
         status, last_activity_at, synced_at, created_at, updated_at,
         customer_success_manager_id, customer_success_manager_name,
         aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+        account_manager_id, account_manager_name,
         mpn_id, apn_id
       ) VALUES ${placeholders}
       ON CONFLICT(id) DO UPDATE SET
@@ -351,6 +353,8 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
         aws_owner_name=excluded.aws_owner_name,
         azure_owner_id=excluded.azure_owner_id,
         azure_owner_name=excluded.azure_owner_name,
+        account_manager_id=excluded.account_manager_id,
+        account_manager_name=excluded.account_manager_name,
         mpn_id=excluded.mpn_id,
         apn_id=excluded.apn_id,
         last_activity_at=MAX(COALESCE(customers.last_activity_at,''), COALESCE(excluded.last_activity_at,'')),
