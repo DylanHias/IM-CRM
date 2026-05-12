@@ -7,7 +7,7 @@ import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
 import { useAuthStore } from '@/store/authStore';
 import { bulkUpsertCustomers, bulkUpdateCustomerArrByBcn, clearStaleCustomerArr, recomputeLastActivityDates, recomputeCloudCustomerStatus, recomputeCustomerHealthScores, queryAllCustomerIds } from '@/lib/db/queries/customers';
-import { bulkUpsertContacts, queryAllContactIds, queryContactPushInfo, queryPendingContacts, markContactSynced, markContactSyncError } from '@/lib/db/queries/contacts';
+import { bulkUpsertContacts, queryAllContactIds, queryContactPushInfo, queryPendingContacts, markContactSynced, markContactSyncError, preloadContactState } from '@/lib/db/queries/contacts';
 import { queryPendingActivities, markActivitySynced, markActivitySyncError, preloadActivityState, bulkUpsertActivities } from '@/lib/db/queries/activities';
 import { queryPendingFollowUps, markFollowUpSynced, markFollowUpSyncError, preloadFollowUpState, bulkUpsertFollowUps } from '@/lib/db/queries/followups';
 import {
@@ -213,7 +213,8 @@ async function syncD365(token: string): Promise<void> {
     // --- Contacts ---
     emitProgress('Syncing contacts...', processed, grandTotal);
     console.time('[sync] write:contacts');
-    const contactChanged = await bulkUpsertContacts(contacts, localCustomerIds);
+    const existingContactMap = await preloadContactState();
+    const contactChanged = await bulkUpsertContacts(contacts, localCustomerIds, existingContactMap);
     console.timeEnd('[sync] write:contacts');
     pulled += contactChanged;
     processed += contacts.length;
