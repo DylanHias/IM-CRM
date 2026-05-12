@@ -347,8 +347,21 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['opportunities', 'competitor_id',                 'TEXT'],
     ['opportunities', 'close_description',             'TEXT'],
   ];
+  const tableColumns = new Map<string, Set<string>>();
+  const uniqueTables = Array.from(new Set(cols.map((c) => c[0])));
+  for (const table of uniqueTables) {
+    const info = await db.select<{ name: string }[]>(`PRAGMA table_info(${table})`);
+    tableColumns.set(table, new Set(info.map((c) => c.name)));
+  }
   for (const [table, col, def] of cols) {
-    try { await db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); } catch { /* column already exists */ }
+    if (tableColumns.get(table)?.has(col)) continue;
+    try {
+      await db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+      tableColumns.get(table)?.add(col);
+    } catch (err) {
+      console.error(`[db] Failed to add column ${table}.${col}:`, err);
+      throw err;
+    }
   }
 }
 
@@ -900,7 +913,10 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   if (currentVersion < 39) {
     // Admin-only flag: which users appear in the admin Team Analytics panel.
     // Local preference, never pushed to D365.
-    try { await db.execute(`ALTER TABLE users ADD COLUMN analytics_tracked INTEGER NOT NULL DEFAULT 0`); } catch { /* column may already exist */ }
+    const cols = await db.select<{ name: string }[]>(`PRAGMA table_info(users)`);
+    if (!cols.some((c) => c.name === 'analytics_tracked')) {
+      await db.execute(`ALTER TABLE users ADD COLUMN analytics_tracked INTEGER NOT NULL DEFAULT 0`);
+    }
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
     await db.execute(
       `UPDATE app_settings SET value = '39', updated_at = datetime('now') WHERE key = 'schema_version'`

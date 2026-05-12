@@ -13,6 +13,7 @@ import { useLookupTableStore } from '@/store/lookupTableStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { Toaster } from 'sonner';
+import { Button } from '@/components/ui/button';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
 function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -25,7 +26,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
+
+  const retryInit = async () => {
+    setRetrying(true);
+    setDbError(null);
+    try {
+      await initDb();
+      setDbReady(true);
+      await Promise.all([
+        useSettingsStore.getState().hydrateFromDb(),
+        useOptionSetStore.getState().hydrateFromDb(),
+        useLookupTableStore.getState().hydrateFromDb(),
+      ]);
+    } catch (err) {
+      console.error('[db] Retry failed:', err);
+      setDbError(err instanceof Error ? err.message : 'Database initialization failed');
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -87,9 +108,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   if (dbError) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <p className="text-destructive font-medium">Database failed to initialize</p>
-          <p className="text-sm text-muted-foreground">{dbError}</p>
+        <div className="text-center space-y-4 max-w-md px-6">
+          <div className="space-y-2">
+            <p className="text-destructive font-medium">Database failed to initialize</p>
+            <p className="text-sm text-muted-foreground break-words">{dbError}</p>
+          </div>
+          <Button onClick={retryInit} disabled={retrying} size="sm">
+            {retrying ? 'Retrying…' : 'Retry'}
+          </Button>
         </div>
       </div>
     );
