@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import {
   RefreshCw, Search, X, ArrowUp, ArrowDown,
@@ -661,7 +661,15 @@ function DrilldownPanel({
         </div>
         {drilldown.timeline.some((p) => p.meeting + p.call + p.visit + p.note + p.followup + p.opportunity > 0) ? (
           <ChartContainer config={timelineConfig} className="aspect-auto h-[240px] w-full">
-            <BarChart data={drilldown.timeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <AreaChart data={drilldown.timeline} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+              <defs>
+                {TIMELINE_KEYS.map((key) => (
+                  <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={`var(--color-${key})`} stopOpacity={0.8} />
+                    <stop offset="95%" stopColor={`var(--color-${key})`} stopOpacity={0.1} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid vertical={false} className="stroke-border" />
               <XAxis
                 dataKey="date"
@@ -674,15 +682,16 @@ function DrilldownPanel({
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
               <ChartTooltip cursor={{ fill: 'hsl(var(--muted) / 0.4)' }} content={<ChartTooltipContent indicator="dot" />} />
               {TIMELINE_KEYS.map((key) => (
-                <Bar
+                <Area
                   key={key}
                   dataKey={key}
-                  fill={`var(--color-${key})`}
-                  radius={[2, 2, 0, 0]}
+                  type="natural"
+                  fill={`url(#fill-${key})`}
+                  stroke={`var(--color-${key})`}
                 />
               ))}
               <ChartLegend verticalAlign="bottom" content={<ChartLegendContent />} />
-            </BarChart>
+            </AreaChart>
           </ChartContainer>
         ) : (
           <p className="py-6 text-center text-sm text-muted-foreground">Nothing logged in this period.</p>
