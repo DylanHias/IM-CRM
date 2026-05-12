@@ -1040,6 +1040,29 @@ class RealD365Adapter implements ID365Adapter {
         .filter((x) => x.remoteId && x.label);
     };
 
+    // im360_contacttypes: name lives in `im360_contacttype` (not `im360_name`),
+    // records are country-scoped (BE/NL/LU duplicates), and inactive rows hold "DO NOT USE THIS TYPE" entries.
+    const fetchContactTypes = async (): Promise<LookupTableItem[]> => {
+      const url = `${this.baseUrl}/api/data/v9.2/im360_contacttypes?$select=im360_contacttypeid,im360_contacttype,im360_contacttypecountrycode,statecode&$filter=statecode eq 0`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        console.error(`[sync] Contact types fetch failed ${res.status}: ${await res.text()}`);
+        return [];
+      }
+      const json = (await res.json()) as { value: Array<Record<string, unknown>> };
+      return json.value
+        .map((r) => {
+          const type = String(r.im360_contacttype ?? '').trim();
+          const cc = String(r.im360_contacttypecountrycode ?? '').trim();
+          const country = cc.split('/').pop()?.trim() ?? '';
+          return {
+            remoteId: String(r.im360_contacttypeid ?? ''),
+            label: country ? `${type} (${country})` : type,
+          };
+        })
+        .filter((x) => x.remoteId && x.label && !x.label.toUpperCase().includes('DO NOT USE'));
+    };
+
     // Only fetch cloud vendors whose name STARTS with AWS / MICROSOFT / Azure — full table has hundreds of hardware vendors,
     // and substring matches like "A&C - MICROSOFT SMARTPHONE" leak through `contains`.
     const vendorFilter = encodeURIComponent(
@@ -1050,8 +1073,9 @@ class RealD365Adapter implements ID365Adapter {
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_servicenames?$select=im360_servicenameid,im360_name`, 'im360_servicenameid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/im360_countries?$select=im360_countryid,im360_name`, 'im360_countryid', 'im360_name'),
       fetchOne(`${this.baseUrl}/api/data/v9.2/transactioncurrencies?$select=transactioncurrencyid,isocurrencycode&$filter=isocurrencycode eq 'EUR' or isocurrencycode eq 'USD'`, 'transactioncurrencyid', 'isocurrencycode'),
-      fetchOne(`${this.baseUrl}/api/data/v9.2/im360_contacttypes?$select=im360_contacttypeid,im360_name`, 'im360_contacttypeid', 'im360_name'),
+      fetchContactTypes(),
     ]);
+    console.log(`[sync] Lookup tables fetched — contacttypes: ${contactTypes.length}, countries: ${countries.length}, vendors: ${vendors.length}, services: ${serviceNames.length}, currencies: ${currencies.length}`);
 
     return [
       { key: 'opportunity.primaryvendor', items: vendors },

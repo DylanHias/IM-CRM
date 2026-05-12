@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { underlineSpring, tabPanelMotion, statCardMotion, sectionReveal } from '@/lib/motion';
 import {
@@ -287,13 +288,19 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
         ),
       );
       const contact = updated.find((c) => c.id === contactId);
-      if (contact?.remoteId) {
-        directPushPrimaryContact(customerId, contact.remoteId).catch((err) =>
-          console.error('[contact] D365 primary contact push failed:', err),
-        );
+      if (!contact?.remoteId) {
+        console.warn('[contact] Primary contact push skipped: contact not yet synced to D365');
+        toast.info('Primary contact saved locally. Will sync to D365 once the contact itself syncs.');
+        return;
+      }
+      const pushResult = await directPushPrimaryContact(customerId, contact.remoteId);
+      if (!pushResult.success) {
+        console.error('[contact] D365 primary contact push failed:', pushResult.error);
+        toast.error(`Could not update primary contact in D365: ${pushResult.error}`);
       }
     } catch (err) {
       console.error('[contact] Failed to set primary contact:', err);
+      toast.error('Failed to set primary contact');
     }
   }, [contacts, customerId]);
 
