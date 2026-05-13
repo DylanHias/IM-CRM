@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpportunityForm } from '@/components/opportunities/OpportunityForm';
@@ -40,10 +40,14 @@ describe('OpportunityForm', () => {
     expect(inputs.length).toBeGreaterThan(0);
   });
 
-  it('submit button is disabled when subject is empty', () => {
+  it('shows error styling and blocks submit when subject is empty', () => {
     render(<OpportunityForm {...defaultProps} />);
     const submitButton = screen.getByRole('button', { name: /create opportunity/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton).toBeEnabled();
+    const form = submitButton.closest('form')!;
+    fireEvent.submit(form);
+    expect(mockOnSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/subject \*/i)).toHaveClass('text-rose-600');
   });
 
   it('cancel button calls onCancel', async () => {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FollowUpForm } from '@/components/followups/FollowUpForm';
@@ -50,19 +50,29 @@ describe('FollowUpForm', () => {
     expect(screen.getByLabelText(/due date/i)).toBeInTheDocument();
   });
 
-  it('submit button is disabled when title is empty', () => {
+  it('shows error styling and blocks submit when title is empty', () => {
     render(<FollowUpForm {...defaultProps} />);
     const submitButton = screen.getByRole('button', { name: /create follow-up/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton).toBeEnabled();
+    const form = submitButton.closest('form')!;
+    fireEvent.submit(form);
+    expect(mockCreateFollowUp).not.toHaveBeenCalled();
+    expect(screen.getByText(/title \*/i)).toHaveClass('text-rose-600');
   });
 
-  it('submit button is disabled when due date is empty', async () => {
+  it('shows error styling and blocks submit when due date is empty', async () => {
     const user = userEvent.setup();
     render(<FollowUpForm {...defaultProps} />);
     await user.type(screen.getByLabelText(/title/i), 'Check in');
-    // Due date is still empty
+    // Clear the default due date so it's empty
+    const dateInput = screen.getByLabelText(/due date/i);
+    fireEvent.change(dateInput, { target: { value: '' } });
     const submitButton = screen.getByRole('button', { name: /create follow-up/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton).toBeEnabled();
+    const form = submitButton.closest('form')!;
+    fireEvent.submit(form);
+    expect(mockCreateFollowUp).not.toHaveBeenCalled();
+    expect(screen.getByText(/due date \*/i)).toHaveClass('text-rose-600');
   });
 
   it('submit button is enabled when title and due date have values', async () => {

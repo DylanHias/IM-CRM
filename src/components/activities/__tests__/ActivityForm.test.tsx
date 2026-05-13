@@ -81,10 +81,14 @@ describe('ActivityForm', () => {
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
-  it('submit button is disabled when subject is empty', () => {
+  it('shows error styling and blocks submit when subject is empty', () => {
     render(<ActivityForm {...defaultProps} />);
     const submitButton = screen.getByRole('button', { name: /log activity/i });
-    expect(submitButton).toBeDisabled();
+    expect(submitButton).toBeEnabled();
+    const form = submitButton.closest('form')!;
+    fireEvent.submit(form);
+    expect(mockCreateActivity).not.toHaveBeenCalled();
+    expect(screen.getByText(/subject \*/i)).toHaveClass('text-rose-600');
   });
 
   it('submit button is enabled when subject has value', async () => {
