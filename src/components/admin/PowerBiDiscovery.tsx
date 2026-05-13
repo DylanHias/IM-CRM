@@ -8,6 +8,7 @@ import { Loader2, Copy, Check } from 'lucide-react';
 
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
+const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const POWERBI_BASE = 'https://api.powerbi.com/v1.0/myorg';
 
 interface ProbeResult {
@@ -45,7 +46,15 @@ export function PowerBiDiscovery() {
         return;
       }
 
+      const workspaceProbes = WORKSPACE_ID
+        ? [
+            probe(token, `/groups/${WORKSPACE_ID}/datasets/${DATASET_ID}`),
+            probe(token, `/groups/${WORKSPACE_ID}/datasets`),
+          ]
+        : [];
+
       const initial = await Promise.all([
+        ...workspaceProbes,
         probe(token, `/datasets/${DATASET_ID}`),
         probe(token, `/datasets`),
         probe(token, `/apps`),
