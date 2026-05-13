@@ -8,7 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useFollowUps } from '@/hooks/useFollowUps';
+import { useSettingsStore } from '@/store/settingsStore';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+
+function offsetDateISO(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
 
 interface FollowUpFormProps {
   customerId: string;
@@ -19,17 +26,22 @@ interface FollowUpFormProps {
 export function FollowUpForm({ customerId, customerName, activityId }: FollowUpFormProps) {
   const router = useRouter();
   const { createFollowUp } = useFollowUps(customerId);
+  const defaultDueDays = useSettingsStore((s) => s.defaultFollowUpDueDays);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(() => offsetDateISO(defaultDueDays));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !dueDate) return;
+    if (!title.trim() || !dueDate) {
+      setShowErrors(true);
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -77,13 +89,14 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="title">Title *</Label>
+        <Label htmlFor="title" className={showErrors && !title.trim() ? 'text-rose-600' : ''}>Title *</Label>
         <Input
           id="title"
           placeholder="What needs to be done?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
+          className={showErrors && !title.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''}
         />
       </div>
 
@@ -99,13 +112,14 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="dueDate">Due Date *</Label>
+        <Label htmlFor="dueDate" className={showErrors && !dueDate ? 'text-rose-600' : ''}>Due Date *</Label>
         <DatePicker
           id="dueDate"
           value={dueDate}
           onChange={setDueDate}
           minDate={new Date()}
           placeholder="Select due date"
+          className={showErrors && !dueDate ? '!border-rose-500' : ''}
         />
       </div>
 
@@ -113,7 +127,7 @@ export function FollowUpForm({ customerId, customerName, activityId }: FollowUpF
         <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting || !title.trim() || !dueDate} className="flex-1">
+        <Button type="submit" disabled={isSubmitting} className="flex-1">
           {isSubmitting ? (
             <>
               <Loader2 size={15} className="animate-spin mr-2" />

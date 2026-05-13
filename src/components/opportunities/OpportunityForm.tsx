@@ -65,6 +65,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
   const [contactId, setContactId] = useState<string>(opportunity?.contactId ?? 'none');
   const [customerNeed, setCustomerNeed] = useState(opportunity?.customerNeed ?? '');
   const [isSaving, setIsSaving] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     setProbability(stageToProbability(stage));
@@ -81,7 +82,10 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim()) return;
+    if (!subject.trim()) {
+      setShowErrors(true);
+      return;
+    }
     setIsSaving(true);
     try {
       await onSubmit({
@@ -111,8 +115,8 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
-        <Label>Subject *</Label>
-        <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
+        <Label className={showErrors && !subject.trim() ? 'text-rose-600' : ''}>Subject *</Label>
+        <Input value={subject} onChange={(e) => setSubject(e.target.value)} required className={showErrors && !subject.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -224,7 +228,7 @@ export function OpportunityForm({ opportunity, contacts, customer, onSubmit, onC
 
       <div className="flex gap-3 pt-1">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
-        <Button type="submit" disabled={isSaving || !subject.trim()} className="flex-1">
+        <Button type="submit" disabled={isSaving} className="flex-1">
           {isSaving ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : opportunity ? 'Save Changes' : 'Create Opportunity'}
         </Button>
       </div>

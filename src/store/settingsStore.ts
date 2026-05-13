@@ -2,10 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import type { SortBy } from '@/store/customerStore';
+import type { Stage } from '@/lib/opportunityRules';
 
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
+type ActivityStatusDefault = 'open' | 'completed';
+type CallDirection = 'outgoing' | 'incoming';
+type OpportunityCurrency = 'EUR' | 'USD';
+type OpportunityCountry = 'Belgium' | 'Netherlands';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
@@ -33,9 +38,17 @@ interface SettingsState {
 
   // Data & Defaults
   defaultActivityType: ActivityType;
+  defaultActivityStatus: ActivityStatusDefault;
+  defaultCallDirection: CallDirection;
+  defaultAppointmentDurationHours: number;
   defaultCustomerSort: SortBy;
   defaultCustomerFilterOwner: boolean;
   noRecentActivityDays: number;
+  defaultOpportunityCurrency: OpportunityCurrency;
+  defaultOpportunityCountry: OpportunityCountry;
+  defaultOpportunityStage: Stage;
+  defaultOpportunityExpirationDays: number;
+  defaultFollowUpDueDays: number;
 
   // Notifications & Reminders
   followUpReminderDays: number;
@@ -84,9 +97,17 @@ const APPEARANCE_DEFAULTS = {
 
 const DATA_DEFAULTS = {
   defaultActivityType: 'meeting' as ActivityType,
+  defaultActivityStatus: 'open' as ActivityStatusDefault,
+  defaultCallDirection: 'outgoing' as CallDirection,
+  defaultAppointmentDurationHours: 1,
   defaultCustomerSort: 'lastActivity' as SortBy,
   defaultCustomerFilterOwner: false,
   noRecentActivityDays: 90,
+  defaultOpportunityCurrency: 'USD' as OpportunityCurrency,
+  defaultOpportunityCountry: 'Belgium' as OpportunityCountry,
+  defaultOpportunityStage: 'Prospecting' as Stage,
+  defaultOpportunityExpirationDays: 7,
+  defaultFollowUpDueDays: 1,
 };
 
 const NOTIFICATION_DEFAULTS = {

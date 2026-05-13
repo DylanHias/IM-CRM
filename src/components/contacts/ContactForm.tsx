@@ -44,6 +44,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const lookupTables = useLookupTableStore((s) => s.lookupTables);
   const countryOptions = useMemo(
@@ -69,6 +70,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
       setCloudContact(initialData?.cloudContact ?? false);
       setSuccess(false);
       setError(null);
+      setShowErrors(false);
     }
   }, [open, initialData]);
 
@@ -98,7 +100,10 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) return;
+    if (!firstName.trim() || !lastName.trim()) {
+      setShowErrors(true);
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -174,12 +179,12 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
             )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="cf-firstName">First Name *</Label>
-                <Input id="cf-firstName" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                <Label htmlFor="cf-firstName" className={showErrors && !firstName.trim() ? 'text-rose-600' : ''}>First Name *</Label>
+                <Input id="cf-firstName" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className={showErrors && !firstName.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''} />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="cf-lastName">Last Name *</Label>
-                <Input id="cf-lastName" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                <Label htmlFor="cf-lastName" className={showErrors && !lastName.trim() ? 'text-rose-600' : ''}>Last Name *</Label>
+                <Input id="cf-lastName" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required className={showErrors && !lastName.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''} />
               </div>
             </div>
 
@@ -253,7 +258,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
 
             <div className="flex gap-3 pt-1">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} className="flex-1">Cancel</Button>
-              <Button type="submit" disabled={isSubmitting || !firstName.trim() || !lastName.trim()} className="flex-1">
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
                 {isSubmitting ? <><Loader2 size={15} className="animate-spin mr-2" />Saving...</> : isEdit ? 'Save Changes' : 'Add Contact'}
               </Button>
             </div>

@@ -15,6 +15,8 @@ import { todayISO, nowDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { Contact, ActivityStatus } from '@/types/entities';
 
+const ACTIVITY_STATUS_FROM_DEFAULT = (d: 'open' | 'completed'): ActivityStatus => d;
+
 interface ActivityFormProps {
   customerId: string;
   customerName: string;
@@ -38,6 +40,9 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const router = useRouter();
   const { createActivity } = useActivities(customerId);
   const defaultActivityType = useSettingsStore((s) => s.defaultActivityType);
+  const defaultActivityStatus = useSettingsStore((s) => s.defaultActivityStatus);
+  const defaultCallDirection = useSettingsStore((s) => s.defaultCallDirection);
+  const defaultAppointmentDurationHours = useSettingsStore((s) => s.defaultAppointmentDurationHours);
 
   // null = user hasn't touched the type yet, so we derive from settings
   const [typeOverride, setTypeOverride] = useState<'meeting' | 'visit' | 'call' | 'note' | null>(null);
@@ -47,18 +52,19 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
   const [description, setDescription] = useState('');
   const isAppointmentType = type === 'meeting' || type === 'visit';
   const [startTime, setStartTime] = useState(nowDatetimeLocal);
-  const [occurredAt, setOccurredAt] = useState(() => addHoursLocal(nowDatetimeLocal(), 1));
-  const [activityStatus, setActivityStatus] = useState<ActivityStatus>('open');
-  const [direction, setDirection] = useState<'outgoing' | 'incoming'>('outgoing');
+  const [occurredAt, setOccurredAt] = useState(() => addHoursLocal(nowDatetimeLocal(), defaultAppointmentDurationHours));
+  const [activityStatus, setActivityStatus] = useState<ActivityStatus>(ACTIVITY_STATUS_FROM_DEFAULT(defaultActivityStatus));
+  const [direction, setDirection] = useState<'outgoing' | 'incoming'>(defaultCallDirection);
   const [contactId, setContactId] = useState<string>('none');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const handleStartTimeChange = (newStart: string) => {
     setStartTime(newStart);
     if (new Date(newStart) >= new Date(occurredAt)) {
-      setOccurredAt(addHoursLocal(newStart, 1));
+      setOccurredAt(addHoursLocal(newStart, defaultAppointmentDurationHours));
     }
   };
 
@@ -69,7 +75,10 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim()) return;
+    if (!subject.trim()) {
+      setShowErrors(true);
+      return;
+    }
 
     if (isAppointmentType && new Date(startTime) > new Date(occurredAt)) {
       setError('Start time must be before or equal to end time.');
@@ -135,7 +144,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
           if (wasAppointment !== isNowAppointment) {
             const now = nowDatetimeLocal();
             setStartTime(now);
-            setOccurredAt(isNowAppointment ? addHoursLocal(now, 1) : todayISO());
+            setOccurredAt(isNowAppointment ? addHoursLocal(now, defaultAppointmentDurationHours) : todayISO());
           }
         }}>
           <SelectTrigger>
@@ -165,13 +174,14 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       )}
 
       <div className="col-span-2 space-y-1">
-        <Label htmlFor="subject">Subject *</Label>
+        <Label htmlFor="subject" className={showErrors && !subject.trim() ? 'text-rose-600' : ''}>Subject *</Label>
         <Input
           id="subject"
           placeholder={type === 'note' ? 'Note title...' : 'Meeting / call subject...'}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
+          className={showErrors && !subject.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''}
         />
       </div>
 
@@ -247,7 +257,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
         <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting || !subject.trim()} className="flex-1">
+        <Button type="submit" disabled={isSubmitting} className="flex-1">
           {isSubmitting ? (
             <>
               <Loader2 size={15} className="animate-spin mr-2" />

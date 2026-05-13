@@ -38,16 +38,21 @@ export function CloseOpportunityDialog({ open, outcome, currency, onClose, onCon
   const [closeDate, setCloseDate] = useState(() => todayISO());
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
   const reset = () => {
     setStatusReason('');
     setActualRevenue('0');
     setCloseDate(todayISO());
     setDescription('');
+    setShowErrors(false);
   };
 
   const handleConfirm = async () => {
-    if (!statusReason) return;
+    if (!statusReason) {
+      setShowErrors(true);
+      return;
+    }
     setSaving(true);
     try {
       await onConfirm({
@@ -87,8 +92,8 @@ export function CloseOpportunityDialog({ open, outcome, currency, onClose, onCon
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label>Status reason *</Label>
+          <div className={`space-y-1 ${showErrors && !statusReason ? '[&_button[role=combobox]]:!border-rose-500 [&_button[role=combobox]]:focus:!ring-rose-500' : ''}`}>
+            <Label className={showErrors && !statusReason ? 'text-rose-600' : ''}>Status reason *</Label>
             <Select value={statusReason} onValueChange={setStatusReason}>
               <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
               <SelectContent>
@@ -129,7 +134,7 @@ export function CloseOpportunityDialog({ open, outcome, currency, onClose, onCon
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={!statusReason || saving}
+            disabled={saving}
             className={`flex-1 ${ctaClass}`}
           >
             {saving ? <><Loader2 size={14} className="animate-spin mr-2" />Closing…</> : `Confirm ${outcome}`}
