@@ -353,7 +353,7 @@ export function OpportunityWizard({
         <Section title="Basics" subtitle="Core details about this opportunity">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Subject" wide required>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Cloud migration project" />
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="BE - #Service Name - Reseller - Vendor - End Customer - ARR" />
             </Field>
 
             {customers ? (
