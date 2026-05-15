@@ -97,20 +97,25 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     try {
       await db.execute('DELETE FROM customer_revenue');
 
-      const valid: RevenueRowDb[] = [];
+      const byBcn = new Map<string, RevenueRowDb>();
       for (const row of rows) {
         const bcn = toStrOrNull(row['Customer[bcn]']);
         if (!bcn) continue;
-        valid.push({
+        const next: RevenueRowDb = {
           bcn,
-          pbi_customer_id: toStrOrNull(row['Customer[customer_id]']),
+          pbi_customer_id: toStrOrNull(row['[customer_id]']),
           arr_usd: toNumOrNull(row['[ARR_USD]']),
           arr_lc: toNumOrNull(row['[ARR_LC]']),
-          currency_code: toStrOrNull(row['Customer[currency_code]']),
+          currency_code: toStrOrNull(row['[currency_code]']),
           as_of_month: toStrOrNull(row['[AsOfMonth]']),
           refreshed_at: refreshedAt,
-        });
+        };
+        const existing = byBcn.get(bcn);
+        if (!existing || (next.arr_usd ?? 0) > (existing.arr_usd ?? 0)) {
+          byBcn.set(bcn, next);
+        }
       }
+      const valid = Array.from(byBcn.values());
 
       for (let i = 0; i < valid.length; i += CHUNK) {
         const chunk = valid.slice(i, i + CHUNK);

@@ -14,12 +14,18 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ColumnPicker, useColumnConfig } from '@/components/ui/ColumnPicker';
 import type { ColumnDef } from '@/components/ui/ColumnPicker';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerStore } from '@/store/customerStore';
+import { useRevenueStore } from '@/store/revenueStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useSettingsStore } from '@/store/settingsStore';
+import { getEffectiveArr, type Currency, type EffectiveArr } from '@/lib/revenue/effectiveArr';
+import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
+import { RefreshButton } from '@/components/revenue/RefreshButton';
+import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { normalizeCity, getUniqueCities, displayCity } from '@/lib/utils/cityProvince';
@@ -73,7 +79,13 @@ const ARR_COLUMNS: (ColumnDef & { field: SortField | null; align: string })[] = 
 
 const ARR_COLUMN_MAP = new Map(ARR_COLUMNS.map((c) => [c.id, c]));
 
-function renderArrCell(customer: Customer, columnId: string, contacts: Contact[], router: ReturnType<typeof useRouter>) {
+function renderArrCell(
+  customer: Customer,
+  columnId: string,
+  contacts: Contact[],
+  router: ReturnType<typeof useRouter>,
+  effective: EffectiveArr | undefined,
+) {
   switch (columnId) {
     case 'name':
       return (
@@ -111,8 +123,33 @@ function renderArrCell(customer: Customer, columnId: string, contacts: Contact[]
       ) : (
         <span className="text-muted-foreground">—</span>
       );
-    case 'arr':
-      return <span className="font-semibold tabular-nums">{formatArr(customer.arr, customer.arrCurrency)}</span>;
+    case 'arr': {
+      if (!effective || effective.value === null) {
+        return <span className="text-muted-foreground tabular-nums">—</span>;
+      }
+      const dotClass =
+        effective.source === 'powerbi' ? 'bg-success' :
+        effective.source === 'd365' ? 'bg-muted-foreground/50' : 'bg-transparent';
+      const tip =
+        effective.source === 'powerbi'
+          ? `Live from Power BI${effective.asOfMonth ? ` · ${new Date(effective.asOfMonth).toLocaleDateString()}` : ''}`
+          : effective.source === 'd365'
+          ? 'Synced from D365 (no live value)'
+          : '';
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1.5 font-semibold tabular-nums">
+                <span className={cn('size-1.5 rounded-full shrink-0', dotClass)} aria-hidden />
+                {formatArr(effective.value, effective.currency)}
+              </span>
+            </TooltipTrigger>
+            {tip && <TooltipContent><span className="text-xs">{tip}</span></TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
     default:
       return null;
   }
@@ -127,6 +164,8 @@ export default function RevenueOverviewPage() {
   const [filterCloud, setFilterCloud] = useState<'all' | 'yes' | 'no'>('all');
   const [filterCountry, setFilterCountry] = useState('');
   const [filterCity, setFilterCity] = useState('');
+  const [filterSource, setFilterSource] = useState<'all' | 'powerbi' | 'd365'>('all');
+  const [currency, setCurrency] = useState<Currency>('USD');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -140,7 +179,17 @@ export default function RevenueOverviewPage() {
 
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
+  const revenueByBcn = useRevenueStore((s) => s.byBcn);
   const walkthroughActive = useSettingsStore((s) => s.walkthroughActive);
+
+  const effectiveByCustomerId = useMemo(() => {
+    const map = new Map<string, EffectiveArr>();
+    for (const c of allCustomers) {
+      const revenue = c.bcn ? revenueByBcn.get(c.bcn) ?? null : null;
+      map.set(c.id, getEffectiveArr(c, revenue, currency));
+    }
+    return map;
+  }, [allCustomers, revenueByBcn, currency]);
 
   const countryOptions = useMemo(() => {
     const codes = new Set<string>();
@@ -164,6 +213,7 @@ export default function RevenueOverviewPage() {
     (filterCloud !== 'all' ? 1 : 0) +
     (filterCountry !== '' ? 1 : 0) +
     (filterCity !== '' ? 1 : 0) +
+    (filterSource !== 'all' ? 1 : 0) +
     (arrMin !== '' ? 1 : 0) +
     (arrMax !== '' ? 1 : 0);
 
@@ -171,6 +221,7 @@ export default function RevenueOverviewPage() {
     setFilterCloud('all');
     setFilterCountry('');
     setFilterCity('');
+    setFilterSource('all');
     setArrMin('');
     setArrMax('');
     setPage(1);
@@ -186,19 +237,26 @@ export default function RevenueOverviewPage() {
       if (filterCloud === 'no' && c.cloudCustomer !== false) return false;
       if (filterCountry !== '' && c.addressCountry !== filterCountry) return false;
       if (filterCity !== '' && normalizeCity(c.addressCity) !== filterCity) return false;
-      if (min !== null && (c.arr === null || c.arr < min)) return false;
-      if (max !== null && (c.arr === null || c.arr > max)) return false;
+      const effective = effectiveByCustomerId.get(c.id);
+      const arrValue = effective?.value ?? null;
+      if (filterSource === 'powerbi' && effective?.source !== 'powerbi') return false;
+      if (filterSource === 'd365' && effective?.source !== 'd365') return false;
+      if (min !== null && (arrValue === null || arrValue < min)) return false;
+      if (max !== null && (arrValue === null || arrValue > max)) return false;
       return true;
     });
     return [...rows].sort((a, b) => {
       let cmp = 0;
       switch (sortBy) {
-        case 'arr':
-          if (a.arr === null && b.arr === null) cmp = 0;
-          else if (a.arr === null) cmp = 1;
-          else if (b.arr === null) cmp = -1;
-          else cmp = a.arr - b.arr;
+        case 'arr': {
+          const aArr = effectiveByCustomerId.get(a.id)?.value ?? null;
+          const bArr = effectiveByCustomerId.get(b.id)?.value ?? null;
+          if (aArr === null && bArr === null) cmp = 0;
+          else if (aArr === null) cmp = 1;
+          else if (bArr === null) cmp = -1;
+          else cmp = aArr - bArr;
           break;
+        }
         case 'name':
           cmp = a.name.localeCompare(b.name);
           break;
@@ -211,7 +269,7 @@ export default function RevenueOverviewPage() {
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [allCustomers, searchQuery, filterCloud, filterCountry, filterCity, arrMin, arrMax, sortBy, sortDir]);
+  }, [allCustomers, searchQuery, filterCloud, filterCountry, filterCity, filterSource, arrMin, arrMax, sortBy, sortDir, effectiveByCustomerId]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -355,6 +413,8 @@ export default function RevenueOverviewPage() {
               </Button>
             </div>
 
+            <CurrencyToggle value={currency} onChange={setCurrency} />
+
             <Button
               variant={showFilters || activeFilterCount > 0 ? 'default' : 'outline'}
               size="sm"
@@ -379,19 +439,24 @@ export default function RevenueOverviewPage() {
 
             <ColumnPicker tableKey="revenueOverview" columns={ARR_COLUMNS} />
 
-            <button
-              data-tour="export-button"
-              onClick={walkthroughActive || isExporting ? undefined : handleExport}
-              disabled={walkthroughActive || isExporting}
-              className={cn(
-                'ml-auto flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',
-                'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
-                (walkthroughActive || isExporting) && 'pointer-events-none opacity-70'
-              )}
-            >
-              {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              {isExporting ? 'Exporting…' : 'Export to Excel'}
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <LastRefreshedBadge />
+              <RefreshButton />
+
+              <button
+                data-tour="export-button"
+                onClick={walkthroughActive || isExporting ? undefined : handleExport}
+                disabled={walkthroughActive || isExporting}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium',
+                  'bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
+                  (walkthroughActive || isExporting) && 'pointer-events-none opacity-70'
+                )}
+              >
+                {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                {isExporting ? 'Exporting…' : 'Export to Excel'}
+              </button>
+            </div>
           </motion.div>
 
           {/* Row 2: Collapsible filter panel */}
@@ -429,6 +494,17 @@ export default function RevenueOverviewPage() {
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="yes">Yes</SelectItem>
                     <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">ARR source</label>
+                <Select value={filterSource} onValueChange={(v) => { setFilterSource(v as 'all' | 'powerbi' | 'd365'); setPage(1); }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="powerbi">Live (Power BI)</SelectItem>
+                    <SelectItem value="d365">Synced (D365)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -483,6 +559,15 @@ export default function RevenueOverviewPage() {
                   onClick={() => setFilterCloud('all')}
                 >
                   Cloud: {filterCloud} <X size={10} />
+                </Badge>
+              )}
+              {filterSource !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-secondary"
+                  onClick={() => setFilterSource('all')}
+                >
+                  Source: {filterSource === 'powerbi' ? 'Live' : 'Synced'} <X size={10} />
                 </Badge>
               )}
               {arrMin !== '' && (
@@ -556,7 +641,7 @@ export default function RevenueOverviewPage() {
                           if (!col) return null;
                           return (
                             <td key={id} className={cn('px-4 py-3', col.align)}>
-                              {renderArrCell(customer, id, allContacts, router)}
+                              {renderArrCell(customer, id, allContacts, router, effectiveByCustomerId.get(customer.id))}
                             </td>
                           );
                         })}
