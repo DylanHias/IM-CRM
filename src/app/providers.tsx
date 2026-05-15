@@ -6,6 +6,8 @@ import { MsalProvider } from '@azure/msal-react';
 import { ThemeProvider } from 'styled-components';
 import { initializeMsal } from '@/lib/auth/msalInstance';
 import { initDb } from '@/lib/db/client';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { storeChangelog } from '@/components/layout/ChangelogDialog';
 import { lightTheme, darkTheme } from '@/styles/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useOptionSetStore } from '@/store/optionSetStore';
@@ -32,6 +34,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const retryInit = async () => {
     setRetrying(true);
     setDbError(null);
+
+    if (isTauriApp()) {
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater');
+        const update = await check();
+        if (update) {
+          if (update.body) await storeChangelog(update.body, update.version);
+          await update.downloadAndInstall();
+          const { relaunch } = await import('@tauri-apps/plugin-process');
+          await relaunch();
+          return;
+        }
+      } catch (err) {
+        console.error('[updater] Retry update check failed:', err);
+      }
+    }
+
     try {
       await initDb();
       setDbReady(true);
