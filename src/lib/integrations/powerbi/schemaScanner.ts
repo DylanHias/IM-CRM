@@ -1,8 +1,11 @@
 import { executeDaxQuery, type DaxQueryResult } from './client';
+import schemaSnapshotJson from './schemaSnapshot.json';
 
 const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
+
+export type SchemaSource = 'live' | 'snapshot';
 
 export interface SchemaTable {
   id: number;
@@ -51,6 +54,7 @@ export interface SchemaRelationship {
 
 export interface PowerBiSchema {
   scannedAt: string;
+  source: SchemaSource;
   datasetId: string;
   workspaceId: string | null;
   tables: SchemaTable[];
@@ -58,6 +62,8 @@ export interface PowerBiSchema {
   measures: SchemaMeasure[];
   relationships: SchemaRelationship[];
 }
+
+const snapshot: PowerBiSchema = schemaSnapshotJson as PowerBiSchema;
 
 const DATA_TYPE_MAP: Record<number, string> = {
   1: 'Automatic',
@@ -129,17 +135,6 @@ async function tryEvaluate(token: string, dax: string): Promise<EvalOutcome> {
   }
 }
 
-function isCompatLevelError(err: string): boolean {
-  const lower = err.toLowerCase();
-  return (
-    lower.includes('info.tables') ||
-    lower.includes('not recognized') ||
-    lower.includes('compatibility level') ||
-    lower.includes('cannot find') ||
-    lower.includes('undefined function')
-  );
-}
-
 export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
   const [tablesOut, columnsOut, measuresOut, relOut] = await Promise.all([
     tryEvaluate(token, 'EVALUATE INFO.TABLES()'),
@@ -155,12 +150,10 @@ export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
 
   if (!tablesRes) {
     const detail = tablesErr ?? 'unknown error';
-    if (tablesErr && isCompatLevelError(tablesErr)) {
-      throw new Error(
-        `INFO.TABLES() not supported by this dataset (compatibility level below 1604). Upgrade the model in Power BI Desktop or use an XMLA endpoint to scan schema. Underlying error: ${detail}`,
-      );
-    }
-    throw new Error(`Schema scan failed: ${detail}`);
+    console.warn(
+      `[powerbi-schema] Live INFO.TABLES() failed (${detail.slice(0, 120)}); falling back to bundled snapshot from ${snapshot.scannedAt}.`,
+    );
+    return snapshot;
   }
 
   const tables: SchemaTable[] = (tablesRes.rows ?? []).map((row) => ({
@@ -229,6 +222,7 @@ export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
 
   return {
     scannedAt: new Date().toISOString(),
+    source: 'live',
     datasetId: DATASET_ID,
     workspaceId: WORKSPACE_ID || null,
     tables,
@@ -236,4 +230,8 @@ export async function scanPowerBiSchema(token: string): Promise<PowerBiSchema> {
     measures,
     relationships,
   };
+}
+
+export function getSchemaSnapshot(): PowerBiSchema {
+  return snapshot;
 }

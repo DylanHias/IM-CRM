@@ -107,6 +107,18 @@ export function PowerBiSchemaViewer() {
 
       {schema && (
         <>
+          {schema.source === 'snapshot' && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />
+              <span>
+                Live INFO.TABLES() not supported by this dataset (compatibility level below 1604).
+                Showing bundled snapshot from {new Date(schema.scannedAt).toLocaleDateString()}. Refresh by
+                re-running the DMV queries in DAX Studio and regenerating
+                <code className="mx-1 px-1 bg-amber-500/20 rounded">schemaSnapshot.json</code>.
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-4 gap-2 text-xs">
             <SummaryCard label="Tables" value={schema.tables.filter((t) => !t.isHidden).length} total={schema.tables.length} />
             <SummaryCard label="Columns" value={schema.columns.filter((c) => !c.isHidden).length} total={schema.columns.length} />

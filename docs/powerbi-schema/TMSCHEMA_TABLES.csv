@@ -1,0 +1,26 @@
+ID,ModelID,Name,DataCategory,Description,IsHidden,TableStorageID,ModifiedTime,StructureModifiedTime,SystemFlags,ShowAsVariationsOnly,IsPrivate,DefaultDetailRowsDefinitionID,AlternateSourcePrecedence,RefreshPolicyID,CalculationGroupID,ExcludeFromModelRefresh,LineageTag,SourceLineageTag,SystemManaged,ExcludeFromAutomaticAggregations
+12,1,"_Relationship.eda","","",False,1447,2026-05-15 07:21:53.170,2026-05-15 07:21:53.170,0,False,False,,0,,,False,"9058cbab-2428-488c-a080-15a21c4c5ddc","1e227014-621c-4256-8ebd-17a1e30dccab",False,False
+15,1,"EC Baseline 2023","","",False,1449,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"3555afd3-834c-4b0d-9bf6-21b045f95a67","96e99a9d-e759-4f22-9c18-7bb1642c2ca7",False,False
+18,1,"_commercial SKUs","","",False,1451,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"0a4295f4-01b8-4bd3-9960-5fd18d9c5c61","1d43f19d-920c-48c0-acd3-13ec2496718d",False,False
+21,1,"_UK","","",False,1453,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"4a21ff92-ef3f-40a8-8389-9ac4cb5cf1d1","d0b8ea91-92b2-4a9a-b1b5-a0d0c98a6207",False,False
+24,1,"ARR","","",False,1455,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"a73d0641-2b52-4475-8e3e-b665965db0c0","85c39060-fca4-4887-bfb9-d704b105a04a",False,False
+27,1,"Seats","","",False,1457,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"f4ace0e9-55cf-4019-af3d-a03b3ce69edc","9f94a320-2066-4845-a892-a39f73218a74",False,False
+30,1,"Sales","","",False,1459,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"4fc9478c-af01-4c5e-b431-92ead89d6688","c934e0ca-ac11-4f03-babe-f8885bde6d13",False,False
+33,1,"Reseller","","",False,1461,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"71224f98-a688-4250-b4c9-ae7a59ee51a6","23cd00b2-b144-44ae-89a8-d564c50973a2",False,False
+36,1,"Pnl","","",False,1463,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"14c3883a-b25a-4f88-9845-518568dccf1f","772875a7-0c1c-44ac-8aaa-c19ea1df37c1",False,False
+39,1,"Channel","","",False,1465,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"1e655eed-b0e2-4e7f-b4b1-022b158ee9f7","31a33860-7a07-46f3-8656-78e0103043ee",False,False
+42,1,"Customer","","",False,1467,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"e890ce0a-15fe-4910-88dc-7425d1d84046","f04e8dfc-8542-48a9-a6e8-ac88ef82b56a",False,False
+45,1,"Calendar","","",False,1469,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"4c684a2c-61cd-4105-8cdc-944b25a34371","e88b4722-9db7-4190-95d0-26c41c39d3cc",False,False
+48,1,"CSM","","",False,1471,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"44eb7f53-ae8a-4962-b31d-f32b4d26e18a","15447138-cc63-4f54-9b94-eba3b0f93f85",False,False
+51,1,"ARR Movement","","",False,1473,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"756a523c-9923-4b47-865e-cad8359c8a5d","990d5fa0-b098-4612-bf73-dc1be9d05ccb",False,False
+54,1,"Vendor","","",False,1475,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"02172ef4-4b06-43d4-b7fb-a7e78d61919b","914c19aa-5fdf-4f29-a389-27b034884c98",False,False
+57,1,"Vendor_plan","","",True,1477,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"91156ec5-086d-41a0-954c-bcc13c3ae0ff","7ac84f05-bade-44f2-8202-31534ec4a87f",False,False
+60,1,"Subscription","","",False,1479,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"1b9b7d3d-9fb6-48c1-bbd3-f6e8ec5d90f7","c4eb3806-9b35-4da3-ad18-a81b4a3074e6",False,False
+63,1,"Plan","","",False,1481,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"c91d7032-6aac-4378-8e11-241fdaaeee86","6a51ad44-301b-4316-a50b-d78fc5d9f8ce",False,False
+66,1,"Fact Reseller-Subscription","","",False,1483,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"613c97ab-c38e-48a5-8b21-ac4ac676b392","a427a469-5ec2-4d99-a677-354ae721f345",False,False
+69,1,"Order","","",False,1485,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"50843efe-4cea-4bc8-b129-9b1a1e244eac","07e671cd-1dcc-48f4-b0e3-158c6a68eaa9",False,False
+72,1,"NDR","","",False,1487,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"9479d23c-9e08-42ec-a851-34ae63842b80","2cca9e73-8100-43a7-bc96-0570b8dc81cc",False,False
+75,1,"Resource","","",False,1489,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"052149ae-341b-4ffb-b1de-5adb1099ec6a","d56f26cd-7538-42c7-a260-9d2a3434f0a0",False,False
+78,1,"Rates","","",False,1491,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"6124c69e-23b1-4d7a-b9fa-cd2ec7535cdc","e1c525e0-24f9-4859-ad45-cf62901756f3",False,False
+81,1,"UK CSC","","",False,1493,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,False,False,,0,,,False,"e78e0883-15e3-4bfb-8c83-9f5461325d37","255634df-442b-41fd-9a47-14b980c3e04e",False,False
+84,1,"LocalDateTable_d9ed60df-0447-4153-80e6-9dca083642cd","","",False,1495,2026-05-15 07:21:53.173,2026-05-15 07:21:53.173,0,True,False,,0,,,False,"967c1039-d290-4c96-8b07-0d1d90560e6f","2d9130e9-157e-445f-8bc0-0ddcb130b970",False,False
