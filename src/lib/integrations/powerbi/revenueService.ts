@@ -138,7 +138,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
           r.refreshed_at,
         ]);
         await db.execute(
-          `INSERT INTO customer_revenue
+          `INSERT OR REPLACE INTO customer_revenue
            (bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, refreshed_at)
            VALUES ${placeholders}`,
           values,
