@@ -24,6 +24,23 @@ function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+async function checkAndInstallUpdate(): Promise<boolean> {
+  if (!isTauriApp()) return false;
+  try {
+    const { check } = await import('@tauri-apps/plugin-updater');
+    const update = await check();
+    if (!update) return false;
+    if (update.body) await storeChangelog(update.body, update.version);
+    await update.downloadAndInstall();
+    const { relaunch } = await import('@tauri-apps/plugin-process');
+    await relaunch();
+    return true;
+  } catch (err) {
+    console.error('[updater] Update check failed:', err);
+    return false;
+  }
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
   const [dbReady, setDbReady] = useState(false);
@@ -35,21 +52,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setRetrying(true);
     setDbError(null);
 
-    if (isTauriApp()) {
-      try {
-        const { check } = await import('@tauri-apps/plugin-updater');
-        const update = await check();
-        if (update) {
-          if (update.body) await storeChangelog(update.body, update.version);
-          await update.downloadAndInstall();
-          const { relaunch } = await import('@tauri-apps/plugin-process');
-          await relaunch();
-          return;
-        }
-      } catch (err) {
-        console.error('[updater] Retry update check failed:', err);
-      }
-    }
+    if (await checkAndInstallUpdate()) return;
 
     try {
       await initDb();
@@ -69,6 +72,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
+      // Check for app updates before anything else — ensures a broken startup
+      // can self-heal once a fix is published, since the updater would otherwise
+      // only run after the app shell has fully mounted.
+      if (await checkAndInstallUpdate()) return;
+
       const instance = await initializeMsal();
 
       // Handle MSAL redirect response (Tauri uses loginRedirect instead of loginPopup)
@@ -145,6 +153,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
     init();
   }, []);
+
+  // Auto-recover from a failed DB init: if a fix has since been published,
+  // download + install it without the user needing to click Retry.
+  useEffect(() => {
+    if (!dbError) return;
+    void checkAndInstallUpdate();
+  }, [dbError]);
 
   if (dbError) {
     return (
