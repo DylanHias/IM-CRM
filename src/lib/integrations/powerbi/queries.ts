@@ -166,25 +166,23 @@ export function resellerSeatsTrendDax(monthsBack: number, countryCodes: readonly
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX(Seats[month]), ALL(Seats))
 VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
-VAR ScopedResellerIds = CALCULATETABLE(
-  VALUES(Reseller[reseller_id]),
-  Reseller[country_code] IN ${codesList}
-)
 RETURN
-ADDCOLUMNS(
-  SUMMARIZE(
-    FILTER(Seats,
-      Seats[reseller_id] IN ScopedResellerIds &&
-      Seats[month] >= EarliestMonth &&
-      Seats[month] <= LatestMonth
+CALCULATETABLE(
+  ADDCOLUMNS(
+    SUMMARIZE(
+      FILTER(Seats,
+        Seats[month] >= EarliestMonth &&
+        Seats[month] <= LatestMonth
+      ),
+      Seats[month]
     ),
-    Seats[month]
+    "ActiveSeats", CALCULATE(SUM(Seats[seats_active_seats])),
+    "ActiveResellers", CALCULATE(
+      DISTINCTCOUNT(Seats[reseller_id]),
+      Seats[seats_active_seats] > 0
+    )
   ),
-  "ActiveSeats", CALCULATE(SUM(Seats[seats_active_seats])),
-  "ActiveResellers", CALCULATE(
-    DISTINCTCOUNT(Seats[reseller_id]),
-    FILTER(Seats, Seats[seats_active_seats] > 0)
-  )
+  Reseller[country_code] IN ${codesList}
 )
 `.trim();
 }
