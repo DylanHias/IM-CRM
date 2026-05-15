@@ -178,16 +178,20 @@ export default function RevenueOverviewPage() {
   useCustomers();
   const { customers: allCustomers, allContacts } = useCustomerStore();
   const revenueByBcn = useRevenueStore((s) => s.byBcn);
+  const revenueByResellerAccount = useRevenueStore((s) => s.byResellerAccount);
   const walkthroughActive = useSettingsStore((s) => s.walkthroughActive);
 
   const effectiveByCustomerId = useMemo(() => {
     const map = new Map<string, EffectiveArr>();
     for (const c of allCustomers) {
-      const revenue = c.bcn ? revenueByBcn.get(c.bcn) ?? null : null;
+      const revenue =
+        (c.bcn ? revenueByBcn.get(c.bcn) : undefined) ||
+        (c.accountNumber ? revenueByResellerAccount.get(c.accountNumber) : undefined) ||
+        null;
       map.set(c.id, getEffectiveArr(c, revenue, 'LC'));
     }
     return map;
-  }, [allCustomers, revenueByBcn]);
+  }, [allCustomers, revenueByBcn, revenueByResellerAccount]);
 
   const countryOptions = useMemo(() => {
     const codes = new Set<string>();

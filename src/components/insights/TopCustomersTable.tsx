@@ -39,25 +39,27 @@ function formatCurrency(value: number, code: string): string {
 export function TopCustomersTable({ currency, region, limit = 25, className }: Props) {
   const router = useRouter();
   const byBcn = useRevenueStore((s) => s.byBcn);
+  const byResellerAccount = useRevenueStore((s) => s.byResellerAccount);
   const customers = useCustomerStore((s) => s.customers);
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
     const codes = REGION_COUNTRIES[region];
-    const customersByBcn = new Map<string, { id: string; name: string }>();
+    const seen = new Set<string>();
     for (const c of customers) {
-      if (!c.bcn) continue;
       if (!c.addressCountry || !codes.includes(c.addressCountry)) continue;
-      customersByBcn.set(c.bcn, { id: c.id, name: c.name });
-    }
-    for (const r of Array.from(byBcn.values())) {
+      const r =
+        (c.bcn ? byBcn.get(c.bcn) : undefined) ||
+        (c.accountNumber ? byResellerAccount.get(c.accountNumber) : undefined);
+      if (!r) continue;
+      // Dedupe: one PBI row shouldn't yield two table rows if a customer matches both keys.
+      if (seen.has(r.bcn)) continue;
+      seen.add(r.bcn);
       const value = currency === 'USD' ? r.arrUsd : r.arrLc;
       if (value === null || value <= 0) continue;
-      const customer = customersByBcn.get(r.bcn);
-      if (!customer) continue;
       out.push({
-        customerId: customer.id,
-        customerName: customer.name,
+        customerId: c.id,
+        customerName: c.name,
         bcn: r.bcn,
         arr: value,
         currencyCode: currency === 'USD' ? 'USD' : r.currencyCode ?? 'EUR',
@@ -65,7 +67,7 @@ export function TopCustomersTable({ currency, region, limit = 25, className }: P
     }
     out.sort((a, b) => b.arr - a.arr);
     return out.slice(0, limit);
-  }, [byBcn, customers, currency, region, limit]);
+  }, [byBcn, byResellerAccount, customers, currency, region, limit]);
 
   return (
     <div className={cn('rounded-xl border border-border/60 bg-card shadow-sm', className)}>

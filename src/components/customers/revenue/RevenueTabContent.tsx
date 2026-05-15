@@ -27,7 +27,7 @@ const MONTHS_OPTIONS = [
 
 export function RevenueTabContent({ customer }: Props) {
   const [monthsBack, setMonthsBack] = useState<number>(12);
-  const revenue = useCustomerRevenue(customer.bcn);
+  const revenue = useCustomerRevenue(customer.bcn, customer.accountNumber);
 
   return (
     <div className="space-y-4">

@@ -90,15 +90,16 @@ async function ensureTablesExist(db: Database): Promise<void> {
     CREATE TABLE IF NOT EXISTS customer_revenue (
       bcn                   TEXT PRIMARY KEY,
       pbi_customer_id       TEXT,
+      reseller_account      TEXT,
       arr_usd               REAL,
       arr_lc                REAL,
       currency_code         TEXT,
       as_of_month           TEXT,
       active_end_customers  INTEGER,
-      refreshed_at          TEXT NOT NULL
-    )
+      refreshed_at          TEXT NOT NULL    )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_reseller_account ON customer_revenue(reseller_account)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS contacts (
@@ -376,6 +377,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['opportunities', 'competitor_id',                 'TEXT'],
     ['opportunities', 'close_description',             'TEXT'],
     ['customer_revenue', 'active_end_customers',       'INTEGER'],
+    ['customer_revenue', 'reseller_account',           'TEXT'],
   ];
   const tableColumns = new Map<string, Set<string>>();
   const uniqueTables = Array.from(new Set(cols.map((c) => c[0])));
@@ -413,7 +415,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '42')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '43')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -1010,6 +1012,22 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     );
     await db.execute(
       `UPDATE app_settings SET value = '42', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 43) {
+    // Reseller Account fallback: PBI Reseller has a separate ID we can match
+    // against D365 accountnumber for customers whose BCN is missing or wrong.
+    try {
+      await db.execute(`ALTER TABLE customer_revenue ADD COLUMN reseller_account TEXT`);
+    } catch (err) {
+      console.error('[db] customer_revenue.reseller_account add failed (may already exist):', err);
+    }
+    await db.execute(
+      `CREATE INDEX IF NOT EXISTS idx_customer_revenue_reseller_account ON customer_revenue(reseller_account)`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '43', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }

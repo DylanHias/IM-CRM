@@ -7,12 +7,13 @@ const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
-const COLS_PER_ROW = 8;
+const COLS_PER_ROW = 9;
 const CHUNK = Math.floor(999 / COLS_PER_ROW);
 
 interface RevenueRowDb {
   bcn: string;
   pbi_customer_id: string | null;
+  reseller_account: string | null;
   arr_usd: number | null;
   arr_lc: number | null;
   currency_code: string | null;
@@ -37,6 +38,7 @@ function mapDbRow(row: RevenueRowDb): CustomerRevenueRow {
   return {
     bcn: row.bcn,
     pbiCustomerId: row.pbi_customer_id,
+    resellerAccount: row.reseller_account,
     arrUsd: row.arr_usd,
     arrLc: row.arr_lc,
     currencyCode: row.currency_code,
@@ -61,12 +63,23 @@ async function readSetting(key: string): Promise<string | null> {
   return rows[0]?.value || null;
 }
 
-async function getCrmBcnSet(): Promise<Set<string>> {
+interface CrmMatchSets {
+  bcns: Set<string>;
+  accountNumbers: Set<string>;
+}
+
+async function getCrmMatchSets(): Promise<CrmMatchSets> {
   const db = await getDb();
-  const rows = await db.select<{ bcn: string }[]>(
-    `SELECT bcn FROM customers WHERE bcn IS NOT NULL AND bcn != ''`,
+  const rows = await db.select<{ bcn: string | null; account_number: string | null }[]>(
+    `SELECT bcn, account_number FROM customers`,
   );
-  return new Set(rows.map((r) => r.bcn));
+  const bcns = new Set<string>();
+  const accountNumbers = new Set<string>();
+  for (const r of rows) {
+    if (r.bcn) bcns.add(r.bcn);
+    if (r.account_number) accountNumbers.add(r.account_number);
+  }
+  return { bcns, accountNumbers };
 }
 
 export async function getAutoRefreshHours(): Promise<number> {
@@ -78,7 +91,7 @@ export async function getAutoRefreshHours(): Promise<number> {
 export async function loadRevenueFromDb(): Promise<void> {
   const db = await getDb();
   const rows = await db.select<RevenueRowDb[]>(
-    `SELECT bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at
+    `SELECT bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at
      FROM customer_revenue`,
   );
   const lastRefreshed = await readSetting('revenue_last_refresh_at');
@@ -109,20 +122,28 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     const refreshedAt = new Date().toISOString();
 
     const db = await getDb();
-    const crmBcns = await getCrmBcnSet();
+    const { bcns: crmBcns, accountNumbers: crmAccountNumbers } = await getCrmMatchSets();
 
     const byBcn = new Map<string, RevenueRowDb>();
     let skippedNotInCrm = 0;
+    let matchedByBcn = 0;
+    let matchedByAccount = 0;
     for (const row of rows) {
       const bcn = toStrOrNull(row['Reseller[bcn]']);
       if (!bcn) continue;
-      if (!crmBcns.has(bcn)) {
+      const resellerAccount = toStrOrNull(row['Reseller[Reseller Account]']);
+      const matchByBcn = crmBcns.has(bcn);
+      const matchByAccount = !!resellerAccount && crmAccountNumbers.has(resellerAccount);
+      if (!matchByBcn && !matchByAccount) {
         skippedNotInCrm++;
         continue;
       }
+      if (matchByBcn) matchedByBcn++;
+      else matchedByAccount++;
       const next: RevenueRowDb = {
         bcn,
         pbi_customer_id: toStrOrNull(row['Reseller[reseller_id]']),
+        reseller_account: resellerAccount,
         arr_usd: toNumOrNull(row['[ARR_USD]']),
         arr_lc: toNumOrNull(row['[ARR_LC]']),
         currency_code: toStrOrNull(row['Reseller[currency_code]']),
@@ -157,6 +178,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
       const values = chunk.flatMap((r) => [
         r.bcn,
         r.pbi_customer_id,
+        r.reseller_account,
         r.arr_usd,
         r.arr_lc,
         r.currency_code,
@@ -167,7 +189,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
       try {
         const result = await db.execute(
           `INSERT OR REPLACE INTO customer_revenue
-           (bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at)
+           (bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at)
            VALUES ${placeholders}`,
           values,
         );
@@ -203,7 +225,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     }
 
     console.log(
-      `[revenue] refresh complete: ${inserted} rows inserted, ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
+      `[revenue] refresh complete: ${inserted} rows inserted (${matchedByBcn} via BCN, ${matchedByAccount} via Reseller Account), ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
     );
 
     useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);

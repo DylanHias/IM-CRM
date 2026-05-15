@@ -26,13 +26,12 @@ const ACTIVITY_WINDOW_MONTHS = 12;
  * 12 months is included, even if their current-month value is zero. UI can
  * distinguish active vs dormant-but-recent via the value itself.
  *
- * Response keys: Reseller[bcn], Reseller[reseller_id], Reseller[currency_code],
- * [ARR_USD], [ARR_LC], [ActiveEndCustomers], [AsOfMonth]
+ * Response keys: Reseller[bcn], Reseller[reseller_id], Reseller[Reseller Account],
+ * Reseller[currency_code], [ARR_USD], [ARR_LC], [ActiveEndCustomers], [AsOfMonth]
  *
  * ActiveEndCustomers = distinct ARR[customer_id] for this reseller in the latest
  * month. ARR rows are emitted per active end-customer subscription, so this counts
- * the reseller's currently-active end customers (not historical).
- */
+ * the reseller's currently-active end customers (not historical). */
 export const CURRENT_ARR_BY_BCN_DAX = `
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX(ARR[calendar_month]), ALL(ARR))
@@ -44,6 +43,7 @@ FILTER(
       FILTER(Reseller, Reseller[country_code] IN ${BENELUX_DAX_LIST}),
       Reseller[bcn],
       Reseller[reseller_id],
+      Reseller[Reseller Account],
       Reseller[currency_code]
     ),
     "ARR_USD", CALCULATE(SUM(ARR[arr_arr_amt_usd]), ARR[calendar_month] = LatestMonth),

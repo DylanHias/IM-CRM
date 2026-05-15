@@ -50,17 +50,27 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
 
 export function KpiCards({ currency, region, className }: Props) {
   const byBcn = useRevenueStore((s) => s.byBcn);
+  const byResellerAccount = useRevenueStore((s) => s.byResellerAccount);
   const customers = useCustomerStore((s) => s.customers);
 
   const kpis = useMemo<Kpi[]>(() => {
     const codes = REGION_COUNTRIES[region];
     const scopedCustomers = customers.filter((c) => c.addressCountry && codes.includes(c.addressCountry));
-    const scopedBcns = new Set(scopedCustomers.map((c) => c.bcn).filter((b): b is string => !!b));
 
     let totalArr = 0;
     let activeCount = 0;
-    for (const row of Array.from(byBcn.values())) {
-      if (!scopedBcns.has(row.bcn)) continue;
+    let coveredCount = 0;
+    const seenRowKeys = new Set<string>();
+    for (const c of scopedCustomers) {
+      const row =
+        (c.bcn ? byBcn.get(c.bcn) : undefined) ||
+        (c.accountNumber ? byResellerAccount.get(c.accountNumber) : undefined);
+      if (!row) continue;
+      // Dedupe across the two index paths so a single PBI row never counts twice
+      // if a customer matches by both BCN and account number.
+      if (seenRowKeys.has(row.bcn)) continue;
+      seenRowKeys.add(row.bcn);
+      coveredCount++;
       const value = currency === 'USD' ? row.arrUsd : row.arrLc;
       if (value !== null && value > 0) {
         totalArr += value;
@@ -68,8 +78,7 @@ export function KpiCards({ currency, region, className }: Props) {
       }
     }
     const avgArr = activeCount > 0 ? totalArr / activeCount : 0;
-    const scopedWithCache = Array.from(byBcn.values()).filter((r) => scopedBcns.has(r.bcn)).length;
-    const coveragePct = scopedBcns.size > 0 ? (scopedWithCache / scopedBcns.size) * 100 : 0;
+    const coveragePct = scopedCustomers.length > 0 ? (coveredCount / scopedCustomers.length) * 100 : 0;
 
     const code = currency === 'USD' ? 'USD' : 'EUR';
 
@@ -96,10 +105,10 @@ export function KpiCards({ currency, region, className }: Props) {
         label: 'Live coverage',
         icon: Radio,
         value: `${coveragePct.toFixed(0)}%`,
-        hint: `${scopedWithCache.toLocaleString('nl-BE')} / ${scopedBcns.size.toLocaleString('nl-BE')} customers with BCN`,
+        hint: `${coveredCount.toLocaleString('nl-BE')} / ${scopedCustomers.length.toLocaleString('nl-BE')} customers matched`,
       },
     ];
-  }, [byBcn, customers, currency, region]);
+  }, [byBcn, byResellerAccount, customers, currency, region]);
 
   return (
     <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>

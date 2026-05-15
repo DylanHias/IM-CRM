@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { Customer } from '@/types/entities';
 
 interface Props {
-  customer: Pick<Customer, 'arr' | 'arrCurrency' | 'bcn'>;
+  customer: Pick<Customer, 'arr' | 'arrCurrency' | 'bcn' | 'accountNumber'>;
   currency: Currency;
   className?: string;
 }
@@ -35,7 +35,7 @@ function formatMonth(iso: string | null): string {
 }
 
 export function ArrSummaryCard({ customer, currency, className }: Props) {
-  const revenue = useCustomerRevenue(customer.bcn);
+  const revenue = useCustomerRevenue(customer.bcn, customer.accountNumber);
   const effective = getEffectiveArr(customer, revenue, currency);
 
   const isLive = effective.source === 'powerbi';
