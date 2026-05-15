@@ -78,6 +78,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         useLookupTableStore.getState().hydrateFromDb(),
       ]);
 
+      // Hydrate revenue cache so customer ARR renders immediately from the last refresh
+      try {
+        const { loadRevenueFromDb } = await import('@/lib/integrations/powerbi/revenueService');
+        await loadRevenueFromDb();
+      } catch (err) {
+        console.error('[revenue] hydrate failed:', err);
+      }
+
       // Restore Tauri session from persisted refresh token
       try {
         const { restoreSession } = await import('@/lib/auth/authHelpers');
@@ -95,6 +103,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
             const { loadProfilePhoto } = await import('@/hooks/useAuth');
             await loadProfilePhoto(account.localAccountId);
           }
+
+          // Auth restored — kick off background revenue refresh if cache is stale.
+          // Runs detached from the init flow so a slow/failing Power BI call never blocks the app shell.
+          void (async () => {
+            try {
+              const { getAccessToken } = await import('@/lib/auth/authHelpers');
+              const { powerBiRequest } = await import('@/lib/auth/msalConfig');
+              const { maybeAutoRefresh } = await import('@/lib/integrations/powerbi/revenueService');
+              const token = await getAccessToken(powerBiRequest.scopes);
+              if (token) await maybeAutoRefresh(token);
+            } catch (err) {
+              console.error('[revenue] auto-refresh init failed:', err);
+            }
+          })();
         }
       } catch (err) {
         console.error('[auth] Session restore failed:', err);

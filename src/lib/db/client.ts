@@ -87,6 +87,19 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name COLLATE NOCASE)`);
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS customer_revenue (
+      bcn              TEXT PRIMARY KEY,
+      pbi_customer_id  TEXT,
+      arr_usd          REAL,
+      arr_lc           REAL,
+      currency_code    TEXT,
+      as_of_month      TEXT,
+      refreshed_at     TEXT NOT NULL
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS contacts (
       id            TEXT PRIMARY KEY,
       customer_id   TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -398,7 +411,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '41')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '42')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -970,6 +983,30 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
     await db.execute(
       `UPDATE app_settings SET value = '41', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 42) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS customer_revenue (
+        bcn              TEXT PRIMARY KEY,
+        pbi_customer_id  TEXT,
+        arr_usd          REAL,
+        arr_lc           REAL,
+        currency_code    TEXT,
+        as_of_month      TEXT,
+        refreshed_at     TEXT NOT NULL
+      )
+    `);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
+    await db.execute(
+      `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('revenue_last_refresh_at', '')`
+    );
+    await db.execute(
+      `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('revenue_auto_refresh_hours', '6')`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '42', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
   }
 }
