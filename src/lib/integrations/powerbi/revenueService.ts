@@ -93,74 +93,97 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     const refreshedAt = new Date().toISOString();
 
     const db = await getDb();
-    await db.execute('BEGIN TRANSACTION');
-    try {
-      await db.execute('DELETE FROM customer_revenue');
 
-      const byBcn = new Map<string, RevenueRowDb>();
-      for (const row of rows) {
-        const bcn = toStrOrNull(row['Customer[bcn]']);
-        if (!bcn) continue;
-        const next: RevenueRowDb = {
-          bcn,
-          pbi_customer_id: toStrOrNull(row['Customer[customer_id]']),
-          arr_usd: toNumOrNull(row['[ARR_USD]']),
-          arr_lc: toNumOrNull(row['[ARR_LC]']),
-          currency_code: toStrOrNull(row['Customer[currency_code]']),
-          as_of_month: toStrOrNull(row['[AsOfMonth]']),
-          refreshed_at: refreshedAt,
-        };
-        const existing = byBcn.get(bcn);
-        if (!existing || (next.arr_usd ?? 0) > (existing.arr_usd ?? 0)) {
-          byBcn.set(bcn, next);
-        }
+    const byBcn = new Map<string, RevenueRowDb>();
+    for (const row of rows) {
+      const bcn = toStrOrNull(row['Customer[bcn]']);
+      if (!bcn) continue;
+      const next: RevenueRowDb = {
+        bcn,
+        pbi_customer_id: toStrOrNull(row['Customer[customer_id]']),
+        arr_usd: toNumOrNull(row['[ARR_USD]']),
+        arr_lc: toNumOrNull(row['[ARR_LC]']),
+        currency_code: toStrOrNull(row['Customer[currency_code]']),
+        as_of_month: toStrOrNull(row['[AsOfMonth]']),
+        refreshed_at: refreshedAt,
+      };
+      const existing = byBcn.get(bcn);
+      if (!existing || (next.arr_usd ?? 0) > (existing.arr_usd ?? 0)) {
+        byBcn.set(bcn, next);
       }
-      const valid = Array.from(byBcn.values());
+    }
+    const valid = Array.from(byBcn.values());
 
-      for (let i = 0; i < valid.length; i += CHUNK) {
-        const chunk = valid.slice(i, i + CHUNK);
-        const placeholders = chunk
-          .map(
-            (_, j) =>
-              `(${Array.from(
-                { length: COLS_PER_ROW },
-                (__, k) => `$${j * COLS_PER_ROW + k + 1}`,
-              ).join(',')})`,
-          )
-          .join(',');
-        const values = chunk.flatMap((r) => [
-          r.bcn,
-          r.pbi_customer_id,
-          r.arr_usd,
-          r.arr_lc,
-          r.currency_code,
-          r.as_of_month,
-          r.refreshed_at,
-        ]);
-        await db.execute(
+    // Same pattern as bulkUpsertCustomers / bulkUpsertOpportunities: each chunk
+    // auto-commits so the write lock is released between batches and concurrent
+    // sync/auth writes can interleave. Per-chunk try/catch keeps one bad batch
+    // from aborting the whole refresh.
+    let inserted = 0;
+    let errors = 0;
+    for (let i = 0; i < valid.length; i += CHUNK) {
+      const chunk = valid.slice(i, i + CHUNK);
+      const placeholders = chunk
+        .map(
+          (_, j) =>
+            `(${Array.from(
+              { length: COLS_PER_ROW },
+              (__, k) => `$${j * COLS_PER_ROW + k + 1}`,
+            ).join(',')})`,
+        )
+        .join(',');
+      const values = chunk.flatMap((r) => [
+        r.bcn,
+        r.pbi_customer_id,
+        r.arr_usd,
+        r.arr_lc,
+        r.currency_code,
+        r.as_of_month,
+        r.refreshed_at,
+      ]);
+      try {
+        const result = await db.execute(
           `INSERT OR REPLACE INTO customer_revenue
            (bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, refreshed_at)
            VALUES ${placeholders}`,
           values,
         );
+        inserted += result.rowsAffected;
+      } catch (err) {
+        console.error('[revenue] Bulk insert chunk failed:', err instanceof Error ? err.message : err);
+        errors++;
       }
+    }
 
+    // Only prune stale rows if every chunk landed cleanly — partial failure should
+    // leave older rows intact rather than dropping data we still want.
+    if (errors === 0) {
+      try {
+        await db.execute(
+          `DELETE FROM customer_revenue WHERE refreshed_at < $1`,
+          [refreshedAt],
+        );
+      } catch (err) {
+        console.error('[revenue] Stale-row prune failed:', err instanceof Error ? err.message : err);
+      }
+    }
+
+    try {
       await db.execute(
         `INSERT INTO app_settings (key, value, updated_at)
          VALUES ('revenue_last_refresh_at', $1, datetime('now'))
          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
         [refreshedAt],
       );
-      await db.execute('COMMIT');
-
-      useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);
-      return { count: valid.length };
     } catch (err) {
-      await db.execute('ROLLBACK').catch(() => {
-        // already rolled back or never started — surface the original error
-      });
-      throw err;
+      console.error('[revenue] last-refresh timestamp write failed:', err instanceof Error ? err.message : err);
     }
+
+    console.log(
+      `[revenue] refresh complete: ${inserted} rows inserted, ${errors} chunk${errors === 1 ? '' : 's'} failed`,
+    );
+
+    useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);
+    return { count: valid.length };
   } finally {
     useRevenueStore.getState().setRefreshing(false);
   }
