@@ -103,10 +103,10 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
         if (!bcn) continue;
         const next: RevenueRowDb = {
           bcn,
-          pbi_customer_id: toStrOrNull(row['[customer_id]']),
+          pbi_customer_id: toStrOrNull(row['Customer[customer_id]']),
           arr_usd: toNumOrNull(row['[ARR_USD]']),
           arr_lc: toNumOrNull(row['[ARR_LC]']),
-          currency_code: toStrOrNull(row['[currency_code]']),
+          currency_code: toStrOrNull(row['Customer[currency_code]']),
           as_of_month: toStrOrNull(row['[AsOfMonth]']),
           refreshed_at: refreshedAt,
         };

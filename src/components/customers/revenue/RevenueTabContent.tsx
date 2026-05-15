@@ -1,0 +1,76 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { sectionReveal } from '@/lib/motion';
+import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
+import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
+import { RefreshButton } from '@/components/revenue/RefreshButton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { ArrSummaryCard } from './ArrSummaryCard';
+import { ArrMovementChart } from './ArrMovementChart';
+import { useCustomerRevenue } from '@/hooks/useCustomerRevenue';
+import type { Currency } from '@/lib/revenue/effectiveArr';
+import type { Customer } from '@/types/entities';
+
+interface Props {
+  customer: Customer;
+}
+
+const MONTHS_OPTIONS = [
+  { value: '3', label: 'Last 3 months' },
+  { value: '6', label: 'Last 6 months' },
+  { value: '12', label: 'Last 12 months' },
+  { value: '24', label: 'Last 24 months' },
+] as const;
+
+export function RevenueTabContent({ customer }: Props) {
+  const [currency, setCurrency] = useState<Currency>('USD');
+  const [monthsBack, setMonthsBack] = useState<number>(12);
+  const revenue = useCustomerRevenue(customer.bcn);
+
+  return (
+    <div className="space-y-4">
+      <motion.div className="flex flex-wrap items-center gap-3" {...sectionReveal(0)}>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Currency</Label>
+          <CurrencyToggle value={currency} onChange={setCurrency} />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Period</Label>
+          <Select value={String(monthsBack)} onValueChange={(v) => setMonthsBack(Number(v))}>
+            <SelectTrigger className="h-9 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <LastRefreshedBadge />
+          <RefreshButton />
+        </div>
+      </motion.div>
+
+      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4" {...sectionReveal(0.05)}>
+        <ArrSummaryCard customer={customer} currency={currency} />
+        <div className="md:col-span-2">
+          <ArrMovementChart
+            bcn={customer.bcn}
+            monthsBack={monthsBack}
+            currency={currency}
+            currencyCode={revenue?.currencyCode ?? customer.arrCurrency ?? null}
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+}

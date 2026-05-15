@@ -8,7 +8,7 @@ import { underlineSpring, tabPanelMotion, statCardMotion, sectionReveal } from '
 import {
   Building2, Bell, Plus, Settings,
   Clock, User, Loader2,
-  Mail, Phone, Globe, Target, ArrowLeft, Copy, Check,
+  Mail, Phone, Globe, Target, ArrowLeft, Copy, Check, TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ import { OpportunityList } from '@/components/opportunities/OpportunityList';
 import { CloudServicesContactsCard } from '@/components/customers/CloudServicesContactsCard';
 import { VendorRelatedCard } from '@/components/customers/VendorRelatedCard';
 import { ActivitiesTabContent } from '@/components/activities/ActivitiesTabContent';
+import { RevenueTabContent } from '@/components/customers/revenue/RevenueTabContent';
 import { FollowUpList } from '@/components/followups/FollowUpList';
 import { Timeline } from '@/components/timeline/Timeline';
 import { useCustomerStore } from '@/store/customerStore';
@@ -44,13 +45,13 @@ import { useOpportunities } from '@/hooks/useOpportunities';
 import { scoreHealth, healthTier, healthTierLabel, healthTierBadgeVariant } from '@/lib/customers/healthScore';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 
-type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities';
+type ProfileTab = 'overview' | 'activities' | 'contacts' | 'followups' | 'opportunities' | 'revenue';
 
 interface CustomerDetailProps {
   customerId: string;
 }
 
-const validTabs: ProfileTab[] = ['overview', 'activities', 'contacts', 'followups', 'opportunities'];
+const validTabs: ProfileTab[] = ['overview', 'activities', 'contacts', 'followups', 'opportunities', 'revenue'];
 
 export default function CustomerDetailClient({ customerId }: CustomerDetailProps) {
   const router = useRouter();
@@ -310,6 +311,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
     { key: 'contacts', label: 'Contacts', icon: User, count: contacts.length },
     { key: 'followups', label: 'Follow-Ups', icon: Bell, count: followUps.length },
     { key: 'opportunities' as ProfileTab, label: 'Opportunities', icon: Target, count: customerOpportunities.length },
+    { key: 'revenue' as ProfileTab, label: 'Revenue', icon: TrendingUp },
   ], [activities.length, filteredActivityCount, contacts.length, followUps.length, customerOpportunities.length]);
 
 
@@ -645,6 +647,16 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                     {...tabPanelMotion}
                   >
                     <OpportunityList customerId={customerId} triggerAdd={triggerOpportunityAdd} />
+                  </motion.div>
+                )}
+
+                {/* Revenue Tab */}
+                {activeTab === 'revenue' && (
+                  <motion.div
+                    key="revenue"
+                    {...tabPanelMotion}
+                  >
+                    <RevenueTabContent customer={customer} />
                   </motion.div>
                 )}
 
