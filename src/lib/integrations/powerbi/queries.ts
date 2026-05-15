@@ -27,7 +27,11 @@ const ACTIVITY_WINDOW_MONTHS = 12;
  * distinguish active vs dormant-but-recent via the value itself.
  *
  * Response keys: Reseller[bcn], Reseller[reseller_id], Reseller[currency_code],
- * [ARR_USD], [ARR_LC], [AsOfMonth]
+ * [ARR_USD], [ARR_LC], [ActiveEndCustomers], [AsOfMonth]
+ *
+ * ActiveEndCustomers = distinct ARR[customer_id] for this reseller in the latest
+ * month. ARR rows are emitted per active end-customer subscription, so this counts
+ * the reseller's currently-active end customers (not historical).
  */
 export const CURRENT_ARR_BY_BCN_DAX = `
 EVALUATE
@@ -44,6 +48,10 @@ FILTER(
     ),
     "ARR_USD", CALCULATE(SUM(ARR[arr_arr_amt_usd]), ARR[calendar_month] = LatestMonth),
     "ARR_LC", CALCULATE(SUM(ARR[ARR, LC]), ARR[calendar_month] = LatestMonth),
+    "ActiveEndCustomers", CALCULATE(
+      DISTINCTCOUNT(ARR[customer_id]),
+      ARR[calendar_month] = LatestMonth
+    ),
     "WindowARR_USD", CALCULATE(
       SUM(ARR[arr_arr_amt_usd]),
       ARR[calendar_month] >= WindowStart,

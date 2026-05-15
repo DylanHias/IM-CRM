@@ -88,13 +88,14 @@ async function ensureTablesExist(db: Database): Promise<void> {
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS customer_revenue (
-      bcn              TEXT PRIMARY KEY,
-      pbi_customer_id  TEXT,
-      arr_usd          REAL,
-      arr_lc           REAL,
-      currency_code    TEXT,
-      as_of_month      TEXT,
-      refreshed_at     TEXT NOT NULL
+      bcn                   TEXT PRIMARY KEY,
+      pbi_customer_id       TEXT,
+      arr_usd               REAL,
+      arr_lc                REAL,
+      currency_code         TEXT,
+      as_of_month           TEXT,
+      active_end_customers  INTEGER,
+      refreshed_at          TEXT NOT NULL
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
@@ -374,6 +375,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['opportunities', 'close_date',                    'TEXT'],
     ['opportunities', 'competitor_id',                 'TEXT'],
     ['opportunities', 'close_description',             'TEXT'],
+    ['customer_revenue', 'active_end_customers',       'INTEGER'],
   ];
   const tableColumns = new Map<string, Set<string>>();
   const uniqueTables = Array.from(new Set(cols.map((c) => c[0])));
@@ -989,13 +991,14 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
   if (currentVersion < 42) {
     await db.execute(`
       CREATE TABLE IF NOT EXISTS customer_revenue (
-        bcn              TEXT PRIMARY KEY,
-        pbi_customer_id  TEXT,
-        arr_usd          REAL,
-        arr_lc           REAL,
-        currency_code    TEXT,
-        as_of_month      TEXT,
-        refreshed_at     TEXT NOT NULL
+        bcn                   TEXT PRIMARY KEY,
+        pbi_customer_id       TEXT,
+        arr_usd               REAL,
+        arr_lc                REAL,
+        currency_code         TEXT,
+        as_of_month           TEXT,
+        active_end_customers  INTEGER,
+        refreshed_at          TEXT NOT NULL
       )
     `);
     await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);

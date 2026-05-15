@@ -7,6 +7,7 @@ export interface CustomerRevenueRow {
   arrLc: number | null;
   currencyCode: string | null;
   asOfMonth: string | null;
+  activeEndCustomers: number | null;
   refreshedAt: string;
 }
 

@@ -7,7 +7,7 @@ const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
-const COLS_PER_ROW = 7;
+const COLS_PER_ROW = 8;
 const CHUNK = Math.floor(999 / COLS_PER_ROW);
 
 interface RevenueRowDb {
@@ -17,6 +17,7 @@ interface RevenueRowDb {
   arr_lc: number | null;
   currency_code: string | null;
   as_of_month: string | null;
+  active_end_customers: number | null;
   refreshed_at: string;
 }
 
@@ -40,8 +41,15 @@ function mapDbRow(row: RevenueRowDb): CustomerRevenueRow {
     arrLc: row.arr_lc,
     currencyCode: row.currency_code,
     asOfMonth: row.as_of_month,
+    activeEndCustomers: row.active_end_customers,
     refreshedAt: row.refreshed_at,
   };
+}
+
+function toIntOrNull(v: unknown): number | null {
+  const n = toNumOrNull(v);
+  if (n === null) return null;
+  return Math.round(n);
 }
 
 async function readSetting(key: string): Promise<string | null> {
@@ -70,7 +78,7 @@ export async function getAutoRefreshHours(): Promise<number> {
 export async function loadRevenueFromDb(): Promise<void> {
   const db = await getDb();
   const rows = await db.select<RevenueRowDb[]>(
-    `SELECT bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, refreshed_at
+    `SELECT bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at
      FROM customer_revenue`,
   );
   const lastRefreshed = await readSetting('revenue_last_refresh_at');
@@ -119,6 +127,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
         arr_lc: toNumOrNull(row['[ARR_LC]']),
         currency_code: toStrOrNull(row['Reseller[currency_code]']),
         as_of_month: toStrOrNull(row['[AsOfMonth]']),
+        active_end_customers: toIntOrNull(row['[ActiveEndCustomers]']),
         refreshed_at: refreshedAt,
       };
       const existing = byBcn.get(bcn);
@@ -152,12 +161,13 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
         r.arr_lc,
         r.currency_code,
         r.as_of_month,
+        r.active_end_customers,
         r.refreshed_at,
       ]);
       try {
         const result = await db.execute(
           `INSERT OR REPLACE INTO customer_revenue
-           (bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, refreshed_at)
+           (bcn, pbi_customer_id, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at)
            VALUES ${placeholders}`,
           values,
         );

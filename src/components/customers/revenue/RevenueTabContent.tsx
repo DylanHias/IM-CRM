@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
 import { sectionReveal } from '@/lib/motion';
 import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { RefreshButton } from '@/components/revenue/RefreshButton';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ArrSummaryCard } from './ArrSummaryCard';
 import { ArrMovementChart } from './ArrMovementChart';
 import { useCustomerRevenue } from '@/hooks/useCustomerRevenue';
+import { cn } from '@/lib/utils';
 import type { Customer } from '@/types/entities';
 
 interface Props {
@@ -53,7 +55,10 @@ export function RevenueTabContent({ customer }: Props) {
       </motion.div>
 
       <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4" {...sectionReveal(0.05)}>
-        <ArrSummaryCard customer={customer} currency="LC" />
+        <div className="space-y-4">
+          <ArrSummaryCard customer={customer} currency="LC" />
+          <ActiveEndCustomersCard count={revenue?.activeEndCustomers ?? null} />
+        </div>
         <div className="md:col-span-2">
           <ArrMovementChart
             bcn={customer.bcn}
@@ -63,6 +68,32 @@ export function RevenueTabContent({ customer }: Props) {
           />
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+function ActiveEndCustomersCard({ count, className }: { count: number | null; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3',
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Users size={13} />
+        Active end customers
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-semibold tabular-nums text-foreground">
+          {count === null ? '—' : count.toLocaleString('nl-BE')}
+        </span>
+      </div>
+      <div className="text-xs text-muted-foreground">
+        {count === null
+          ? 'No revenue data yet — refresh in Admin → Revenue Sync'
+          : 'End customers with active ARR this month'}
+      </div>
     </div>
   );
 }
