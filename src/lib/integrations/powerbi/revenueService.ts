@@ -53,6 +53,14 @@ async function readSetting(key: string): Promise<string | null> {
   return rows[0]?.value || null;
 }
 
+async function getCrmBcnSet(): Promise<Set<string>> {
+  const db = await getDb();
+  const rows = await db.select<{ bcn: string }[]>(
+    `SELECT bcn FROM customers WHERE bcn IS NOT NULL AND bcn != ''`,
+  );
+  return new Set(rows.map((r) => r.bcn));
+}
+
 export async function getAutoRefreshHours(): Promise<number> {
   const v = await readSetting('revenue_auto_refresh_hours');
   const n = v ? Number(v) : 6;
@@ -93,11 +101,17 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     const refreshedAt = new Date().toISOString();
 
     const db = await getDb();
+    const crmBcns = await getCrmBcnSet();
 
     const byBcn = new Map<string, RevenueRowDb>();
+    let skippedNotInCrm = 0;
     for (const row of rows) {
       const bcn = toStrOrNull(row['Reseller[bcn]']);
       if (!bcn) continue;
+      if (!crmBcns.has(bcn)) {
+        skippedNotInCrm++;
+        continue;
+      }
       const next: RevenueRowDb = {
         bcn,
         pbi_customer_id: toStrOrNull(row['Reseller[reseller_id]']),
@@ -179,7 +193,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     }
 
     console.log(
-      `[revenue] refresh complete: ${inserted} rows inserted, ${errors} chunk${errors === 1 ? '' : 's'} failed`,
+      `[revenue] refresh complete: ${inserted} rows inserted, ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
     );
 
     useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);
