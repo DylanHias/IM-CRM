@@ -14,8 +14,8 @@ import { useOptionSetStore } from '@/store/optionSetStore';
 import { useLookupTableStore } from '@/store/lookupTableStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
+import { ErrorScreen } from '@/components/layout/ErrorScreen';
 import { Toaster } from 'sonner';
-import { Button } from '@/components/ui/button';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
 function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -163,17 +163,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   if (dbError) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4 max-w-md px-6">
-          <div className="space-y-2">
-            <p className="text-destructive font-medium">Database failed to initialize</p>
-            <p className="text-sm text-muted-foreground break-words">{dbError}</p>
-          </div>
-          <Button onClick={retryInit} disabled={retrying} size="sm">
-            {retrying ? 'Retrying…' : 'Retry'}
-          </Button>
-        </div>
-      </div>
+      <ErrorScreen
+        title="Database failed to initialize"
+        description={dbError}
+        onRetry={retryInit}
+        retrying={retrying}
+      />
     );
   }
 
