@@ -5,10 +5,12 @@ import { TrendingUp, Users, BarChart3, Radio } from 'lucide-react';
 import { useRevenueStore } from '@/store/revenueStore';
 import { useCustomerStore } from '@/store/customerStore';
 import type { Currency } from '@/lib/revenue/effectiveArr';
+import { type Region, REGION_COUNTRIES } from '@/lib/revenue/region';
 import { cn } from '@/lib/utils';
 
 interface Props {
   currency: Currency;
+  region: Region;
   className?: string;
 }
 
@@ -46,14 +48,19 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
   );
 }
 
-export function KpiCards({ currency, className }: Props) {
+export function KpiCards({ currency, region, className }: Props) {
   const byBcn = useRevenueStore((s) => s.byBcn);
   const customers = useCustomerStore((s) => s.customers);
 
   const kpis = useMemo<Kpi[]>(() => {
+    const codes = REGION_COUNTRIES[region];
+    const scopedCustomers = customers.filter((c) => c.addressCountry && codes.includes(c.addressCountry));
+    const scopedBcns = new Set(scopedCustomers.map((c) => c.bcn).filter((b): b is string => !!b));
+
     let totalArr = 0;
     let activeCount = 0;
     for (const row of Array.from(byBcn.values())) {
+      if (!scopedBcns.has(row.bcn)) continue;
       const value = currency === 'USD' ? row.arrUsd : row.arrLc;
       if (value !== null && value > 0) {
         totalArr += value;
@@ -61,8 +68,8 @@ export function KpiCards({ currency, className }: Props) {
       }
     }
     const avgArr = activeCount > 0 ? totalArr / activeCount : 0;
-    const customersWithBcn = customers.filter((c) => !!c.bcn).length;
-    const coveragePct = customersWithBcn > 0 ? (byBcn.size / customersWithBcn) * 100 : 0;
+    const scopedWithCache = Array.from(byBcn.values()).filter((r) => scopedBcns.has(r.bcn)).length;
+    const coveragePct = scopedBcns.size > 0 ? (scopedWithCache / scopedBcns.size) * 100 : 0;
 
     const code = currency === 'USD' ? 'USD' : 'EUR';
 
@@ -77,7 +84,7 @@ export function KpiCards({ currency, className }: Props) {
         label: 'Active customers',
         icon: Users,
         value: activeCount.toLocaleString('nl-BE'),
-        hint: `${customers.length.toLocaleString('nl-BE')} total in CRM`,
+        hint: `${scopedCustomers.length.toLocaleString('nl-BE')} in scope`,
       },
       {
         label: 'Average ARR',
@@ -89,10 +96,10 @@ export function KpiCards({ currency, className }: Props) {
         label: 'Live coverage',
         icon: Radio,
         value: `${coveragePct.toFixed(0)}%`,
-        hint: `${byBcn.size.toLocaleString('nl-BE')} / ${customersWithBcn.toLocaleString('nl-BE')} customers with BCN`,
+        hint: `${scopedWithCache.toLocaleString('nl-BE')} / ${scopedBcns.size.toLocaleString('nl-BE')} customers with BCN`,
       },
     ];
-  }, [byBcn, customers, currency]);
+  }, [byBcn, customers, currency, region]);
 
   return (
     <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>

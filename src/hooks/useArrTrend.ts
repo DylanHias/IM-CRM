@@ -1,6 +1,7 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import {
   useRevenueInsightsStore,
+  trendKey,
   type ArrTrendPoint,
 } from '@/store/revenueInsightsStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
@@ -14,20 +15,21 @@ interface Result {
   refresh: () => Promise<void>;
 }
 
-export function useArrTrend(monthsBack: number): Result {
-  const entry = useRevenueInsightsStore((s) => s.trendByMonths.get(monthsBack));
-  const isLoading = useRevenueInsightsStore((s) => s.loadingMonths.has(monthsBack));
-  const error = useRevenueInsightsStore((s) => s.errorByMonths.get(monthsBack) ?? null);
+export function useArrTrend(monthsBack: number, countryCodes: readonly string[]): Result {
+  const key = useMemo(() => trendKey(monthsBack, countryCodes), [monthsBack, countryCodes]);
+  const entry = useRevenueInsightsStore((s) => s.trendByKey.get(key));
+  const isLoading = useRevenueInsightsStore((s) => s.loadingKeys.has(key));
+  const error = useRevenueInsightsStore((s) => s.errorByKey.get(key) ?? null);
 
   const refresh = useCallback(async () => {
     try {
       const token = await getAccessToken(powerBiRequest.scopes);
       if (!token) return;
-      await fetchArrTrend(token, monthsBack, true);
+      await fetchArrTrend(token, monthsBack, countryCodes, true);
     } catch {
       // captured in store
     }
-  }, [monthsBack]);
+  }, [monthsBack, countryCodes]);
 
   useEffect(() => {
     if (entry || isLoading) return;
@@ -35,12 +37,12 @@ export function useArrTrend(monthsBack: number): Result {
       try {
         const token = await getAccessToken(powerBiRequest.scopes);
         if (!token) return;
-        await fetchArrTrend(token, monthsBack);
+        await fetchArrTrend(token, monthsBack, countryCodes);
       } catch {
         // captured in store
       }
     })();
-  }, [monthsBack, entry, isLoading]);
+  }, [monthsBack, countryCodes, entry, isLoading]);
 
   return {
     points: entry?.points ?? [],

@@ -66,21 +66,25 @@ FILTER(
  *
  * Response keys: ARR[calendar_month], [ARR_USD], [CustomerCount]
  */
-export function arrTrendDax(monthsBack: number): string {
+export function arrTrendDax(monthsBack: number, countryCodes: readonly string[]): string {
   const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
+  const safeCodes = countryCodes
+    .map((c) => c.replace(/[^A-Z]/g, ''))
+    .filter((c) => c.length === 2);
+  const codesList = `{${safeCodes.map((c) => `"${c}"`).join(', ')}}`;
   return `
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX(ARR[calendar_month]), ALL(ARR))
 VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
-VAR BeneluxResellerIds = CALCULATETABLE(
+VAR ScopedResellerIds = CALCULATETABLE(
   VALUES(Reseller[reseller_id]),
-  Reseller[country_code] IN ${BENELUX_DAX_LIST}
+  Reseller[country_code] IN ${codesList}
 )
 RETURN
 ADDCOLUMNS(
   SUMMARIZE(
     FILTER(ARR,
-      ARR[reseller_id] IN BeneluxResellerIds &&
+      ARR[reseller_id] IN ScopedResellerIds &&
       ARR[calendar_month] >= EarliestMonth &&
       ARR[calendar_month] <= LatestMonth
     ),

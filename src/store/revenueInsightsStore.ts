@@ -7,46 +7,53 @@ export interface ArrTrendPoint {
 }
 
 export interface ArrTrendEntry {
+  key: string;
   monthsBack: number;
+  countryCodes: readonly string[];
   points: ArrTrendPoint[];
   fetchedAt: number;
 }
 
-interface RevenueInsightsState {
-  trendByMonths: Map<number, ArrTrendEntry>;
-  loadingMonths: Set<number>;
-  errorByMonths: Map<number, string>;
+export function trendKey(monthsBack: number, countryCodes: readonly string[]): string {
+  const codes = [...countryCodes].sort().join(',');
+  return `${monthsBack}::${codes}`;
+}
 
-  setTrend: (monthsBack: number, entry: ArrTrendEntry) => void;
-  setLoading: (monthsBack: number, loading: boolean) => void;
-  setError: (monthsBack: number, error: string | null) => void;
+interface RevenueInsightsState {
+  trendByKey: Map<string, ArrTrendEntry>;
+  loadingKeys: Set<string>;
+  errorByKey: Map<string, string>;
+
+  setTrend: (key: string, entry: ArrTrendEntry) => void;
+  setLoading: (key: string, loading: boolean) => void;
+  setError: (key: string, error: string | null) => void;
 }
 
 export const useRevenueInsightsStore = create<RevenueInsightsState>((set) => ({
-  trendByMonths: new Map(),
-  loadingMonths: new Set(),
-  errorByMonths: new Map(),
+  trendByKey: new Map(),
+  loadingKeys: new Set(),
+  errorByKey: new Map(),
 
-  setTrend: (monthsBack, entry) =>
+  setTrend: (key, entry) =>
     set((s) => {
-      const next = new Map(s.trendByMonths);
-      next.set(monthsBack, entry);
-      const nextErr = new Map(s.errorByMonths);
-      nextErr.delete(monthsBack);
-      return { trendByMonths: next, errorByMonths: nextErr };
+      const next = new Map(s.trendByKey);
+      next.set(key, entry);
+      const nextErr = new Map(s.errorByKey);
+      nextErr.delete(key);
+      return { trendByKey: next, errorByKey: nextErr };
     }),
-  setLoading: (monthsBack, loading) =>
+  setLoading: (key, loading) =>
     set((s) => {
-      const next = new Set(s.loadingMonths);
-      if (loading) next.add(monthsBack);
-      else next.delete(monthsBack);
-      return { loadingMonths: next };
+      const next = new Set(s.loadingKeys);
+      if (loading) next.add(key);
+      else next.delete(key);
+      return { loadingKeys: next };
     }),
-  setError: (monthsBack, error) =>
+  setError: (key, error) =>
     set((s) => {
-      const next = new Map(s.errorByMonths);
-      if (error) next.set(monthsBack, error);
-      else next.delete(monthsBack);
-      return { errorByMonths: next };
+      const next = new Map(s.errorByKey);
+      if (error) next.set(key, error);
+      else next.delete(key);
+      return { errorByKey: next };
     }),
 }));

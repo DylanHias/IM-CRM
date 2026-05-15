@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   monthsBack: number;
+  countryCodes: readonly string[];
+  scopeLabel: string;
   className?: string;
 }
 
@@ -32,8 +34,8 @@ function formatUsd(value: number): string {
   }
 }
 
-export function ArrTrendChart({ monthsBack, className }: Props) {
-  const { points, isLoading, error, refresh } = useArrTrend(monthsBack);
+export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className }: Props) {
+  const { points, isLoading, error, refresh } = useArrTrend(monthsBack, countryCodes);
 
   const data = useMemo(
     () =>
@@ -56,7 +58,7 @@ export function ArrTrendChart({ monthsBack, className }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <LineChartIcon size={13} />
-          Total ARR · last {monthsBack} months (USD)
+          Total ARR · {scopeLabel} · last {monthsBack} months (USD)
         </div>
         <Button
           variant="ghost"

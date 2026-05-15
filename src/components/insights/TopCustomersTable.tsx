@@ -6,10 +6,12 @@ import { Trophy } from 'lucide-react';
 import { useRevenueStore } from '@/store/revenueStore';
 import { useCustomerStore } from '@/store/customerStore';
 import type { Currency } from '@/lib/revenue/effectiveArr';
+import { type Region, REGION_COUNTRIES } from '@/lib/revenue/region';
 import { cn } from '@/lib/utils';
 
 interface Props {
   currency: Currency;
+  region: Region;
   limit?: number;
   className?: string;
 }
@@ -34,16 +36,19 @@ function formatCurrency(value: number, code: string): string {
   }
 }
 
-export function TopCustomersTable({ currency, limit = 25, className }: Props) {
+export function TopCustomersTable({ currency, region, limit = 25, className }: Props) {
   const router = useRouter();
   const byBcn = useRevenueStore((s) => s.byBcn);
   const customers = useCustomerStore((s) => s.customers);
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
+    const codes = REGION_COUNTRIES[region];
     const customersByBcn = new Map<string, { id: string; name: string }>();
     for (const c of customers) {
-      if (c.bcn) customersByBcn.set(c.bcn, { id: c.id, name: c.name });
+      if (!c.bcn) continue;
+      if (!c.addressCountry || !codes.includes(c.addressCountry)) continue;
+      customersByBcn.set(c.bcn, { id: c.id, name: c.name });
     }
     for (const r of Array.from(byBcn.values())) {
       const value = currency === 'USD' ? r.arrUsd : r.arrLc;
@@ -60,7 +65,7 @@ export function TopCustomersTable({ currency, limit = 25, className }: Props) {
     }
     out.sort((a, b) => b.arr - a.arr);
     return out.slice(0, limit);
-  }, [byBcn, customers, currency, limit]);
+  }, [byBcn, customers, currency, region, limit]);
 
   return (
     <div className={cn('rounded-xl border border-border/60 bg-card shadow-sm', className)}>

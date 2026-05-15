@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal } from '@/lib/motion';
 import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
@@ -12,6 +12,7 @@ import { KpiCards } from './KpiCards';
 import { TopCustomersTable } from './TopCustomersTable';
 import { ArrTrendChart } from './ArrTrendChart';
 import type { Currency } from '@/lib/revenue/effectiveArr';
+import { type Region, REGION_COUNTRIES, REGION_LABELS } from '@/lib/revenue/region';
 
 const MONTHS_OPTIONS = [
   { value: '6', label: 'Last 6 months' },
@@ -27,21 +28,48 @@ const TOP_N_OPTIONS = [
   { value: '100', label: 'Top 100' },
 ] as const;
 
+const REGION_OPTIONS: { value: Region; label: string }[] = [
+  { value: 'BENELUX', label: REGION_LABELS.BENELUX },
+  { value: 'BE', label: REGION_LABELS.BE },
+  { value: 'NL', label: REGION_LABELS.NL },
+  { value: 'LU', label: REGION_LABELS.LU },
+];
+
 export function InsightsPageContent() {
   const [currency, setCurrency] = useState<Currency>('USD');
+  const [region, setRegion] = useState<Region>('BENELUX');
   const [monthsBack, setMonthsBack] = useState<number>(12);
   const [topN, setTopN] = useState<number>(25);
+
+  const countryCodes = useMemo(() => REGION_COUNTRIES[region], [region]);
+  const scopeLabel = REGION_LABELS[region];
 
   return (
     <div className="space-y-4">
       <motion.div {...sectionReveal(0)}>
         <h2 className="text-xl font-semibold text-foreground">Insights</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Org-wide revenue performance across the Benelux customer base.
+          Revenue performance across {scopeLabel.toLowerCase()}.
         </p>
       </motion.div>
 
       <motion.div className="flex flex-wrap items-center gap-3" {...sectionReveal(0.05)}>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Select value={region} onValueChange={(v) => setRegion(v as Region)}>
+            <SelectTrigger className="h-9 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REGION_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Currency</Label>
           <CurrencyToggle value={currency} onChange={setCurrency} />
@@ -86,15 +114,15 @@ export function InsightsPageContent() {
       </motion.div>
 
       <motion.div {...sectionReveal(0.1)}>
-        <KpiCards currency={currency} />
+        <KpiCards currency={currency} region={region} />
       </motion.div>
 
       <motion.div {...sectionReveal(0.15)}>
-        <ArrTrendChart monthsBack={monthsBack} />
+        <ArrTrendChart monthsBack={monthsBack} countryCodes={countryCodes} scopeLabel={scopeLabel} />
       </motion.div>
 
       <motion.div {...sectionReveal(0.2)}>
-        <TopCustomersTable currency={currency} limit={topN} />
+        <TopCustomersTable currency={currency} region={region} limit={topN} />
       </motion.div>
     </div>
   );

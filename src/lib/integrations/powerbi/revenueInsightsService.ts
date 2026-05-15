@@ -2,6 +2,7 @@ import { executeDaxQuery } from './client';
 import { arrTrendDax } from './queries';
 import {
   useRevenueInsightsStore,
+  trendKey,
   type ArrTrendPoint,
 } from '@/store/revenueInsightsStore';
 
@@ -37,40 +38,42 @@ function parseRows(rows: Record<string, unknown>[]): ArrTrendPoint[] {
 export async function fetchArrTrend(
   token: string,
   monthsBack: number,
+  countryCodes: readonly string[],
   force = false,
 ): Promise<ArrTrendPoint[]> {
+  const key = trendKey(monthsBack, countryCodes);
   const store = useRevenueInsightsStore.getState();
 
-  const cached = store.trendByMonths.get(monthsBack);
+  const cached = store.trendByKey.get(key);
   if (!force && cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
     return cached.points;
   }
 
-  if (store.loadingMonths.has(monthsBack)) {
+  if (store.loadingKeys.has(key)) {
     return new Promise((resolve) => {
       const unsub = useRevenueInsightsStore.subscribe((s) => {
-        if (!s.loadingMonths.has(monthsBack)) {
+        if (!s.loadingKeys.has(key)) {
           unsub();
-          resolve(s.trendByMonths.get(monthsBack)?.points ?? []);
+          resolve(s.trendByKey.get(key)?.points ?? []);
         }
       });
     });
   }
 
-  store.setLoading(monthsBack, true);
-  store.setError(monthsBack, null);
+  store.setLoading(key, true);
+  store.setError(key, null);
   try {
-    const dax = arrTrendDax(monthsBack);
+    const dax = arrTrendDax(monthsBack, countryCodes);
     const result = await executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, dax);
     const points = parseRows(result.rows ?? []);
-    store.setTrend(monthsBack, { monthsBack, points, fetchedAt: Date.now() });
+    store.setTrend(key, { key, monthsBack, countryCodes, points, fetchedAt: Date.now() });
     return points;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[insights] ARR trend fetch failed:', msg);
-    store.setError(monthsBack, msg);
+    store.setError(key, msg);
     throw err;
   } finally {
-    store.setLoading(monthsBack, false);
+    store.setLoading(key, false);
   }
 }
