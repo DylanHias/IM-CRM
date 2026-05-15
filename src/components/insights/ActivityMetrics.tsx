@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 
 interface Props {
   region: Region;
+  monthsBack: number;
   className?: string;
 }
 
@@ -63,18 +64,18 @@ function MetricCard({ label, value, hint, icon: Icon, delta }: MetricProps) {
   );
 }
 
-export function ActivityMetrics({ region, className }: Props) {
+export function ActivityMetrics({ region, monthsBack, className }: Props) {
   const countryCodes = useMemo(() => REGION_COUNTRIES[region], [region]);
-  const { points, isLoading, error } = useResellerSeatsTrend(2, countryCodes);
+  const { points, isLoading, error } = useResellerSeatsTrend(monthsBack, countryCodes);
 
   const latest = points[points.length - 1];
-  const prev = points[points.length - 2];
+  const earliest = points.length > 1 ? points[0] : undefined;
 
-  const resellerDelta = latest && prev ? pct(latest.activeResellers, prev.activeResellers) : null;
-  const seatDelta = latest && prev ? pct(latest.activeSeats, prev.activeSeats) : null;
+  const resellerDelta = latest && earliest ? pct(latest.activeResellers, earliest.activeResellers) : null;
+  const seatDelta = latest && earliest ? pct(latest.activeSeats, earliest.activeSeats) : null;
 
   const asOf = latest ? formatMonthLabel(latest.month) : null;
-  const prevLabel = prev ? formatMonthLabel(prev.month) : null;
+  const earliestLabel = earliest ? formatMonthLabel(earliest.month) : null;
 
   if (error) {
     return (
@@ -118,18 +119,18 @@ export function ActivityMetrics({ region, className }: Props) {
         hint={asOf ? `As of ${asOf}` : undefined}
       />
       <MetricCard
-        label="MoM reseller growth"
+        label="Reseller growth"
         icon={TrendingUp}
         value={resellerDelta !== null ? `${resellerDelta >= 0 ? '+' : ''}${resellerDelta.toFixed(1)}%` : '—'}
         delta={resellerDelta}
-        hint={prevLabel && asOf ? `${prevLabel} → ${asOf}` : undefined}
+        hint={earliestLabel && asOf ? `${earliestLabel} → ${asOf}` : undefined}
       />
       <MetricCard
-        label="MoM seat growth"
+        label="Seat growth"
         icon={TrendingUp}
         value={seatDelta !== null ? `${seatDelta >= 0 ? '+' : ''}${seatDelta.toFixed(1)}%` : '—'}
         delta={seatDelta}
-        hint={prevLabel && asOf ? `${prevLabel} → ${asOf}` : undefined}
+        hint={earliestLabel && asOf ? `${earliestLabel} → ${asOf}` : undefined}
       />
     </div>
   );

@@ -21,13 +21,6 @@ const MONTHS_OPTIONS = [
   { value: '24', label: 'Last 24 months' },
 ] as const;
 
-const TOP_N_OPTIONS = [
-  { value: '10', label: 'Top 10' },
-  { value: '25', label: 'Top 25' },
-  { value: '50', label: 'Top 50' },
-  { value: '100', label: 'Top 100' },
-] as const;
-
 const REGION_OPTIONS: { value: Region; label: string }[] = [
   { value: 'BENELUX', label: REGION_LABELS.BENELUX },
   { value: 'BE', label: REGION_LABELS.BE },
@@ -38,7 +31,6 @@ const REGION_OPTIONS: { value: Region; label: string }[] = [
 export function InsightsPageContent() {
   const [region, setRegion] = useState<Region>('BENELUX');
   const [monthsBack, setMonthsBack] = useState<number>(12);
-  const [topN, setTopN] = useState<number>(25);
 
   const countryCodes = useMemo(() => REGION_COUNTRIES[region], [region]);
   const scopeLabel = REGION_LABELS[region];
@@ -85,22 +77,6 @@ export function InsightsPageContent() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Top N</Label>
-          <Select value={String(topN)} onValueChange={(v) => setTopN(Number(v))}>
-            <SelectTrigger className="h-9 w-[120px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TOP_N_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="ml-auto flex items-center gap-2">
           <LastRefreshedBadge />
           <RefreshButton />
@@ -112,7 +88,7 @@ export function InsightsPageContent() {
       </motion.div>
 
       <motion.div {...sectionReveal(0.12)}>
-        <ActivityMetrics region={region} />
+        <ActivityMetrics region={region} monthsBack={monthsBack} />
       </motion.div>
 
       <motion.div {...sectionReveal(0.15)}>
@@ -128,7 +104,7 @@ export function InsightsPageContent() {
       </motion.div>
 
       <motion.div {...sectionReveal(0.2)}>
-        <TopCustomersTable currency="LC" region={region} limit={topN} />
+        <TopCustomersTable currency="LC" region={region} />
       </motion.div>
     </div>
   );
