@@ -137,3 +137,103 @@ ADDCOLUMNS(
 )
 `.trim();
 }
+
+function safeCountryList(countryCodes: readonly string[]): string {
+  const safeCodes = countryCodes
+    .map((c) => c.replace(/[^A-Z]/g, ''))
+    .filter((c) => c.length === 2);
+  return `{${safeCodes.map((c) => `"${c}"`).join(', ')}}`;
+}
+
+/**
+ * Monthly active-resellers + active-seats trend (last N months) scoped to a region.
+ * "Active" = reseller had a Seats row with seats_active_seats > 0 in that month.
+ *
+ * Response keys: Seats[month], [ActiveResellers], [ActiveSeats]
+ */
+export function resellerSeatsTrendDax(monthsBack: number, countryCodes: readonly string[]): string {
+  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
+  const codesList = safeCountryList(countryCodes);
+  return `
+EVALUATE
+VAR LatestMonth = CALCULATE(MAX(Seats[month]), ALL(Seats))
+VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
+VAR ScopedResellerIds = CALCULATETABLE(
+  VALUES(Reseller[reseller_id]),
+  Reseller[country_code] IN ${codesList}
+)
+RETURN
+ADDCOLUMNS(
+  SUMMARIZE(
+    FILTER(Seats,
+      Seats[reseller_id] IN ScopedResellerIds &&
+      Seats[month] >= EarliestMonth &&
+      Seats[month] <= LatestMonth
+    ),
+    Seats[month]
+  ),
+  "ActiveSeats", CALCULATE(SUM(Seats[seats_active_seats])),
+  "ActiveResellers", CALCULATE(
+    DISTINCTCOUNT(Seats[reseller_id]),
+    FILTER(Seats, Seats[seats_active_seats] > 0)
+  )
+)
+`.trim();
+}
+
+/**
+ * Monthly net sales (LC) per vendor (top N by total) over last N months, scoped to region.
+ *
+ * Response keys: Sales[month], Vendor[vendor_name], [NetSales_LC]
+ */
+export function netSalesByVendorDax(
+  monthsBack: number,
+  countryCodes: readonly string[],
+  topN: number,
+): string {
+  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
+  const safeTop = Math.max(1, Math.min(20, Math.floor(topN)));
+  const codesList = safeCountryList(countryCodes);
+  return `
+EVALUATE
+VAR LatestMonth = CALCULATE(MAX(Sales[month]), ALL(Sales))
+VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
+VAR ScopedResellerIds = CALCULATETABLE(
+  VALUES(Reseller[reseller_id]),
+  Reseller[country_code] IN ${codesList}
+)
+VAR VendorTotals =
+  ADDCOLUMNS(
+    SUMMARIZE(
+      FILTER(Sales,
+        Sales[reseller_id] IN ScopedResellerIds &&
+        Sales[month] >= EarliestMonth &&
+        Sales[month] <= LatestMonth
+      ),
+      Vendor[vendor_name]
+    ),
+    "Total", CALCULATE(SUM(Sales[net_sales_lc]))
+  )
+VAR TopVendorNames =
+  SELECTCOLUMNS(
+    TOPN(${safeTop}, FILTER(VendorTotals, [Total] > 0), [Total], DESC),
+    "v", Vendor[vendor_name]
+  )
+RETURN
+ADDCOLUMNS(
+  FILTER(
+    SUMMARIZE(
+      FILTER(Sales,
+        Sales[reseller_id] IN ScopedResellerIds &&
+        Sales[month] >= EarliestMonth &&
+        Sales[month] <= LatestMonth
+      ),
+      Sales[month],
+      Vendor[vendor_name]
+    ),
+    Vendor[vendor_name] IN TopVendorNames
+  ),
+  "NetSales_LC", CALCULATE(SUM(Sales[net_sales_lc]))
+)
+`.trim();
+}

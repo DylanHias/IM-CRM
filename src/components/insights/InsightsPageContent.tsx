@@ -8,8 +8,10 @@ import { RefreshButton } from '@/components/revenue/RefreshButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { KpiCards } from './KpiCards';
+import { ActivityMetrics } from './ActivityMetrics';
 import { TopCustomersTable } from './TopCustomersTable';
 import { ArrTrendChart } from './ArrTrendChart';
+import { NetSalesByVendorChart } from './NetSalesByVendorChart';
 import { type Region, REGION_COUNTRIES, REGION_LABELS } from '@/lib/revenue/region';
 
 const MONTHS_OPTIONS = [
@@ -109,8 +111,20 @@ export function InsightsPageContent() {
         <KpiCards currency="LC" region={region} />
       </motion.div>
 
+      <motion.div {...sectionReveal(0.12)}>
+        <ActivityMetrics region={region} />
+      </motion.div>
+
       <motion.div {...sectionReveal(0.15)}>
         <ArrTrendChart monthsBack={monthsBack} countryCodes={countryCodes} scopeLabel={scopeLabel} />
+      </motion.div>
+
+      <motion.div {...sectionReveal(0.18)}>
+        <NetSalesByVendorChart
+          monthsBack={monthsBack}
+          countryCodes={countryCodes}
+          scopeLabel={scopeLabel}
+        />
       </motion.div>
 
       <motion.div {...sectionReveal(0.2)}>
