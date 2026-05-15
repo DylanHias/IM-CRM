@@ -32,6 +32,7 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/followups': 'Go to Follow-Ups',
     '/opportunities': 'Go to Opportunities',
     '/revenue-overview': 'Go to Revenue Overview',
+    '/insights': 'Go to Insights',
     '/analytics': 'Go to Analytics',
     '/timeline': 'Go to Timeline',
   };

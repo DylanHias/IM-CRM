@@ -45,7 +45,7 @@ export function TopCustomersTable({ currency, limit = 25, className }: Props) {
     for (const c of customers) {
       if (c.bcn) customersByBcn.set(c.bcn, { id: c.id, name: c.name });
     }
-    for (const r of byBcn.values()) {
+    for (const r of Array.from(byBcn.values())) {
       const value = currency === 'USD' ? r.arrUsd : r.arrLc;
       if (value === null || value <= 0) continue;
       const customer = customersByBcn.get(r.bcn);

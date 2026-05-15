@@ -246,28 +246,28 @@ export default function RevenueOverviewPage() {
       return true;
     });
     return [...rows].sort((a, b) => {
-      let cmp = 0;
       switch (sortBy) {
         case 'arr': {
           const aArr = effectiveByCustomerId.get(a.id)?.value ?? null;
           const bArr = effectiveByCustomerId.get(b.id)?.value ?? null;
-          if (aArr === null && bArr === null) cmp = 0;
-          else if (aArr === null) cmp = 1;
-          else if (bArr === null) cmp = -1;
-          else cmp = aArr - bArr;
-          break;
+          // Unavailable ARR always sinks to the bottom, regardless of sort direction.
+          if (aArr === null && bArr === null) return 0;
+          if (aArr === null) return 1;
+          if (bArr === null) return -1;
+          const cmp = aArr - bArr;
+          return sortDir === 'asc' ? cmp : -cmp;
         }
-        case 'name':
-          cmp = a.name.localeCompare(b.name);
-          break;
+        case 'name': {
+          const cmp = a.name.localeCompare(b.name);
+          return sortDir === 'asc' ? cmp : -cmp;
+        }
         case 'cloudCustomer': {
           const aVal = a.cloudCustomer === true ? 1 : a.cloudCustomer === false ? 0 : -1;
           const bVal = b.cloudCustomer === true ? 1 : b.cloudCustomer === false ? 0 : -1;
-          cmp = aVal - bVal;
-          break;
+          const cmp = aVal - bVal;
+          return sortDir === 'asc' ? cmp : -cmp;
         }
       }
-      return sortDir === 'asc' ? cmp : -cmp;
     });
   }, [allCustomers, searchQuery, filterCloud, filterCountry, filterCity, filterSource, arrMin, arrMax, sortBy, sortDir, effectiveByCustomerId]);
 

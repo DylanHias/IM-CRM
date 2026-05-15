@@ -53,7 +53,7 @@ export function KpiCards({ currency, className }: Props) {
   const kpis = useMemo<Kpi[]>(() => {
     let totalArr = 0;
     let activeCount = 0;
-    for (const row of byBcn.values()) {
+    for (const row of Array.from(byBcn.values())) {
       const value = currency === 'USD' ? row.arrUsd : row.arrLc;
       if (value !== null && value > 0) {
         totalArr += value;
