@@ -96,14 +96,14 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
 
     const byBcn = new Map<string, RevenueRowDb>();
     for (const row of rows) {
-      const bcn = toStrOrNull(row['Customer[bcn]']);
+      const bcn = toStrOrNull(row['Reseller[bcn]']);
       if (!bcn) continue;
       const next: RevenueRowDb = {
         bcn,
-        pbi_customer_id: toStrOrNull(row['Customer[customer_id]']),
+        pbi_customer_id: toStrOrNull(row['Reseller[reseller_id]']),
         arr_usd: toNumOrNull(row['[ARR_USD]']),
         arr_lc: toNumOrNull(row['[ARR_LC]']),
-        currency_code: toStrOrNull(row['Customer[currency_code]']),
+        currency_code: toStrOrNull(row['Reseller[currency_code]']),
         as_of_month: toStrOrNull(row['[AsOfMonth]']),
         refreshed_at: refreshedAt,
       };
