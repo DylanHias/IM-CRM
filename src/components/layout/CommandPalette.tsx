@@ -3,7 +3,7 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart,
+  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
   Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User, LayoutDashboard,
 } from 'lucide-react';
 import {
@@ -26,6 +26,7 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/followups': CheckSquare,
   '/opportunities': Target,
   '/revenue-overview': BarChart2,
+  '/insights': Gauge,
   '/analytics': LineChart,
   '/timeline': Clock,
 };

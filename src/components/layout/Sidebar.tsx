@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart,
+  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
   ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair,
@@ -130,6 +130,7 @@ export function AppSidebar() {
     },
     '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
+    '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
   };

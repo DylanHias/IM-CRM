@@ -44,6 +44,38 @@ FILTER(
  *  'ARR Movement'[month], [Upgrade_USD], [Downgrade_USD], [Cancellation_USD],
  *  [NewSale_USD], [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
  */
+/**
+ * Org-wide monthly ARR trend across Benelux customers.
+ * Returns one row per month with total ARR (USD) and distinct customer count.
+ *
+ * Response keys: ARR[calendar_month], [ARR_USD], [CustomerCount]
+ */
+export function arrTrendDax(monthsBack: number): string {
+  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
+  return `
+EVALUATE
+VAR LatestMonth = CALCULATE(MAX(ARR[calendar_month]), ALL(ARR))
+VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
+VAR BeneluxCustIds = CALCULATETABLE(
+  VALUES(Customer[customer_id]),
+  Customer[country_code] IN ${BENELUX_DAX_LIST}
+)
+RETURN
+ADDCOLUMNS(
+  SUMMARIZE(
+    FILTER(ARR,
+      ARR[customer_id] IN BeneluxCustIds &&
+      ARR[calendar_month] >= EarliestMonth &&
+      ARR[calendar_month] <= LatestMonth
+    ),
+    ARR[calendar_month]
+  ),
+  "ARR_USD", CALCULATE(SUM(ARR[arr_arr_amt_usd])),
+  "CustomerCount", CALCULATE(DISTINCTCOUNT(ARR[customer_id]))
+)
+`.trim();
+}
+
 export function arrMovementByBcnDax(bcn: string, monthsBack: number): string {
   const safeBcn = bcn.replace(/[^a-zA-Z0-9\-_.]/g, '');
   const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));

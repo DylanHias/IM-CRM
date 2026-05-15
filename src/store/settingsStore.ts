@@ -14,12 +14,13 @@ type OpportunityCountry = 'Belgium' | 'Netherlands';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
-export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | '/opportunities' | '/revenue-overview' | '/analytics' | '/timeline';
+export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | '/opportunities' | '/revenue-overview' | '/insights' | '/analytics' | '/timeline';
 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/dashboard',
   '/customers',
   '/revenue-overview',
+  '/insights',
   '/followups',
   '/analytics',
   '/timeline',
