@@ -3,10 +3,17 @@
  * stays inside Power BI's executeQueries limits (100k rows, 1M cells, 60s timeout)
  * regardless of how large the underlying fact tables are.
  *
+ * Scope is Benelux only (~30k customers) — filtered in DAX so non-Benelux rows
+ * never cross the wire.
+ *
  * Response key conventions:
  *  - Native columns: "Customer[bcn]"
  *  - Computed (ADDCOLUMNS) columns: "[ARR_USD]"
  */
+
+export const BENELUX_COUNTRY_CODES = ['BE', 'NL', 'LU'] as const;
+
+const BENELUX_DAX_LIST = `{${BENELUX_COUNTRY_CODES.map((c) => `"${c}"`).join(', ')}}`;
 
 export const CURRENT_ARR_BY_BCN_DAX = `
 EVALUATE
@@ -15,7 +22,7 @@ RETURN
 FILTER(
   ADDCOLUMNS(
     SUMMARIZE(
-      Customer,
+      FILTER(Customer, Customer[country_code] IN ${BENELUX_DAX_LIST}),
       Customer[bcn],
       Customer[customer_id],
       Customer[currency_code]
