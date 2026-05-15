@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal } from '@/lib/motion';
-import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
 import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { RefreshButton } from '@/components/revenue/RefreshButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { KpiCards } from './KpiCards';
 import { TopCustomersTable } from './TopCustomersTable';
 import { ArrTrendChart } from './ArrTrendChart';
-import type { Currency } from '@/lib/revenue/effectiveArr';
 import { type Region, REGION_COUNTRIES, REGION_LABELS } from '@/lib/revenue/region';
 
 const MONTHS_OPTIONS = [
@@ -36,7 +34,6 @@ const REGION_OPTIONS: { value: Region; label: string }[] = [
 ];
 
 export function InsightsPageContent() {
-  const [currency, setCurrency] = useState<Currency>('USD');
   const [region, setRegion] = useState<Region>('BENELUX');
   const [monthsBack, setMonthsBack] = useState<number>(12);
   const [topN, setTopN] = useState<number>(25);
@@ -68,11 +65,6 @@ export function InsightsPageContent() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Currency</Label>
-          <CurrencyToggle value={currency} onChange={setCurrency} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -114,7 +106,7 @@ export function InsightsPageContent() {
       </motion.div>
 
       <motion.div {...sectionReveal(0.1)}>
-        <KpiCards currency={currency} region={region} />
+        <KpiCards currency="LC" region={region} />
       </motion.div>
 
       <motion.div {...sectionReveal(0.15)}>
@@ -122,7 +114,7 @@ export function InsightsPageContent() {
       </motion.div>
 
       <motion.div {...sectionReveal(0.2)}>
-        <TopCustomersTable currency={currency} region={region} limit={topN} />
+        <TopCustomersTable currency="LC" region={region} limit={topN} />
       </motion.div>
     </div>
   );

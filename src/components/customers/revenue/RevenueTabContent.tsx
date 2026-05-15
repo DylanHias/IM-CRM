@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal } from '@/lib/motion';
-import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
 import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { RefreshButton } from '@/components/revenue/RefreshButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { ArrSummaryCard } from './ArrSummaryCard';
 import { ArrMovementChart } from './ArrMovementChart';
 import { useCustomerRevenue } from '@/hooks/useCustomerRevenue';
-import type { Currency } from '@/lib/revenue/effectiveArr';
 import type { Customer } from '@/types/entities';
 
 interface Props {
@@ -26,18 +24,12 @@ const MONTHS_OPTIONS = [
 ] as const;
 
 export function RevenueTabContent({ customer }: Props) {
-  const [currency, setCurrency] = useState<Currency>('USD');
   const [monthsBack, setMonthsBack] = useState<number>(12);
   const revenue = useCustomerRevenue(customer.bcn);
 
   return (
     <div className="space-y-4">
       <motion.div className="flex flex-wrap items-center gap-3" {...sectionReveal(0)}>
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Currency</Label>
-          <CurrencyToggle value={currency} onChange={setCurrency} />
-        </div>
-
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Period</Label>
           <Select value={String(monthsBack)} onValueChange={(v) => setMonthsBack(Number(v))}>
@@ -61,12 +53,12 @@ export function RevenueTabContent({ customer }: Props) {
       </motion.div>
 
       <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4" {...sectionReveal(0.05)}>
-        <ArrSummaryCard customer={customer} currency={currency} />
+        <ArrSummaryCard customer={customer} currency="LC" />
         <div className="md:col-span-2">
           <ArrMovementChart
             bcn={customer.bcn}
             monthsBack={monthsBack}
-            currency={currency}
+            currency="LC"
             currencyCode={revenue?.currencyCode ?? customer.arrCurrency ?? null}
           />
         </div>

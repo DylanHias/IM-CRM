@@ -21,16 +21,16 @@ function formatMonthLabel(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
 }
 
-function formatUsd(value: number): string {
+function formatEur(value: number): string {
   try {
-    return new Intl.NumberFormat('en', {
+    return new Intl.NumberFormat('nl-BE', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
       maximumFractionDigits: 0,
       notation: Math.abs(value) >= 1_000_000 ? 'compact' : 'standard',
     }).format(value);
   } catch {
-    return `$${value.toLocaleString('en')}`;
+    return `€ ${value.toLocaleString('nl-BE')}`;
   }
 }
 
@@ -42,7 +42,7 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
       points.map((p) => ({
         month: p.month,
         monthLabel: formatMonthLabel(p.month),
-        ARR: p.arrUsd,
+        ARR: p.arrLc,
         Customers: p.customerCount,
       })),
     [points],
@@ -58,7 +58,7 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <LineChartIcon size={13} />
-          Total ARR · {scopeLabel} · last {monthsBack} months (USD)
+          Total ARR · {scopeLabel} · last {monthsBack} months
         </div>
         <Button
           variant="ghost"
@@ -108,7 +108,7 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) =>
-                  new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v as number)
+                  new Intl.NumberFormat('nl-BE', { notation: 'compact', maximumFractionDigits: 1 }).format(v as number)
                 }
               />
               <Tooltip
@@ -119,7 +119,7 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
                   fontSize: 12,
                 }}
                 formatter={(value: number, name: string) =>
-                  name === 'ARR' ? [formatUsd(value), 'ARR (USD)'] : [value.toLocaleString('nl-BE'), 'Customers']
+                  name === 'ARR' ? [formatEur(value), 'ARR'] : [value.toLocaleString('nl-BE'), 'Customers']
                 }
               />
               <Line

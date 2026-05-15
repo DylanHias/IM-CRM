@@ -135,7 +135,11 @@ export function AppSidebar() {
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
   };
 
-  const navItems = sidebarOrder.filter((key) => !sidebarHiddenTabs.includes(key)).map((key) => navItemMap[key]).filter(Boolean);
+  const navItems = sidebarOrder
+    .filter((key) => !sidebarHiddenTabs.includes(key))
+    .filter((key) => isAdmin || key !== '/insights')
+    .map((key) => navItemMap[key])
+    .filter(Boolean);
 
   const recentCustomers = recentCustomerIds
     .map((id) => {

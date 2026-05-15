@@ -22,8 +22,7 @@ import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useSettingsStore } from '@/store/settingsStore';
-import { getEffectiveArr, type Currency, type EffectiveArr } from '@/lib/revenue/effectiveArr';
-import { CurrencyToggle } from '@/components/revenue/CurrencyToggle';
+import { getEffectiveArr, type EffectiveArr } from '@/lib/revenue/effectiveArr';
 import { RefreshButton } from '@/components/revenue/RefreshButton';
 import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { cn } from '@/lib/utils';
@@ -165,7 +164,6 @@ export default function RevenueOverviewPage() {
   const [filterCountry, setFilterCountry] = useState('');
   const [filterCity, setFilterCity] = useState('');
   const [filterSource, setFilterSource] = useState<'all' | 'powerbi' | 'd365'>('all');
-  const [currency, setCurrency] = useState<Currency>('USD');
   const [arrMin, setArrMin] = useState('');
   const [arrMax, setArrMax] = useState('');
   const [page, setPage] = useState(1);
@@ -186,10 +184,10 @@ export default function RevenueOverviewPage() {
     const map = new Map<string, EffectiveArr>();
     for (const c of allCustomers) {
       const revenue = c.bcn ? revenueByBcn.get(c.bcn) ?? null : null;
-      map.set(c.id, getEffectiveArr(c, revenue, currency));
+      map.set(c.id, getEffectiveArr(c, revenue, 'LC'));
     }
     return map;
-  }, [allCustomers, revenueByBcn, currency]);
+  }, [allCustomers, revenueByBcn]);
 
   const countryOptions = useMemo(() => {
     const codes = new Set<string>();
@@ -412,8 +410,6 @@ export default function RevenueOverviewPage() {
                 {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
               </Button>
             </div>
-
-            <CurrencyToggle value={currency} onChange={setCurrency} />
 
             <Button
               variant={showFilters || activeFilterCount > 0 ? 'default' : 'outline'}

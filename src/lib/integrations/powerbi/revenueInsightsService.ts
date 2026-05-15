@@ -28,7 +28,7 @@ function toMonthIso(v: unknown): string {
 function parseRows(rows: Record<string, unknown>[]): ArrTrendPoint[] {
   const out = rows.map((r) => ({
     month: toMonthIso(r['ARR[calendar_month]']),
-    arrUsd: toNum(r['[ARR_USD]']),
+    arrLc: toNum(r['[ARR_LC]']),
     customerCount: toNum(r['[CustomerCount]']),
   }));
   out.sort((a, b) => a.month.localeCompare(b.month));

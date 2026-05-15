@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export interface ArrTrendPoint {
   month: string;
-  arrUsd: number;
+  arrLc: number;
   customerCount: number;
 }
 

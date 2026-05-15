@@ -90,7 +90,7 @@ ADDCOLUMNS(
     ),
     ARR[calendar_month]
   ),
-  "ARR_USD", CALCULATE(SUM(ARR[arr_arr_amt_usd])),
+  "ARR_LC", CALCULATE(SUM(ARR[ARR, LC])),
   "CustomerCount", CALCULATE(DISTINCTCOUNT(ARR[reseller_id]))
 )
 `.trim();
