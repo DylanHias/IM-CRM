@@ -96,7 +96,8 @@ async function ensureTablesExist(db: Database): Promise<void> {
       currency_code         TEXT,
       as_of_month           TEXT,
       active_end_customers  INTEGER,
-      refreshed_at          TEXT NOT NULL    )
+      refreshed_at          TEXT NOT NULL
+    )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_reseller_account ON customer_revenue(reseller_account)`);
@@ -397,7 +398,33 @@ async function ensureAllColumns(db: Database): Promise<void> {
   }
 }
 
+async function rebuildCustomerRevenueIfDrifted(db: Database): Promise<void> {
+  const tableExists = await db.select<{ name: string }[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'customer_revenue'`
+  );
+  if (tableExists.length === 0) return;
+
+  const info = await db.select<{ name: string }[]>(`PRAGMA table_info(customer_revenue)`);
+  const have = new Set(info.map((c) => c.name));
+  const required = ['bcn', 'pbi_customer_id', 'reseller_account', 'arr_usd', 'arr_lc', 'currency_code', 'as_of_month', 'active_end_customers', 'refreshed_at'];
+  const missing = required.filter((c) => !have.has(c));
+  if (missing.length === 0) return;
+
+  console.warn('[db] customer_revenue is missing columns, rebuilding cache:', missing);
+  await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_pbi_id`);
+  await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_reseller_account`);
+  await db.execute(`DROP TABLE customer_revenue`);
+  await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'revenue_last_refresh_at'`);
+}
+
 async function runSchema(db: Database): Promise<void> {
+  // Self-heal cache tables whose schema drifted (e.g. a migration that ran with
+  // ALTER TABLE in a try/catch where the catch swallowed the error). customer_revenue
+  // is a refreshable Power BI cache — dropping it costs nothing, the next refresh
+  // rebuilds the rows. Must run BEFORE ensureTablesExist so the CREATE TABLE then
+  // produces the current shape.
+  await rebuildCustomerRevenueIfDrifted(db);
+
   // Always ensure all tables exist first — guards against partial init or corruption
   await ensureTablesExist(db);
   // Always backfill any columns that may be missing (handles fresh install / migration drift)
