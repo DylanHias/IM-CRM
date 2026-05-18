@@ -125,23 +125,21 @@ VAR ResellerIds = CALCULATETABLE(
   Reseller[bcn] = TargetBcn
 )
 RETURN
-ADDCOLUMNS(
-  SUMMARIZE(
-    FILTER('ARR Movement',
-      'ARR Movement'[reseller_id] IN ResellerIds &&
-      'ARR Movement'[month] >= EarliestMonth &&
-      'ARR Movement'[month] <= LatestMonth
-    ),
-    'ARR Movement'[month]
+CALCULATETABLE(
+  ADDCOLUMNS(
+    SUMMARIZE('ARR Movement', 'ARR Movement'[month]),
+    "Upgrade_USD", CALCULATE(SUM('ARR Movement'[arr_upgrade_usd])),
+    "Downgrade_USD", CALCULATE(SUM('ARR Movement'[arr_downgrade_usd])),
+    "Cancellation_USD", CALCULATE(SUM('ARR Movement'[arr_cancellation_usd])),
+    "NewSale_USD", CALCULATE(SUM('ARR Movement'[arr_new_sale_usd])),
+    "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
+    "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
+    "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
+    "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
   ),
-  "Upgrade_USD", CALCULATE(SUM('ARR Movement'[arr_upgrade_usd])),
-  "Downgrade_USD", CALCULATE(SUM('ARR Movement'[arr_downgrade_usd])),
-  "Cancellation_USD", CALCULATE(SUM('ARR Movement'[arr_cancellation_usd])),
-  "NewSale_USD", CALCULATE(SUM('ARR Movement'[arr_new_sale_usd])),
-  "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
-  "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
-  "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
-  "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
+  'ARR Movement'[reseller_id] IN ResellerIds,
+  'ARR Movement'[month] >= EarliestMonth,
+  'ARR Movement'[month] <= LatestMonth
 )
 `.trim();
 }
