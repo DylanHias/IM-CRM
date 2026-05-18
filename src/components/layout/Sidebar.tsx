@@ -137,7 +137,6 @@ export function AppSidebar() {
 
   const navItems = sidebarOrder
     .filter((key) => !sidebarHiddenTabs.includes(key))
-    .filter((key) => isAdmin || key !== '/insights')
     .map((key) => navItemMap[key])
     .filter(Boolean);
 
