@@ -392,6 +392,198 @@ async fn export_revenue_overview(
     .map_err(|e| e.to_string())?
 }
 
+// ─── Revenue cache portable export / import ─────────────────────────────────
+// Lets one user export the cached Power BI revenue rows (customer_revenue table
+// + last-refresh timestamp) to a JSON file and another user import the same
+// file. Useful for sharing live ARR with colleagues who lack Power BI access.
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RevenueCacheRow {
+    bcn: String,
+    pbi_customer_id: Option<String>,
+    reseller_account: Option<String>,
+    arr_usd: Option<f64>,
+    arr_lc: Option<f64>,
+    currency_code: Option<String>,
+    as_of_month: Option<String>,
+    active_end_customers: Option<i64>,
+    refreshed_at: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RevenueCacheFile {
+    kind: String,
+    schema_version: u32,
+    exported_at: String,
+    last_refreshed_at: Option<String>,
+    row_count: usize,
+    rows: Vec<RevenueCacheRow>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ImportResult {
+    row_count: usize,
+    last_refreshed_at: Option<String>,
+    exported_at: Option<String>,
+}
+
+#[tauri::command]
+async fn export_revenue_cache(
+    app: tauri::AppHandle,
+    path: String,
+    exported_at: String,
+) -> Result<usize, String> {
+    let db_path: PathBuf = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("crm.db");
+
+    tokio::task::spawn_blocking(move || -> Result<usize, String> {
+        let conn = rusqlite::Connection::open_with_flags(
+            &db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .map_err(|e| e.to_string())?;
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc,
+                        currency_code, as_of_month, active_end_customers, refreshed_at
+                 FROM customer_revenue",
+            )
+            .map_err(|e| e.to_string())?;
+
+        let rows: Vec<RevenueCacheRow> = stmt
+            .query_map([], |r| {
+                Ok(RevenueCacheRow {
+                    bcn: r.get(0)?,
+                    pbi_customer_id: r.get(1)?,
+                    reseller_account: r.get(2)?,
+                    arr_usd: r.get(3)?,
+                    arr_lc: r.get(4)?,
+                    currency_code: r.get(5)?,
+                    as_of_month: r.get(6)?,
+                    active_end_customers: r.get(7)?,
+                    refreshed_at: r.get(8)?,
+                })
+            })
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+
+        let last_refreshed_at: Option<String> = conn
+            .query_row(
+                "SELECT value FROM app_settings WHERE key = 'revenue_last_refresh_at'",
+                [],
+                |r| r.get(0),
+            )
+            .ok();
+
+        let count = rows.len();
+        let payload = RevenueCacheFile {
+            kind: "im-crm-revenue-cache".to_string(),
+            schema_version: 1,
+            exported_at,
+            last_refreshed_at,
+            row_count: count,
+            rows,
+        };
+
+        let json = serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?;
+        std::fs::write(&path, json).map_err(|e| e.to_string())?;
+        Ok(count)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn import_revenue_cache(
+    app: tauri::AppHandle,
+    path: String,
+) -> Result<ImportResult, String> {
+    let db_path: PathBuf = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("crm.db");
+
+    tokio::task::spawn_blocking(move || -> Result<ImportResult, String> {
+        let raw = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Could not read file: {e}"))?;
+        let parsed: RevenueCacheFile = serde_json::from_str(&raw)
+            .map_err(|e| format!("File is not a valid revenue cache export: {e}"))?;
+
+        if parsed.kind != "im-crm-revenue-cache" {
+            return Err(format!(
+                "Unexpected file kind '{}' — expected 'im-crm-revenue-cache'",
+                parsed.kind
+            ));
+        }
+        if parsed.schema_version != 1 {
+            return Err(format!(
+                "Unsupported schema version {} — please update the app",
+                parsed.schema_version
+            ));
+        }
+
+        let mut conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+        tx.execute("DELETE FROM customer_revenue", [])
+            .map_err(|e| e.to_string())?;
+
+        {
+            let mut stmt = tx
+                .prepare(
+                    "INSERT OR REPLACE INTO customer_revenue
+                     (bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc,
+                      currency_code, as_of_month, active_end_customers, refreshed_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                )
+                .map_err(|e| e.to_string())?;
+            for r in &parsed.rows {
+                stmt.execute(rusqlite::params![
+                    r.bcn,
+                    r.pbi_customer_id,
+                    r.reseller_account,
+                    r.arr_usd,
+                    r.arr_lc,
+                    r.currency_code,
+                    r.as_of_month,
+                    r.active_end_customers,
+                    r.refreshed_at,
+                ])
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        if let Some(ts) = parsed.last_refreshed_at.as_deref() {
+            tx.execute(
+                "INSERT INTO app_settings (key, value, updated_at)
+                 VALUES ('revenue_last_refresh_at', ?1, datetime('now'))
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                rusqlite::params![ts],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+
+        tx.commit().map_err(|e| e.to_string())?;
+
+        Ok(ImportResult {
+            row_count: parsed.rows.len(),
+            last_refreshed_at: parsed.last_refreshed_at,
+            exported_at: Some(parsed.exported_at),
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Export a pre-built table (headers + rows) to a single-sheet XLSX file.
 /// Used by the revenue overview export where data is already filtered in JS.
 #[tauri::command]
@@ -452,6 +644,8 @@ pub fn run() {
             export_db_all,
             export_rows,
             export_revenue_overview,
+            export_revenue_cache,
+            import_revenue_cache,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
