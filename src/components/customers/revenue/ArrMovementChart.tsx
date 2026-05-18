@@ -1,7 +1,18 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, CartesianGrid } from 'recharts';
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ReferenceLine,
+} from 'recharts';
 import { Loader2, AlertCircle, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArrMovement } from '@/hooks/useArrMovement';
@@ -23,6 +34,7 @@ interface ChartRow {
   Upgrade: number;
   Downgrade: number;
   Cancellation: number;
+  Net: number;
 }
 
 function formatMonthLabel(iso: string): string {
@@ -51,14 +63,21 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
   const { rows, isLoading, error, refresh } = useArrMovement(bcn, monthsBack);
 
   const data: ChartRow[] = useMemo(() => {
-    return rows.map((r) => ({
-      month: r.month,
-      monthLabel: formatMonthLabel(r.month),
-      NewSale: currency === 'USD' ? r.newSaleUsd : r.newSaleLc,
-      Upgrade: currency === 'USD' ? r.upgradeUsd : r.upgradeLc,
-      Downgrade: -(currency === 'USD' ? r.downgradeUsd : r.downgradeLc),
-      Cancellation: -(currency === 'USD' ? r.cancellationUsd : r.cancellationLc),
-    }));
+    return rows.map((r) => {
+      const newSale = Math.abs(currency === 'USD' ? r.newSaleUsd : r.newSaleLc);
+      const upgrade = Math.abs(currency === 'USD' ? r.upgradeUsd : r.upgradeLc);
+      const downgrade = -Math.abs(currency === 'USD' ? r.downgradeUsd : r.downgradeLc);
+      const cancellation = -Math.abs(currency === 'USD' ? r.cancellationUsd : r.cancellationLc);
+      return {
+        month: r.month,
+        monthLabel: formatMonthLabel(r.month),
+        NewSale: newSale,
+        Upgrade: upgrade,
+        Downgrade: downgrade,
+        Cancellation: cancellation,
+        Net: newSale + upgrade + downgrade + cancellation,
+      };
+    });
   }, [rows, currency]);
 
   const displayCurrency = currency === 'USD' ? 'USD' : currencyCode ?? null;
@@ -117,7 +136,7 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
       {data.length > 0 && (
         <div className="h-72 -ml-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} stackOffset="sign">
+            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} stackOffset="sign">
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
               <XAxis
                 dataKey="monthLabel"
@@ -133,6 +152,7 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
                   new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v as number)
                 }
               />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
@@ -147,7 +167,15 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
               <Bar dataKey="Upgrade" stackId="movement" fill="hsl(var(--primary))" />
               <Bar dataKey="Downgrade" stackId="movement" fill="hsl(var(--warning))" />
               <Bar dataKey="Cancellation" stackId="movement" fill="hsl(var(--destructive))" />
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="Net"
+                stroke="hsl(var(--foreground))"
+                strokeWidth={2}
+                dot={{ r: 3, fill: 'hsl(var(--foreground))' }}
+                activeDot={{ r: 5 }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
