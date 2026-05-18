@@ -78,11 +78,11 @@ export function ActivityMetrics({ region, monthsBack, className }: Props) {
   const asOf = latest ? formatMonthLabel(latest.month) : null;
   const earliestLabel = earliest ? formatMonthLabel(earliest.month) : null;
 
-  if (error) {
+  if (!latest && error) {
     return <PowerBiUnavailable className={className} />;
   }
 
-  if (isLoading && !latest) {
+  if (!latest && isLoading) {
     return (
       <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
         {[0, 1, 2, 3].map((i) => (

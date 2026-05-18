@@ -413,6 +413,57 @@ struct RevenueCacheRow {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ArrMovementRow {
+    bcn: String,
+    months_back: i64,
+    month: String,
+    upgrade_usd: Option<f64>,
+    downgrade_usd: Option<f64>,
+    cancellation_usd: Option<f64>,
+    new_sale_usd: Option<f64>,
+    upgrade_lc: Option<f64>,
+    downgrade_lc: Option<f64>,
+    cancellation_lc: Option<f64>,
+    new_sale_lc: Option<f64>,
+    refreshed_at: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ArrTrendRow {
+    months_back: i64,
+    country_codes: String,
+    month: String,
+    arr_lc: Option<f64>,
+    customer_count: Option<i64>,
+    refreshed_at: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ResellerSeatsTrendRow {
+    months_back: i64,
+    country_codes: String,
+    month: String,
+    active_resellers: Option<i64>,
+    active_seats: Option<i64>,
+    refreshed_at: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NetSalesByVendorRow {
+    months_back: i64,
+    country_codes: String,
+    top_n: i64,
+    vendor: String,
+    month: String,
+    net_sales_lc: Option<f64>,
+    refreshed_at: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RevenueCacheFile {
     kind: String,
     schema_version: u32,
@@ -420,6 +471,15 @@ struct RevenueCacheFile {
     last_refreshed_at: Option<String>,
     row_count: usize,
     rows: Vec<RevenueCacheRow>,
+    // Added in schema_version 2 — older v1 files omit these and serde fills in defaults.
+    #[serde(default)]
+    arr_movement: Vec<ArrMovementRow>,
+    #[serde(default)]
+    arr_trend: Vec<ArrTrendRow>,
+    #[serde(default)]
+    reseller_seats_trend: Vec<ResellerSeatsTrendRow>,
+    #[serde(default)]
+    net_sales_by_vendor: Vec<NetSalesByVendorRow>,
 }
 
 #[derive(Serialize)]
@@ -483,14 +543,121 @@ async fn export_revenue_cache(
             )
             .ok();
 
+        // Insights tables — added in schema_version 2. Tables introduced in
+        // migration v44; an older DB may not have them yet, so we fail soft
+        // and ship an empty vec rather than aborting the whole export.
+        let arr_movement: Vec<ArrMovementRow> = conn
+            .prepare(
+                "SELECT bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd,
+                        new_sale_usd, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at
+                 FROM arr_movement",
+            )
+            .and_then(|mut stmt| {
+                let mapped: Vec<ArrMovementRow> = stmt
+                    .query_map([], |r| {
+                        Ok(ArrMovementRow {
+                            bcn: r.get(0)?,
+                            months_back: r.get(1)?,
+                            month: r.get(2)?,
+                            upgrade_usd: r.get(3)?,
+                            downgrade_usd: r.get(4)?,
+                            cancellation_usd: r.get(5)?,
+                            new_sale_usd: r.get(6)?,
+                            upgrade_lc: r.get(7)?,
+                            downgrade_lc: r.get(8)?,
+                            cancellation_lc: r.get(9)?,
+                            new_sale_lc: r.get(10)?,
+                            refreshed_at: r.get(11)?,
+                        })
+                    })?
+                    .filter_map(Result::ok)
+                    .collect();
+                Ok(mapped)
+            })
+            .unwrap_or_default();
+
+        let arr_trend: Vec<ArrTrendRow> = conn
+            .prepare(
+                "SELECT months_back, country_codes, month, arr_lc, customer_count, refreshed_at
+                 FROM arr_trend",
+            )
+            .and_then(|mut stmt| {
+                let mapped: Vec<ArrTrendRow> = stmt
+                    .query_map([], |r| {
+                        Ok(ArrTrendRow {
+                            months_back: r.get(0)?,
+                            country_codes: r.get(1)?,
+                            month: r.get(2)?,
+                            arr_lc: r.get(3)?,
+                            customer_count: r.get(4)?,
+                            refreshed_at: r.get(5)?,
+                        })
+                    })?
+                    .filter_map(Result::ok)
+                    .collect();
+                Ok(mapped)
+            })
+            .unwrap_or_default();
+
+        let reseller_seats_trend: Vec<ResellerSeatsTrendRow> = conn
+            .prepare(
+                "SELECT months_back, country_codes, month, active_resellers, active_seats, refreshed_at
+                 FROM reseller_seats_trend",
+            )
+            .and_then(|mut stmt| {
+                let mapped: Vec<ResellerSeatsTrendRow> = stmt
+                    .query_map([], |r| {
+                        Ok(ResellerSeatsTrendRow {
+                            months_back: r.get(0)?,
+                            country_codes: r.get(1)?,
+                            month: r.get(2)?,
+                            active_resellers: r.get(3)?,
+                            active_seats: r.get(4)?,
+                            refreshed_at: r.get(5)?,
+                        })
+                    })?
+                    .filter_map(Result::ok)
+                    .collect();
+                Ok(mapped)
+            })
+            .unwrap_or_default();
+
+        let net_sales_by_vendor: Vec<NetSalesByVendorRow> = conn
+            .prepare(
+                "SELECT months_back, country_codes, top_n, vendor, month, net_sales_lc, refreshed_at
+                 FROM net_sales_by_vendor",
+            )
+            .and_then(|mut stmt| {
+                let mapped: Vec<NetSalesByVendorRow> = stmt
+                    .query_map([], |r| {
+                        Ok(NetSalesByVendorRow {
+                            months_back: r.get(0)?,
+                            country_codes: r.get(1)?,
+                            top_n: r.get(2)?,
+                            vendor: r.get(3)?,
+                            month: r.get(4)?,
+                            net_sales_lc: r.get(5)?,
+                            refreshed_at: r.get(6)?,
+                        })
+                    })?
+                    .filter_map(Result::ok)
+                    .collect();
+                Ok(mapped)
+            })
+            .unwrap_or_default();
+
         let count = rows.len();
         let payload = RevenueCacheFile {
             kind: "im-crm-revenue-cache".to_string(),
-            schema_version: 1,
+            schema_version: 2,
             exported_at,
             last_refreshed_at,
             row_count: count,
             rows,
+            arr_movement,
+            arr_trend,
+            reseller_seats_trend,
+            net_sales_by_vendor,
         };
 
         let json = serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?;
@@ -524,7 +691,9 @@ async fn import_revenue_cache(
                 parsed.kind
             ));
         }
-        if parsed.schema_version != 1 {
+        // Accept v1 (customer_revenue only) and v2 (with insights tables) — both
+        // produced by the same app, just before/after the v2.12.82 release.
+        if parsed.schema_version != 1 && parsed.schema_version != 2 {
             return Err(format!(
                 "Unsupported schema version {} — please update the app",
                 parsed.schema_version
@@ -559,6 +728,97 @@ async fn import_revenue_cache(
                     r.refreshed_at,
                 ])
                 .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // Insights tables (v2+). The tables may not exist on a brand-new DB
+        // if migration v44 has not run yet — fail soft so the customer_revenue
+        // import still completes.
+        if !parsed.arr_movement.is_empty() {
+            let _ = tx.execute("DELETE FROM arr_movement", []);
+            if let Ok(mut stmt) = tx.prepare(
+                "INSERT OR REPLACE INTO arr_movement
+                 (bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
+                  upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            ) {
+                for r in &parsed.arr_movement {
+                    let _ = stmt.execute(rusqlite::params![
+                        r.bcn,
+                        r.months_back,
+                        r.month,
+                        r.upgrade_usd,
+                        r.downgrade_usd,
+                        r.cancellation_usd,
+                        r.new_sale_usd,
+                        r.upgrade_lc,
+                        r.downgrade_lc,
+                        r.cancellation_lc,
+                        r.new_sale_lc,
+                        r.refreshed_at,
+                    ]);
+                }
+            }
+        }
+
+        if !parsed.arr_trend.is_empty() {
+            let _ = tx.execute("DELETE FROM arr_trend", []);
+            if let Ok(mut stmt) = tx.prepare(
+                "INSERT OR REPLACE INTO arr_trend
+                 (months_back, country_codes, month, arr_lc, customer_count, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            ) {
+                for r in &parsed.arr_trend {
+                    let _ = stmt.execute(rusqlite::params![
+                        r.months_back,
+                        r.country_codes,
+                        r.month,
+                        r.arr_lc,
+                        r.customer_count,
+                        r.refreshed_at,
+                    ]);
+                }
+            }
+        }
+
+        if !parsed.reseller_seats_trend.is_empty() {
+            let _ = tx.execute("DELETE FROM reseller_seats_trend", []);
+            if let Ok(mut stmt) = tx.prepare(
+                "INSERT OR REPLACE INTO reseller_seats_trend
+                 (months_back, country_codes, month, active_resellers, active_seats, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            ) {
+                for r in &parsed.reseller_seats_trend {
+                    let _ = stmt.execute(rusqlite::params![
+                        r.months_back,
+                        r.country_codes,
+                        r.month,
+                        r.active_resellers,
+                        r.active_seats,
+                        r.refreshed_at,
+                    ]);
+                }
+            }
+        }
+
+        if !parsed.net_sales_by_vendor.is_empty() {
+            let _ = tx.execute("DELETE FROM net_sales_by_vendor", []);
+            if let Ok(mut stmt) = tx.prepare(
+                "INSERT OR REPLACE INTO net_sales_by_vendor
+                 (months_back, country_codes, top_n, vendor, month, net_sales_lc, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            ) {
+                for r in &parsed.net_sales_by_vendor {
+                    let _ = stmt.execute(rusqlite::params![
+                        r.months_back,
+                        r.country_codes,
+                        r.top_n,
+                        r.vendor,
+                        r.month,
+                        r.net_sales_lc,
+                        r.refreshed_at,
+                    ]);
+                }
             }
         }
 

@@ -100,16 +100,16 @@ export function NetSalesByVendorChart({
         </Button>
       </div>
 
-      {error && <PowerBiUnavailable />}
+      {data.length === 0 && error && <PowerBiUnavailable />}
 
-      {!error && isLoading && data.length === 0 && (
+      {data.length === 0 && !error && isLoading && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           <Loader2 size={14} className="mr-2 animate-spin" />
           Loading net sales by vendor…
         </div>
       )}
 
-      {!error && !isLoading && data.length === 0 && (
+      {data.length === 0 && !error && !isLoading && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           No sales data available.
         </div>

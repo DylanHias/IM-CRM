@@ -69,6 +69,7 @@ interface RevenueInsightsState {
   setVendorSales: (key: string, entry: NetSalesByVendorEntry) => void;
   setLoading: (key: string, loading: boolean) => void;
   setError: (key: string, error: string | null) => void;
+  resetAll: () => void;
 }
 
 export const useRevenueInsightsStore = create<RevenueInsightsState>((set) => ({
@@ -115,5 +116,13 @@ export const useRevenueInsightsStore = create<RevenueInsightsState>((set) => ({
       if (error) next.set(key, error);
       else next.delete(key);
       return { errorByKey: next };
+    }),
+  resetAll: () =>
+    set({
+      trendByKey: new Map(),
+      resellerSeatsByKey: new Map(),
+      vendorSalesByKey: new Map(),
+      loadingKeys: new Set(),
+      errorByKey: new Map(),
     }),
 }));

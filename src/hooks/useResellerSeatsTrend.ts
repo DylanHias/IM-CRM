@@ -6,7 +6,10 @@ import {
 } from '@/store/revenueInsightsStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
-import { fetchResellerSeatsTrend } from '@/lib/integrations/powerbi/revenueInsightsService';
+import {
+  fetchResellerSeatsTrend,
+  loadResellerSeatsTrendFromDb,
+} from '@/lib/integrations/powerbi/revenueInsightsService';
 
 interface Result {
   points: ResellerSeatsTrendPoint[];
@@ -40,6 +43,8 @@ export function useResellerSeatsTrend(
   useEffect(() => {
     if (entry || isLoading) return;
     void (async () => {
+      const cached = await loadResellerSeatsTrendFromDb(monthsBack, countryCodes);
+      if (cached && cached.length > 0) return;
       try {
         const token = await getAccessToken(powerBiRequest.scopes);
         if (!token) return;

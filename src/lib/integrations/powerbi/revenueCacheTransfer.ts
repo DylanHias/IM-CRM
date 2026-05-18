@@ -1,5 +1,7 @@
 import { toast } from 'sonner';
 import { loadRevenueFromDb } from '@/lib/integrations/powerbi/revenueService';
+import { useRevenueInsightsStore } from '@/store/revenueInsightsStore';
+import { useCustomerRevenueDetailStore } from '@/store/customerRevenueDetailStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 export interface ImportRevenueCacheResult {
@@ -34,6 +36,12 @@ export async function pickAndImportRevenueCache(): Promise<ImportRevenueCacheRes
     const result = await invoke<ImportRevenueCacheResult>('import_revenue_cache', { path: openPath });
 
     await loadRevenueFromDb();
+
+    // Clear cached insights store entries so hooks re-hydrate from the
+    // freshly-imported DB rows instead of showing the stale PowerBiUnavailable
+    // state captured before the import.
+    useRevenueInsightsStore.getState().resetAll();
+    useCustomerRevenueDetailStore.getState().resetAll();
 
     const refreshedNote = result.lastRefreshedAt
       ? ` · last refreshed ${formatTimestamp(result.lastRefreshedAt)}`

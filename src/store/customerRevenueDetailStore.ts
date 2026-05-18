@@ -27,6 +27,7 @@ interface CustomerRevenueDetailState {
   setMovement: (key: string, entry: ArrMovementEntry) => void;
   setLoading: (key: string, loading: boolean) => void;
   setError: (key: string, error: string | null) => void;
+  resetAll: () => void;
 }
 
 export function movementKey(bcn: string, monthsBack: number): string {
@@ -59,5 +60,11 @@ export const useCustomerRevenueDetailStore = create<CustomerRevenueDetailState>(
       if (error) next.set(key, error);
       else next.delete(key);
       return { errorByKey: next };
+    }),
+  resetAll: () =>
+    set({
+      movementByKey: new Map(),
+      loadingKeys: new Set(),
+      errorByKey: new Map(),
     }),
 }));

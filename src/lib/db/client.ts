@@ -103,6 +103,63 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_reseller_account ON customer_revenue(reseller_account)`);
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS arr_movement (
+      bcn               TEXT NOT NULL,
+      months_back       INTEGER NOT NULL,
+      month             TEXT NOT NULL,
+      upgrade_usd       REAL,
+      downgrade_usd     REAL,
+      cancellation_usd  REAL,
+      new_sale_usd      REAL,
+      upgrade_lc        REAL,
+      downgrade_lc      REAL,
+      cancellation_lc   REAL,
+      new_sale_lc       REAL,
+      refreshed_at      TEXT NOT NULL,
+      PRIMARY KEY (bcn, months_back, month)
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_arr_movement_bcn ON arr_movement(bcn)`);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS arr_trend (
+      months_back     INTEGER NOT NULL,
+      country_codes   TEXT NOT NULL,
+      month           TEXT NOT NULL,
+      arr_lc          REAL,
+      customer_count  INTEGER,
+      refreshed_at    TEXT NOT NULL,
+      PRIMARY KEY (months_back, country_codes, month)
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS reseller_seats_trend (
+      months_back       INTEGER NOT NULL,
+      country_codes     TEXT NOT NULL,
+      month             TEXT NOT NULL,
+      active_resellers  INTEGER,
+      active_seats      INTEGER,
+      refreshed_at      TEXT NOT NULL,
+      PRIMARY KEY (months_back, country_codes, month)
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS net_sales_by_vendor (
+      months_back    INTEGER NOT NULL,
+      country_codes  TEXT NOT NULL,
+      top_n          INTEGER NOT NULL,
+      vendor         TEXT NOT NULL,
+      month          TEXT NOT NULL,
+      net_sales_lc   REAL,
+      refreshed_at   TEXT NOT NULL,
+      PRIMARY KEY (months_back, country_codes, top_n, vendor, month)
+    )
+  `);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_net_sales_vendor ON net_sales_by_vendor(vendor)`);
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS contacts (
       id            TEXT PRIMARY KEY,
       customer_id   TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -442,7 +499,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '43')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '44')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -1056,6 +1113,103 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
     await db.execute(
       `UPDATE app_settings SET value = '43', updated_at = datetime('now') WHERE key = 'schema_version'`
     );
+  }
+
+  if (currentVersion < 44) {
+    // Persist insights datasets locally so charts can render from cache
+    // when Power BI is unreachable or after an .imrev import.
+    // ensureTablesExist already creates these on fresh installs; this block
+    // covers upgrades from v43. All statements are idempotent and guarded so
+    // a partial failure can't crash the migrator on subsequent runs.
+    const statements: { label: string; sql: string }[] = [
+      {
+        label: 'arr_movement',
+        sql: `CREATE TABLE IF NOT EXISTS arr_movement (
+          bcn               TEXT NOT NULL,
+          months_back       INTEGER NOT NULL,
+          month             TEXT NOT NULL,
+          upgrade_usd       REAL,
+          downgrade_usd     REAL,
+          cancellation_usd  REAL,
+          new_sale_usd      REAL,
+          upgrade_lc        REAL,
+          downgrade_lc      REAL,
+          cancellation_lc   REAL,
+          new_sale_lc       REAL,
+          refreshed_at      TEXT NOT NULL,
+          PRIMARY KEY (bcn, months_back, month)
+        )`,
+      },
+      {
+        label: 'idx_arr_movement_bcn',
+        sql: `CREATE INDEX IF NOT EXISTS idx_arr_movement_bcn ON arr_movement(bcn)`,
+      },
+      {
+        label: 'arr_trend',
+        sql: `CREATE TABLE IF NOT EXISTS arr_trend (
+          months_back     INTEGER NOT NULL,
+          country_codes   TEXT NOT NULL,
+          month           TEXT NOT NULL,
+          arr_lc          REAL,
+          customer_count  INTEGER,
+          refreshed_at    TEXT NOT NULL,
+          PRIMARY KEY (months_back, country_codes, month)
+        )`,
+      },
+      {
+        label: 'reseller_seats_trend',
+        sql: `CREATE TABLE IF NOT EXISTS reseller_seats_trend (
+          months_back       INTEGER NOT NULL,
+          country_codes     TEXT NOT NULL,
+          month             TEXT NOT NULL,
+          active_resellers  INTEGER,
+          active_seats      INTEGER,
+          refreshed_at      TEXT NOT NULL,
+          PRIMARY KEY (months_back, country_codes, month)
+        )`,
+      },
+      {
+        label: 'net_sales_by_vendor',
+        sql: `CREATE TABLE IF NOT EXISTS net_sales_by_vendor (
+          months_back    INTEGER NOT NULL,
+          country_codes  TEXT NOT NULL,
+          top_n          INTEGER NOT NULL,
+          vendor         TEXT NOT NULL,
+          month          TEXT NOT NULL,
+          net_sales_lc   REAL,
+          refreshed_at   TEXT NOT NULL,
+          PRIMARY KEY (months_back, country_codes, top_n, vendor, month)
+        )`,
+      },
+      {
+        label: 'idx_net_sales_vendor',
+        sql: `CREATE INDEX IF NOT EXISTS idx_net_sales_vendor ON net_sales_by_vendor(vendor)`,
+      },
+    ];
+
+    let v44Failures = 0;
+    for (const { label, sql } of statements) {
+      try {
+        await db.execute(sql);
+      } catch (err) {
+        v44Failures++;
+        console.error(`[db] migration v44 step '${label}' failed:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    // Only bump schema_version when every step landed cleanly so we retry
+    // failed steps on next launch instead of skipping them.
+    if (v44Failures === 0) {
+      try {
+        await db.execute(
+          `UPDATE app_settings SET value = '44', updated_at = datetime('now') WHERE key = 'schema_version'`
+        );
+      } catch (err) {
+        console.error('[db] migration v44 schema_version bump failed:', err);
+      }
+    } else {
+      console.warn(`[db] migration v44 left ${v44Failures} step(s) failed — will retry next launch`);
+    }
   }
 }
 

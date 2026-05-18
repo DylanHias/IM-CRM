@@ -1,5 +1,6 @@
 import { executeDaxQuery } from './client';
 import { arrMovementByBcnDax } from './queries';
+import { getDb } from '@/lib/db/client';
 import {
   useCustomerRevenueDetailStore,
   movementKey,
@@ -42,6 +43,106 @@ function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
   return out;
 }
 
+interface ArrMovementDbRow {
+  bcn: string;
+  months_back: number;
+  month: string;
+  upgrade_usd: number | null;
+  downgrade_usd: number | null;
+  cancellation_usd: number | null;
+  new_sale_usd: number | null;
+  upgrade_lc: number | null;
+  downgrade_lc: number | null;
+  cancellation_lc: number | null;
+  new_sale_lc: number | null;
+  refreshed_at: string;
+}
+
+function dbRowToRow(r: ArrMovementDbRow): ArrMovementRow {
+  return {
+    month: r.month,
+    upgradeUsd: r.upgrade_usd ?? 0,
+    downgradeUsd: r.downgrade_usd ?? 0,
+    cancellationUsd: r.cancellation_usd ?? 0,
+    newSaleUsd: r.new_sale_usd ?? 0,
+    upgradeLc: r.upgrade_lc ?? 0,
+    downgradeLc: r.downgrade_lc ?? 0,
+    cancellationLc: r.cancellation_lc ?? 0,
+    newSaleLc: r.new_sale_lc ?? 0,
+  };
+}
+
+async function persistArrMovement(
+  bcn: string,
+  monthsBack: number,
+  rows: ArrMovementRow[],
+  refreshedAt: string,
+): Promise<void> {
+  const db = await getDb();
+  try {
+    await db.execute(
+      `DELETE FROM arr_movement WHERE bcn = $1 AND months_back = $2`,
+      [bcn, monthsBack],
+    );
+    for (const r of rows) {
+      await db.execute(
+        `INSERT OR REPLACE INTO arr_movement
+          (bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
+           upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [
+          bcn,
+          monthsBack,
+          r.month,
+          r.upgradeUsd,
+          r.downgradeUsd,
+          r.cancellationUsd,
+          r.newSaleUsd,
+          r.upgradeLc,
+          r.downgradeLc,
+          r.cancellationLc,
+          r.newSaleLc,
+          refreshedAt,
+        ],
+      );
+    }
+  } catch (err) {
+    console.error('[revenue-detail] persist ARR movement failed:', err);
+  }
+}
+
+export async function loadArrMovementFromDb(
+  bcn: string,
+  monthsBack: number,
+): Promise<ArrMovementRow[] | null> {
+  try {
+    const db = await getDb();
+    const rows = await db.select<ArrMovementDbRow[]>(
+      `SELECT bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
+              upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at
+       FROM arr_movement
+       WHERE bcn = $1 AND months_back = $2
+       ORDER BY month ASC`,
+      [bcn, monthsBack],
+    );
+    if (rows.length === 0) return null;
+    const mapped = rows.map(dbRowToRow);
+    const key = movementKey(bcn, monthsBack);
+    const store = useCustomerRevenueDetailStore.getState();
+    const fetchedAt = new Date(rows[0].refreshed_at).getTime();
+    store.setMovement(key, {
+      bcn,
+      monthsBack,
+      rows: mapped,
+      fetchedAt: Number.isFinite(fetchedAt) ? fetchedAt : Date.now(),
+    });
+    return mapped;
+  } catch (err) {
+    console.error('[revenue-detail] load ARR movement from DB failed:', err);
+    return null;
+  }
+}
+
 export async function fetchArrMovement(
   token: string,
   bcn: string,
@@ -74,12 +175,14 @@ export async function fetchArrMovement(
     const dax = arrMovementByBcnDax(bcn, monthsBack);
     const result = await executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, dax);
     const rows = parseRows(result.rows ?? []);
+    const refreshedAt = new Date().toISOString();
     store.setMovement(key, {
       bcn,
       monthsBack,
       rows,
       fetchedAt: Date.now(),
     });
+    await persistArrMovement(bcn, monthsBack, rows, refreshedAt);
     return rows;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

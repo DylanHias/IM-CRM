@@ -114,16 +114,16 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
         </div>
       )}
 
-      {bcn && error && <PowerBiUnavailable />}
+      {bcn && data.length === 0 && error && <PowerBiUnavailable />}
 
-      {bcn && !error && isLoading && data.length === 0 && (
+      {bcn && data.length === 0 && !error && isLoading && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           <Loader2 size={14} className="mr-2 animate-spin" />
           Loading movement data…
         </div>
       )}
 
-      {bcn && !error && !isLoading && data.length === 0 && (
+      {bcn && data.length === 0 && !error && !isLoading && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           No movement recorded for this customer in the last {monthsBack} months.
         </div>

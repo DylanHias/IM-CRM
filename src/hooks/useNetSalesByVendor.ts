@@ -6,7 +6,10 @@ import {
 } from '@/store/revenueInsightsStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
-import { fetchNetSalesByVendor } from '@/lib/integrations/powerbi/revenueInsightsService';
+import {
+  fetchNetSalesByVendor,
+  loadNetSalesByVendorFromDb,
+} from '@/lib/integrations/powerbi/revenueInsightsService';
 
 interface Result {
   entry: NetSalesByVendorEntry | null;
@@ -41,6 +44,8 @@ export function useNetSalesByVendor(
   useEffect(() => {
     if (entry || isLoading) return;
     void (async () => {
+      const cached = await loadNetSalesByVendorFromDb(monthsBack, countryCodes, topN);
+      if (cached && cached.months.length > 0) return;
       try {
         const token = await getAccessToken(powerBiRequest.scopes);
         if (!token) return;

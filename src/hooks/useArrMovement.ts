@@ -6,7 +6,10 @@ import {
 } from '@/store/customerRevenueDetailStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { powerBiRequest } from '@/lib/auth/msalConfig';
-import { fetchArrMovement } from '@/lib/integrations/powerbi/customerRevenueDetailService';
+import {
+  fetchArrMovement,
+  loadArrMovementFromDb,
+} from '@/lib/integrations/powerbi/customerRevenueDetailService';
 
 interface Result {
   rows: ArrMovementRow[];
@@ -43,6 +46,9 @@ export function useArrMovement(
     if (entry) return;
     if (isLoading) return;
     void (async () => {
+      // Prefer local DB cache so the chart renders even without Power BI access.
+      const cached = await loadArrMovementFromDb(bcn, monthsBack);
+      if (cached && cached.length > 0) return;
       try {
         const token = await getAccessToken(powerBiRequest.scopes);
         if (!token) return;
