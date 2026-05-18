@@ -2,9 +2,10 @@
 
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
-import { Loader2, AlertCircle, RefreshCw, LineChart as LineChartIcon } from 'lucide-react';
+import { Loader2, RefreshCw, LineChart as LineChartIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArrTrend } from '@/hooks/useArrTrend';
+import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -72,12 +73,7 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
         </Button>
       </div>
 
-      {error && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          <AlertCircle size={13} className="mt-0.5 shrink-0" />
-          <span className="break-words">{error}</span>
-        </div>
-      )}
+      {error && <PowerBiUnavailable />}
 
       {!error && isLoading && data.length === 0 && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">

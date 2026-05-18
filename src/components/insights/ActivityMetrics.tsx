@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Users2, Armchair, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
+import { Users2, Armchair, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { useResellerSeatsTrend } from '@/hooks/useResellerSeatsTrend';
+import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import { REGION_COUNTRIES, type Region } from '@/lib/revenue/region';
 import { cn } from '@/lib/utils';
 
@@ -78,14 +79,7 @@ export function ActivityMetrics({ region, monthsBack, className }: Props) {
   const earliestLabel = earliest ? formatMonthLabel(earliest.month) : null;
 
   if (error) {
-    return (
-      <div className={cn('rounded-xl border border-destructive/40 bg-destructive/10 p-4', className)}>
-        <div className="flex items-start gap-2 text-xs text-destructive">
-          <AlertCircle size={13} className="mt-0.5 shrink-0" />
-          <span className="break-words">{error}</span>
-        </div>
-      </div>
-    );
+    return <PowerBiUnavailable className={className} />;
   }
 
   if (isLoading && !latest) {

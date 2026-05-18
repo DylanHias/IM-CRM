@@ -5,7 +5,7 @@ import { Download, Upload, Loader2, Database, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRevenueStore } from '@/store/revenueStore';
-import { loadRevenueFromDb } from '@/lib/integrations/powerbi/revenueService';
+import { pickAndImportRevenueCache } from '@/lib/integrations/powerbi/revenueCacheTransfer';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 function formatTimestamp(iso: string | null): string {
@@ -61,43 +61,9 @@ export function RevenueCacheTransfer() {
 
   async function handleImport() {
     if (isExporting || isImporting) return;
-    if (!isTauriApp()) {
-      toast.error('Import only available in the desktop app');
-      return;
-    }
-
-    const { open } = await import('@tauri-apps/plugin-dialog');
-    const openPath = await open({
-      multiple: false,
-      filters: [{ name: 'IM-CRM Revenue Cache', extensions: ['imrev'] }],
-    });
-    if (!openPath || Array.isArray(openPath)) return;
-
     setIsImporting(true);
-    const toastId = toast.loading('Importing…');
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const result = await invoke<{
-        rowCount: number;
-        lastRefreshedAt: string | null;
-        exportedAt: string | null;
-      }>('import_revenue_cache', { path: openPath });
-
-      await loadRevenueFromDb();
-
-      const refreshedNote = result.lastRefreshedAt
-        ? ` · last refreshed ${formatTimestamp(result.lastRefreshedAt)}`
-        : '';
-      toast.success('Import complete', {
-        id: toastId,
-        description: `${result.rowCount.toLocaleString()} customer${result.rowCount === 1 ? '' : 's'} loaded${refreshedNote}`,
-      });
-    } catch (err) {
-      console.error('[data] Revenue cache import failed:', err);
-      toast.error('Import failed', {
-        id: toastId,
-        description: err instanceof Error ? err.message : String(err),
-      });
+      await pickAndImportRevenueCache();
     } finally {
       setIsImporting(false);
     }

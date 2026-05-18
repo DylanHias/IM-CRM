@@ -16,6 +16,7 @@ import {
 import { Loader2, AlertCircle, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArrMovement } from '@/hooks/useArrMovement';
+import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import type { Currency } from '@/lib/revenue/effectiveArr';
 import { cn } from '@/lib/utils';
 
@@ -113,12 +114,7 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
         </div>
       )}
 
-      {bcn && error && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          <AlertCircle size={13} className="mt-0.5 shrink-0" />
-          <span className="break-words">{error}</span>
-        </div>
-      )}
+      {bcn && error && <PowerBiUnavailable />}
 
       {bcn && !error && isLoading && data.length === 0 && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
