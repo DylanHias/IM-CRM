@@ -31,6 +31,8 @@ export interface D365Customer {
   address1_country: string | null;
   websiteurl: string | null;
   im360_bcn: string | null;
+  im360_armid: string | null;
+  im360_cloudresellerid: string | null;
   im360_mainsegmentation: number | null;
   'im360_mainsegmentation@OData.Community.Display.V1.FormattedValue'?: string;
   statecode: number;

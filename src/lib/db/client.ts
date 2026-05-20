@@ -76,6 +76,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
       synced_at       TEXT NOT NULL,
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       reseller_id     TEXT,
+      arm_id          TEXT,
       bcn             TEXT,
       cloud_customer  INTEGER,
       arr             REAL,
@@ -379,6 +380,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
 async function ensureAllColumns(db: Database): Promise<void> {
   const cols: [string, string, string][] = [
     ['customers',  'reseller_id',     'TEXT'],
+    ['customers',  'arm_id',          'TEXT'],
     ['customers',  'bcn',             'TEXT'],
     ['customers',  'cloud_customer',  'INTEGER'],
     ['customers',  'arr',             'REAL'],
@@ -499,7 +501,7 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '44')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '45')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
@@ -1209,6 +1211,20 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       }
     } else {
       console.warn(`[db] migration v44 left ${v44Failures} step(s) failed — will retry next launch`);
+    }
+  }
+
+  if (currentVersion < 45) {
+    // Add arm_id column to customers for matching against Power BI's marketplace_id.
+    // reseller_id was previously unused; from this version it stores im360_cloudresellerid
+    // (GUID) for matching against Power BI's reseller_id.
+    // ensureAllColumns handles the actual column creation; this block just bumps the version.
+    try {
+      await db.execute(
+        `UPDATE app_settings SET value = '45', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v45 schema_version bump failed:', err);
     }
   }
 }

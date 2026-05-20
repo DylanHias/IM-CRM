@@ -27,7 +27,8 @@ const ACTIVITY_WINDOW_MONTHS = 12;
  * distinguish active vs dormant-but-recent via the value itself.
  *
  * Response keys: Reseller[bcn], Reseller[reseller_id], Reseller[Reseller Account],
- * Reseller[currency_code], [ARR_USD], [ARR_LC], [ActiveEndCustomers], [AsOfMonth]
+ * Reseller[Reseller Name], Reseller[marketplace_id], Reseller[currency_code],
+ * [ARR_USD], [ARR_LC], [ActiveEndCustomers], [AsOfMonth]
  *
  * ActiveEndCustomers = distinct ARR[customer_id] for this reseller in the latest
  * month. ARR rows are emitted per active end-customer subscription, so this counts
@@ -44,6 +45,8 @@ FILTER(
       Reseller[bcn],
       Reseller[reseller_id],
       Reseller[Reseller Account],
+      Reseller[Reseller Name],
+      Reseller[marketplace_id],
       Reseller[currency_code]
     ),
     "ARR_USD", CALCULATE(SUM(ARR[arr_arr_amt_usd]), ARR[calendar_month] = LatestMonth),

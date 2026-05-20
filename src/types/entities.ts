@@ -4,6 +4,7 @@ export interface Customer {
   accountNumber: string | null;
   bcn: string | null;
   resellerId: string | null;
+  armId: string | null;
   industry: string | null;
   segment: string | null;
   ownerId: string | null;

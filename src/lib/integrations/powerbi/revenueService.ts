@@ -66,20 +66,50 @@ async function readSetting(key: string): Promise<string | null> {
 interface CrmMatchSets {
   bcns: Set<string>;
   accountNumbers: Set<string>;
+  cloudResellerIds: Set<string>;
+  armIds: Set<string>;
+  uniqueNormalizedNames: Set<string>;
+}
+
+function normalizeArmId(v: string): string {
+  return v.replace(/^'|'$/g, '').trim();
+}
+
+function normalizeName(v: string): string {
+  return v.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 async function getCrmMatchSets(): Promise<CrmMatchSets> {
   const db = await getDb();
-  const rows = await db.select<{ bcn: string | null; account_number: string | null }[]>(
-    `SELECT bcn, account_number FROM customers`,
-  );
+  const rows = await db.select<{
+    bcn: string | null;
+    account_number: string | null;
+    reseller_id: string | null;
+    arm_id: string | null;
+    name: string | null;
+  }[]>(`SELECT bcn, account_number, reseller_id, arm_id, name FROM customers`);
   const bcns = new Set<string>();
   const accountNumbers = new Set<string>();
+  const cloudResellerIds = new Set<string>();
+  const armIds = new Set<string>();
+  // Name fallback: only allow names that are unique inside the CRM to avoid
+  // collapsing multiple distinct customers onto a single PBI row.
+  const nameCounts = new Map<string, number>();
   for (const r of rows) {
     if (r.bcn) bcns.add(r.bcn);
     if (r.account_number) accountNumbers.add(r.account_number);
+    if (r.reseller_id) cloudResellerIds.add(r.reseller_id);
+    if (r.arm_id) armIds.add(normalizeArmId(r.arm_id));
+    if (r.name) {
+      const n = normalizeName(r.name);
+      if (n) nameCounts.set(n, (nameCounts.get(n) ?? 0) + 1);
+    }
   }
-  return { bcns, accountNumbers };
+  const uniqueNormalizedNames = new Set<string>();
+  nameCounts.forEach((c, n) => {
+    if (c === 1) uniqueNormalizedNames.add(n);
+  });
+  return { bcns, accountNumbers, cloudResellerIds, armIds, uniqueNormalizedNames };
 }
 
 export async function getAutoRefreshHours(): Promise<number> {
@@ -122,24 +152,46 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     const refreshedAt = new Date().toISOString();
 
     const db = await getDb();
-    const { bcns: crmBcns, accountNumbers: crmAccountNumbers } = await getCrmMatchSets();
+    const {
+      bcns: crmBcns,
+      accountNumbers: crmAccountNumbers,
+      cloudResellerIds: crmCloudResellerIds,
+      armIds: crmArmIds,
+      uniqueNormalizedNames: crmUniqueNames,
+    } = await getCrmMatchSets();
 
     const byBcn = new Map<string, RevenueRowDb>();
     let skippedNotInCrm = 0;
     let matchedByBcn = 0;
     let matchedByAccount = 0;
+    let matchedByCloudResellerId = 0;
+    let matchedByMarketplaceId = 0;
+    let matchedByName = 0;
     for (const row of rows) {
       const bcn = toStrOrNull(row['Reseller[bcn]']);
       if (!bcn) continue;
       const resellerAccount = toStrOrNull(row['Reseller[Reseller Account]']);
+      const resellerId = toStrOrNull(row['Reseller[reseller_id]']);
+      const marketplaceId = toStrOrNull(row['Reseller[marketplace_id]']);
+      const resellerName = toStrOrNull(row['Reseller[Reseller Name]']);
       const matchByBcn = crmBcns.has(bcn);
-      const matchByAccount = !!resellerAccount && crmAccountNumbers.has(resellerAccount);
-      if (!matchByBcn && !matchByAccount) {
+      const matchByAccount = !matchByBcn
+        && !!resellerAccount && crmAccountNumbers.has(resellerAccount);
+      const matchByCloudResellerId = !matchByBcn && !matchByAccount
+        && !!resellerId && crmCloudResellerIds.has(resellerId);
+      const matchByMarketplaceId = !matchByBcn && !matchByAccount && !matchByCloudResellerId
+        && !!marketplaceId && crmArmIds.has(normalizeArmId(marketplaceId));
+      const matchByName = !matchByBcn && !matchByAccount && !matchByCloudResellerId && !matchByMarketplaceId
+        && !!resellerName && crmUniqueNames.has(normalizeName(resellerName));
+      if (!matchByBcn && !matchByAccount && !matchByCloudResellerId && !matchByMarketplaceId && !matchByName) {
         skippedNotInCrm++;
         continue;
       }
       if (matchByBcn) matchedByBcn++;
-      else matchedByAccount++;
+      else if (matchByAccount) matchedByAccount++;
+      else if (matchByCloudResellerId) matchedByCloudResellerId++;
+      else if (matchByMarketplaceId) matchedByMarketplaceId++;
+      else matchedByName++;
       const next: RevenueRowDb = {
         bcn,
         pbi_customer_id: toStrOrNull(row['Reseller[reseller_id]']),
@@ -225,7 +277,7 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     }
 
     console.log(
-      `[revenue] refresh complete: ${inserted} rows inserted (${matchedByBcn} via BCN, ${matchedByAccount} via Reseller Account), ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
+      `[revenue] refresh complete: ${inserted} rows inserted (${matchedByBcn} via BCN, ${matchedByAccount} via Reseller Account, ${matchedByCloudResellerId} via cloud reseller_id, ${matchedByMarketplaceId} via marketplace_id, ${matchedByName} via name), ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
     );
 
     useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);

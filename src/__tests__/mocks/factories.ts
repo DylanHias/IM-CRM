@@ -12,6 +12,7 @@ export function createCustomer(overrides?: Partial<Customer>): Customer {
     accountNumber: 'ACC-001',
     bcn: 'BCN-001',
     resellerId: 'RES-001',
+    armId: null,
     industry: 'Technology',
     segment: 'Enterprise',
     ownerId: 'owner-1',
