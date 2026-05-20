@@ -45,18 +45,7 @@ export function useArrMovement(
     if (!bcn) return;
     if (entry) return;
     if (isLoading) return;
-    void (async () => {
-      // Prefer local DB cache so the chart renders even without Power BI access.
-      const cached = await loadArrMovementFromDb(bcn, monthsBack);
-      if (cached && cached.length > 0) return;
-      try {
-        const token = await getAccessToken(powerBiRequest.scopes);
-        if (!token) return;
-        await fetchArrMovement(token, bcn, monthsBack);
-      } catch {
-        // captured in store
-      }
-    })();
+    void loadArrMovementFromDb(bcn, monthsBack);
   }, [bcn, monthsBack, entry, isLoading]);
 
   return {

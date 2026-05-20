@@ -42,17 +42,7 @@ export function useResellerSeatsTrend(
 
   useEffect(() => {
     if (entry || isLoading) return;
-    void (async () => {
-      const cached = await loadResellerSeatsTrendFromDb(monthsBack, countryCodes);
-      if (cached && cached.length > 0) return;
-      try {
-        const token = await getAccessToken(powerBiRequest.scopes);
-        if (!token) return;
-        await fetchResellerSeatsTrend(token, monthsBack, countryCodes);
-      } catch {
-        // captured in store
-      }
-    })();
+    void loadResellerSeatsTrendFromDb(monthsBack, countryCodes);
   }, [monthsBack, countryCodes, entry, isLoading]);
 
   return {

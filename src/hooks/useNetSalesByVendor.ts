@@ -43,17 +43,7 @@ export function useNetSalesByVendor(
 
   useEffect(() => {
     if (entry || isLoading) return;
-    void (async () => {
-      const cached = await loadNetSalesByVendorFromDb(monthsBack, countryCodes, topN);
-      if (cached && cached.months.length > 0) return;
-      try {
-        const token = await getAccessToken(powerBiRequest.scopes);
-        if (!token) return;
-        await fetchNetSalesByVendor(token, monthsBack, countryCodes, topN);
-      } catch {
-        // captured in store
-      }
-    })();
+    void loadNetSalesByVendorFromDb(monthsBack, countryCodes, topN);
   }, [monthsBack, countryCodes, topN, entry, isLoading]);
 
   return {
