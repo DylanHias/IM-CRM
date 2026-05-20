@@ -33,8 +33,8 @@
     --sidebar-bg: 0 0% 100%;
     --sidebar-fg: 222 20% 40%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-active-bg: 217 87% 51%;
-    --sidebar-active-fg: 0 0% 100%;
+    --sidebar-active-bg: var(--primary);
+    --sidebar-active-fg: var(--primary-foreground);
     --sidebar-hover-bg: 218 22% 95%;
     --topbar-bg: 0 0% 100%;
     --topbar-border: 218 22% 91%;
@@ -109,8 +109,8 @@
     --sidebar-bg: 220 10% 17%;
     --sidebar-fg: 220 8% 65%;
     --sidebar-border: 220 6% 24%;
-    --sidebar-active-bg: 217 87% 56%;
-    --sidebar-active-fg: 0 0% 100%;
+    --sidebar-active-bg: var(--primary);
+    --sidebar-active-fg: var(--primary-foreground);
     --sidebar-hover-bg: 220 8% 22%;
     --topbar-bg: 220 10% 17%;
     --topbar-border: 220 8% 22%;
