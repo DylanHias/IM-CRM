@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair, TrendingUp,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -373,10 +373,11 @@ const customerSubNavBase = [
 ] as const;
 
 const customerSubNavOpportunities = { key: 'opportunities', label: 'Opportunities', icon: Crosshair } as const;
+const customerSubNavRevenue = { key: 'revenue', label: 'Revenue', icon: TrendingUp } as const;
 
 function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
   const [open, setOpen] = useState(false);
-  const subNav = [...customerSubNavBase, customerSubNavOpportunities];
+  const subNav = [...customerSubNavBase, customerSubNavOpportunities, customerSubNavRevenue];
 
   return (
     <Collapsible.Root asChild open={open} onOpenChange={setOpen}>

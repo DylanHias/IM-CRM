@@ -1,6 +1,6 @@
 {
   "name": "ingram-crm",
-  "version": "2.12.83",
+  "version": "2.12.84",
   "private": true,
   "scripts": {
     "dev": "next dev",

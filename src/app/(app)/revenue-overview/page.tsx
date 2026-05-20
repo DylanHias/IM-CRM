@@ -89,7 +89,7 @@ function renderArrCell(
     case 'name':
       return (
         <button
-          onClick={() => router.push(`/customers?id=${customer.id}`)}
+          onClick={() => router.push(`/customers?id=${customer.id}&tab=revenue`)}
           className="font-medium text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors text-left"
         >
           {customer.name}
