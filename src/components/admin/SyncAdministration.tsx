@@ -8,15 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { runFullSync, resetSyncWatermark } from '@/lib/sync/syncService';
-import { getAccessToken } from '@/lib/auth/authHelpers';
-import { d365Request } from '@/lib/auth/msalConfig';
+import { resetSyncWatermark } from '@/lib/sync/syncService';
+import { useSync } from '@/hooks/useSync';
+import { useSyncStore } from '@/store/syncStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { toast } from 'sonner';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 
 type SortField = 'syncType' | 'errorMessage' | 'createdAt';
 
 export function SyncAdministration() {
   const { syncHealth, syncErrors, isLoading, loadSyncAdmin } = useAdminStore();
+  const { triggerSync, isSyncing } = useSync();
   const [syncing, setSyncing] = useState(false);
   const [purgeDays, setPurgeDays] = useState(90);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,16 +79,24 @@ export function SyncAdministration() {
   }
 
   const handleForceSync = async () => {
-    if (!isTauriApp()) return;
-    const token = await getAccessToken(d365Request.scopes);
-    if (!token) return;
+    if (!isTauriApp() || isSyncing) return;
     setSyncing(true);
     try {
       await resetSyncWatermark();
-      await runFullSync(token);
+      await triggerSync();
+      const showToasts = useSettingsStore.getState().showSyncToasts;
+      const errors = useSyncStore.getState().syncErrors;
+      if (showToasts) {
+        if (errors.length > 0) {
+          toast.error('Sync completed with errors', { description: `${errors.length} error(s) occurred` });
+        } else {
+          toast.success('Sync complete');
+        }
+      }
       await loadSyncAdmin();
     } catch (err) {
       console.error('[sync] Force re-sync failed:', err);
+      toast.error('Sync failed', { description: 'Something went wrong — try again later' });
     } finally {
       setSyncing(false);
     }
@@ -123,7 +134,7 @@ export function SyncAdministration() {
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Sync Administration</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleForceSync} disabled={syncing || isLoading}>
+          <Button variant="outline" size="sm" onClick={handleForceSync} disabled={syncing || isSyncing || isLoading}>
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
             <span className="ml-1.5">Force Re-sync</span>
           </Button>
