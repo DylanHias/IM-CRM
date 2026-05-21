@@ -106,7 +106,6 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS arr_movement (
       bcn               TEXT NOT NULL,
-      months_back       INTEGER NOT NULL,
       month             TEXT NOT NULL,
       upgrade_usd       REAL,
       downgrade_usd     REAL,
@@ -117,45 +116,41 @@ async function ensureTablesExist(db: Database): Promise<void> {
       cancellation_lc   REAL,
       new_sale_lc       REAL,
       refreshed_at      TEXT NOT NULL,
-      PRIMARY KEY (bcn, months_back, month)
+      PRIMARY KEY (bcn, month)
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_arr_movement_bcn ON arr_movement(bcn)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS arr_trend (
-      months_back     INTEGER NOT NULL,
-      country_codes   TEXT NOT NULL,
       month           TEXT NOT NULL,
+      country_code    TEXT NOT NULL,
       arr_lc          REAL,
       customer_count  INTEGER,
       refreshed_at    TEXT NOT NULL,
-      PRIMARY KEY (months_back, country_codes, month)
+      PRIMARY KEY (month, country_code)
     )
   `);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS reseller_seats_trend (
-      months_back       INTEGER NOT NULL,
-      country_codes     TEXT NOT NULL,
       month             TEXT NOT NULL,
+      country_code      TEXT NOT NULL,
       active_resellers  INTEGER,
       active_seats      INTEGER,
       refreshed_at      TEXT NOT NULL,
-      PRIMARY KEY (months_back, country_codes, month)
+      PRIMARY KEY (month, country_code)
     )
   `);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS net_sales_by_vendor (
-      months_back    INTEGER NOT NULL,
-      country_codes  TEXT NOT NULL,
-      top_n          INTEGER NOT NULL,
-      vendor         TEXT NOT NULL,
       month          TEXT NOT NULL,
+      country_code   TEXT NOT NULL,
+      vendor         TEXT NOT NULL,
       net_sales_lc   REAL,
       refreshed_at   TEXT NOT NULL,
-      PRIMARY KEY (months_back, country_codes, top_n, vendor, month)
+      PRIMARY KEY (month, country_code, vendor)
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_net_sales_vendor ON net_sales_by_vendor(vendor)`);
@@ -1225,6 +1220,100 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     } catch (err) {
       console.error('[db] migration v45 schema_version bump failed:', err);
+    }
+  }
+
+  if (currentVersion < 46) {
+    // Insights tables move from per-(months_back, country_codes) tuple keys to
+    // raw per-country / per-bcn snapshots. The CRM now stores 24mo of Benelux
+    // data once and slices by region + monthsBack in JS — flipping a UI filter
+    // never triggers a Power BI call. Existing rows are dropped; next refresh
+    // repopulates from the new bulk DAX snapshot queries.
+    const statements: { label: string; sql: string }[] = [
+      { label: 'drop arr_movement', sql: `DROP TABLE IF EXISTS arr_movement` },
+      { label: 'drop arr_trend', sql: `DROP TABLE IF EXISTS arr_trend` },
+      { label: 'drop reseller_seats_trend', sql: `DROP TABLE IF EXISTS reseller_seats_trend` },
+      { label: 'drop net_sales_by_vendor', sql: `DROP TABLE IF EXISTS net_sales_by_vendor` },
+      {
+        label: 'arr_movement',
+        sql: `CREATE TABLE arr_movement (
+          bcn               TEXT NOT NULL,
+          month             TEXT NOT NULL,
+          upgrade_usd       REAL,
+          downgrade_usd     REAL,
+          cancellation_usd  REAL,
+          new_sale_usd      REAL,
+          upgrade_lc        REAL,
+          downgrade_lc      REAL,
+          cancellation_lc   REAL,
+          new_sale_lc       REAL,
+          refreshed_at      TEXT NOT NULL,
+          PRIMARY KEY (bcn, month)
+        )`,
+      },
+      {
+        label: 'idx_arr_movement_bcn',
+        sql: `CREATE INDEX idx_arr_movement_bcn ON arr_movement(bcn)`,
+      },
+      {
+        label: 'arr_trend',
+        sql: `CREATE TABLE arr_trend (
+          month           TEXT NOT NULL,
+          country_code    TEXT NOT NULL,
+          arr_lc          REAL,
+          customer_count  INTEGER,
+          refreshed_at    TEXT NOT NULL,
+          PRIMARY KEY (month, country_code)
+        )`,
+      },
+      {
+        label: 'reseller_seats_trend',
+        sql: `CREATE TABLE reseller_seats_trend (
+          month             TEXT NOT NULL,
+          country_code      TEXT NOT NULL,
+          active_resellers  INTEGER,
+          active_seats      INTEGER,
+          refreshed_at      TEXT NOT NULL,
+          PRIMARY KEY (month, country_code)
+        )`,
+      },
+      {
+        label: 'net_sales_by_vendor',
+        sql: `CREATE TABLE net_sales_by_vendor (
+          month         TEXT NOT NULL,
+          country_code  TEXT NOT NULL,
+          vendor        TEXT NOT NULL,
+          net_sales_lc  REAL,
+          refreshed_at  TEXT NOT NULL,
+          PRIMARY KEY (month, country_code, vendor)
+        )`,
+      },
+      {
+        label: 'idx_net_sales_vendor',
+        sql: `CREATE INDEX idx_net_sales_vendor ON net_sales_by_vendor(vendor)`,
+      },
+    ];
+
+    let v46Failures = 0;
+    for (const { label, sql } of statements) {
+      try {
+        await db.execute(sql);
+      } catch (err) {
+        v46Failures++;
+        console.error(`[db] migration v46 step '${label}' failed:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    if (v46Failures === 0) {
+      try {
+        await db.execute(
+          `UPDATE app_settings SET value = '46', updated_at = datetime('now') WHERE key = 'schema_version'`
+        );
+      } catch (err) {
+        console.error('[db] migration v46 schema_version bump failed:', err);
+      }
+    } else {
+      console.warn(`[db] migration v46 left ${v46Failures} step(s) failed — will retry next launch`);
     }
   }
 }

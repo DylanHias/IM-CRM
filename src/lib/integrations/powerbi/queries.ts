@@ -9,6 +9,11 @@
  *
  * Scope is Benelux only — filtered in DAX so non-Benelux rows never cross the wire.
  *
+ * Design: every query returns a *raw snapshot* at max range (24 months) grouped by
+ * country_code (or BCN for movement). The CRM stores these snapshots locally and
+ * slices them client-side by region + months-back, so flipping a UI filter never
+ * needs another DAX call.
+ *
  * Response key conventions:
  *  - Native columns: "Reseller[bcn]"
  *  - Computed (ADDCOLUMNS) columns: "[ARR_USD]"
@@ -19,6 +24,8 @@ export const BENELUX_COUNTRY_CODES = ['BE', 'NL', 'LU'] as const;
 const BENELUX_DAX_LIST = `{${BENELUX_COUNTRY_CODES.map((c) => `"${c}"`).join(', ')}}`;
 
 const ACTIVITY_WINDOW_MONTHS = 12;
+
+const SNAPSHOT_MONTHS = 24;
 
 /**
  * One row per Benelux reseller with their current-month ARR (USD + LC).
@@ -72,24 +79,18 @@ FILTER(
 `.trim();
 
 /**
- * Org-wide monthly ARR trend across Benelux resellers.
- * Returns one row per month with total ARR (USD) and distinct reseller count.
+ * Per-country, per-month ARR snapshot over the last 24 months across Benelux.
+ * The CRM aggregates client-side to derive region/period totals.
  *
- * Response keys: ARR[calendar_month], [ARR_USD], [CustomerCount]
+ * Response keys: ARR[calendar_month], Reseller[country_code], [ARR_LC], [CustomerCount]
  */
-export function arrTrendDax(monthsBack: number, countryCodes: readonly string[]): string {
-  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
-  const safeCodes = countryCodes
-    .map((c) => c.replace(/[^A-Z]/g, ''))
-    .filter((c) => c.length === 2);
-  const codesList = `{${safeCodes.map((c) => `"${c}"`).join(', ')}}`;
-  return `
+export const ARR_TREND_SNAPSHOT_DAX = `
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX(ARR[calendar_month]), ALL(ARR))
-VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
+VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
 VAR ScopedResellerIds = CALCULATETABLE(
   VALUES(Reseller[reseller_id]),
-  Reseller[country_code] IN ${codesList}
+  Reseller[country_code] IN ${BENELUX_DAX_LIST}
 )
 RETURN
 ADDCOLUMNS(
@@ -99,38 +100,97 @@ ADDCOLUMNS(
       ARR[calendar_month] >= EarliestMonth &&
       ARR[calendar_month] <= LatestMonth
     ),
-    ARR[calendar_month]
+    ARR[calendar_month],
+    Reseller[country_code]
   ),
   "ARR_LC", CALCULATE(SUM(ARR[ARR, LC])),
   "CustomerCount", CALCULATE(DISTINCTCOUNT(ARR[reseller_id]))
 )
 `.trim();
-}
 
 /**
- * Per-reseller ARR Movement (last N months) grouped by month.
- * Scoped to a single BCN — resolved to underlying reseller_ids inside DAX.
+ * Per-country, per-month reseller + seat activity snapshot (last 24 months).
+ * "Active" = a reseller with a Seats row where seats_active_seats > 0 in that month.
+ *
+ * Response keys: Seats[month], Reseller[country_code], [ActiveResellers], [ActiveSeats]
+ */
+export const RESELLER_SEATS_SNAPSHOT_DAX = `
+EVALUATE
+VAR LatestMonth = CALCULATE(MAX(Seats[month]), ALL(Seats))
+VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
+RETURN
+CALCULATETABLE(
+  ADDCOLUMNS(
+    SUMMARIZE(
+      FILTER(Seats,
+        Seats[month] >= EarliestMonth &&
+        Seats[month] <= LatestMonth
+      ),
+      Seats[month],
+      Reseller[country_code]
+    ),
+    "ActiveSeats", CALCULATE(SUM(Seats[seats_active_seats])),
+    "ActiveResellers", CALCULATE(
+      DISTINCTCOUNT(Seats[reseller_id]),
+      Seats[seats_active_seats] > 0
+    )
+  ),
+  Reseller[country_code] IN ${BENELUX_DAX_LIST}
+)
+`.trim();
+
+/**
+ * Per-country, per-month, per-vendor net sales (LC) snapshot (last 24 months).
+ * Stores every vendor — UI computes "top N by region" client-side.
+ *
+ * Response keys: Sales[month], Reseller[country_code], Vendor[vendor_name], [NetSales_LC]
+ */
+export const NET_SALES_SNAPSHOT_DAX = `
+EVALUATE
+VAR LatestMonth = CALCULATE(MAX(Sales[month]), ALL(Sales))
+VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
+VAR ScopedResellerIds = CALCULATETABLE(
+  VALUES(Reseller[reseller_id]),
+  Reseller[country_code] IN ${BENELUX_DAX_LIST}
+)
+RETURN
+ADDCOLUMNS(
+  SUMMARIZE(
+    FILTER(Sales,
+      Sales[reseller_id] IN ScopedResellerIds &&
+      Sales[month] >= EarliestMonth &&
+      Sales[month] <= LatestMonth
+    ),
+    Sales[month],
+    Reseller[country_code],
+    Vendor[vendor_name]
+  ),
+  "NetSales_LC", CALCULATE(SUM(Sales[net_sales_lc]))
+)
+`.trim();
+
+/**
+ * Per-BCN, per-month ARR Movement snapshot (last 24 months) for all Benelux resellers.
+ * Returns one row per (bcn, month). The CRM caches this snapshot and the customer
+ * revenue tab slices to a single BCN + monthsBack client-side.
  *
  * Response keys:
- *  'ARR Movement'[month], [Upgrade_USD], [Downgrade_USD], [Cancellation_USD],
- *  [NewSale_USD], [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
+ *  Reseller[bcn], 'ARR Movement'[month],
+ *  [Upgrade_USD], [Downgrade_USD], [Cancellation_USD], [NewSale_USD],
+ *  [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
  */
-export function arrMovementByBcnDax(bcn: string, monthsBack: number): string {
-  const safeBcn = bcn.replace(/[^a-zA-Z0-9\-_.]/g, '');
-  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
-  return `
+export const ARR_MOVEMENT_SNAPSHOT_DAX = `
 EVALUATE
-VAR TargetBcn = "${safeBcn}"
 VAR LatestMonth = CALCULATE(MAX('ARR Movement'[month]), ALL('ARR Movement'))
-VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
-VAR ResellerIds = CALCULATETABLE(
+VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
+VAR ScopedResellerIds = CALCULATETABLE(
   VALUES(Reseller[reseller_id]),
-  Reseller[bcn] = TargetBcn
+  Reseller[country_code] IN ${BENELUX_DAX_LIST}
 )
 RETURN
 CALCULATETABLE(
   ADDCOLUMNS(
-    SUMMARIZE('ARR Movement', 'ARR Movement'[month]),
+    SUMMARIZE('ARR Movement', Reseller[bcn], 'ARR Movement'[month]),
     "Upgrade_USD", CALCULATE(SUM('ARR Movement'[arr_upgrade_usd])),
     "Downgrade_USD", CALCULATE(SUM('ARR Movement'[arr_downgrade_usd])),
     "Cancellation_USD", CALCULATE(SUM('ARR Movement'[arr_cancellation_usd])),
@@ -140,107 +200,8 @@ CALCULATETABLE(
     "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
     "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
   ),
-  'ARR Movement'[reseller_id] IN ResellerIds,
+  'ARR Movement'[reseller_id] IN ScopedResellerIds,
   'ARR Movement'[month] >= EarliestMonth,
   'ARR Movement'[month] <= LatestMonth
 )
 `.trim();
-}
-
-function safeCountryList(countryCodes: readonly string[]): string {
-  const safeCodes = countryCodes
-    .map((c) => c.replace(/[^A-Z]/g, ''))
-    .filter((c) => c.length === 2);
-  return `{${safeCodes.map((c) => `"${c}"`).join(', ')}}`;
-}
-
-/**
- * Monthly active-resellers + active-seats trend (last N months) scoped to a region.
- * "Active" = reseller had a Seats row with seats_active_seats > 0 in that month.
- *
- * Response keys: Seats[month], [ActiveResellers], [ActiveSeats]
- */
-export function resellerSeatsTrendDax(monthsBack: number, countryCodes: readonly string[]): string {
-  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
-  const codesList = safeCountryList(countryCodes);
-  return `
-EVALUATE
-VAR LatestMonth = CALCULATE(MAX(Seats[month]), ALL(Seats))
-VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
-RETURN
-CALCULATETABLE(
-  ADDCOLUMNS(
-    SUMMARIZE(
-      FILTER(Seats,
-        Seats[month] >= EarliestMonth &&
-        Seats[month] <= LatestMonth
-      ),
-      Seats[month]
-    ),
-    "ActiveSeats", CALCULATE(SUM(Seats[seats_active_seats])),
-    "ActiveResellers", CALCULATE(
-      DISTINCTCOUNT(Seats[reseller_id]),
-      Seats[seats_active_seats] > 0
-    )
-  ),
-  Reseller[country_code] IN ${codesList}
-)
-`.trim();
-}
-
-/**
- * Monthly net sales (LC) per vendor (top N by total) over last N months, scoped to region.
- *
- * Response keys: Sales[month], Vendor[vendor_name], [NetSales_LC]
- */
-export function netSalesByVendorDax(
-  monthsBack: number,
-  countryCodes: readonly string[],
-  topN: number,
-): string {
-  const safeMonths = Math.max(1, Math.min(36, Math.floor(monthsBack)));
-  const safeTop = Math.max(1, Math.min(20, Math.floor(topN)));
-  const codesList = safeCountryList(countryCodes);
-  return `
-EVALUATE
-VAR LatestMonth = CALCULATE(MAX(Sales[month]), ALL(Sales))
-VAR EarliestMonth = EDATE(LatestMonth, -${safeMonths} + 1)
-VAR ScopedResellerIds = CALCULATETABLE(
-  VALUES(Reseller[reseller_id]),
-  Reseller[country_code] IN ${codesList}
-)
-VAR VendorTotals =
-  ADDCOLUMNS(
-    SUMMARIZE(
-      FILTER(Sales,
-        Sales[reseller_id] IN ScopedResellerIds &&
-        Sales[month] >= EarliestMonth &&
-        Sales[month] <= LatestMonth
-      ),
-      Vendor[vendor_name]
-    ),
-    "Total", CALCULATE(SUM(Sales[net_sales_lc]))
-  )
-VAR TopVendorNames =
-  SELECTCOLUMNS(
-    TOPN(${safeTop}, FILTER(VendorTotals, [Total] > 0), [Total], DESC),
-    "v", Vendor[vendor_name]
-  )
-RETURN
-ADDCOLUMNS(
-  FILTER(
-    SUMMARIZE(
-      FILTER(Sales,
-        Sales[reseller_id] IN ScopedResellerIds &&
-        Sales[month] >= EarliestMonth &&
-        Sales[month] <= LatestMonth
-      ),
-      Sales[month],
-      Vendor[vendor_name]
-    ),
-    Vendor[vendor_name] IN TopVendorNames
-  ),
-  "NetSales_LC", CALCULATE(SUM(Sales[net_sales_lc]))
-)
-`.trim();
-}

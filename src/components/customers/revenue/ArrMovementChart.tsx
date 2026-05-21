@@ -13,10 +13,8 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
-import { Loader2, AlertCircle, RefreshCw, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, BarChart3 } from 'lucide-react';
 import { useArrMovement } from '@/hooks/useArrMovement';
-import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import type { Currency } from '@/lib/revenue/effectiveArr';
 import { cn } from '@/lib/utils';
 
@@ -61,7 +59,7 @@ function formatValue(value: number, currencyCode: string | null): string {
 }
 
 export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, className }: Props) {
-  const { rows, isLoading, error, refresh } = useArrMovement(bcn, monthsBack);
+  const { rows, isHydrated } = useArrMovement(bcn, monthsBack);
 
   const data: ChartRow[] = useMemo(() => {
     return rows.map((r) => {
@@ -90,21 +88,9 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
         className,
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <BarChart3 size={13} />
-          ARR movement · last {monthsBack} months
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={isLoading || !bcn}
-          className="h-7 px-2 text-xs"
-        >
-          {isLoading ? <Loader2 size={11} className="mr-1 animate-spin" /> : <RefreshCw size={11} className="mr-1" />}
-          Refresh
-        </Button>
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <BarChart3 size={13} />
+        ARR movement · last {monthsBack} months
       </div>
 
       {!bcn && (
@@ -114,16 +100,14 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
         </div>
       )}
 
-      {bcn && data.length === 0 && error && <PowerBiUnavailable />}
-
-      {bcn && data.length === 0 && !error && isLoading && (
+      {bcn && data.length === 0 && !isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           <Loader2 size={14} className="mr-2 animate-spin" />
           Loading movement data…
         </div>
       )}
 
-      {bcn && data.length === 0 && !error && !isLoading && (
+      {bcn && data.length === 0 && isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           No movement recorded for this customer in the last {monthsBack} months.
         </div>

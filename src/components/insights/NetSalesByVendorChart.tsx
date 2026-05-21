@@ -11,10 +11,8 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { Loader2, RefreshCw, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, BarChart3 } from 'lucide-react';
 import { useNetSalesByVendor } from '@/hooks/useNetSalesByVendor';
-import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -26,14 +24,14 @@ interface Props {
 }
 
 const VENDOR_COLORS = [
-  '#2563eb', // blue
-  '#dc2626', // red
-  '#16a34a', // green
-  '#9333ea', // purple
-  '#ea580c', // orange
-  '#0891b2', // cyan
-  '#ca8a04', // yellow
-  '#db2777', // pink
+  '#2563eb',
+  '#dc2626',
+  '#16a34a',
+  '#9333ea',
+  '#ea580c',
+  '#0891b2',
+  '#ca8a04',
+  '#db2777',
 ];
 
 function formatMonthLabel(iso: string): string {
@@ -63,7 +61,7 @@ export function NetSalesByVendorChart({
   topVendors = 8,
   className,
 }: Props) {
-  const { entry, isLoading, error, refresh } = useNetSalesByVendor(monthsBack, countryCodes, topVendors);
+  const { entry, isHydrated } = useNetSalesByVendor(monthsBack, countryCodes, topVendors);
 
   const data = useMemo(() => {
     if (!entry || entry.months.length === 0) return [];
@@ -83,35 +81,21 @@ export function NetSalesByVendorChart({
 
   return (
     <div className={cn('rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3', className)}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <BarChart3 size={13} />
-          Monthly net sales (LC) by vendor · {scopeLabel} · top {topVendors} · last {monthsBack} months
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={isLoading}
-          className="h-7 px-2 text-xs"
-        >
-          {isLoading ? <Loader2 size={11} className="mr-1 animate-spin" /> : <RefreshCw size={11} className="mr-1" />}
-          Refresh
-        </Button>
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <BarChart3 size={13} />
+        Monthly net sales (LC) by vendor · {scopeLabel} · top {topVendors} · last {monthsBack} months
       </div>
 
-      {data.length === 0 && error && <PowerBiUnavailable />}
-
-      {data.length === 0 && !error && isLoading && (
+      {data.length === 0 && !isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           <Loader2 size={14} className="mr-2 animate-spin" />
           Loading net sales by vendor…
         </div>
       )}
 
-      {data.length === 0 && !error && !isLoading && (
+      {data.length === 0 && isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
-          No sales data available.
+          No sales data available — run a refresh in Admin → Revenue Sync.
         </div>
       )}
 

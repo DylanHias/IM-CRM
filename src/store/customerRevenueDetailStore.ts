@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 export interface ArrMovementRow {
+  bcn: string;
   month: string;
   upgradeUsd: number;
   downgradeUsd: number;
@@ -12,59 +13,37 @@ export interface ArrMovementRow {
   newSaleLc: number;
 }
 
-export interface ArrMovementEntry {
-  bcn: string;
-  monthsBack: number;
-  rows: ArrMovementRow[];
-  fetchedAt: number;
-}
-
 interface CustomerRevenueDetailState {
-  movementByKey: Map<string, ArrMovementEntry>;
-  loadingKeys: Set<string>;
-  errorByKey: Map<string, string>;
+  movementByBcn: Map<string, ArrMovementRow[]>;
+  lastRefreshedAt: string | null;
+  isHydrated: boolean;
 
-  setMovement: (key: string, entry: ArrMovementEntry) => void;
-  setLoading: (key: string, loading: boolean) => void;
-  setError: (key: string, error: string | null) => void;
-  resetAll: () => void;
+  setMovement: (rows: ArrMovementRow[], lastRefreshedAt: string | null) => void;
+  setHydrated: (hydrated: boolean) => void;
 }
 
-export function movementKey(bcn: string, monthsBack: number): string {
-  return `${bcn}::${monthsBack}`;
+function indexByBcn(rows: ArrMovementRow[]): Map<string, ArrMovementRow[]> {
+  const out = new Map<string, ArrMovementRow[]>();
+  for (const r of rows) {
+    let list = out.get(r.bcn);
+    if (!list) {
+      list = [];
+      out.set(r.bcn, list);
+    }
+    list.push(r);
+  }
+  // Per-BCN months in ascending order so UI can trim from the tail.
+  out.forEach((list: ArrMovementRow[]) => {
+    list.sort((a, b) => a.month.localeCompare(b.month));
+  });
+  return out;
 }
 
 export const useCustomerRevenueDetailStore = create<CustomerRevenueDetailState>((set) => ({
-  movementByKey: new Map(),
-  loadingKeys: new Set(),
-  errorByKey: new Map(),
-
-  setMovement: (key, entry) =>
-    set((s) => {
-      const next = new Map(s.movementByKey);
-      next.set(key, entry);
-      const nextErr = new Map(s.errorByKey);
-      nextErr.delete(key);
-      return { movementByKey: next, errorByKey: nextErr };
-    }),
-  setLoading: (key, loading) =>
-    set((s) => {
-      const next = new Set(s.loadingKeys);
-      if (loading) next.add(key);
-      else next.delete(key);
-      return { loadingKeys: next };
-    }),
-  setError: (key, error) =>
-    set((s) => {
-      const next = new Map(s.errorByKey);
-      if (error) next.set(key, error);
-      else next.delete(key);
-      return { errorByKey: next };
-    }),
-  resetAll: () =>
-    set({
-      movementByKey: new Map(),
-      loadingKeys: new Set(),
-      errorByKey: new Map(),
-    }),
+  movementByBcn: new Map(),
+  lastRefreshedAt: null,
+  isHydrated: false,
+  setMovement: (rows, lastRefreshedAt) =>
+    set({ movementByBcn: indexByBcn(rows), lastRefreshedAt }),
+  setHydrated: (isHydrated) => set({ isHydrated }),
 }));

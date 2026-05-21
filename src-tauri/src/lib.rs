@@ -415,7 +415,6 @@ struct RevenueCacheRow {
 #[serde(rename_all = "camelCase")]
 struct ArrMovementRow {
     bcn: String,
-    months_back: i64,
     month: String,
     upgrade_usd: Option<f64>,
     downgrade_usd: Option<f64>,
@@ -431,9 +430,8 @@ struct ArrMovementRow {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ArrTrendRow {
-    months_back: i64,
-    country_codes: String,
     month: String,
+    country_code: String,
     arr_lc: Option<f64>,
     customer_count: Option<i64>,
     refreshed_at: String,
@@ -442,9 +440,8 @@ struct ArrTrendRow {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ResellerSeatsTrendRow {
-    months_back: i64,
-    country_codes: String,
     month: String,
+    country_code: String,
     active_resellers: Option<i64>,
     active_seats: Option<i64>,
     refreshed_at: String,
@@ -453,11 +450,9 @@ struct ResellerSeatsTrendRow {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct NetSalesByVendorRow {
-    months_back: i64,
-    country_codes: String,
-    top_n: i64,
-    vendor: String,
     month: String,
+    country_code: String,
+    vendor: String,
     net_sales_lc: Option<f64>,
     refreshed_at: String,
 }
@@ -543,12 +538,13 @@ async fn export_revenue_cache(
             )
             .ok();
 
-        // Insights tables — added in schema_version 2. Tables introduced in
-        // migration v44; an older DB may not have them yet, so we fail soft
+        // Insights tables — schema_version 3 stores raw per-country / per-bcn
+        // snapshots so the UI can slice by region + monthsBack client-side.
+        // An older DB may not have these tables yet (pre-v44), so we fail soft
         // and ship an empty vec rather than aborting the whole export.
         let arr_movement: Vec<ArrMovementRow> = conn
             .prepare(
-                "SELECT bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd,
+                "SELECT bcn, month, upgrade_usd, downgrade_usd, cancellation_usd,
                         new_sale_usd, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at
                  FROM arr_movement",
             )
@@ -557,17 +553,16 @@ async fn export_revenue_cache(
                     .query_map([], |r| {
                         Ok(ArrMovementRow {
                             bcn: r.get(0)?,
-                            months_back: r.get(1)?,
-                            month: r.get(2)?,
-                            upgrade_usd: r.get(3)?,
-                            downgrade_usd: r.get(4)?,
-                            cancellation_usd: r.get(5)?,
-                            new_sale_usd: r.get(6)?,
-                            upgrade_lc: r.get(7)?,
-                            downgrade_lc: r.get(8)?,
-                            cancellation_lc: r.get(9)?,
-                            new_sale_lc: r.get(10)?,
-                            refreshed_at: r.get(11)?,
+                            month: r.get(1)?,
+                            upgrade_usd: r.get(2)?,
+                            downgrade_usd: r.get(3)?,
+                            cancellation_usd: r.get(4)?,
+                            new_sale_usd: r.get(5)?,
+                            upgrade_lc: r.get(6)?,
+                            downgrade_lc: r.get(7)?,
+                            cancellation_lc: r.get(8)?,
+                            new_sale_lc: r.get(9)?,
+                            refreshed_at: r.get(10)?,
                         })
                     })?
                     .filter_map(Result::ok)
@@ -578,19 +573,18 @@ async fn export_revenue_cache(
 
         let arr_trend: Vec<ArrTrendRow> = conn
             .prepare(
-                "SELECT months_back, country_codes, month, arr_lc, customer_count, refreshed_at
+                "SELECT month, country_code, arr_lc, customer_count, refreshed_at
                  FROM arr_trend",
             )
             .and_then(|mut stmt| {
                 let mapped: Vec<ArrTrendRow> = stmt
                     .query_map([], |r| {
                         Ok(ArrTrendRow {
-                            months_back: r.get(0)?,
-                            country_codes: r.get(1)?,
-                            month: r.get(2)?,
-                            arr_lc: r.get(3)?,
-                            customer_count: r.get(4)?,
-                            refreshed_at: r.get(5)?,
+                            month: r.get(0)?,
+                            country_code: r.get(1)?,
+                            arr_lc: r.get(2)?,
+                            customer_count: r.get(3)?,
+                            refreshed_at: r.get(4)?,
                         })
                     })?
                     .filter_map(Result::ok)
@@ -601,19 +595,18 @@ async fn export_revenue_cache(
 
         let reseller_seats_trend: Vec<ResellerSeatsTrendRow> = conn
             .prepare(
-                "SELECT months_back, country_codes, month, active_resellers, active_seats, refreshed_at
+                "SELECT month, country_code, active_resellers, active_seats, refreshed_at
                  FROM reseller_seats_trend",
             )
             .and_then(|mut stmt| {
                 let mapped: Vec<ResellerSeatsTrendRow> = stmt
                     .query_map([], |r| {
                         Ok(ResellerSeatsTrendRow {
-                            months_back: r.get(0)?,
-                            country_codes: r.get(1)?,
-                            month: r.get(2)?,
-                            active_resellers: r.get(3)?,
-                            active_seats: r.get(4)?,
-                            refreshed_at: r.get(5)?,
+                            month: r.get(0)?,
+                            country_code: r.get(1)?,
+                            active_resellers: r.get(2)?,
+                            active_seats: r.get(3)?,
+                            refreshed_at: r.get(4)?,
                         })
                     })?
                     .filter_map(Result::ok)
@@ -624,20 +617,18 @@ async fn export_revenue_cache(
 
         let net_sales_by_vendor: Vec<NetSalesByVendorRow> = conn
             .prepare(
-                "SELECT months_back, country_codes, top_n, vendor, month, net_sales_lc, refreshed_at
+                "SELECT month, country_code, vendor, net_sales_lc, refreshed_at
                  FROM net_sales_by_vendor",
             )
             .and_then(|mut stmt| {
                 let mapped: Vec<NetSalesByVendorRow> = stmt
                     .query_map([], |r| {
                         Ok(NetSalesByVendorRow {
-                            months_back: r.get(0)?,
-                            country_codes: r.get(1)?,
-                            top_n: r.get(2)?,
-                            vendor: r.get(3)?,
-                            month: r.get(4)?,
-                            net_sales_lc: r.get(5)?,
-                            refreshed_at: r.get(6)?,
+                            month: r.get(0)?,
+                            country_code: r.get(1)?,
+                            vendor: r.get(2)?,
+                            net_sales_lc: r.get(3)?,
+                            refreshed_at: r.get(4)?,
                         })
                     })?
                     .filter_map(Result::ok)
@@ -649,7 +640,7 @@ async fn export_revenue_cache(
         let count = rows.len();
         let payload = RevenueCacheFile {
             kind: "im-crm-revenue-cache".to_string(),
-            schema_version: 2,
+            schema_version: 3,
             exported_at,
             last_refreshed_at,
             row_count: count,
@@ -691,9 +682,16 @@ async fn import_revenue_cache(
                 parsed.kind
             ));
         }
-        // Accept v1 (customer_revenue only) and v2 (with insights tables) — both
-        // produced by the same app, just before/after the v2.12.82 release.
-        if parsed.schema_version != 1 && parsed.schema_version != 2 {
+        // v3 changed insights tables to per-country/per-bcn snapshots; v1/v2 imports
+        // would write to columns that no longer exist, so we reject them with a clear
+        // message rather than corrupting the DB.
+        if parsed.schema_version == 1 || parsed.schema_version == 2 {
+            return Err(
+                "This export was made by an older app version. Re-export with v2.12.86+ to import insights data."
+                    .to_string(),
+            );
+        }
+        if parsed.schema_version != 3 {
             return Err(format!(
                 "Unsupported schema version {} — please update the app",
                 parsed.schema_version
@@ -731,21 +729,19 @@ async fn import_revenue_cache(
             }
         }
 
-        // Insights tables (v2+). The tables may not exist on a brand-new DB
-        // if migration v44 has not run yet — fail soft so the customer_revenue
-        // import still completes.
+        // Insights tables. The tables may not exist on a brand-new DB if migration v46
+        // has not run yet — fail soft so the customer_revenue import still completes.
         if !parsed.arr_movement.is_empty() {
             let _ = tx.execute("DELETE FROM arr_movement", []);
             if let Ok(mut stmt) = tx.prepare(
                 "INSERT OR REPLACE INTO arr_movement
-                 (bcn, months_back, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
+                 (bcn, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
                   upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             ) {
                 for r in &parsed.arr_movement {
                     let _ = stmt.execute(rusqlite::params![
                         r.bcn,
-                        r.months_back,
                         r.month,
                         r.upgrade_usd,
                         r.downgrade_usd,
@@ -765,14 +761,13 @@ async fn import_revenue_cache(
             let _ = tx.execute("DELETE FROM arr_trend", []);
             if let Ok(mut stmt) = tx.prepare(
                 "INSERT OR REPLACE INTO arr_trend
-                 (months_back, country_codes, month, arr_lc, customer_count, refreshed_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                 (month, country_code, arr_lc, customer_count, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
             ) {
                 for r in &parsed.arr_trend {
                     let _ = stmt.execute(rusqlite::params![
-                        r.months_back,
-                        r.country_codes,
                         r.month,
+                        r.country_code,
                         r.arr_lc,
                         r.customer_count,
                         r.refreshed_at,
@@ -785,14 +780,13 @@ async fn import_revenue_cache(
             let _ = tx.execute("DELETE FROM reseller_seats_trend", []);
             if let Ok(mut stmt) = tx.prepare(
                 "INSERT OR REPLACE INTO reseller_seats_trend
-                 (months_back, country_codes, month, active_resellers, active_seats, refreshed_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                 (month, country_code, active_resellers, active_seats, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
             ) {
                 for r in &parsed.reseller_seats_trend {
                     let _ = stmt.execute(rusqlite::params![
-                        r.months_back,
-                        r.country_codes,
                         r.month,
+                        r.country_code,
                         r.active_resellers,
                         r.active_seats,
                         r.refreshed_at,
@@ -805,16 +799,14 @@ async fn import_revenue_cache(
             let _ = tx.execute("DELETE FROM net_sales_by_vendor", []);
             if let Ok(mut stmt) = tx.prepare(
                 "INSERT OR REPLACE INTO net_sales_by_vendor
-                 (months_back, country_codes, top_n, vendor, month, net_sales_lc, refreshed_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                 (month, country_code, vendor, net_sales_lc, refreshed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
             ) {
                 for r in &parsed.net_sales_by_vendor {
                     let _ = stmt.execute(rusqlite::params![
-                        r.months_back,
-                        r.country_codes,
-                        r.top_n,
-                        r.vendor,
                         r.month,
+                        r.country_code,
+                        r.vendor,
                         r.net_sales_lc,
                         r.refreshed_at,
                     ]);

@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { Users2, Armchair, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { useResellerSeatsTrend } from '@/hooks/useResellerSeatsTrend';
-import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import { REGION_COUNTRIES, type Region } from '@/lib/revenue/region';
 import { cn } from '@/lib/utils';
 
@@ -67,7 +66,7 @@ function MetricCard({ label, value, hint, icon: Icon, delta }: MetricProps) {
 
 export function ActivityMetrics({ region, monthsBack, className }: Props) {
   const countryCodes = useMemo(() => REGION_COUNTRIES[region], [region]);
-  const { points, isLoading, error } = useResellerSeatsTrend(monthsBack, countryCodes);
+  const { points, isHydrated } = useResellerSeatsTrend(monthsBack, countryCodes);
 
   const latest = points[points.length - 1];
   const earliest = points.length > 1 ? points[0] : undefined;
@@ -78,11 +77,7 @@ export function ActivityMetrics({ region, monthsBack, className }: Props) {
   const asOf = latest ? formatMonthLabel(latest.month) : null;
   const earliestLabel = earliest ? formatMonthLabel(earliest.month) : null;
 
-  if (!latest && error) {
-    return <PowerBiUnavailable className={className} />;
-  }
-
-  if (!latest && isLoading) {
+  if (!latest && !isHydrated) {
     return (
       <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
         {[0, 1, 2, 3].map((i) => (

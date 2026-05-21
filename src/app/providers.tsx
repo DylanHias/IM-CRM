@@ -105,10 +105,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
         useLookupTableStore.getState().hydrateFromDb(),
       ]);
 
-      // Hydrate revenue cache so customer ARR renders immediately from the last refresh
+      // Hydrate revenue + insights caches so every chart/KPI renders immediately
+      // from the last sync. UI reads exclusively from local DB — no per-component
+      // Power BI fetches.
       try {
-        const { loadRevenueFromDb } = await import('@/lib/integrations/powerbi/revenueService');
-        await loadRevenueFromDb();
+        const [revenueModule, insightsModule, movementModule] = await Promise.all([
+          import('@/lib/integrations/powerbi/revenueService'),
+          import('@/lib/integrations/powerbi/revenueInsightsService'),
+          import('@/lib/integrations/powerbi/customerRevenueDetailService'),
+        ]);
+        await Promise.all([
+          revenueModule.loadRevenueFromDb(),
+          insightsModule.loadInsightsFromDb(),
+          movementModule.loadArrMovementFromDb(),
+        ]);
       } catch (err) {
         console.error('[revenue] hydrate failed:', err);
       }

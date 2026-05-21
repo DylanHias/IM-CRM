@@ -1,57 +1,29 @@
-import { useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
 import {
   useCustomerRevenueDetailStore,
-  movementKey,
   type ArrMovementRow,
 } from '@/store/customerRevenueDetailStore';
-import { getAccessToken } from '@/lib/auth/authHelpers';
-import { powerBiRequest } from '@/lib/auth/msalConfig';
-import {
-  fetchArrMovement,
-  loadArrMovementFromDb,
-} from '@/lib/integrations/powerbi/customerRevenueDetailService';
 
 interface Result {
   rows: ArrMovementRow[];
-  isLoading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
+  isHydrated: boolean;
 }
 
 export function useArrMovement(
   bcn: string | null | undefined,
   monthsBack: number,
 ): Result {
-  const key = bcn ? movementKey(bcn, monthsBack) : null;
-  const entry = useCustomerRevenueDetailStore((s) => (key ? s.movementByKey.get(key) : undefined));
-  const isLoading = useCustomerRevenueDetailStore((s) => (key ? s.loadingKeys.has(key) : false));
-  const error = useCustomerRevenueDetailStore((s) => (key ? s.errorByKey.get(key) ?? null : null));
+  const movementByBcn = useCustomerRevenueDetailStore((s) => s.movementByBcn);
+  const isHydrated = useCustomerRevenueDetailStore((s) => s.isHydrated);
 
-  const refresh = useCallback(async () => {
-    if (!bcn) return;
-    try {
-      const token = await getAccessToken(powerBiRequest.scopes);
-      if (!token) {
-        console.warn('[revenue-detail] no Power BI token — refresh skipped');
-        return;
-      }
-      await fetchArrMovement(token, bcn, monthsBack, true);
-    } catch {
-      // Error already captured in the store by the service.
-    }
-  }, [bcn, monthsBack]);
+  const rows = useMemo<ArrMovementRow[]>(() => {
+    if (!bcn) return [];
+    const list = movementByBcn.get(bcn);
+    if (!list || list.length === 0) return [];
+    const safeMonths = Math.max(1, Math.floor(monthsBack));
+    // list is already sorted ascending by month in the store.
+    return list.slice(-safeMonths);
+  }, [bcn, monthsBack, movementByBcn]);
 
-  useEffect(() => {
-    if (!bcn) return;
-    if (entry) return;
-    if (isLoading) return;
-    void loadArrMovementFromDb(bcn, monthsBack);
-  }, [bcn, monthsBack, entry, isLoading]);
-
-  return {
-    rows: entry?.rows ?? [],
-    isLoading,
-    error,
-    refresh,
-  };
+  return { rows, isHydrated };
 }

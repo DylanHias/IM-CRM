@@ -2,10 +2,8 @@
 
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
-import { Loader2, RefreshCw, LineChart as LineChartIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2, LineChart as LineChartIcon } from 'lucide-react';
 import { useArrTrend } from '@/hooks/useArrTrend';
-import { PowerBiUnavailable } from '@/components/revenue/PowerBiUnavailable';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -36,7 +34,7 @@ function formatEur(value: number): string {
 }
 
 export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className }: Props) {
-  const { points, isLoading, error, refresh } = useArrTrend(monthsBack, countryCodes);
+  const { points, isHydrated } = useArrTrend(monthsBack, countryCodes);
 
   const data = useMemo(
     () =>
@@ -56,35 +54,21 @@ export function ArrTrendChart({ monthsBack, countryCodes, scopeLabel, className 
         className,
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <LineChartIcon size={13} />
-          Total ARR · {scopeLabel} · last {monthsBack} months
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void refresh()}
-          disabled={isLoading}
-          className="h-7 px-2 text-xs"
-        >
-          {isLoading ? <Loader2 size={11} className="mr-1 animate-spin" /> : <RefreshCw size={11} className="mr-1" />}
-          Refresh
-        </Button>
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <LineChartIcon size={13} />
+        Total ARR · {scopeLabel} · last {monthsBack} months
       </div>
 
-      {data.length === 0 && error && <PowerBiUnavailable />}
-
-      {data.length === 0 && !error && isLoading && (
+      {data.length === 0 && !isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
           <Loader2 size={14} className="mr-2 animate-spin" />
           Loading ARR trend…
         </div>
       )}
 
-      {data.length === 0 && !error && !isLoading && (
+      {data.length === 0 && isHydrated && (
         <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
-          No trend data available.
+          No trend data available — run a refresh in Admin → Revenue Sync.
         </div>
       )}
 

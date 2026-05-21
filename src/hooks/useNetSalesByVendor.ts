@@ -1,21 +1,20 @@
-import { useEffect, useCallback, useMemo } from 'react';
-import {
-  useRevenueInsightsStore,
-  vendorSalesKey,
-  type NetSalesByVendorEntry,
-} from '@/store/revenueInsightsStore';
-import { getAccessToken } from '@/lib/auth/authHelpers';
-import { powerBiRequest } from '@/lib/auth/msalConfig';
-import {
-  fetchNetSalesByVendor,
-  loadNetSalesByVendorFromDb,
-} from '@/lib/integrations/powerbi/revenueInsightsService';
+import { useMemo } from 'react';
+import { useRevenueInsightsStore } from '@/store/revenueInsightsStore';
+
+export interface VendorMonthlySales {
+  vendor: string;
+  totalLc: number;
+  pointsByMonth: Map<string, number>;
+}
+
+export interface NetSalesByVendorEntry {
+  months: string[];
+  vendors: VendorMonthlySales[];
+}
 
 interface Result {
   entry: NetSalesByVendorEntry | null;
-  isLoading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
+  isHydrated: boolean;
 }
 
 export function useNetSalesByVendor(
@@ -23,33 +22,53 @@ export function useNetSalesByVendor(
   countryCodes: readonly string[],
   topN: number,
 ): Result {
-  const storeKey = useMemo(
-    () => `vendorSales::${vendorSalesKey(monthsBack, countryCodes, topN)}`,
-    [monthsBack, countryCodes, topN],
-  );
-  const entry = useRevenueInsightsStore((s) => s.vendorSalesByKey.get(storeKey));
-  const isLoading = useRevenueInsightsStore((s) => s.loadingKeys.has(storeKey));
-  const error = useRevenueInsightsStore((s) => s.errorByKey.get(storeKey) ?? null);
+  const rows = useRevenueInsightsStore((s) => s.vendorSalesRows);
+  const isHydrated = useRevenueInsightsStore((s) => s.isHydrated);
 
-  const refresh = useCallback(async () => {
-    try {
-      const token = await getAccessToken(powerBiRequest.scopes);
-      if (!token) return;
-      await fetchNetSalesByVendor(token, monthsBack, countryCodes, topN, true);
-    } catch {
-      // captured in store
+  const entry = useMemo<NetSalesByVendorEntry | null>(() => {
+    if (rows.length === 0) return null;
+    const codeSet = new Set(countryCodes.map((c) => c.toUpperCase()));
+
+    // First pass: sum each vendor's monthly LC across the requested countries.
+    const totalsByVendor = new Map<string, Map<string, number>>();
+    const monthSet = new Set<string>();
+    for (const r of rows) {
+      if (!codeSet.has(r.countryCode)) continue;
+      monthSet.add(r.month);
+      let perMonth = totalsByVendor.get(r.vendor);
+      if (!perMonth) {
+        perMonth = new Map();
+        totalsByVendor.set(r.vendor, perMonth);
+      }
+      perMonth.set(r.month, (perMonth.get(r.month) ?? 0) + r.netSalesLc);
     }
-  }, [monthsBack, countryCodes, topN]);
 
-  useEffect(() => {
-    if (entry || isLoading) return;
-    void loadNetSalesByVendorFromDb(monthsBack, countryCodes, topN);
-  }, [monthsBack, countryCodes, topN, entry, isLoading]);
+    // Trim months to monthsBack (sorted, take tail).
+    const allMonthsSorted = Array.from(monthSet).sort();
+    const safeMonths = Math.max(1, Math.floor(monthsBack));
+    const months = allMonthsSorted.slice(-safeMonths);
+    if (months.length === 0) return null;
+    const monthFilter = new Set(months);
 
-  return {
-    entry: entry ?? null,
-    isLoading,
-    error,
-    refresh,
-  };
+    // Second pass: compute window totals, drop vendors with zero in-window, pick topN.
+    const vendors: VendorMonthlySales[] = [];
+    totalsByVendor.forEach((perMonth, vendor) => {
+      const trimmedPoints = new Map<string, number>();
+      let totalLc = 0;
+      perMonth.forEach((v, m) => {
+        if (!monthFilter.has(m)) return;
+        trimmedPoints.set(m, v);
+        totalLc += v;
+      });
+      if (totalLc <= 0) return;
+      vendors.push({ vendor, totalLc, pointsByMonth: trimmedPoints });
+    });
+    vendors.sort((a, b) => b.totalLc - a.totalLc);
+    const safeTop = Math.max(1, Math.floor(topN));
+    const topVendors = vendors.slice(0, safeTop);
+
+    return { months, vendors: topVendors };
+  }, [rows, monthsBack, countryCodes, topN]);
+
+  return { entry, isHydrated };
 }

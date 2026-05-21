@@ -1,6 +1,6 @@
 [package]
 name = "crm-mvp"
-version = "2.12.87"
+version = "2.12.88"
 edition = "2021"
 
 [lib]
