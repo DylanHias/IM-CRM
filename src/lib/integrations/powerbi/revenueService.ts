@@ -311,13 +311,36 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
   }
 }
 
+async function snapshotsNeedBackfill(): Promise<boolean> {
+  // After the v46 schema migration the four snapshot tables are dropped and
+  // recreated empty, but revenue_last_refresh_at stays fresh — so the staleness
+  // check below would skip the refresh and the ARR movement / insights charts
+  // would render blank forever. Force a refresh whenever any snapshot is empty.
+  try {
+    const db = await getDb();
+    const tables = ['arr_movement', 'arr_trend', 'reseller_seats_trend', 'net_sales_by_vendor'];
+    for (const t of tables) {
+      const rows = await db.select<{ c: number }[]>(`SELECT COUNT(*) AS c FROM ${t}`);
+      if ((rows[0]?.c ?? 0) === 0) return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('[revenue] snapshot backfill check failed:', err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
 export async function maybeAutoRefresh(token: string): Promise<void> {
   const lastRefreshedAt = useRevenueStore.getState().lastRefreshedAt;
   const hours = await getAutoRefreshHours();
-  if (!isStale(lastRefreshedAt, hours)) return;
+  const stale = isStale(lastRefreshedAt, hours);
+  const backfill = !stale && (await snapshotsNeedBackfill());
+  if (!stale && !backfill) return;
   try {
     const { count } = await refreshRevenue(token);
-    console.log(`[revenue] auto-refresh complete: ${count} customers`);
+    console.log(
+      `[revenue] auto-refresh complete: ${count} customers${backfill ? ' (snapshot backfill)' : ''}`,
+    );
   } catch (err) {
     console.error('[revenue] auto-refresh failed:', err);
   }

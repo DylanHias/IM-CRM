@@ -548,7 +548,7 @@ export default function CustomerDetailClient({ customerId }: CustomerDetailProps
                             render: (
                               <p className="text-lg font-bold text-foreground">
                                 {(() => {
-                                  const cur = customer.arrCurrency ?? 'USD';
+                                  const cur = customer.arrCurrency ?? 'EUR';
                                   try {
                                     return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(customer.arr);
                                   } catch {

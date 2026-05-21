@@ -18,46 +18,20 @@ export interface EffectiveArr {
 export function getEffectiveArr(
   customer: Pick<Customer, 'arr' | 'arrCurrency'>,
   revenue: CustomerRevenueRow | null,
-  preferredCurrency: Currency,
+  _preferredCurrency?: Currency,
 ): EffectiveArr {
-  if (revenue) {
-    if (preferredCurrency === 'USD' && revenue.arrUsd !== null) {
-      return {
-        value: revenue.arrUsd,
-        currency: 'USD',
-        source: 'powerbi',
-        asOfMonth: revenue.asOfMonth,
-      };
-    }
-    if (preferredCurrency === 'LC' && revenue.arrLc !== null) {
-      return {
-        value: revenue.arrLc,
-        currency: revenue.currencyCode ?? customer.arrCurrency,
-        source: 'powerbi',
-        asOfMonth: revenue.asOfMonth,
-      };
-    }
-    if (revenue.arrUsd !== null) {
-      return {
-        value: revenue.arrUsd,
-        currency: 'USD',
-        source: 'powerbi',
-        asOfMonth: revenue.asOfMonth,
-      };
-    }
-    if (revenue.arrLc !== null) {
-      return {
-        value: revenue.arrLc,
-        currency: revenue.currencyCode ?? customer.arrCurrency,
-        source: 'powerbi',
-        asOfMonth: revenue.asOfMonth,
-      };
-    }
+  if (revenue && revenue.arrLc !== null) {
+    return {
+      value: revenue.arrLc,
+      currency: revenue.currencyCode ?? customer.arrCurrency ?? 'EUR',
+      source: 'powerbi',
+      asOfMonth: revenue.asOfMonth,
+    };
   }
   if (customer.arr !== null && customer.arr !== undefined) {
     return {
       value: customer.arr,
-      currency: customer.arrCurrency,
+      currency: customer.arrCurrency ?? 'EUR',
       source: 'd365',
       asOfMonth: null,
     };

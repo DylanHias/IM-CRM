@@ -45,7 +45,7 @@ function formatMonthLabel(iso: string): string {
 
 function formatValue(value: number, currencyCode: string | null): string {
   const abs = Math.abs(value);
-  const cur = currencyCode ?? 'USD';
+  const cur = currencyCode ?? 'EUR';
   try {
     return new Intl.NumberFormat('nl-BE', {
       style: 'currency',

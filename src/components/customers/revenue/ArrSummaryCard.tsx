@@ -15,7 +15,7 @@ interface Props {
 
 function formatArr(value: number | null, currency: string | null): string {
   if (value === null) return '—';
-  const cur = currency ?? 'USD';
+  const cur = currency ?? 'EUR';
   try {
     return new Intl.NumberFormat('nl-BE', {
       style: 'currency',
