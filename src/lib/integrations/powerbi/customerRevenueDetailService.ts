@@ -25,14 +25,18 @@ function toMonthIso(v: unknown): string {
 
 function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
   return rows
-    .map((r) => ({
-      bcn: String(r['Reseller[bcn]'] ?? '').trim(),
-      month: toMonthIso(r["'ARR Movement'[month]"]),
-      upgradeLc: toNum(r['[Upgrade_LC]']),
-      downgradeLc: toNum(r['[Downgrade_LC]']),
-      cancellationLc: toNum(r['[Cancellation_LC]']),
-      newSaleLc: toNum(r['[NewSale_LC]']),
-    }))
+    .map((r) => {
+      const resellerBcn = String(r['Reseller[bcn]'] ?? '').trim();
+      const movementBcn = String(r["'ARR Movement'[bcn]"] ?? '').trim();
+      return {
+        bcn: resellerBcn || movementBcn,
+        month: toMonthIso(r["'ARR Movement'[month]"]),
+        upgradeLc: toNum(r['[Upgrade_LC]']),
+        downgradeLc: toNum(r['[Downgrade_LC]']),
+        cancellationLc: toNum(r['[Cancellation_LC]']),
+        newSaleLc: toNum(r['[NewSale_LC]']),
+      };
+    })
     .filter((r) => r.bcn && r.month);
 }
 
@@ -126,8 +130,26 @@ export async function refreshArrMovementFromPowerBi(token: string): Promise<void
     DATASET_ID,
     ARR_MOVEMENT_SNAPSHOT_DAX,
   );
+  const rawCount = result.rows?.length ?? 0;
   const rows = parseRows(result.rows ?? []);
 
+  if (rawCount > 0 && rows.length === 0) {
+    const sampleKeys = Object.keys(result.rows?.[0] ?? {});
+    console.error(
+      `[revenue] ARR movement: DAX returned ${rawCount} rows but 0 parsed — bcn/month missing. Response keys: ${sampleKeys.join(', ')}`,
+    );
+  }
+
+  if (rows.length === 0) {
+    console.warn(
+      `[revenue] ARR movement: 0 rows parsed (raw=${rawCount}) — keeping previous snapshot, refresh skipped`,
+    );
+    return;
+  }
+
+  console.log(
+    `[revenue] ARR movement: persisting ${rows.length} rows (raw=${rawCount}) for ${new Set(rows.map((r) => r.bcn)).size} BCNs`,
+  );
   await persistArrMovement(rows, refreshedAt);
   useCustomerRevenueDetailStore.getState().setMovement(rows, refreshedAt);
   useCustomerRevenueDetailStore.getState().setHydrated(true);

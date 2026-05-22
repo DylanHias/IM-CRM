@@ -31,7 +31,7 @@ export function RefreshButton({
         toast.error('Sign in again to refresh revenue');
         return;
       }
-      const { count } = await refreshRevenue(token);
+      const { count } = await refreshRevenue(token, { awaitSnapshots: true });
       toast.success('Revenue refreshed', {
         description: `${count.toLocaleString()} customers updated from Power BI`,
       });

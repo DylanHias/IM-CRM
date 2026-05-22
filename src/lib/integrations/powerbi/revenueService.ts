@@ -136,7 +136,15 @@ function isStale(lastRefreshedAt: string | null, hours: number): boolean {
   return Date.now() - t > hours * 3600 * 1000;
 }
 
-export async function refreshRevenue(token: string): Promise<{ count: number }> {
+export interface RefreshRevenueOpts {
+  /** Wait for the snapshot datasets (insights + ARR movement) to finish before resolving. */
+  awaitSnapshots?: boolean;
+}
+
+export async function refreshRevenue(
+  token: string,
+  opts?: RefreshRevenueOpts,
+): Promise<{ count: number }> {
   const store = useRevenueStore.getState();
   if (store.isRefreshing) return { count: store.byBcn.size };
 
@@ -286,7 +294,11 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
     // refresh — they pull large Benelux-wide DAX snapshots and would otherwise block
     // the user-facing refresh result. UI reads from local DB, so a brief lag before
     // the next refresh just means charts show the previous snapshot.
-    void refreshSnapshotsInBackground(token);
+    if (opts?.awaitSnapshots) {
+      await refreshSnapshotsInBackground(token);
+    } else {
+      void refreshSnapshotsInBackground(token);
+    }
 
     return { count: valid.length };
   } finally {

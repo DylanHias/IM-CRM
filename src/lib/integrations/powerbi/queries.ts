@@ -170,11 +170,14 @@ ADDCOLUMNS(
 `.trim();
 
 /**
- * Per-BCN, per-month ARR Movement snapshot (last 24 months) for all Benelux resellers.
- * LC values only — chart always renders in EUR. Mirrors NET_SALES_SNAPSHOT_DAX.
+ * Per-BCN, per-month ARR Movement snapshot (last 12 months) for all Benelux resellers.
+ * Groups by both 'ARR Movement'[bcn] (native fact column) and Reseller[bcn] (via model
+ * relationship) — the parser falls back to whichever is non-empty. This survives the
+ * case where the model relationship between 'ARR Movement'[reseller_id] and
+ * Reseller[reseller_id] fails to propagate Reseller[bcn] into the SUMMARIZE.
  *
  * Response keys:
- *  Reseller[bcn], 'ARR Movement'[month],
+ *  Reseller[bcn], 'ARR Movement'[bcn], 'ARR Movement'[month],
  *  [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
  */
 export const ARR_MOVEMENT_SNAPSHOT_DAX = `
@@ -194,6 +197,7 @@ ADDCOLUMNS(
       'ARR Movement'[month] <= LatestMonth
     ),
     'ARR Movement'[month],
+    'ARR Movement'[bcn],
     Reseller[bcn]
   ),
   "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
