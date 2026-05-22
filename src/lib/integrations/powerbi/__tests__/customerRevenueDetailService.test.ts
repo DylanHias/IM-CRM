@@ -38,8 +38,7 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
     executeDaxMock.mockResolvedValue({
       rows: [
         {
-          'Reseller[bcn]': 'BCN-001',
-          "'ARR Movement'[bcn]": '',
+          '[bcn]': 'BCN-001',
           "'ARR Movement'[month]": '2026-04-01T00:00:00',
           '[Upgrade_LC]': 1000,
           '[Downgrade_LC]': -200,
@@ -69,12 +68,11 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
     ]);
   });
 
-  it("falls back to 'ARR Movement'[bcn] when Reseller[bcn] is blank — survives model relationship failure", async () => {
+  it('falls back to Reseller[bcn] if [bcn] key is missing (forward-compatible parser)', async () => {
     executeDaxMock.mockResolvedValue({
       rows: [
         {
-          'Reseller[bcn]': '',
-          "'ARR Movement'[bcn]": 'BCN-FALLBACK',
+          'Reseller[bcn]': 'BCN-FALLBACK',
           "'ARR Movement'[month]": '2026-04',
           '[Upgrade_LC]': 100,
           '[Downgrade_LC]': 0,
@@ -106,8 +104,7 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
     executeDaxMock.mockResolvedValue({
       rows: [
         {
-          'Reseller[bcn]': '',
-          "'ARR Movement'[bcn]": '',
+          '[bcn]': '',
           "'ARR Movement'[month]": '2026-04',
           '[Upgrade_LC]': 100,
           '[Downgrade_LC]': 0,
@@ -129,8 +126,7 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
     executeDaxMock.mockResolvedValue({
       rows: [
         {
-          'Reseller[bcn]': 'A',
-          "'ARR Movement'[bcn]": 'A',
+          '[bcn]': 'A',
           "'ARR Movement'[month]": '2026-03',
           '[Upgrade_LC]': 1,
           '[Downgrade_LC]': 0,
@@ -138,8 +134,7 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
           '[NewSale_LC]': 0,
         },
         {
-          'Reseller[bcn]': 'A',
-          "'ARR Movement'[bcn]": 'A',
+          '[bcn]': 'A',
           "'ARR Movement'[month]": '2026-04',
           '[Upgrade_LC]': 2,
           '[Downgrade_LC]': 0,
@@ -147,8 +142,7 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
           '[NewSale_LC]': 0,
         },
         {
-          'Reseller[bcn]': 'B',
-          "'ARR Movement'[bcn]": 'B',
+          '[bcn]': 'B',
           "'ARR Movement'[month]": '2026-04',
           '[Upgrade_LC]': 3,
           '[Downgrade_LC]': 0,

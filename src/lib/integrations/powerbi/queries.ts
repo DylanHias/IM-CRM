@@ -171,14 +171,15 @@ ADDCOLUMNS(
 
 /**
  * Per-BCN, per-month ARR Movement snapshot (last 12 months) for all Benelux resellers.
- * Groups by both 'ARR Movement'[bcn] (native fact column) and Reseller[bcn] (via model
- * relationship) — the parser falls back to whichever is non-empty. This survives the
- * case where the model relationship between 'ARR Movement'[reseller_id] and
- * Reseller[reseller_id] fails to propagate Reseller[bcn] into the SUMMARIZE.
+ *
+ * 'ARR Movement' has no native bcn column — bcn lives on Reseller only. We group
+ * by 'ARR Movement'[reseller_id] (which DOES exist on the fact table) and resolve
+ * bcn via LOOKUPVALUE against Reseller, avoiding the brittle SUMMARIZE-via-
+ * relationship pattern that previously left Reseller[bcn] blank in v2.12.91/92/93.
  *
  * Response keys:
- *  Reseller[bcn], 'ARR Movement'[bcn], 'ARR Movement'[month],
- *  [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
+ *  'ARR Movement'[month], 'ARR Movement'[reseller_id],
+ *  [bcn], [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
  */
 export const ARR_MOVEMENT_SNAPSHOT_DAX = `
 EVALUATE
@@ -189,20 +190,23 @@ VAR ScopedResellerIds = CALCULATETABLE(
   Reseller[country_code] IN ${BENELUX_DAX_LIST}
 )
 RETURN
-ADDCOLUMNS(
-  SUMMARIZE(
-    FILTER('ARR Movement',
-      'ARR Movement'[reseller_id] IN ScopedResellerIds &&
-      'ARR Movement'[month] >= EarliestMonth &&
-      'ARR Movement'[month] <= LatestMonth
+FILTER(
+  ADDCOLUMNS(
+    SUMMARIZE(
+      FILTER('ARR Movement',
+        'ARR Movement'[reseller_id] IN ScopedResellerIds &&
+        'ARR Movement'[month] >= EarliestMonth &&
+        'ARR Movement'[month] <= LatestMonth
+      ),
+      'ARR Movement'[month],
+      'ARR Movement'[reseller_id]
     ),
-    'ARR Movement'[month],
-    'ARR Movement'[bcn],
-    Reseller[bcn]
+    "bcn", LOOKUPVALUE(Reseller[bcn], Reseller[reseller_id], 'ARR Movement'[reseller_id]),
+    "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
+    "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
+    "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
+    "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
   ),
-  "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
-  "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
-  "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
-  "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
+  NOT ISBLANK([bcn])
 )
 `.trim();

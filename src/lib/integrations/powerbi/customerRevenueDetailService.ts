@@ -25,18 +25,16 @@ function toMonthIso(v: unknown): string {
 
 function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
   return rows
-    .map((r) => {
-      const resellerBcn = String(r['Reseller[bcn]'] ?? '').trim();
-      const movementBcn = String(r["'ARR Movement'[bcn]"] ?? '').trim();
-      return {
-        bcn: resellerBcn || movementBcn,
-        month: toMonthIso(r["'ARR Movement'[month]"]),
-        upgradeLc: toNum(r['[Upgrade_LC]']),
-        downgradeLc: toNum(r['[Downgrade_LC]']),
-        cancellationLc: toNum(r['[Cancellation_LC]']),
-        newSaleLc: toNum(r['[NewSale_LC]']),
-      };
-    })
+    .map((r) => ({
+      // ADDCOLUMNS-defined "bcn" comes back as [bcn]; fall back to Reseller[bcn]
+      // if the DAX is ever changed to expose it via SUMMARIZE again.
+      bcn: String(r['[bcn]'] ?? r['Reseller[bcn]'] ?? '').trim(),
+      month: toMonthIso(r["'ARR Movement'[month]"]),
+      upgradeLc: toNum(r['[Upgrade_LC]']),
+      downgradeLc: toNum(r['[Downgrade_LC]']),
+      cancellationLc: toNum(r['[Cancellation_LC]']),
+      newSaleLc: toNum(r['[NewSale_LC]']),
+    }))
     .filter((r) => r.bcn && r.month);
 }
 
