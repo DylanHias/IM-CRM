@@ -87,48 +87,77 @@ function parseVendorSales(rows: Record<string, unknown>[]): VendorSalesRow[] {
     .filter((r) => r.month && r.countryCode && r.vendor);
 }
 
-async function persistArrTrend(rows: ArrTrendRow[], refreshedAt: string): Promise<void> {
+// Chunked bulk insert helper — same pattern as customer_revenue.
+// Per-row loops hold the SQLite write lock long enough to break concurrent writers.
+async function bulkInsert<T>(
+  table: string,
+  columns: string[],
+  rows: T[],
+  toValues: (r: T) => unknown[],
+  refreshedAt: string,
+): Promise<void> {
   const db = await getDb();
-  await db.execute(`DELETE FROM arr_trend`);
-  for (const r of rows) {
-    await db.execute(
-      `INSERT OR REPLACE INTO arr_trend (month, country_code, arr_lc, customer_count, refreshed_at)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [r.month, r.countryCode, r.arrLc, r.customerCount, refreshedAt],
-    );
+  await db.execute(`DELETE FROM ${table}`);
+  const colCount = columns.length + 1; // +1 for refreshed_at
+  const chunkSize = Math.floor(999 / colCount);
+  const colList = [...columns, 'refreshed_at'].join(',');
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const placeholders = chunk
+      .map(
+        (_, j) =>
+          `(${Array.from(
+            { length: colCount },
+            (__, k) => `$${j * colCount + k + 1}`,
+          ).join(',')})`,
+      )
+      .join(',');
+    const values = chunk.flatMap((r) => [...toValues(r), refreshedAt]);
+    try {
+      await db.execute(
+        `INSERT OR REPLACE INTO ${table} (${colList}) VALUES ${placeholders}`,
+        values,
+      );
+    } catch (err) {
+      console.error(`[revenue] ${table} chunk failed:`, err instanceof Error ? err.message : err);
+    }
   }
+}
+
+async function persistArrTrend(rows: ArrTrendRow[], refreshedAt: string): Promise<void> {
+  await bulkInsert(
+    'arr_trend',
+    ['month', 'country_code', 'arr_lc', 'customer_count'],
+    rows,
+    (r) => [r.month, r.countryCode, r.arrLc, r.customerCount],
+    refreshedAt,
+  );
 }
 
 async function persistResellerSeats(
   rows: ResellerSeatsRow[],
   refreshedAt: string,
 ): Promise<void> {
-  const db = await getDb();
-  await db.execute(`DELETE FROM reseller_seats_trend`);
-  for (const r of rows) {
-    await db.execute(
-      `INSERT OR REPLACE INTO reseller_seats_trend
-        (month, country_code, active_resellers, active_seats, refreshed_at)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [r.month, r.countryCode, r.activeResellers, r.activeSeats, refreshedAt],
-    );
-  }
+  await bulkInsert(
+    'reseller_seats_trend',
+    ['month', 'country_code', 'active_resellers', 'active_seats'],
+    rows,
+    (r) => [r.month, r.countryCode, r.activeResellers, r.activeSeats],
+    refreshedAt,
+  );
 }
 
 async function persistVendorSales(
   rows: VendorSalesRow[],
   refreshedAt: string,
 ): Promise<void> {
-  const db = await getDb();
-  await db.execute(`DELETE FROM net_sales_by_vendor`);
-  for (const r of rows) {
-    await db.execute(
-      `INSERT OR REPLACE INTO net_sales_by_vendor
-        (month, country_code, vendor, net_sales_lc, refreshed_at)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [r.month, r.countryCode, r.vendor, r.netSalesLc, refreshedAt],
-    );
-  }
+  await bulkInsert(
+    'net_sales_by_vendor',
+    ['month', 'country_code', 'vendor', 'net_sales_lc'],
+    rows,
+    (r) => [r.month, r.countryCode, r.vendor, r.netSalesLc],
+    refreshedAt,
+  );
 }
 
 export async function loadInsightsFromDb(): Promise<void> {

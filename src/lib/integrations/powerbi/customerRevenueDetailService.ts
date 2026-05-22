@@ -45,24 +45,45 @@ interface ArrMovementDbRow {
   new_sale_lc: number | null;
 }
 
+const ARR_MOVEMENT_COLS = 7;
+const ARR_MOVEMENT_CHUNK = Math.floor(999 / ARR_MOVEMENT_COLS);
+
 async function persistArrMovement(rows: ArrMovementRow[], refreshedAt: string): Promise<void> {
   const db = await getDb();
   await db.execute(`DELETE FROM arr_movement`);
-  for (const r of rows) {
-    await db.execute(
-      `INSERT OR REPLACE INTO arr_movement
-        (bcn, month, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [
-        r.bcn,
-        r.month,
-        r.upgradeLc,
-        r.downgradeLc,
-        r.cancellationLc,
-        r.newSaleLc,
-        refreshedAt,
-      ],
-    );
+  // Chunked bulk insert — same pattern as customer_revenue. A per-row loop
+  // holds the SQLite write lock long enough to break concurrent writers
+  // (D365 sync, app_settings updates, the parallel insights snapshot).
+  for (let i = 0; i < rows.length; i += ARR_MOVEMENT_CHUNK) {
+    const chunk = rows.slice(i, i + ARR_MOVEMENT_CHUNK);
+    const placeholders = chunk
+      .map(
+        (_, j) =>
+          `(${Array.from(
+            { length: ARR_MOVEMENT_COLS },
+            (__, k) => `$${j * ARR_MOVEMENT_COLS + k + 1}`,
+          ).join(',')})`,
+      )
+      .join(',');
+    const values = chunk.flatMap((r) => [
+      r.bcn,
+      r.month,
+      r.upgradeLc,
+      r.downgradeLc,
+      r.cancellationLc,
+      r.newSaleLc,
+      refreshedAt,
+    ]);
+    try {
+      await db.execute(
+        `INSERT OR REPLACE INTO arr_movement
+          (bcn, month, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
+         VALUES ${placeholders}`,
+        values,
+      );
+    } catch (err) {
+      console.error('[revenue] ARR movement chunk failed:', err instanceof Error ? err.message : err);
+    }
   }
 }
 
