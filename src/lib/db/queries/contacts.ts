@@ -175,12 +175,12 @@ export async function bulkUpsertContacts(
   const db = await getDb();
 
   const toInsert: Contact[] = [];
-  const toUpdate: Contact[] = [];
+  const toUpdate: { contact: Contact; localId: string }[] = [];
   for (const contact of filtered) {
     const prev = contact.remoteId ? existing.get(contact.remoteId) : undefined;
     if (prev) {
       if (prev.syncStatus === 'pending') continue;
-      toUpdate.push(contact);
+      toUpdate.push({ contact, localId: prev.localId });
     } else {
       toInsert.push(contact);
     }
@@ -221,26 +221,44 @@ export async function bulkUpsertContacts(
     }
   }
 
-  for (const c of toUpdate) {
+  // Chunked upsert for existing rows — PK conflict on the preserved local id
+  // triggers DO UPDATE. notes / is_primary / created_at stay put (local-only or
+  // immutable). Rows with sync_status='pending' were already filtered above.
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const chunk = toUpdate.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap(({ contact: c, localId }) => [
+      localId, c.customerId, c.firstName, c.lastName,
+      c.jobTitle, c.email, c.phone, c.mobile,
+      c.notes, c.contactType,
+      c.contactTypeId, c.countryId, c.countryName,
+      c.cloudContact === true ? 1 : c.cloudContact === false ? 0 : null,
+      'synced', c.remoteId, 'd365',
+      c.syncedAt, c.createdAt, c.updatedAt,
+    ]);
     try {
       const result = await db.execute(
-        `UPDATE contacts SET
-           customer_id=$1, first_name=$2, last_name=$3, job_title=$4, email=$5,
-           phone=$6, mobile=$7, contact_type=$8, contact_type_id=$9,
-           country_id=$10, country_name=$11, cloud_contact=$12,
-           sync_status='synced', source='d365', synced_at=$13, updated_at=$14
-         WHERE remote_id=$15 AND sync_status != 'pending'`,
-        [
-          c.customerId, c.firstName, c.lastName, c.jobTitle, c.email,
-          c.phone, c.mobile, c.contactType, c.contactTypeId,
-          c.countryId, c.countryName,
-          c.cloudContact === true ? 1 : c.cloudContact === false ? 0 : null,
-          c.syncedAt, c.updatedAt, c.remoteId,
-        ],
+        `INSERT INTO contacts (
+          id, customer_id, first_name, last_name, job_title, email, phone, mobile,
+          notes, contact_type, contact_type_id, country_id, country_name,
+          cloud_contact, sync_status, remote_id, source,
+          synced_at, created_at, updated_at
+        ) VALUES ${placeholders}
+        ON CONFLICT(id) DO UPDATE SET
+          customer_id=excluded.customer_id, first_name=excluded.first_name, last_name=excluded.last_name,
+          job_title=excluded.job_title, email=excluded.email, phone=excluded.phone, mobile=excluded.mobile,
+          contact_type=excluded.contact_type, contact_type_id=excluded.contact_type_id,
+          country_id=excluded.country_id, country_name=excluded.country_name,
+          cloud_contact=excluded.cloud_contact,
+          sync_status='synced', source='d365',
+          synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+        values,
       );
       changed += result.rowsAffected;
     } catch (err) {
-      console.error(`[contact] Failed to update contact ${c.remoteId}:`, err instanceof Error ? err.message : err);
+      console.error('[contact] Bulk update chunk failed:', err instanceof Error ? err.message : err);
     }
   }
 

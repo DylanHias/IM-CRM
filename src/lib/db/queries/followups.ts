@@ -305,7 +305,7 @@ export async function bulkUpsertFollowUps(
   const db = await getDb();
 
   const toInsert: FollowUp[] = [];
-  const toUpdate: FollowUp[] = [];
+  const toUpdate: { followUp: FollowUp; localId: string }[] = [];
   let skipped = 0;
 
   for (const followUp of followUps) {
@@ -313,7 +313,7 @@ export async function bulkUpsertFollowUps(
     const prev = followUp.remoteId ? existing.get(followUp.remoteId) : undefined;
     if (prev) {
       if (prev.syncStatus === 'pending') { skipped++; continue; }
-      toUpdate.push(followUp);
+      toUpdate.push({ followUp, localId: prev.localId });
     } else {
       toInsert.push(followUp);
     }
@@ -349,23 +349,35 @@ export async function bulkUpsertFollowUps(
     }
   }
 
+  // Chunked upsert for existing rows — PK conflict on the preserved local id
+  // triggers DO UPDATE. created_at stays put.
   let updated = 0;
-  for (const f of toUpdate) {
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const chunk = toUpdate.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap(({ followUp: f, localId }) => [
+      localId, f.customerId, f.activityId, f.title, f.description, f.dueDate,
+      f.completed ? 1 : 0, f.completedAt, f.createdById, f.createdByName,
+      'synced', f.remoteId, 'd365', f.createdAt, f.updatedAt,
+    ]);
     try {
-      await db.execute(
-        `UPDATE follow_ups SET customer_id=$1, title=$2, description=$3, due_date=$4,
-         completed=$5, completed_at=$6, created_by_id=$7, created_by_name=$8,
-         sync_status='synced', source='d365', updated_at=$9
-         WHERE remote_id=$10`,
-        [
-          f.customerId, f.title, f.description, f.dueDate,
-          f.completed ? 1 : 0, f.completedAt,
-          f.createdById, f.createdByName, f.updatedAt, f.remoteId,
-        ],
+      const result = await db.execute(
+        `INSERT INTO follow_ups (
+          id, customer_id, activity_id, title, description, due_date, completed,
+          completed_at, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+        ) VALUES ${placeholders}
+        ON CONFLICT(id) DO UPDATE SET
+          customer_id=excluded.customer_id, title=excluded.title, description=excluded.description,
+          due_date=excluded.due_date, completed=excluded.completed, completed_at=excluded.completed_at,
+          created_by_id=excluded.created_by_id, created_by_name=excluded.created_by_name,
+          sync_status='synced', source='d365', updated_at=excluded.updated_at`,
+        values,
       );
-      updated++;
+      updated += result.rowsAffected;
     } catch (err) {
-      console.error(`[followup] Failed to update follow-up ${f.remoteId}:`, err instanceof Error ? err.message : err);
+      console.error('[followup] Bulk update chunk failed:', err instanceof Error ? err.message : err);
       errors++;
     }
   }

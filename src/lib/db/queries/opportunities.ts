@@ -289,7 +289,7 @@ export async function bulkUpsertOpportunities(
   const db = await getDb();
 
   const toInsert: Opportunity[] = [];
-  const toUpdate: Opportunity[] = [];
+  const toUpdate: { opp: Opportunity; localId: string }[] = [];
   let skipped = 0;
 
   for (const opp of opps) {
@@ -299,7 +299,7 @@ export async function bulkUpsertOpportunities(
     const prev = opp.remoteId ? existing.get(opp.remoteId) : undefined;
     if (prev) {
       if (prev.syncStatus === 'pending') { skipped++; continue; }
-      toUpdate.push(mapped);
+      toUpdate.push({ opp: mapped, localId: prev.localId });
     } else {
       toInsert.push(mapped);
     }
@@ -355,45 +355,59 @@ export async function bulkUpsertOpportunities(
     }
   }
 
+  // Chunked upsert for existing rows — PK conflict on the preserved local id
+  // triggers DO UPDATE. created_at / created_by_* stay put.
   let updated = 0;
-  for (const o of toUpdate) {
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const chunk = toUpdate.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap(({ opp, localId }) => [localId, ...insertValuesFor(opp).slice(1)]);
     try {
-      await db.execute(
-        `UPDATE opportunities SET
-          customer_id=$1, contact_id=$2, status=$3, subject=$4, bcn=$5,
-          multi_vendor_opportunity=$6, sell_type=$7, primary_vendor=$8,
-          opportunity_type=$9, stage=$10, probability=$11, expiration_date=$12,
-          estimated_revenue=$13, currency=$14, country=$15, source=$16, record_type=$17,
-          customer_need=$18, sync_status='synced', updated_at=$19,
-          single_or_cross_sell=$20, estimated_mrr=$21, annual_revenue=$22,
-          apn_id=$23, aws_partner_type=$24, aws_service_type=$25, apn_tagging=$26,
-          end_user_type=$27, support_type=$28, payer_account=$29,
-          existing_payee_account=$30, consolidation_acceptance_date=$31,
-          ms_csp_tenant=$32, mpn_id=$33, migration_type=$34, service_name=$35,
-          competitive_winback=$36, public_sector_segment=$37,
-          status_reason=$38, actual_revenue=$39, close_date=$40,
-          competitor_id=$41, close_description=$42, opportunity_number=$43
-         WHERE remote_id=$44`,
-        [
-          o.customerId, o.contactId, o.status, o.subject, o.bcn,
-          o.multiVendorOpportunity ? 1 : 0, o.sellType, o.primaryVendor,
-          o.opportunityType, o.stage, o.probability, o.expirationDate,
-          o.estimatedRevenue, o.currency, o.country, o.source, o.recordType, o.customerNeed,
-          o.updatedAt,
-          o.singleOrCrossSell, o.estimatedMRR, o.annualRevenue,
-          o.apnId, o.awsPartnerType, o.awsServiceType, o.apnTagging,
-          o.endUserType, o.supportType, o.payerAccount,
-          o.existingPayeeAccount, o.consolidationAcceptanceDate,
-          o.msCspTenant, o.mpnId, o.migrationType, o.serviceName,
-          o.competitiveWinback, o.publicSectorSegment,
-          o.statusReason, o.actualRevenue, o.closeDate,
-          o.competitorId, o.closeDescription, o.opportunityNumber,
-          o.remoteId,
-        ],
+      const result = await db.execute(
+        `INSERT INTO opportunities (
+          id, customer_id, contact_id, status, subject, bcn, multi_vendor_opportunity,
+          sell_type, primary_vendor, opportunity_type, stage, probability,
+          expiration_date, estimated_revenue, currency, country, source, record_type,
+          customer_need, sync_status, remote_id, created_by_id, created_by_name,
+          created_at, updated_at,
+          single_or_cross_sell, estimated_mrr, annual_revenue,
+          apn_id, aws_partner_type, aws_service_type, apn_tagging, end_user_type,
+          support_type, payer_account, existing_payee_account, consolidation_acceptance_date,
+          ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
+          public_sector_segment, status_reason, actual_revenue, close_date,
+          competitor_id, close_description, opportunity_number
+        ) VALUES ${placeholders}
+        ON CONFLICT(id) DO UPDATE SET
+          customer_id=excluded.customer_id, contact_id=excluded.contact_id, status=excluded.status,
+          subject=excluded.subject, bcn=excluded.bcn,
+          multi_vendor_opportunity=excluded.multi_vendor_opportunity, sell_type=excluded.sell_type,
+          primary_vendor=excluded.primary_vendor, opportunity_type=excluded.opportunity_type,
+          stage=excluded.stage, probability=excluded.probability,
+          expiration_date=excluded.expiration_date, estimated_revenue=excluded.estimated_revenue,
+          currency=excluded.currency, country=excluded.country,
+          source=excluded.source, record_type=excluded.record_type,
+          customer_need=excluded.customer_need, sync_status='synced', updated_at=excluded.updated_at,
+          single_or_cross_sell=excluded.single_or_cross_sell, estimated_mrr=excluded.estimated_mrr,
+          annual_revenue=excluded.annual_revenue, apn_id=excluded.apn_id,
+          aws_partner_type=excluded.aws_partner_type, aws_service_type=excluded.aws_service_type,
+          apn_tagging=excluded.apn_tagging, end_user_type=excluded.end_user_type,
+          support_type=excluded.support_type, payer_account=excluded.payer_account,
+          existing_payee_account=excluded.existing_payee_account,
+          consolidation_acceptance_date=excluded.consolidation_acceptance_date,
+          ms_csp_tenant=excluded.ms_csp_tenant, mpn_id=excluded.mpn_id,
+          migration_type=excluded.migration_type, service_name=excluded.service_name,
+          competitive_winback=excluded.competitive_winback,
+          public_sector_segment=excluded.public_sector_segment,
+          status_reason=excluded.status_reason, actual_revenue=excluded.actual_revenue,
+          close_date=excluded.close_date, competitor_id=excluded.competitor_id,
+          close_description=excluded.close_description, opportunity_number=excluded.opportunity_number`,
+        values,
       );
-      updated++;
+      updated += result.rowsAffected;
     } catch (err) {
-      console.error(`[opportunity] Failed to update opportunity ${o.remoteId}:`, err instanceof Error ? err.message : err);
+      console.error('[opportunity] Bulk update chunk failed:', err instanceof Error ? err.message : err);
       errors++;
     }
   }

@@ -222,7 +222,7 @@ export async function bulkUpsertActivities(
   const db = await getDb();
 
   const toInsert: Activity[] = [];
-  const toUpdate: Activity[] = [];
+  const toUpdate: { activity: Activity; localId: string }[] = [];
   let skipped = 0;
 
   for (const activity of activities) {
@@ -232,7 +232,7 @@ export async function bulkUpsertActivities(
     const prev = activity.remoteId ? existing.get(activity.remoteId) : undefined;
     if (prev) {
       if (prev.syncStatus === 'pending') { skipped++; continue; }
-      toUpdate.push(mapped);
+      toUpdate.push({ activity: mapped, localId: prev.localId });
     } else {
       toInsert.push(mapped);
     }
@@ -269,23 +269,38 @@ export async function bulkUpsertActivities(
     }
   }
 
+  // Chunked upsert for existing rows — PK conflict on the preserved local id
+  // triggers DO UPDATE. created_at stays put.
   let updated = 0;
-  for (const a of toUpdate) {
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const chunk = toUpdate.slice(i, i + CHUNK);
+    const placeholders = chunk
+      .map((_, j) => `(${Array.from({ length: COLS }, (__, k) => `$${j * COLS + k + 1}`).join(',')})`)
+      .join(',');
+    const values = chunk.flatMap(({ activity: a, localId }) => [
+      localId, a.customerId, a.contactId, a.type, a.subject, a.description,
+      a.occurredAt, a.startTime, a.activityStatus, a.direction,
+      a.createdById, a.createdByName, 'synced', a.remoteId, 'd365',
+      a.createdAt, a.updatedAt,
+    ]);
     try {
-      await db.execute(
-        `UPDATE activities SET customer_id=$1, contact_id=$2, type=$3, subject=$4, description=$5,
-         occurred_at=$6, start_time=$7, activity_status=$8, direction=$9,
-         created_by_id=$10, created_by_name=$11, sync_status='synced', source='d365', updated_at=$12
-         WHERE remote_id=$13`,
-        [
-          a.customerId, a.contactId, a.type, a.subject, a.description,
-          a.occurredAt, a.startTime, a.activityStatus, a.direction,
-          a.createdById, a.createdByName, a.updatedAt, a.remoteId,
-        ],
+      const result = await db.execute(
+        `INSERT INTO activities (
+          id, customer_id, contact_id, type, subject, description, occurred_at, start_time,
+          activity_status, direction, created_by_id, created_by_name, sync_status, remote_id, source, created_at, updated_at
+        ) VALUES ${placeholders}
+        ON CONFLICT(id) DO UPDATE SET
+          customer_id=excluded.customer_id, contact_id=excluded.contact_id, type=excluded.type,
+          subject=excluded.subject, description=excluded.description,
+          occurred_at=excluded.occurred_at, start_time=excluded.start_time,
+          activity_status=excluded.activity_status, direction=excluded.direction,
+          created_by_id=excluded.created_by_id, created_by_name=excluded.created_by_name,
+          sync_status='synced', source='d365', updated_at=excluded.updated_at`,
+        values,
       );
-      updated++;
+      updated += result.rowsAffected;
     } catch (err) {
-      console.error(`[activity] Failed to update activity ${a.remoteId}:`, err instanceof Error ? err.message : err);
+      console.error('[activity] Bulk update chunk failed:', err instanceof Error ? err.message : err);
       errors++;
     }
   }
