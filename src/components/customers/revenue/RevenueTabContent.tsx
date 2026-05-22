@@ -61,7 +61,7 @@ export function RevenueTabContent({ customer }: Props) {
         </div>
         <div className="md:col-span-2">
           <ArrMovementChart
-            bcn={revenue?.bcn ?? customer.bcn}
+            bcn={customer.bcn}
             monthsBack={monthsBack}
             currency="LC"
             currencyCode="EUR"

@@ -26,7 +26,7 @@ function toMonthIso(v: unknown): string {
 function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
   return rows
     .map((r) => ({
-      bcn: String(r['Reseller[bcn]'] ?? '').trim(),
+      bcn: String(r["'ARR Movement'[bcn]"] ?? r['Reseller[bcn]'] ?? '').trim(),
       month: toMonthIso(r["'ARR Movement'[month]"]),
       upgradeUsd: toNum(r['[Upgrade_USD]']),
       downgradeUsd: toNum(r['[Downgrade_USD]']),

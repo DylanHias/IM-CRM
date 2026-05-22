@@ -175,7 +175,7 @@ ADDCOLUMNS(
  * revenue tab slices to a single BCN + monthsBack client-side.
  *
  * Response keys:
- *  Reseller[bcn], 'ARR Movement'[month],
+ *  'ARR Movement'[bcn], 'ARR Movement'[month],
  *  [Upgrade_USD], [Downgrade_USD], [Cancellation_USD], [NewSale_USD],
  *  [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
  */
@@ -183,14 +183,14 @@ export const ARR_MOVEMENT_SNAPSHOT_DAX = `
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX('ARR Movement'[month]), ALL('ARR Movement'))
 VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
-VAR ScopedResellerIds = CALCULATETABLE(
-  VALUES(Reseller[reseller_id]),
+VAR ScopedBcns = CALCULATETABLE(
+  VALUES(Reseller[bcn]),
   Reseller[country_code] IN ${BENELUX_DAX_LIST}
 )
 RETURN
 CALCULATETABLE(
   ADDCOLUMNS(
-    SUMMARIZE('ARR Movement', Reseller[bcn], 'ARR Movement'[month]),
+    SUMMARIZE('ARR Movement', 'ARR Movement'[bcn], 'ARR Movement'[month]),
     "Upgrade_USD", CALCULATE(SUM('ARR Movement'[arr_upgrade_usd])),
     "Downgrade_USD", CALCULATE(SUM('ARR Movement'[arr_downgrade_usd])),
     "Cancellation_USD", CALCULATE(SUM('ARR Movement'[arr_cancellation_usd])),
@@ -200,7 +200,7 @@ CALCULATETABLE(
     "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
     "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
   ),
-  'ARR Movement'[reseller_id] IN ScopedResellerIds,
+  'ARR Movement'[bcn] IN ScopedBcns,
   'ARR Movement'[month] >= EarliestMonth,
   'ARR Movement'[month] <= LatestMonth
 )
