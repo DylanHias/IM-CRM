@@ -122,6 +122,27 @@ describe('refreshArrMovementFromPowerBi — ARR movement populates resiliently',
     expect(deleteCalls).toHaveLength(0);
   });
 
+  it('parses rows when month key comes back without table quotes (real Power BI response)', async () => {
+    executeDaxMock.mockResolvedValue({
+      rows: [
+        {
+          '[bcn]': 'BCN-REAL',
+          'ARR Movement[month]': '2026-04-01T00:00:00',
+          '[Upgrade_LC]': 42,
+          '[Downgrade_LC]': 0,
+          '[Cancellation_LC]': 0,
+          '[NewSale_LC]': 0,
+        },
+      ],
+    });
+
+    await refreshArrMovementFromPowerBi('token');
+
+    const state = useCustomerRevenueDetailStore.getState();
+    expect(state.movementByBcn.get('BCN-REAL')?.[0].month).toBe('2026-04');
+    expect(state.movementByBcn.get('BCN-REAL')?.[0].upgradeLc).toBe(42);
+  });
+
   it('parses many rows and groups by bcn correctly', async () => {
     executeDaxMock.mockResolvedValue({
       rows: [
