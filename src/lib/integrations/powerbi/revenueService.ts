@@ -282,33 +282,37 @@ export async function refreshRevenue(token: string): Promise<{ count: number }> 
 
     useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);
 
-    // Insights datasets (org-wide trend, reseller seats, vendor sales) and the
-    // per-BCN ARR movement snapshot share the same refresh cadence — UI reads
-    // everything from local DB, so we populate all snapshots in one go. Each
-    // is isolated so a failure in one doesn't roll back customer_revenue.
-    await Promise.all([
-      (async () => {
-        try {
-          const { refreshInsightsFromPowerBi } = await import('./revenueInsightsService');
-          await refreshInsightsFromPowerBi(token);
-        } catch (err) {
-          console.error('[revenue] insights snapshot refresh failed:', err instanceof Error ? err.message : err);
-        }
-      })(),
-      (async () => {
-        try {
-          const { refreshArrMovementFromPowerBi } = await import('./customerRevenueDetailService');
-          await refreshArrMovementFromPowerBi(token);
-        } catch (err) {
-          console.error('[revenue] ARR movement snapshot refresh failed:', err instanceof Error ? err.message : err);
-        }
-      })(),
-    ]);
+    // Snapshot datasets (insights + ARR movement) are detached from the foreground
+    // refresh — they pull large Benelux-wide DAX snapshots and would otherwise block
+    // the user-facing refresh result. UI reads from local DB, so a brief lag before
+    // the next refresh just means charts show the previous snapshot.
+    void refreshSnapshotsInBackground(token);
 
     return { count: valid.length };
   } finally {
     useRevenueStore.getState().setRefreshing(false);
   }
+}
+
+async function refreshSnapshotsInBackground(token: string): Promise<void> {
+  await Promise.all([
+    (async () => {
+      try {
+        const { refreshInsightsFromPowerBi } = await import('./revenueInsightsService');
+        await refreshInsightsFromPowerBi(token);
+      } catch (err) {
+        console.error('[revenue] insights snapshot refresh failed:', err instanceof Error ? err.message : err);
+      }
+    })(),
+    (async () => {
+      try {
+        const { refreshArrMovementFromPowerBi } = await import('./customerRevenueDetailService');
+        await refreshArrMovementFromPowerBi(token);
+      } catch (err) {
+        console.error('[revenue] ARR movement snapshot refresh failed:', err instanceof Error ? err.message : err);
+      }
+    })(),
+  ]);
 }
 
 async function snapshotsNeedBackfill(): Promise<boolean> {

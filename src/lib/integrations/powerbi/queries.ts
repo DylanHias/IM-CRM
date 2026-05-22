@@ -25,7 +25,7 @@ const BENELUX_DAX_LIST = `{${BENELUX_COUNTRY_CODES.map((c) => `"${c}"`).join(', 
 
 const ACTIVITY_WINDOW_MONTHS = 12;
 
-const SNAPSHOT_MONTHS = 24;
+const SNAPSHOT_MONTHS = 12;
 
 /**
  * One row per Benelux reseller with their current-month ARR (USD + LC).
