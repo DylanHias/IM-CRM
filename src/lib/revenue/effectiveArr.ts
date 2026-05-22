@@ -23,7 +23,7 @@ export function getEffectiveArr(
   if (revenue && revenue.arrLc !== null) {
     return {
       value: revenue.arrLc,
-      currency: revenue.currencyCode ?? customer.arrCurrency ?? 'EUR',
+      currency: 'EUR',
       source: 'powerbi',
       asOfMonth: revenue.asOfMonth,
     };
@@ -31,7 +31,7 @@ export function getEffectiveArr(
   if (customer.arr !== null && customer.arr !== undefined) {
     return {
       value: customer.arr,
-      currency: customer.arrCurrency ?? 'EUR',
+      currency: 'EUR',
       source: 'd365',
       asOfMonth: null,
     };
