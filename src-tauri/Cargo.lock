@@ -546,7 +546,7 @@ dependencies = [
 
 [[package]]
 name = "crm-mvp"
-version = "2.12.79"
+version = "2.12.97"
 dependencies = [
  "reqwest 0.12.28",
  "rusqlite",
