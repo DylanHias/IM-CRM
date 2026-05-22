@@ -316,6 +316,9 @@ async function snapshotsNeedBackfill(): Promise<boolean> {
   // recreated empty, but revenue_last_refresh_at stays fresh — so the staleness
   // check below would skip the refresh and the ARR movement / insights charts
   // would render blank forever. Force a refresh whenever any snapshot is empty.
+  // Also force a refresh when arr_movement has rows but no valid bcns — that's
+  // the broken-state v2.12.91 left when joining on 'ARR Movement'[bcn] returned
+  // blanks. The corrected query (v2.12.92+) joins on Reseller[bcn] instead.
   try {
     const db = await getDb();
     const tables = ['arr_movement', 'arr_trend', 'reseller_seats_trend', 'net_sales_by_vendor'];
@@ -323,6 +326,10 @@ async function snapshotsNeedBackfill(): Promise<boolean> {
       const rows = await db.select<{ c: number }[]>(`SELECT COUNT(*) AS c FROM ${t}`);
       if ((rows[0]?.c ?? 0) === 0) return true;
     }
+    const validBcns = await db.select<{ c: number }[]>(
+      `SELECT COUNT(*) AS c FROM arr_movement WHERE bcn IS NOT NULL AND bcn <> ''`,
+    );
+    if ((validBcns[0]?.c ?? 0) === 0) return true;
     return false;
   } catch (err) {
     console.error('[revenue] snapshot backfill check failed:', err instanceof Error ? err.message : err);
