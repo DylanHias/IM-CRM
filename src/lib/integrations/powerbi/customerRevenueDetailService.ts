@@ -26,12 +26,8 @@ function toMonthIso(v: unknown): string {
 function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
   return rows
     .map((r) => ({
-      bcn: String(r['Reseller[bcn]'] ?? r["'ARR Movement'[bcn]"] ?? '').trim(),
+      bcn: String(r['Reseller[bcn]'] ?? '').trim(),
       month: toMonthIso(r["'ARR Movement'[month]"]),
-      upgradeUsd: toNum(r['[Upgrade_USD]']),
-      downgradeUsd: toNum(r['[Downgrade_USD]']),
-      cancellationUsd: toNum(r['[Cancellation_USD]']),
-      newSaleUsd: toNum(r['[NewSale_USD]']),
       upgradeLc: toNum(r['[Upgrade_LC]']),
       downgradeLc: toNum(r['[Downgrade_LC]']),
       cancellationLc: toNum(r['[Cancellation_LC]']),
@@ -43,10 +39,6 @@ function parseRows(rows: Record<string, unknown>[]): ArrMovementRow[] {
 interface ArrMovementDbRow {
   bcn: string;
   month: string;
-  upgrade_usd: number | null;
-  downgrade_usd: number | null;
-  cancellation_usd: number | null;
-  new_sale_usd: number | null;
   upgrade_lc: number | null;
   downgrade_lc: number | null;
   cancellation_lc: number | null;
@@ -59,16 +51,11 @@ async function persistArrMovement(rows: ArrMovementRow[], refreshedAt: string): 
   for (const r of rows) {
     await db.execute(
       `INSERT OR REPLACE INTO arr_movement
-        (bcn, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
-         upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        (bcn, month, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc, refreshed_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [
         r.bcn,
         r.month,
-        r.upgradeUsd,
-        r.downgradeUsd,
-        r.cancellationUsd,
-        r.newSaleUsd,
         r.upgradeLc,
         r.downgradeLc,
         r.cancellationLc,
@@ -84,8 +71,7 @@ export async function loadArrMovementFromDb(): Promise<void> {
     const db = await getDb();
     const [rows, refreshedAtRow] = await Promise.all([
       db.select<ArrMovementDbRow[]>(
-        `SELECT bcn, month, upgrade_usd, downgrade_usd, cancellation_usd, new_sale_usd,
-                upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc
+        `SELECT bcn, month, upgrade_lc, downgrade_lc, cancellation_lc, new_sale_lc
          FROM arr_movement
          ORDER BY bcn ASC, month ASC`,
       ),
@@ -95,10 +81,6 @@ export async function loadArrMovementFromDb(): Promise<void> {
     const mapped: ArrMovementRow[] = rows.map((r) => ({
       bcn: r.bcn,
       month: r.month,
-      upgradeUsd: r.upgrade_usd ?? 0,
-      downgradeUsd: r.downgrade_usd ?? 0,
-      cancellationUsd: r.cancellation_usd ?? 0,
-      newSaleUsd: r.new_sale_usd ?? 0,
       upgradeLc: r.upgrade_lc ?? 0,
       downgradeLc: r.downgrade_lc ?? 0,
       cancellationLc: r.cancellation_lc ?? 0,

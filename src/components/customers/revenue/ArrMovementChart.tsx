@@ -15,14 +15,11 @@ import {
 } from 'recharts';
 import { Loader2, AlertCircle, BarChart3 } from 'lucide-react';
 import { useArrMovement } from '@/hooks/useArrMovement';
-import type { Currency } from '@/lib/revenue/effectiveArr';
 import { cn } from '@/lib/utils';
 
 interface Props {
   bcn: string | null;
   monthsBack: number;
-  currency: Currency;
-  currencyCode?: string | null;
   className?: string;
 }
 
@@ -43,30 +40,29 @@ function formatMonthLabel(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' });
 }
 
-function formatValue(value: number, currencyCode: string | null): string {
+function formatValue(value: number): string {
   const abs = Math.abs(value);
-  const cur = currencyCode ?? 'EUR';
   try {
     return new Intl.NumberFormat('nl-BE', {
       style: 'currency',
-      currency: cur,
+      currency: 'EUR',
       maximumFractionDigits: 0,
       notation: abs >= 100_000 ? 'compact' : 'standard',
     }).format(value);
   } catch {
-    return `${cur} ${value.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`;
+    return `EUR ${value.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`;
   }
 }
 
-export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, className }: Props) {
+export function ArrMovementChart({ bcn, monthsBack, className }: Props) {
   const { rows, isHydrated } = useArrMovement(bcn, monthsBack);
 
   const data: ChartRow[] = useMemo(() => {
     return rows.map((r) => {
-      const newSale = Math.abs(currency === 'USD' ? r.newSaleUsd : r.newSaleLc);
-      const upgrade = Math.abs(currency === 'USD' ? r.upgradeUsd : r.upgradeLc);
-      const downgrade = -Math.abs(currency === 'USD' ? r.downgradeUsd : r.downgradeLc);
-      const cancellation = -Math.abs(currency === 'USD' ? r.cancellationUsd : r.cancellationLc);
+      const newSale = Math.abs(r.newSaleLc);
+      const upgrade = Math.abs(r.upgradeLc);
+      const downgrade = -Math.abs(r.downgradeLc);
+      const cancellation = -Math.abs(r.cancellationLc);
       return {
         month: r.month,
         monthLabel: formatMonthLabel(r.month),
@@ -77,9 +73,7 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
         Net: newSale + upgrade + downgrade + cancellation,
       };
     });
-  }, [rows, currency]);
-
-  const displayCurrency = currency === 'USD' ? 'USD' : currencyCode ?? null;
+  }, [rows]);
 
   return (
     <div
@@ -140,7 +134,7 @@ export function ArrMovementChart({ bcn, monthsBack, currency, currencyCode, clas
                   borderRadius: 6,
                   fontSize: 12,
                 }}
-                formatter={(value: number, name: string) => [formatValue(value, displayCurrency), name]}
+                formatter={(value: number, name: string) => [formatValue(value), name]}
               />
               <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} iconSize={10} />
               <Bar dataKey="NewSale" stackId="movement" fill="hsl(var(--success))" />

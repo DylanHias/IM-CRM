@@ -171,36 +171,34 @@ ADDCOLUMNS(
 
 /**
  * Per-BCN, per-month ARR Movement snapshot (last 24 months) for all Benelux resellers.
- * Returns one row per (bcn, month). The CRM caches this snapshot and the customer
- * revenue tab slices to a single BCN + monthsBack client-side.
+ * LC values only — chart always renders in EUR. Mirrors NET_SALES_SNAPSHOT_DAX.
  *
  * Response keys:
  *  Reseller[bcn], 'ARR Movement'[month],
- *  [Upgrade_USD], [Downgrade_USD], [Cancellation_USD], [NewSale_USD],
  *  [Upgrade_LC], [Downgrade_LC], [Cancellation_LC], [NewSale_LC]
- *
- * Joins to Reseller[bcn] via the model relationship (not reseller_id).
- * Scoping is by Reseller[country_code] so reseller_id is never involved.
  */
 export const ARR_MOVEMENT_SNAPSHOT_DAX = `
 EVALUATE
 VAR LatestMonth = CALCULATE(MAX('ARR Movement'[month]), ALL('ARR Movement'))
 VAR EarliestMonth = EDATE(LatestMonth, -${SNAPSHOT_MONTHS} + 1)
+VAR ScopedResellerIds = CALCULATETABLE(
+  VALUES(Reseller[reseller_id]),
+  Reseller[country_code] IN ${BENELUX_DAX_LIST}
+)
 RETURN
-CALCULATETABLE(
-  ADDCOLUMNS(
-    SUMMARIZE('ARR Movement', Reseller[bcn], 'ARR Movement'[month]),
-    "Upgrade_USD", CALCULATE(SUM('ARR Movement'[arr_upgrade_usd])),
-    "Downgrade_USD", CALCULATE(SUM('ARR Movement'[arr_downgrade_usd])),
-    "Cancellation_USD", CALCULATE(SUM('ARR Movement'[arr_cancellation_usd])),
-    "NewSale_USD", CALCULATE(SUM('ARR Movement'[arr_new_sale_usd])),
-    "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
-    "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
-    "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
-    "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
+ADDCOLUMNS(
+  SUMMARIZE(
+    FILTER('ARR Movement',
+      'ARR Movement'[reseller_id] IN ScopedResellerIds &&
+      'ARR Movement'[month] >= EarliestMonth &&
+      'ARR Movement'[month] <= LatestMonth
+    ),
+    'ARR Movement'[month],
+    Reseller[bcn]
   ),
-  Reseller[country_code] IN ${BENELUX_DAX_LIST},
-  'ARR Movement'[month] >= EarliestMonth,
-  'ARR Movement'[month] <= LatestMonth
+  "Upgrade_LC", CALCULATE(SUM('ARR Movement'[arr_upgrade])),
+  "Downgrade_LC", CALCULATE(SUM('ARR Movement'[arr_downgrade])),
+  "Cancellation_LC", CALCULATE(SUM('ARR Movement'[arr_cancellation])),
+  "NewSale_LC", CALCULATE(SUM('ARR Movement'[arr_new_sale]))
 )
 `.trim();

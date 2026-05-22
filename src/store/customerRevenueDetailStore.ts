@@ -3,10 +3,6 @@ import { create } from 'zustand';
 export interface ArrMovementRow {
   bcn: string;
   month: string;
-  upgradeUsd: number;
-  downgradeUsd: number;
-  cancellationUsd: number;
-  newSaleUsd: number;
   upgradeLc: number;
   downgradeLc: number;
   cancellationLc: number;

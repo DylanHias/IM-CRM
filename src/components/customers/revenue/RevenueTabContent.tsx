@@ -60,12 +60,7 @@ export function RevenueTabContent({ customer }: Props) {
           <ActiveEndCustomersCard count={revenue?.activeEndCustomers ?? null} />
         </div>
         <div className="md:col-span-2">
-          <ArrMovementChart
-            bcn={customer.bcn}
-            monthsBack={monthsBack}
-            currency="LC"
-            currencyCode="EUR"
-          />
+          <ArrMovementChart bcn={customer.bcn} monthsBack={monthsBack} />
         </div>
       </motion.div>
     </div>
