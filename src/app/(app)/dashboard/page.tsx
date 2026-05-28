@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, Target, Wallet } from 'lucide-react';
+import { Activity, Target, Wallet, Building2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listContainerVariants, listItemVariants, sectionReveal } from '@/lib/motion';
 import { MetricCard } from '@/components/analytics/MetricCard';
@@ -58,6 +58,7 @@ interface DashboardCache {
   activityTrend: { current: number; previous: number };
   opportunityTrend: { current: number; previous: number };
   pipelineDelta: { currentValue: number; previousValue: number };
+  myCustomersCount: number;
   forUserId: string;
 }
 let cache: DashboardCache | null = null;
@@ -107,6 +108,9 @@ export default function DashboardPage() {
   const [pipelineDelta, setPipelineDelta] = useState<{ currentValue: number; previousValue: number } | null>(
     cache?.pipelineDelta ?? null,
   );
+  const [myCustomersCount, setMyCustomersCount] = useState<number | null>(
+    cache?.myCustomersCount ?? null,
+  );
   const [loading, setLoading] = useState(cache === null);
 
   const loadedForUserId = useRef<string | null>(null);
@@ -141,6 +145,7 @@ export default function DashboardPage() {
             queryMyActivityWeeklyTrend,
             queryMyOpportunityWeeklyTrend,
             queryMyPipelineWeeklyDelta,
+            queryMyCustomersCount,
           },
           { queryFollowUpsByUser },
           { queryMyRecentActivitiesLatest },
@@ -164,6 +169,7 @@ export default function DashboardPage() {
           actTrend,
           oppTrend,
           pipeDelta,
+          myCustCount,
         ] = await Promise.all([
           queryMyRecentActivitiesLatest(userId, altUserId, 15),
           queryMyRecentOpportunitiesLatest(userId, altUserId, 15),
@@ -176,6 +182,7 @@ export default function DashboardPage() {
           queryMyActivityWeeklyTrend(userIds),
           queryMyOpportunityWeeklyTrend(userIds),
           queryMyPipelineWeeklyDelta(userIds),
+          queryMyCustomersCount(userIds),
         ]);
 
         const cityAgg = new Map<string, number>();
@@ -200,6 +207,7 @@ export default function DashboardPage() {
           activityTrend: actTrend,
           opportunityTrend: oppTrend,
           pipelineDelta: pipeDelta,
+          myCustomersCount: myCustCount,
           forUserId: userId,
         };
         loadedForUserId.current = userId;
@@ -216,6 +224,7 @@ export default function DashboardPage() {
         setActivityTrend(actTrend);
         setOpportunityTrend(oppTrend);
         setPipelineDelta(pipeDelta);
+        setMyCustomersCount(myCustCount);
       } catch (err) {
         console.error('[dashboard] Failed to load dashboard data:', err);
       } finally {
@@ -244,7 +253,7 @@ export default function DashboardPage() {
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-stretch">
         <motion.div {...sectionReveal(0)}>
           <BelgiumMapCard
             cityCounts={cityCounts}
@@ -254,13 +263,14 @@ export default function DashboardPage() {
         </motion.div>
 
         <motion.div
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-3 h-full min-h-0"
           variants={listContainerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={listItemVariants}>
+          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
             <MetricCard
+              className="h-full"
               label="Total Activities"
               value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
               icon={Activity}
@@ -269,8 +279,9 @@ export default function DashboardPage() {
               deltaLabel="% vs last 7d"
             />
           </motion.div>
-          <motion.div variants={listItemVariants}>
+          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
             <MetricCard
+              className="h-full"
               label="Opportunities"
               value={loading || opportunitiesCount === null ? '—' : fmt(opportunitiesCount)}
               icon={Target}
@@ -279,8 +290,9 @@ export default function DashboardPage() {
               deltaLabel="% vs last 7d"
             />
           </motion.div>
-          <motion.div variants={listItemVariants}>
+          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
             <MetricCard
+              className="h-full"
               label="Open Pipeline"
               value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
               icon={Wallet}
@@ -289,17 +301,26 @@ export default function DashboardPage() {
               deltaLabel="% vs 7d ago"
             />
           </motion.div>
+          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
+            <MetricCard
+              className="h-full"
+              label="My Customers"
+              value={loading || myCustomersCount === null ? '—' : fmt(myCustomersCount)}
+              icon={Building2}
+              sub="Accounts you own"
+            />
+          </motion.div>
         </motion.div>
 
-        <div className="flex flex-col gap-4">
-          <motion.div {...sectionReveal(0.08)}>
+        <div className="flex flex-col gap-4 h-full min-h-0">
+          <motion.div {...sectionReveal(0.08)} className="flex-1 min-h-0">
             <RecentActivityPanel
               activities={recentActivities}
               opportunities={recentOpportunities}
               loading={loading}
             />
           </motion.div>
-          <motion.div {...sectionReveal(0.14)}>
+          <motion.div {...sectionReveal(0.14)} className="flex-1 min-h-0">
             <StaleOpportunitiesPanel opportunities={staleOpportunities} loading={loading} />
           </motion.div>
         </div>

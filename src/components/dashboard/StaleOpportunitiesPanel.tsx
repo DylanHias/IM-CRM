@@ -38,7 +38,7 @@ export function StaleOpportunitiesPanel({ opportunities, loading }: Props) {
         </span>
       </div>
 
-      <div className="overflow-y-auto flex-1 min-h-0 max-h-[320px]">
+      <div className="overflow-y-auto flex-1 min-h-0">
         {loading ? (
           <ul className="divide-y divide-border/60">
             {Array.from({ length: 4 }).map((_, i) => (

@@ -474,6 +474,21 @@ export async function queryMyOpportunityWeeklyTrend(userIds: string[]): Promise<
   return { current: row?.current ?? 0, previous: row?.previous ?? 0 };
 }
 
+export async function queryMyCustomersCount(userIds: string[]): Promise<number> {
+  const db = await getDb();
+  const n = userIds.length;
+  const placeholders = inClause(n);
+  const [row] = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM customers
+     WHERE owner_id IN (${placeholders})
+        OR aws_owner_id IN (${placeholders})
+        OR azure_owner_id IN (${placeholders})
+        OR customer_success_manager_id IN (${placeholders})`,
+    [...userIds, ...userIds, ...userIds, ...userIds],
+  );
+  return row?.count ?? 0;
+}
+
 export async function queryMyPipelineWeeklyDelta(userIds: string[]): Promise<{ currentValue: number; previousValue: number }> {
   const db = await getDb();
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
