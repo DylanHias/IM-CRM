@@ -292,7 +292,9 @@ async function ensureTablesExist(db: Database): Promise<void> {
     )
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-  await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
+  // idx_users_analytics_tracked is created after ensureAllColumns — see runSchema.
+  // Older databases predate the analytics_tracked column, so the index must be
+  // built only after the column has been backfilled.
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS option_sets (
@@ -483,6 +485,9 @@ async function runSchema(db: Database): Promise<void> {
   await ensureTablesExist(db);
   // Always backfill any columns that may be missing (handles fresh install / migration drift)
   await ensureAllColumns(db);
+  // Indexes that reference backfilled columns must run after ensureAllColumns,
+  // otherwise CREATE INDEX fails on older databases where the column is added below.
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_users_analytics_tracked ON users(analytics_tracked)`);
 
   const rows = await db.select<{ value: string }[]>(
     `SELECT value FROM app_settings WHERE key = 'schema_version'`
