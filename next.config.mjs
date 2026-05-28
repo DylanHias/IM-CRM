@@ -16,6 +16,10 @@ const nextConfig = {
       test: /\.md$/,
       type: 'asset/source',
     });
+    if (config.optimization) {
+      config.optimization.minimize = false;
+      config.optimization.minimizer = [];
+    }
     return config;
   },
 };

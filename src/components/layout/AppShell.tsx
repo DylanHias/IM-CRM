@@ -10,6 +10,7 @@ import { InitialSyncDialog } from './InitialSyncDialog';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
 import { Walkthrough } from '@/components/walkthrough/Walkthrough';
+import { EasterEggController } from '@/components/easterEggs/EasterEggController';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -62,6 +63,7 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </SidebarProvider>
       <Walkthrough />
+      <EasterEggController />
       <ChangelogDialog />
       <InitialSyncDialog />
       <CommandPalette />

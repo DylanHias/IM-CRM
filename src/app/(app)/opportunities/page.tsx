@@ -23,6 +23,14 @@ import { queryAllCustomers } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { notifyPush } from '@/lib/sync/pushToast';
+import {
+  isWhaleDeal,
+  whaleCelebration,
+  isFirstWinOfDay,
+  realisticConfetti,
+  isSalesModeArmed,
+  salesModeBurst,
+} from '@/lib/easterEggs';
 import { emitDataEvent, onDataEvent } from '@/lib/dataEvents';
 import { useAuthStore } from '@/store/authStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
@@ -286,6 +294,17 @@ export default function OpportunitiesPage() {
     emitDataEvent('opportunity', 'updated', updated.customerId);
     setCloseOutcome(null);
     setEditing(null);
+
+    if (data.outcome === 'Won') {
+      if (isWhaleDeal(data.actualRevenue, updated.currency ?? 'USD')) {
+        whaleCelebration();
+      } else if (isSalesModeArmed()) {
+        window.sessionStorage.removeItem('crm-easter-egg-sales-mode-armed');
+        salesModeBurst();
+      } else if (isFirstWinOfDay()) {
+        realisticConfetti();
+      }
+    }
   };
 
   const pushAndNotify = (opp: Opportunity, action: string): void => {

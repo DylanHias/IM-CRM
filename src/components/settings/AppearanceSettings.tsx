@@ -29,17 +29,18 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import { EasterEggsSettings } from './EasterEggsSettings';
 
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 
-const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string; hex: string }[] = [
-  { value: 'blue', label: 'Blue', swatch: 'bg-[hsl(217,87%,51%)]', hex: '#1f6feb' },
-  { value: 'purple', label: 'Purple', swatch: 'bg-[hsl(263,70%,50%)]', hex: '#7c3aed' },
-  { value: 'green', label: 'Green', swatch: 'bg-[hsl(142,72%,37%)]', hex: '#16a34a' },
-  { value: 'orange', label: 'Orange', swatch: 'bg-[hsl(25,95%,53%)]', hex: '#f97316' },
-  { value: 'red', label: 'Red', swatch: 'bg-[hsl(0,84%,60%)]', hex: '#ef4444' },
-  { value: 'pink', label: 'Pink', swatch: 'bg-[hsl(330,81%,60%)]', hex: '#ec4899' },
+const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
+  { value: 'blue', label: 'Blue', hex: '#1f6feb' },
+  { value: 'purple', label: 'Purple', hex: '#7c3aed' },
+  { value: 'green', label: 'Green', hex: '#16a34a' },
+  { value: 'orange', label: 'Orange', hex: '#f97316' },
+  { value: 'red', label: 'Red', hex: '#ef4444' },
+  { value: 'pink', label: 'Pink', hex: '#ec4899' },
 ];
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -219,6 +220,7 @@ export function AppearanceSettings() {
               <button
                 key={c.value}
                 title={c.label}
+                style={{ backgroundColor: c.hex }}
                 onClick={() => {
                   updateSetting('accentColor', c.value);
                   updateSetting('customAccentHex', null);
@@ -228,7 +230,6 @@ export function AppearanceSettings() {
                 onMouseLeave={() => !customAccentHex && applyAccentPreview(accentColor)}
                 className={cn(
                   'w-6 h-6 rounded-full transition-all',
-                  c.swatch,
                   !customAccentHex && accentColor === c.value
                     ? 'ring-2 ring-offset-2 ring-offset-background ring-foreground/30 scale-110'
                     : 'hover:scale-105'
@@ -418,6 +419,8 @@ export function AppearanceSettings() {
           </SortableContext>
         </DndContext>
       </div>
+
+      <EasterEggsSettings />
 
     </div>
   );
