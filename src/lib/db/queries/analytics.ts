@@ -432,3 +432,61 @@ export async function queryActivityPatternsData(
     mostActiveCustomers,
   };
 }
+
+export interface WeeklyTrend {
+  current: number;
+  previous: number;
+}
+
+export async function queryMyActivityWeeklyTrend(userIds: string[]): Promise<WeeklyTrend> {
+  const db = await getDb();
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000).toISOString();
+  const nowIso = now.toISOString();
+  const n = userIds.length;
+  const [row] = await db.select<{ current: number; previous: number }[]>(
+    `SELECT
+       SUM(CASE WHEN occurred_at >= $${n + 1} AND occurred_at <= $${n + 2} THEN 1 ELSE 0 END) as current,
+       SUM(CASE WHEN occurred_at >= $${n + 3} AND occurred_at < $${n + 1} THEN 1 ELSE 0 END) as previous
+     FROM activities
+     WHERE created_by_id IN (${inClause(n)}) AND occurred_at >= $${n + 3} AND occurred_at <= $${n + 2}`,
+    [...userIds, sevenDaysAgo, nowIso, fourteenDaysAgo],
+  );
+  return { current: row?.current ?? 0, previous: row?.previous ?? 0 };
+}
+
+export async function queryMyOpportunityWeeklyTrend(userIds: string[]): Promise<WeeklyTrend> {
+  const db = await getDb();
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000).toISOString();
+  const nowIso = now.toISOString();
+  const n = userIds.length;
+  const [row] = await db.select<{ current: number; previous: number }[]>(
+    `SELECT
+       SUM(CASE WHEN created_at >= $${n + 1} AND created_at <= $${n + 2} THEN 1 ELSE 0 END) as current,
+       SUM(CASE WHEN created_at >= $${n + 3} AND created_at < $${n + 1} THEN 1 ELSE 0 END) as previous
+     FROM opportunities
+     WHERE created_by_id IN (${inClause(n)}) AND created_at >= $${n + 3} AND created_at <= $${n + 2}`,
+    [...userIds, sevenDaysAgo, nowIso, fourteenDaysAgo],
+  );
+  return { current: row?.current ?? 0, previous: row?.previous ?? 0 };
+}
+
+export async function queryMyPipelineWeeklyDelta(userIds: string[]): Promise<{ currentValue: number; previousValue: number }> {
+  const db = await getDb();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const n = userIds.length;
+  const [currentRow] = await db.select<{ value: number }[]>(
+    `SELECT COALESCE(SUM(estimated_revenue), 0) as value FROM opportunities
+     WHERE status = 'Open' AND created_by_id IN (${inClause(n)})`,
+    userIds,
+  );
+  const [previousRow] = await db.select<{ value: number }[]>(
+    `SELECT COALESCE(SUM(estimated_revenue), 0) as value FROM opportunities
+     WHERE status = 'Open' AND created_by_id IN (${inClause(n)}) AND created_at < $${n + 1}`,
+    [...userIds, sevenDaysAgo],
+  );
+  return { currentValue: currentRow?.value ?? 0, previousValue: previousRow?.value ?? 0 };
+}

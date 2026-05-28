@@ -545,3 +545,70 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
   }
   return true;
 }
+
+export interface StaleOpportunity {
+  id: string;
+  subject: string;
+  customerId: string;
+  customerName: string;
+  stage: string;
+  estimatedRevenue: number | null;
+  currency: string | null;
+  lastActivityAt: string;
+  daysStale: number;
+}
+
+export async function queryMyStaleOpportunities(
+  userId: string,
+  altUserId: string | null,
+  withinDays = 30,
+  limit = 25,
+): Promise<StaleOpportunity[]> {
+  const db = await getDb();
+  const cutoff = new Date(Date.now() - withinDays * 86400000).toISOString();
+  const userIds = altUserId && altUserId !== userId ? [userId, altUserId] : [userId];
+  const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
+  const rows = await db.select<{
+    id: string;
+    subject: string;
+    customerId: string;
+    customerName: string | null;
+    stage: string;
+    estimatedRevenue: number | null;
+    currency: string | null;
+    lastActivityAt: string;
+  }[]>(
+    `SELECT * FROM (
+       SELECT o.id, o.subject,
+         o.customer_id as customerId,
+         c.name as customerName,
+         o.stage,
+         o.estimated_revenue as estimatedRevenue,
+         o.currency,
+         COALESCE(
+           (SELECT MAX(a.occurred_at) FROM activities a WHERE a.customer_id = o.customer_id),
+           o.updated_at
+         ) as lastActivityAt
+       FROM opportunities o
+       LEFT JOIN customers c ON c.id = o.customer_id
+       WHERE o.status = 'Open'
+         AND o.created_by_id IN (${placeholders})
+     )
+     WHERE lastActivityAt < $${userIds.length + 1}
+     ORDER BY lastActivityAt ASC
+     LIMIT $${userIds.length + 2}`,
+    [...userIds, cutoff, limit],
+  );
+  const now = Date.now();
+  return rows.map((r) => ({
+    id: r.id,
+    subject: r.subject,
+    customerId: r.customerId,
+    customerName: r.customerName ?? 'Unknown',
+    stage: r.stage,
+    estimatedRevenue: r.estimatedRevenue,
+    currency: r.currency,
+    lastActivityAt: r.lastActivityAt,
+    daysStale: Math.floor((now - new Date(r.lastActivityAt).getTime()) / 86400000),
+  }));
+}
