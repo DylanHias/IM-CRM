@@ -1,6 +1,7 @@
 import { executeDaxQuery } from './client';
 import { ARR_MOVEMENT_SNAPSHOT_DAX } from './queries';
 import { getDb } from '@/lib/db/client';
+import { insertSyncRecord, updateSyncRecord } from '@/lib/db/queries/sync';
 import {
   useCustomerRevenueDetailStore,
   type ArrMovementRow,
@@ -120,34 +121,43 @@ export async function loadArrMovementFromDb(): Promise<void> {
 
 export async function refreshArrMovementFromPowerBi(token: string): Promise<void> {
   const refreshedAt = new Date().toISOString();
+  const recordId = await insertSyncRecord('powerbi_arr_movement', 'running', refreshedAt);
 
-  const result = await executeDaxQuery(
-    token,
-    null,
-    DATASET_ID,
-    ARR_MOVEMENT_SNAPSHOT_DAX,
-  );
-  const rawCount = result.rows?.length ?? 0;
-  const rows = parseRows(result.rows ?? []);
-
-  if (rawCount > 0 && rows.length === 0) {
-    const sampleKeys = Object.keys(result.rows?.[0] ?? {});
-    console.error(
-      `[revenue] ARR movement: DAX returned ${rawCount} rows but 0 parsed — bcn/month missing. Response keys: ${sampleKeys.join(', ')}`,
+  try {
+    const result = await executeDaxQuery(
+      token,
+      null,
+      DATASET_ID,
+      ARR_MOVEMENT_SNAPSHOT_DAX,
     );
-  }
+    const rawCount = result.rows?.length ?? 0;
+    const rows = parseRows(result.rows ?? []);
 
-  if (rows.length === 0) {
-    console.warn(
-      `[revenue] ARR movement: 0 rows parsed (raw=${rawCount}) — keeping previous snapshot, refresh skipped`,
+    if (rawCount > 0 && rows.length === 0) {
+      const sampleKeys = Object.keys(result.rows?.[0] ?? {});
+      console.error(
+        `[revenue] ARR movement: DAX returned ${rawCount} rows but 0 parsed — bcn/month missing. Response keys: ${sampleKeys.join(', ')}`,
+      );
+    }
+
+    if (rows.length === 0) {
+      console.warn(
+        `[revenue] ARR movement: 0 rows parsed (raw=${rawCount}) — keeping previous snapshot, refresh skipped`,
+      );
+      await updateSyncRecord(recordId, 'partial', rawCount, 0, '0 rows parsed — snapshot kept');
+      return;
+    }
+
+    console.log(
+      `[revenue] ARR movement: persisting ${rows.length} rows (raw=${rawCount}) for ${new Set(rows.map((r) => r.bcn)).size} BCNs`,
     );
-    return;
+    await persistArrMovement(rows, refreshedAt);
+    useCustomerRevenueDetailStore.getState().setMovement(rows, refreshedAt);
+    useCustomerRevenueDetailStore.getState().setHydrated(true);
+    await updateSyncRecord(recordId, 'success', rows.length, 0, null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'PowerBI ARR movement refresh failed';
+    await updateSyncRecord(recordId, 'error', 0, 0, message);
+    throw err;
   }
-
-  console.log(
-    `[revenue] ARR movement: persisting ${rows.length} rows (raw=${rawCount}) for ${new Set(rows.map((r) => r.bcn)).size} BCNs`,
-  );
-  await persistArrMovement(rows, refreshedAt);
-  useCustomerRevenueDetailStore.getState().setMovement(rows, refreshedAt);
-  useCustomerRevenueDetailStore.getState().setHydrated(true);
 }

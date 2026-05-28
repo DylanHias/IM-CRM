@@ -1,4 +1,11 @@
-export type SyncType = 'd365' | 'powerbi_arr' | 'push_activities' | 'push_followups' | 'push_opportunities';
+export type SyncType =
+  | 'd365'
+  | 'powerbi_arr'
+  | 'powerbi_insights'
+  | 'powerbi_arr_movement'
+  | 'push_activities'
+  | 'push_followups'
+  | 'push_opportunities';
 export type SyncStatus = 'running' | 'success' | 'partial' | 'error';
 
 export interface SyncRecord {

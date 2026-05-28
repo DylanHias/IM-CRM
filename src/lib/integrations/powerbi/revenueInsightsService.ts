@@ -5,6 +5,7 @@ import {
   RESELLER_SEATS_SNAPSHOT_DAX,
 } from './queries';
 import { getDb } from '@/lib/db/client';
+import { insertSyncRecord, updateSyncRecord } from '@/lib/db/queries/sync';
 import {
   useRevenueInsightsStore,
   type ArrTrendRow,
@@ -210,28 +211,38 @@ export async function loadInsightsFromDb(): Promise<void> {
 
 export async function refreshInsightsFromPowerBi(token: string): Promise<void> {
   const refreshedAt = new Date().toISOString();
+  const recordId = await insertSyncRecord('powerbi_insights', 'running', refreshedAt);
 
-  const [trendResult, seatResult, vendorResult] = await Promise.all([
-    executeDaxQuery(token, null, DATASET_ID, ARR_TREND_SNAPSHOT_DAX),
-    executeDaxQuery(token, null, DATASET_ID, RESELLER_SEATS_SNAPSHOT_DAX),
-    executeDaxQuery(token, null, DATASET_ID, NET_SALES_SNAPSHOT_DAX),
-  ]);
+  try {
+    const [trendResult, seatResult, vendorResult] = await Promise.all([
+      executeDaxQuery(token, null, DATASET_ID, ARR_TREND_SNAPSHOT_DAX),
+      executeDaxQuery(token, null, DATASET_ID, RESELLER_SEATS_SNAPSHOT_DAX),
+      executeDaxQuery(token, null, DATASET_ID, NET_SALES_SNAPSHOT_DAX),
+    ]);
 
-  const arrTrendRows = parseArrTrend(trendResult.rows ?? []);
-  const resellerSeatsRows = parseResellerSeats(seatResult.rows ?? []);
-  const vendorSalesRows = parseVendorSales(vendorResult.rows ?? []);
+    const arrTrendRows = parseArrTrend(trendResult.rows ?? []);
+    const resellerSeatsRows = parseResellerSeats(seatResult.rows ?? []);
+    const vendorSalesRows = parseVendorSales(vendorResult.rows ?? []);
 
-  await Promise.all([
-    persistArrTrend(arrTrendRows, refreshedAt),
-    persistResellerSeats(resellerSeatsRows, refreshedAt),
-    persistVendorSales(vendorSalesRows, refreshedAt),
-  ]);
+    await Promise.all([
+      persistArrTrend(arrTrendRows, refreshedAt),
+      persistResellerSeats(resellerSeatsRows, refreshedAt),
+      persistVendorSales(vendorSalesRows, refreshedAt),
+    ]);
 
-  useRevenueInsightsStore.getState().setSnapshot({
-    arrTrendRows,
-    resellerSeatsRows,
-    vendorSalesRows,
-    lastRefreshedAt: refreshedAt,
-  });
-  useRevenueInsightsStore.getState().setHydrated(true);
+    useRevenueInsightsStore.getState().setSnapshot({
+      arrTrendRows,
+      resellerSeatsRows,
+      vendorSalesRows,
+      lastRefreshedAt: refreshedAt,
+    });
+    useRevenueInsightsStore.getState().setHydrated(true);
+
+    const totalPulled = arrTrendRows.length + resellerSeatsRows.length + vendorSalesRows.length;
+    await updateSyncRecord(recordId, 'success', totalPulled, 0, null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'PowerBI insights refresh failed';
+    await updateSyncRecord(recordId, 'error', 0, 0, message);
+    throw err;
+  }
 }

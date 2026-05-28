@@ -327,7 +327,17 @@ export async function syncPowerBiArr(): Promise<void> {
     await setAppSetting('last_powerbi_arr_sync', now);
     console.log(`[sync] PowerBI ARR: ${updated} customers updated, ${cleared} cleared`);
     store.setPowerBiAccessDenied(false);
-    await updateSyncRecord(recordId, 'success', updated, 0, null);
+    await updateSyncRecord(recordId, 'success', entries.length, 0, null);
+
+    // Also refresh the insights + ARR movement snapshots so they show up in sync history too.
+    await Promise.all([
+      import('@/lib/integrations/powerbi/revenueInsightsService')
+        .then((m) => m.refreshInsightsFromPowerBi(token))
+        .catch((err) => console.error('[sync] PowerBI insights snapshot failed:', err instanceof Error ? err.message : err)),
+      import('@/lib/integrations/powerbi/customerRevenueDetailService')
+        .then((m) => m.refreshArrMovementFromPowerBi(token))
+        .catch((err) => console.error('[sync] PowerBI ARR movement snapshot failed:', err instanceof Error ? err.message : err)),
+    ]);
   } catch (err) {
     if (err instanceof PowerBiAccessError) {
       console.warn(`[sync] PowerBI ARR skipped: ${err.message}`);
