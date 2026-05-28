@@ -269,6 +269,8 @@ async function ensureTablesExist(db: Database): Promise<void> {
       opportunity_number       TEXT,
       created_by_id            TEXT NOT NULL,
       created_by_name          TEXT NOT NULL,
+      secondary_owner_id       TEXT,
+      secondary_owner_name     TEXT,
       created_at               TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at               TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -433,6 +435,8 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['opportunities', 'close_date',                    'TEXT'],
     ['opportunities', 'competitor_id',                 'TEXT'],
     ['opportunities', 'close_description',             'TEXT'],
+    ['opportunities', 'secondary_owner_id',            'TEXT'],
+    ['opportunities', 'secondary_owner_name',          'TEXT'],
     ['customer_revenue', 'active_end_customers',       'INTEGER'],
     ['customer_revenue', 'reseller_account',           'TEXT'],
   ];
@@ -1319,6 +1323,19 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       }
     } else {
       console.warn(`[db] migration v46 left ${v46Failures} step(s) failed — will retry next launch`);
+    }
+  }
+
+  if (currentVersion < 47) {
+    // Primary + secondary opportunity owner columns. ensureAllColumns handles the
+    // ALTERs; here we just reset the watermark so D365 backfills both on next sync.
+    await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'last_d365_sync'`);
+    try {
+      await db.execute(
+        `UPDATE app_settings SET value = '47', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v47 schema_version bump failed:', err);
     }
   }
 }

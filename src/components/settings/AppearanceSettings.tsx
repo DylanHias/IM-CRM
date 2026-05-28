@@ -1,13 +1,15 @@
 'use client';
 
-import { useSettingsStore, type SidebarTab } from '@/store/settingsStore';
+import { useState } from 'react';
+import { useSettingsStore, type SidebarTab, type Density, type FontScale, type FontFamily, type TableRowDensity } from '@/store/settingsStore';
 import { SettingRow } from './SettingRow';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff } from 'lucide-react';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -31,13 +33,19 @@ import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifi
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 
-const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string }[] = [
-  { value: 'blue', label: 'Blue', swatch: 'bg-[hsl(217,87%,51%)]' },
-  { value: 'purple', label: 'Purple', swatch: 'bg-[hsl(263,70%,50%)]' },
-  { value: 'green', label: 'Green', swatch: 'bg-[hsl(142,72%,37%)]' },
-  { value: 'orange', label: 'Orange', swatch: 'bg-[hsl(25,95%,53%)]' },
-  { value: 'red', label: 'Red', swatch: 'bg-[hsl(0,84%,60%)]' },
-  { value: 'pink', label: 'Pink', swatch: 'bg-[hsl(330,81%,60%)]' },
+const ACCENT_COLORS: { value: AccentColor; label: string; swatch: string; hex: string }[] = [
+  { value: 'blue', label: 'Blue', swatch: 'bg-[hsl(217,87%,51%)]', hex: '#1f6feb' },
+  { value: 'purple', label: 'Purple', swatch: 'bg-[hsl(263,70%,50%)]', hex: '#7c3aed' },
+  { value: 'green', label: 'Green', swatch: 'bg-[hsl(142,72%,37%)]', hex: '#16a34a' },
+  { value: 'orange', label: 'Orange', swatch: 'bg-[hsl(25,95%,53%)]', hex: '#f97316' },
+  { value: 'red', label: 'Red', swatch: 'bg-[hsl(0,84%,60%)]', hex: '#ef4444' },
+  { value: 'pink', label: 'Pink', swatch: 'bg-[hsl(330,81%,60%)]', hex: '#ec4899' },
+];
+
+const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
 ];
 
 const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }> = {
@@ -52,9 +60,49 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
   '/timeline': { label: 'Timeline', icon: Clock },
 };
 
+function applyThemePreview(theme: Theme) {
+  const root = document.documentElement;
+  let resolved: 'light' | 'dark';
+  if (theme === 'system') {
+    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  } else {
+    resolved = theme;
+  }
+  root.classList.toggle('dark', resolved === 'dark');
+  root.style.colorScheme = resolved;
+}
+
+function applyAccentPreview(accent: AccentColor) {
+  const root = document.documentElement;
+  root.classList.remove('accent-blue', 'accent-purple', 'accent-green', 'accent-orange', 'accent-red', 'accent-pink');
+  if (accent !== 'blue') root.classList.add(`accent-${accent}`);
+}
+
 export function AppearanceSettings() {
-  const { theme, accentColor, compactMode, sidebarDefaultExpanded, sidebarOrder, sidebarHiddenTabs, updateSetting, resetSection } =
-    useSettingsStore();
+  const {
+    theme,
+    accentColor,
+    customAccentHex,
+    density,
+    fontScale,
+    fontFamily,
+    tableRowDensity,
+    highContrast,
+    reduceMotion,
+    autoThemeByTime,
+    autoThemeDarkStartHour,
+    autoThemeLightStartHour,
+    defaultLandingTab,
+    sidebarDefaultExpanded,
+    sidebarRememberLastState,
+    sidebarOrder,
+    sidebarHiddenTabs,
+    updateSetting,
+    resetSection,
+  } = useSettingsStore();
+
+  const [hexDraft, setHexDraft] = useState(customAccentHex ?? '');
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -68,43 +116,120 @@ export function AppearanceSettings() {
     updateSetting('sidebarOrder', arrayMove(sidebarOrder, oldIndex, newIndex));
   };
 
+  const resetThemeColors = () => {
+    updateSetting('theme', 'light');
+    updateSetting('accentColor', 'blue');
+    updateSetting('customAccentHex', null);
+    updateSetting('highContrast', false);
+    updateSetting('autoThemeByTime', false);
+    updateSetting('autoThemeDarkStartHour', 19);
+    updateSetting('autoThemeLightStartHour', 7);
+    setHexDraft('');
+  };
+
+  const resetLayout = () => {
+    updateSetting('density', 'comfortable');
+    updateSetting('fontScale', 'md');
+    updateSetting('fontFamily', 'sans');
+    updateSetting('tableRowDensity', 'comfortable');
+    updateSetting('reduceMotion', false);
+  };
+
+  const resetSidebar = () => {
+    updateSetting('sidebarDefaultExpanded', false);
+    updateSetting('sidebarRememberLastState', true);
+    updateSetting('defaultLandingTab', '/dashboard');
+    updateSetting('sidebarOrder', Object.keys(SIDEBAR_TAB_META) as SidebarTab[]);
+    updateSetting('sidebarHiddenTabs', []);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold">Appearance</h2>
-        <ConfirmPopover message="Reset appearance settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('appearance')}>
+        <ConfirmPopover message="Reset all appearance settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('appearance')}>
           <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
             <RotateCcw size={12} className="mr-1" />
-            Reset
+            Reset all
           </Button>
         </ConfirmPopover>
       </div>
 
-      <div className="space-y-5">
-        <SettingRow label="Theme" description="Choose light, dark, or match your system">
-          <Select value={theme} onValueChange={(v) => updateSetting('theme', v as Theme)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="light">Light</SelectItem>
-              <SelectItem value="dark">Dark</SelectItem>
-              <SelectItem value="system">System</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* THEME & COLORS */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Theme & colors</p>
+          <ConfirmPopover message="Reset theme and color settings?" confirmLabel="Reset" onConfirm={resetThemeColors}>
+            <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground">Reset</Button>
+          </ConfirmPopover>
+        </div>
+
+        <SettingRow label="Theme" description="Light, dark, or follow your system">
+          <div className="flex gap-1 rounded-lg border bg-muted/30 p-0.5">
+            {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => updateSetting('theme', value)}
+                onMouseEnter={() => !autoThemeByTime && applyThemePreview(value)}
+                onMouseLeave={() => !autoThemeByTime && applyThemePreview(theme)}
+                title={label}
+                className={cn(
+                  'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs transition-colors',
+                  theme === value ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            ))}
+          </div>
         </SettingRow>
 
+        <SettingRow label="Auto-theme by time of day" description="Switch to dark in the evening, light in the morning">
+          <Switch checked={autoThemeByTime} onCheckedChange={(v) => updateSetting('autoThemeByTime', v)} />
+        </SettingRow>
+
+        {autoThemeByTime && (
+          <SettingRow label="Dark from / light from" description="Hour (0–23) to switch to each theme">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                value={autoThemeDarkStartHour}
+                onChange={(e) => updateSetting('autoThemeDarkStartHour', Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)))}
+                className="w-16 h-8 text-xs"
+              />
+              <span className="text-xs text-muted-foreground">/</span>
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                value={autoThemeLightStartHour}
+                onChange={(e) => updateSetting('autoThemeLightStartHour', Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)))}
+                className="w-16 h-8 text-xs"
+              />
+            </div>
+          </SettingRow>
+        )}
+
         <SettingRow label="Accent color" description="Primary color used across the app">
-          <div className="flex gap-1.5">
+          <div className="flex items-center gap-1.5">
             {ACCENT_COLORS.map((c) => (
               <button
                 key={c.value}
                 title={c.label}
-                onClick={() => updateSetting('accentColor', c.value)}
+                onClick={() => {
+                  updateSetting('accentColor', c.value);
+                  updateSetting('customAccentHex', null);
+                  setHexDraft('');
+                }}
+                onMouseEnter={() => !customAccentHex && applyAccentPreview(c.value)}
+                onMouseLeave={() => !customAccentHex && applyAccentPreview(accentColor)}
                 className={cn(
                   'w-6 h-6 rounded-full transition-all',
                   c.swatch,
-                  accentColor === c.value
+                  !customAccentHex && accentColor === c.value
                     ? 'ring-2 ring-offset-2 ring-offset-background ring-foreground/30 scale-110'
                     : 'hover:scale-105'
                 )}
@@ -113,14 +238,146 @@ export function AppearanceSettings() {
           </div>
         </SettingRow>
 
-        <SettingRow label="Compact mode" description="Reduce spacing and font sizes">
-          <Switch
-            checked={compactMode}
-            onCheckedChange={(v) => updateSetting('compactMode', v)}
-          />
+        <SettingRow label="Custom accent (hex)" description="Override presets with a custom color, e.g. #ff6b35">
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={hexDraft}
+              onChange={(e) => setHexDraft(e.target.value)}
+              placeholder="#1f6feb"
+              className="w-28 h-8 text-xs font-mono"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => {
+                const v = hexDraft.trim();
+                if (/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.test(v)) {
+                  updateSetting('customAccentHex', v.startsWith('#') ? v : `#${v}`);
+                }
+              }}
+            >
+              Apply
+            </Button>
+            {customAccentHex && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => {
+                  updateSetting('customAccentHex', null);
+                  setHexDraft('');
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </SettingRow>
 
-        <SettingRow label="Sidebar expanded by default" description="Start with sidebar expanded on launch">
+        <SettingRow label="High contrast" description="Stronger borders and muted text for readability">
+          <Switch checked={highContrast} onCheckedChange={(v) => updateSetting('highContrast', v)} />
+        </SettingRow>
+      </div>
+
+      <Separator />
+
+      {/* LAYOUT & TYPOGRAPHY */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Layout & typography</p>
+          <ConfirmPopover message="Reset layout settings?" confirmLabel="Reset" onConfirm={resetLayout}>
+            <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground">Reset</Button>
+          </ConfirmPopover>
+        </div>
+
+        <SettingRow label="Density" description="Controls spacing across the app">
+          <Select value={density} onValueChange={(v) => updateSetting('density', v as Density)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="comfortable">Comfortable</SelectItem>
+              <SelectItem value="cozy">Cozy</SelectItem>
+              <SelectItem value="compact">Compact</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+
+        <SettingRow label="Font size" description="Scale all text proportionally">
+          <Select value={fontScale} onValueChange={(v) => updateSetting('fontScale', v as FontScale)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sm">Small</SelectItem>
+              <SelectItem value="md">Medium</SelectItem>
+              <SelectItem value="lg">Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+
+        <SettingRow label="UI font" description="Font family used across the app">
+          <Select value={fontFamily} onValueChange={(v) => updateSetting('fontFamily', v as FontFamily)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sans">DM Sans</SelectItem>
+              <SelectItem value="system">System</SelectItem>
+              <SelectItem value="serif">Serif</SelectItem>
+              <SelectItem value="mono">Monospace</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+
+        <SettingRow label="Table row density" description="Row padding in all data tables">
+          <Select value={tableRowDensity} onValueChange={(v) => updateSetting('tableRowDensity', v as TableRowDensity)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="comfortable">Comfortable</SelectItem>
+              <SelectItem value="cozy">Cozy</SelectItem>
+              <SelectItem value="compact">Compact</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingRow>
+
+        <SettingRow label="Reduce motion" description="Disable transitions and animations">
+          <Switch checked={reduceMotion} onCheckedChange={(v) => updateSetting('reduceMotion', v)} />
+        </SettingRow>
+      </div>
+
+      <Separator />
+
+      {/* SIDEBAR & NAVIGATION */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sidebar & navigation</p>
+          <ConfirmPopover message="Reset sidebar settings?" confirmLabel="Reset" onConfirm={resetSidebar}>
+            <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground">Reset</Button>
+          </ConfirmPopover>
+        </div>
+
+        <SettingRow label="Default landing tab" description="The page that opens when you launch the app">
+          <Select value={defaultLandingTab} onValueChange={(v) => updateSetting('defaultLandingTab', v as SidebarTab)}>
+            <SelectTrigger className="w-[180px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(SIDEBAR_TAB_META) as SidebarTab[]).map((tab) => (
+                <SelectItem key={tab} value={tab}>{SIDEBAR_TAB_META[tab].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
+
+        <SettingRow label="Remember last sidebar state" description="When off, the sidebar starts in the default state on every launch">
+          <Switch checked={sidebarRememberLastState} onCheckedChange={(v) => updateSetting('sidebarRememberLastState', v)} />
+        </SettingRow>
+
+        <SettingRow label="Sidebar expanded by default" description="Used when 'remember last state' is off">
           <Switch
             checked={sidebarDefaultExpanded}
             onCheckedChange={(v) => updateSetting('sidebarDefaultExpanded', v)}

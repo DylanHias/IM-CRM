@@ -6,11 +6,16 @@ import type { Stage } from '@/lib/opportunityRules';
 
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
+export type Density = 'comfortable' | 'cozy' | 'compact';
+export type FontScale = 'sm' | 'md' | 'lg';
+export type FontFamily = 'sans' | 'system' | 'serif' | 'mono';
+export type TableRowDensity = 'comfortable' | 'cozy' | 'compact';
 type ActivityType = 'meeting' | 'visit' | 'call' | 'note';
 type ActivityStatusDefault = 'open' | 'completed';
 type CallDirection = 'outgoing' | 'incoming';
 type OpportunityCurrency = 'EUR' | 'USD';
 type OpportunityCountry = 'Belgium' | 'Netherlands';
+export type SyncToastVerbosity = 'silent' | 'errors' | 'all';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
@@ -32,8 +37,20 @@ interface SettingsState {
   // Appearance
   theme: Theme;
   accentColor: AccentColor;
+  customAccentHex: string | null;
   compactMode: boolean;
+  density: Density;
+  fontScale: FontScale;
+  fontFamily: FontFamily;
+  tableRowDensity: TableRowDensity;
+  highContrast: boolean;
+  reduceMotion: boolean;
+  autoThemeByTime: boolean;
+  autoThemeDarkStartHour: number;
+  autoThemeLightStartHour: number;
+  defaultLandingTab: SidebarTab;
   sidebarDefaultExpanded: boolean;
+  sidebarRememberLastState: boolean;
   sidebarOrder: SidebarTab[];
   sidebarHiddenTabs: SidebarTab[];
 
@@ -56,13 +73,31 @@ interface SettingsState {
   overdueAlertsOnLaunch: boolean;
   dueTodayAlertsOnLaunch: boolean;
   opportunityStaleReminderDays: number;
+  opportunityExpiringReminderDays: number;
+  dailyDigestOnLaunch: boolean;
   showConnectivityToasts: boolean;
   showUpdateToasts: boolean;
+  muteAllNonCriticalToasts: boolean;
+  syncToastVerbosity: SyncToastVerbosity;
+  syncFailureNotificationThreshold: number;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  nativeOsNotifications: boolean;
+  soundOnAlertEnabled: boolean;
+  toastDurationSeconds: number;
 
   // Sync
   autoSyncOnLaunch: boolean;
+  syncPaused: boolean;
+  syncOnWindowFocus: boolean;
   syncIntervalMinutes: number;
   syncPendingIntervalMinutes: number;
+  powerBiRefreshIntervalMinutes: number;
+  syncScopeD365: boolean;
+  syncScopePowerBi: boolean;
+  syncScopePushPending: boolean;
+  syncHistoryRetentionDays: number;
   showSyncToasts: boolean;
 
   // Data Management
@@ -90,8 +125,20 @@ type SettingsSection = 'appearance' | 'dataDefaults' | 'notifications' | 'sync' 
 const APPEARANCE_DEFAULTS = {
   theme: 'light' as Theme,
   accentColor: 'blue' as AccentColor,
+  customAccentHex: null as string | null,
   compactMode: false,
+  density: 'comfortable' as Density,
+  fontScale: 'md' as FontScale,
+  fontFamily: 'sans' as FontFamily,
+  tableRowDensity: 'comfortable' as TableRowDensity,
+  highContrast: false,
+  reduceMotion: false,
+  autoThemeByTime: false,
+  autoThemeDarkStartHour: 19,
+  autoThemeLightStartHour: 7,
+  defaultLandingTab: '/dashboard' as SidebarTab,
   sidebarDefaultExpanded: false,
+  sidebarRememberLastState: true,
   sidebarOrder: DEFAULT_SIDEBAR_ORDER as SidebarTab[],
   sidebarHiddenTabs: [] as SidebarTab[],
 };
@@ -119,12 +166,30 @@ const NOTIFICATION_DEFAULTS = {
   showConnectivityToasts: true,
   showUpdateToasts: true,
   opportunityStaleReminderDays: 30,
+  opportunityExpiringReminderDays: 14,
+  dailyDigestOnLaunch: false,
+  muteAllNonCriticalToasts: false,
+  syncToastVerbosity: 'all' as SyncToastVerbosity,
+  syncFailureNotificationThreshold: 1,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+  nativeOsNotifications: false,
+  soundOnAlertEnabled: false,
+  toastDurationSeconds: 4,
 };
 
 const SYNC_DEFAULTS = {
   autoSyncOnLaunch: false,
+  syncPaused: false,
+  syncOnWindowFocus: false,
   syncIntervalMinutes: 30,
   syncPendingIntervalMinutes: 15,
+  powerBiRefreshIntervalMinutes: 120,
+  syncScopeD365: true,
+  syncScopePowerBi: true,
+  syncScopePushPending: true,
+  syncHistoryRetentionDays: 90,
 };
 
 const DATA_MANAGEMENT_DEFAULTS = {
@@ -242,15 +307,20 @@ export const useSettingsStore = create<SettingsState>()(
       },
       merge: (persisted, current) => {
         const merged = { ...current, ...(persisted as Partial<SettingsState>) };
-        const raw = (persisted as Partial<SettingsState>).sidebarOrder;
+        const p = persisted as Partial<SettingsState>;
+        const raw = p.sidebarOrder;
         if (raw) {
           const valid = raw.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
           const missing = DEFAULT_SIDEBAR_ORDER.filter((t) => !valid.includes(t));
           merged.sidebarOrder = [...valid, ...missing];
         }
-        const rawHidden = (persisted as Partial<SettingsState>).sidebarHiddenTabs;
+        const rawHidden = p.sidebarHiddenTabs;
         if (rawHidden) {
           merged.sidebarHiddenTabs = rawHidden.filter((t) => (DEFAULT_SIDEBAR_ORDER as string[]).includes(t));
+        }
+        // Migrate legacy compactMode → density when density was never set
+        if (p.density === undefined && p.compactMode === true) {
+          merged.density = 'compact';
         }
         return merged;
       },

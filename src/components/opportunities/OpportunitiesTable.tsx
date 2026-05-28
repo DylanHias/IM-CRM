@@ -1,6 +1,6 @@
 'use client';
 
-import { Target, ChevronRight, AlertTriangle, Calendar, Building2 } from 'lucide-react';
+import { Target, ChevronRight, AlertTriangle, Calendar, Building2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
 import styled, { css } from 'styled-components';
@@ -76,11 +76,11 @@ const Card = styled.div`
   position: relative;
   display: grid;
   grid-template-columns: 32px 1fr auto 14px;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   column-gap: 12px;
   row-gap: 5px;
   align-items: center;
-  padding: 10px 16px;
+  padding: 12px 16px;
   cursor: pointer;
   border-bottom: 1px solid hsl(var(--border) / 0.7);
   transition: background-color 0.12s ease;
@@ -92,7 +92,7 @@ const Card = styled.div`
 
 const IconWrap = styled.div<{ $bg: string; $fg: string }>`
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
   width: 32px;
   height: 32px;
   border-radius: 9px;
@@ -212,13 +212,58 @@ const ExpiryChip = styled.span<{ $tone: 'overdue' | 'soon' | 'near' | 'neutral' 
   }
 `;
 
-const CreatorLabel = styled.span`
+const OwnersRow = styled.div`
+  grid-column: 2;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+`;
+
+const OwnerPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11.5px;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground) / 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 180px;
+`;
+
+const OwnerBadge = styled.span<{ $rank: 1 | 2 }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: ${(p) => (p.$rank === 1
+    ? 'hsl(var(--primary) / 0.18)'
+    : 'hsl(var(--muted-foreground) / 0.2)')};
+  color: ${(p) => (p.$rank === 1
+    ? 'hsl(var(--primary))'
+    : 'hsl(var(--muted-foreground))')};
+  flex-shrink: 0;
+`;
+
+const OwnerName = styled.span`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const OwnerEmpty = styled.span`
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground) / 0.6);
+  font-style: italic;
 `;
 
 const StaleChip = styled.span`
@@ -236,7 +281,7 @@ const StaleChip = styled.span`
 
 const Right = styled.div`
   grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -264,7 +309,7 @@ const ValuePlaceholder = styled.div`
 
 const Chevron = styled.div`
   grid-column: 4;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
   display: flex;
   align-items: center;
   color: hsl(var(--muted-foreground) / 0.7);
@@ -349,15 +394,34 @@ export function OpportunitiesTable({ opportunities, customerMap, onEdit }: Oppor
                       </StaleChip>
                     </>
                   )}
-                  {opp.createdByName && (
-                    <>
-                      <MetaSep>·</MetaSep>
-                      <CreatorLabel title={`Created by ${opp.createdByName}`}>
-                        {formatDisplayName(opp.createdByName)}
-                      </CreatorLabel>
-                    </>
-                  )}
                 </MetaRow>
+
+                <OwnersRow>
+                  {opp.createdByName ? (
+                    <OwnerPill title={`Primary owner: ${opp.createdByName}`}>
+                      <OwnerBadge $rank={1} aria-label="Primary owner">1</OwnerBadge>
+                      <User size={11} strokeWidth={2.25} />
+                      <OwnerName>{formatDisplayName(opp.createdByName)}</OwnerName>
+                    </OwnerPill>
+                  ) : (
+                    <OwnerPill>
+                      <OwnerBadge $rank={1} aria-label="Primary owner">1</OwnerBadge>
+                      <OwnerEmpty>Unassigned</OwnerEmpty>
+                    </OwnerPill>
+                  )}
+                  {opp.secondaryOwnerName ? (
+                    <OwnerPill title={`Secondary owner: ${opp.secondaryOwnerName}`}>
+                      <OwnerBadge $rank={2} aria-label="Secondary owner">2</OwnerBadge>
+                      <User size={11} strokeWidth={2.25} />
+                      <OwnerName>{formatDisplayName(opp.secondaryOwnerName)}</OwnerName>
+                    </OwnerPill>
+                  ) : (
+                    <OwnerPill>
+                      <OwnerBadge $rank={2} aria-label="Secondary owner">2</OwnerBadge>
+                      <OwnerEmpty>No secondary owner</OwnerEmpty>
+                    </OwnerPill>
+                  )}
+                </OwnersRow>
 
                 <Right>
                   <Badge variant={statusVariant(opp.status)} className="text-[10px] px-2 py-0.5">

@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=JSON.parse(localStorage.getItem('crm-ui-store')||'{}');if(d.state&&d.state.theme==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'}}catch(e){}})()`,
+            __html: `(function(){try{var d=JSON.parse(localStorage.getItem('crm-settings-store')||'{}').state||{};var t=d.theme||'light';if(d.autoThemeByTime){var h=new Date().getHours();var ds=d.autoThemeDarkStartHour||19;var ls=d.autoThemeLightStartHour||7;t=(ds>ls?(h>=ds||h<ls):(h>=ds&&h<ls))?'dark':'light';}else if(t==='system'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}if(d.density)document.documentElement.classList.add('density-'+d.density);if(d.fontScale)document.documentElement.classList.add('font-scale-'+d.fontScale);if(d.highContrast)document.documentElement.classList.add('high-contrast');if(d.reduceMotion)document.documentElement.classList.add('reduce-motion');if(d.tableRowDensity)document.documentElement.setAttribute('data-table-density',d.tableRowDensity);if(d.accentColor&&d.accentColor!=='blue'&&!d.customAccentHex)document.documentElement.classList.add('accent-'+d.accentColor);}catch(e){}})()`,
           }}
         />
       </head>

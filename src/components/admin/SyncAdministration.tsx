@@ -83,7 +83,7 @@ export function SyncAdministration() {
     setSyncing(true);
     try {
       await resetSyncWatermark();
-      await triggerSync();
+      await triggerSync({ d365: true, powerBi: true, pushPending: true });
       const showToasts = useSettingsStore.getState().showSyncToasts;
       const errors = useSyncStore.getState().syncErrors;
       if (showToasts) {

@@ -97,6 +97,8 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
     closeDate: null,
     competitorId: null,
     closeDescription: null,
+    secondaryOwnerId: data.secondaryOwnerId,
+    secondaryOwnerName: data.secondaryOwnerName,
   });
 
   const handleCreate = async (data: WizardFormData) => {

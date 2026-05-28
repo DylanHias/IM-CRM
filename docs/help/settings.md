@@ -12,11 +12,29 @@ Access Settings from the user menu at the bottom of the sidebar, or press the sh
 
 ## Appearance
 
-- **Theme** — Choose between Light, Dark, or System (follows your OS setting)
-- **Accent color** — Pick your preferred accent color: Blue, Purple, Green, Orange, Red, or Pink
-- **Sidebar default state** — Choose whether the sidebar starts expanded or collapsed
-- **Sidebar order** — Drag and drop navigation items to reorder them however you like; use the eye icon on each item to show or hide it from the sidebar
-- **Reset appearance** — Restore all appearance settings to defaults
+**Theme & colors**
+- **Theme** — Choose between Light, Dark, or System (follows your OS setting). Hover any option to preview before clicking.
+- **Auto-theme by time of day** — When on, the app automatically switches to dark mode in the evening and light mode in the morning; configure the hours
+- **Accent color** — Pick your preferred preset: Blue, Purple, Green, Orange, Red, or Pink. Hover any swatch to preview.
+- **Custom accent (hex)** — Enter any hex value (e.g. `#ff6b35`) to override the presets with a custom color
+- **High contrast** — Stronger borders and darker muted text for easier reading
+
+**Layout & typography**
+- **Density** — Comfortable, Cozy, or Compact. Controls spacing across the entire app.
+- **Font size** — Small, Medium, or Large. Scales all text proportionally.
+- **UI font** — Choose between DM Sans (default), System, Serif, or Monospace
+- **Table row density** — Comfortable, Cozy, or Compact row padding for every data table
+- **Reduce motion** — Disable transitions and animations across the app
+
+**Sidebar & navigation**
+- **Default landing tab** — The page that opens when you launch the app
+- **Remember last sidebar state** — When on, the sidebar reopens in whatever state you left it. When off, it starts in the default state on every launch.
+- **Sidebar expanded by default** — The starting state used when "remember last state" is off
+- **Sidebar order** — Drag and drop navigation items to reorder them; use the eye icon to show or hide a tab
+
+**Resets**
+- **Reset all** — Restore every appearance setting to defaults
+- **Per-section reset** — Each subsection has its own Reset button for targeted resets
 
 ## Data & Defaults
 

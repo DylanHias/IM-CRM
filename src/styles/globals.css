@@ -236,12 +236,62 @@
     --accent-foreground: 330 75% 75%;
   }
 
-  /* Compact mode */
+  /* Compact mode (legacy — kept for back-compat) */
   .compact {
     font-size: 13px;
   }
   .compact .compact\:p-4 {
     padding: 16px;
+  }
+
+  /* Density presets (replaces compactMode) */
+  .density-cozy { font-size: 13.5px; }
+  .density-compact { font-size: 13px; }
+  .density-compact .compact\:p-4 { padding: 16px; }
+
+  /* Font scale - independent of density */
+  html.font-scale-sm { font-size: 14px; }
+  html.font-scale-md { font-size: 16px; }
+  html.font-scale-lg { font-size: 18px; }
+
+  /* Font family overrides */
+  body.font-system { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Arial, sans-serif; }
+  body.font-serif { font-family: var(--font-serif), Georgia, 'Times New Roman', serif; }
+  body.font-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; }
+
+  /* High contrast - tightens muted/border so faint elements stand out */
+  .high-contrast {
+    --border: 220 14% 60%;
+    --muted-foreground: 220 14% 28%;
+    --input: 220 14% 50%;
+  }
+  .high-contrast.dark {
+    --border: 220 14% 60%;
+    --muted-foreground: 220 14% 80%;
+    --input: 220 14% 50%;
+  }
+
+  /* Reduce motion - kills transitions and animations */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Table row density - applies to all tables under root */
+  html[data-table-density="cozy"] table tbody tr td,
+  html[data-table-density="cozy"] table thead tr th {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  html[data-table-density="compact"] table tbody tr td,
+  html[data-table-density="compact"] table thead tr th {
+    padding-top: 3px;
+    padding-bottom: 3px;
   }
 
   /* Toast theme overrides */

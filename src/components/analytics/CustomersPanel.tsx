@@ -37,7 +37,7 @@ const distConfig = {
   count: { label: 'Customers', color: 'hsl(var(--primary))' },
 };
 
-const BUCKET_ORDER = ['No ARR', '< €10k', '€10k–50k', '€50k–200k', '€200k+'];
+const BUCKET_ORDER = ['< €10k', '€10k–50k', '€50k–200k', '€200k+'];
 
 function ArrByDimChart({ data }: { data: ArrByDimensionPoint[] }) {
   if (data.length === 0) {
@@ -97,6 +97,13 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         return { bucket, count: found?.count ?? 0 };
       }).filter((d) => d.count > 0)
     : [];
+
+  const customersWithArr = c
+    ? c.arrDistribution.reduce((sum, d) => sum + d.count, 0)
+    : 0;
+  const customersWithoutArr = c
+    ? Math.max(0, c.stale.total - customersWithArr)
+    : 0;
 
   const cloudPieData = c
     ? c.cloudBySegment.map((s, i) => [
@@ -221,7 +228,11 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         {/* ARR histogram */}
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Customers by ARR Bucket</p>
-          <p className="text-xs text-muted-foreground mb-3">Distribution across ARR ranges</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            {customersWithArr > 0
+              ? `${customersWithArr.toLocaleString('nl-BE')} customer${customersWithArr !== 1 ? 's' : ''} with ARR${customersWithoutArr > 0 ? ` · ${customersWithoutArr.toLocaleString('nl-BE')} without ARR data` : ''}`
+              : 'Distribution across ARR ranges'}
+          </p>
           {arrDist.length > 0 ? (
             <ChartContainer config={distConfig} className="aspect-auto h-[180px] w-full">
               <BarChart data={arrDist} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>

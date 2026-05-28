@@ -156,6 +156,8 @@ export function createOpportunity(overrides?: Partial<Opportunity>): Opportunity
     closeDate: null,
     competitorId: null,
     closeDescription: null,
+    secondaryOwnerId: null,
+    secondaryOwnerName: null,
     ...overrides,
   };
 }

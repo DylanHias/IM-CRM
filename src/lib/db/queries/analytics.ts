@@ -229,8 +229,9 @@ async function queryArrByColumn(column: string): Promise<ArrByDimensionPoint[]> 
        COALESCE(SUM(arr), 0) as totalArr,
        COUNT(*) as customerCount
      FROM customers
-     WHERE status = 'active' AND ${column} IS NOT NULL AND ${column} != ''
+     WHERE status = 'active' AND arr > 0 AND ${column} IS NOT NULL AND ${column} != ''
      GROUP BY ${column}
+     HAVING totalArr > 0
      ORDER BY totalArr DESC`,
   );
 }
@@ -271,14 +272,13 @@ export async function queryCustomerHealthData(): Promise<CustomerHealthData> {
     db.select<{ bucket: string; count: number }[]>(
       `SELECT
          CASE
-           WHEN arr IS NULL OR arr = 0 THEN 'No ARR'
            WHEN arr < 10000 THEN '< €10k'
            WHEN arr < 50000 THEN '€10k–50k'
            WHEN arr < 200000 THEN '€50k–200k'
            ELSE '€200k+'
          END as bucket,
          COUNT(*) as count
-       FROM customers WHERE status = 'active'
+       FROM customers WHERE status = 'active' AND arr > 0
        GROUP BY bucket`,
     ),
 

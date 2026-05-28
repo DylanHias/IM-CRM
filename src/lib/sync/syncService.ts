@@ -31,6 +31,13 @@ import type { Activity, FollowUp, Opportunity } from '@/types/entities';
 import { resolveOpportunityOptionValues, resolveOpportunityLookupValues } from '@/lib/sync/directPushService';
 
 let syncInFlight = false;
+let powerBiSyncInFlight = false;
+
+export interface SyncScope {
+  d365?: boolean;
+  powerBi?: boolean;
+  pushPending?: boolean;
+}
 
 export async function resetSyncWatermark(): Promise<void> {
   await setAppSetting('last_d365_sync', '');
@@ -71,6 +78,9 @@ export async function pushPendingChanges(token: string): Promise<void> {
     await pushPendingOpportunities(token);
     await pushPendingDeletes(token);
 
+    const now = new Date().toISOString();
+    await setAppSetting('last_pending_push', now);
+
     const records = await queryRecentSyncRecords(20);
     store.setRecentRecords(records);
     console.log('[sync] Pending push complete');
@@ -83,7 +93,7 @@ export async function pushPendingChanges(token: string): Promise<void> {
   }
 }
 
-export async function runFullSync(token: string): Promise<void> {
+export async function runFullSync(token: string, scope: SyncScope = {}): Promise<void> {
   if (!isTauriApp()) {
     console.warn('[sync] Not in Tauri — skipping sync');
     return;
@@ -92,39 +102,64 @@ export async function runFullSync(token: string): Promise<void> {
     console.warn('[sync] runFullSync skipped — another sync is already running');
     return;
   }
+  const { d365 = true, powerBi = true, pushPending = true } = scope;
+  if (!d365 && !powerBi && !pushPending) {
+    console.warn('[sync] runFullSync skipped — all scopes disabled');
+    return;
+  }
   syncInFlight = true;
 
   const store = useSyncStore.getState();
   store.setSyncing(true);
   store.clearSyncErrors();
-  console.log('[sync] Starting full sync');
+  console.log(`[sync] Starting sync (scope: d365=${d365}, powerBi=${powerBi}, pushPending=${pushPending})`);
 
   try {
-    await Promise.all([syncOptionSets(token), syncLookupTables(token), syncCloudBeluxUsers(token), syncBelgiumTeamUsers(token)]);
-
-    // Resolve the caller's D365 system user ID once and persist it so analytics
-    // queries can match D365-synced activities (which store the D365 GUID as created_by_id).
     let resolvedCallerD365Id: string | undefined;
-    try {
-      const adapter = getD365Adapter();
-      resolvedCallerD365Id = await adapter.whoAmI(token);
-      store.setCallerD365UserId(resolvedCallerD365Id);
-      console.log(`[sync] Persisted caller D365 systemuserid: ${resolvedCallerD365Id}`);
-    } catch (err) {
-      console.error('[sync] Failed to resolve caller D365 ID via WhoAmI:', err instanceof Error ? err.message : err);
+
+    if (d365) {
+      await Promise.all([syncOptionSets(token), syncLookupTables(token), syncCloudBeluxUsers(token), syncBelgiumTeamUsers(token)]);
+
+      // Resolve the caller's D365 system user ID once and persist it so analytics
+      // queries can match D365-synced activities (which store the D365 GUID as created_by_id).
+      try {
+        const adapter = getD365Adapter();
+        resolvedCallerD365Id = await adapter.whoAmI(token);
+        store.setCallerD365UserId(resolvedCallerD365Id);
+        console.log(`[sync] Persisted caller D365 systemuserid: ${resolvedCallerD365Id}`);
+      } catch (err) {
+        console.error('[sync] Failed to resolve caller D365 ID via WhoAmI:', err instanceof Error ? err.message : err);
+      }
+
+      await syncD365(token);
     }
 
-    await syncD365(token);
-    await syncPowerBiArr();
-    await pushPendingContacts(token);
-    await pushPendingActivities(token, resolvedCallerD365Id);
-    await pushPendingFollowUps(token);
-    await pushPendingOpportunities(token);
-    await pushPendingDeletes(token);
+    if (powerBi) {
+      await syncPowerBiArr();
+    }
+
+    if (pushPending) {
+      if (!resolvedCallerD365Id) {
+        try {
+          const adapter = getD365Adapter();
+          resolvedCallerD365Id = await adapter.whoAmI(token);
+          store.setCallerD365UserId(resolvedCallerD365Id);
+        } catch (err) {
+          console.error('[sync] Failed to resolve caller D365 ID via WhoAmI:', err instanceof Error ? err.message : err);
+        }
+      }
+      await pushPendingContacts(token);
+      await pushPendingActivities(token, resolvedCallerD365Id);
+      await pushPendingFollowUps(token);
+      await pushPendingOpportunities(token);
+      await pushPendingDeletes(token);
+      const now = new Date().toISOString();
+      await setAppSetting('last_pending_push', now);
+    }
 
     const records = await queryRecentSyncRecords(20);
     store.setRecentRecords(records);
-    console.log('[sync] Full sync complete');
+    console.log('[sync] Sync complete');
   } catch (err) {
     console.error('[sync] Full sync failed:', err instanceof Error ? err.message : err);
     throw err;
@@ -287,11 +322,16 @@ async function syncD365(token: string): Promise<void> {
 }
 
 export async function syncPowerBiArr(): Promise<void> {
+  if (powerBiSyncInFlight) {
+    console.warn('[sync] syncPowerBiArr skipped — another Power BI sync is already running');
+    return;
+  }
   const store = useSyncStore.getState();
   if (store.powerBiAccessDenied) {
     console.log('[sync] PowerBI ARR skipped: access previously denied — use Sync page banner to request access');
     return;
   }
+  powerBiSyncInFlight = true;
   const startedAt = new Date().toISOString();
   const recordId = await insertSyncRecord('powerbi_arr', 'running', startedAt);
   let updated = 0;
@@ -358,6 +398,8 @@ export async function syncPowerBiArr(): Promise<void> {
       console.error('[sync] Failed to update sync record after PowerBI error:', recordErr instanceof Error ? recordErr.message : recordErr);
     }
     store.addSyncError({ id: uuidv4(), syncType: 'powerbi_arr', message: `ARR: ${message}`, occurredAt: new Date().toISOString() });
+  } finally {
+    powerBiSyncInFlight = false;
   }
 }
 

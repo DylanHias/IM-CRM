@@ -69,3 +69,33 @@ export async function setAppSetting(key: string, value: string): Promise<void> {
     [key, value]
   );
 }
+
+export async function deleteSyncRecordsOlderThan(days: number): Promise<number> {
+  if (!Number.isFinite(days) || days <= 0) return 0;
+  const db = await getDb();
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+  const result = await db.execute(
+    `DELETE FROM sync_records WHERE created_at < $1`,
+    [cutoff]
+  );
+  return result.rowsAffected ?? 0;
+}
+
+export interface LastSyncTimes {
+  d365: string | null;
+  powerBi: string | null;
+  pendingPush: string | null;
+}
+
+export async function getLastSyncTimes(): Promise<LastSyncTimes> {
+  const [d365, powerBi, pendingPush] = await Promise.all([
+    getAppSetting('last_d365_sync'),
+    getAppSetting('last_powerbi_arr_sync'),
+    getAppSetting('last_pending_push'),
+  ]);
+  return {
+    d365: d365 && d365.length > 0 ? d365 : null,
+    powerBi: powerBi && powerBi.length > 0 ? powerBi : null,
+    pendingPush: pendingPush && pendingPush.length > 0 ? pendingPush : null,
+  };
+}

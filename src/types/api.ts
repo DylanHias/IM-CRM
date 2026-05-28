@@ -182,6 +182,8 @@ export interface D365Opportunity {
   _parentaccountid_value: string | null;
   _parentcontactid_value: string | null;
   _ownerid_value: string | null;
+  _im360_secondaryowner_value: string | null;
+  '_im360_secondaryowner_value@OData.Community.Display.V1.FormattedValue'?: string;
   'statuscode@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_oppstage@OData.Community.Display.V1.FormattedValue'?: string;
   'im360_opptype@OData.Community.Display.V1.FormattedValue'?: string;

@@ -149,6 +149,8 @@ export interface OpportunityRow {
   close_date: string | null;
   competitor_id: string | null;
   close_description: string | null;
+  secondary_owner_id: string | null;
+  secondary_owner_name: string | null;
 }
 
 export interface SyncRecordRow {

@@ -23,7 +23,12 @@ import {
 } from '@/lib/opportunityRules';
 import { useLookupTableStore } from '@/store/lookupTableStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
+import { queryAllCloudBeluxUsers, type CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
+import { formatDisplayName } from '@/lib/utils/nameUtils';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
+
+const SECONDARY_OWNER_NONE = '__none__';
 
 export interface WizardFormData {
   customerId: string;
@@ -58,6 +63,8 @@ export interface WizardFormData {
   serviceName: string | null;
   competitiveWinback: string | null;
   publicSectorSegment: string | null;
+  secondaryOwnerId: string | null;
+  secondaryOwnerName: string | null;
 }
 
 interface Props {
@@ -147,6 +154,20 @@ export function OpportunityWizard({
   const [serviceName, setServiceName] = useState(opportunity?.serviceName ?? '');
   const [competitiveWinback, setCompetitiveWinback] = useState<string>(opportunity?.competitiveWinback ?? 'Unknown');
   const [publicSectorSegment, setPublicSectorSegment] = useState(opportunity?.publicSectorSegment ?? '');
+  const [secondaryOwnerId, setSecondaryOwnerId] = useState<string>(opportunity?.secondaryOwnerId ?? SECONDARY_OWNER_NONE);
+  const [cloudUsers, setCloudUsers] = useState<CloudBeluxUser[]>([]);
+
+  useEffect(() => {
+    if (!isTauriApp()) return;
+    const load = async () => {
+      try {
+        setCloudUsers(await queryAllCloudBeluxUsers());
+      } catch (err) {
+        console.error('[opportunity] Failed to load cloud users:', err);
+      }
+    };
+    load();
+  }, []);
 
   // D365-synced lookup tables (vendors, services, countries, currencies)
   const lookupTables = useLookupTableStore((s) => s.lookupTables);
@@ -296,6 +317,10 @@ export function OpportunityWizard({
         serviceName: isMs ? (serviceName.trim() || null) : null,
         competitiveWinback: isMs ? competitiveWinback : null,
         publicSectorSegment: showPublicSegment ? (publicSectorSegment || null) : null,
+        secondaryOwnerId: secondaryOwnerId === SECONDARY_OWNER_NONE ? null : secondaryOwnerId,
+        secondaryOwnerName: secondaryOwnerId === SECONDARY_OWNER_NONE
+          ? null
+          : (cloudUsers.find((u) => u.id === secondaryOwnerId)?.name ?? null),
       });
     } finally {
       setSaving(false);
@@ -456,6 +481,20 @@ export function OpportunityWizard({
                 onChange={(e) => setCustomerNeed(e.target.value)}
                 rows={2}
                 placeholder="What does the customer need?"
+              />
+            </Field>
+
+            <Field label="Secondary Owner" wide colSpan={2}>
+              <Combobox
+                options={[
+                  { value: SECONDARY_OWNER_NONE, label: '—' },
+                  ...cloudUsers.map((u) => ({ value: u.id, label: formatDisplayName(u.name) })),
+                ]}
+                value={secondaryOwnerId}
+                onValueChange={setSecondaryOwnerId}
+                placeholder="Select secondary owner"
+                searchPlaceholder="Search Cloud Belux Sales..."
+                emptyText="No users found"
               />
             </Field>
           </div>

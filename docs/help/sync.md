@@ -11,11 +11,30 @@ Sync is a two-way process:
 
 ## Automatic Sync
 
-By default, the app syncs automatically in the background at regular intervals. You can configure:
+By default, the app syncs automatically in the background at regular intervals. From **Settings > Sync** you can configure:
 
-- **Auto-sync on launch** — Whether to sync immediately when the app starts (in **Settings > Sync**)
-- **Sync interval** — How often a full background sync runs, from every 5 to 120 minutes (in **Settings > Sync**)
-- **Sync pending interval** — How often pending local changes are pushed to D365, from every 5 to 120 minutes (in **Settings > Sync**)
+- **Pause auto-sync** — Temporarily stop every background sync without losing your interval values
+- **Auto-sync on launch** — Sync immediately when the app starts
+- **Sync on window focus** — Refresh when you return to the app (debounced to once every 5 minutes)
+- **Sync interval** — How often a full background sync runs (5–120 minutes)
+- **Pending push interval** — How often pending local changes are pushed to D365 (5–120 minutes)
+- **Power BI refresh interval** — How often Power BI revenue and insights refresh on their own (30–720 minutes)
+- **Show sync toasts** — Whether to display notifications when a sync completes or fails
+- Quick-preset buttons next to each interval let you set common values with one click. Values typed outside the allowed range are clamped automatically and shown to you instead of being silently dropped.
+
+## Sync Scope
+
+You can choose which parts of a sync actually run. Toggle each in **Settings > Sync > Sync scope**:
+
+- **Customers & activities (Dynamics 365)** — Pull customers, contacts, activities, opportunities, and follow-ups
+- **Revenue & insights (Power BI)** — Pull ARR totals, insights, and ARR movement snapshots
+- **Push pending changes** — Send your local edits back to Dynamics 365
+
+Turning a scope off skips that part of every automatic sync; manual buttons honour your choices too.
+
+## Sync History Retention
+
+Sync history is automatically cleaned up on app start. Choose how long to keep entries in **Settings > Sync > History** (7–365 days, default 90).
 
 ## Manual Sync
 

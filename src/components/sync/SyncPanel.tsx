@@ -81,7 +81,7 @@ export function SyncPanel({ records, pendingActivities, pendingFollowUps, pendin
       {/* Sync buttons */}
       <div className="flex items-center gap-3">
         <Button
-          onClick={triggerSync}
+          onClick={() => { triggerSync(); }}
           disabled={isSyncing || !isOnline}
           className="gap-2"
         >

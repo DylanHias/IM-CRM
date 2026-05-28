@@ -439,6 +439,8 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     closeDate: status === 'Open' ? null : (r.actualclosedate ? r.actualclosedate.split('T')[0] : null),
     competitorId: null,
     closeDescription: status === 'Open' ? null : (r.description ?? null),
+    secondaryOwnerId: r._im360_secondaryowner_value ?? null,
+    secondaryOwnerName: r['_im360_secondaryowner_value@OData.Community.Display.V1.FormattedValue'] ?? null,
   };
 }
 
@@ -624,6 +626,7 @@ class RealD365Adapter implements ID365Adapter {
       '_im360_primaryvendor_value', '_im360_primaryvendorid_value',
       '_im360_servicename1_value', '_im360_country_value', '_transactioncurrencyid_value',
       '_parentaccountid_value', '_parentcontactid_value', '_ownerid_value',
+      '_im360_secondaryowner_value',
       'createdon', 'modifiedon',
     ].join(',');
 
@@ -955,6 +958,12 @@ class RealD365Adapter implements ID365Adapter {
     }
     if (lookupValues.currencyId) {
       body['transactioncurrencyid@odata.bind'] = `/transactioncurrencies(${lookupValues.currencyId})`;
+    }
+    // Secondary owner: bind to systemuser, or explicitly clear with null when removed.
+    if (opportunity.secondaryOwnerId) {
+      body['im360_SecondaryOwner@odata.bind'] = `/systemusers(${opportunity.secondaryOwnerId})`;
+    } else if (isUpdate) {
+      body['im360_SecondaryOwner@odata.bind'] = null;
     }
 
     const endpoint = isUpdate

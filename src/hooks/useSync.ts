@@ -2,8 +2,9 @@
 
 import { useCallback } from 'react';
 import { useSyncStore } from '@/store/syncStore';
-import { runFullSync, pushPendingChanges } from '@/lib/sync/syncService';
+import { runFullSync, pushPendingChanges, type SyncScope } from '@/lib/sync/syncService';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { getAccessToken } from '@/lib/auth/authHelpers';
 import { d365Request } from '@/lib/auth/msalConfig';
 import { useOnlineStatus } from './useOnlineStatus';
@@ -21,10 +22,15 @@ export function useSync() {
     return token;
   }, [isAuthenticated, isOnline, isSyncing]);
 
-  const triggerSync = useCallback(async () => {
+  const triggerSync = useCallback(async (scope?: SyncScope) => {
     const token = await getToken();
     if (!token) return;
-    await runFullSync(token);
+    const resolved = scope ?? {
+      d365: useSettingsStore.getState().syncScopeD365,
+      powerBi: useSettingsStore.getState().syncScopePowerBi,
+      pushPending: useSettingsStore.getState().syncScopePushPending,
+    };
+    await runFullSync(token, resolved);
   }, [getToken]);
 
   const triggerPushPending = useCallback(async () => {

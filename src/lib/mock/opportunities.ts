@@ -31,6 +31,8 @@ const NEW_FIELD_DEFAULTS = {
   closeDate: null,
   competitorId: null,
   closeDescription: null,
+  secondaryOwnerId: null,
+  secondaryOwnerName: null,
 } as const;
 
 export const mockOpportunities: Opportunity[] = ([

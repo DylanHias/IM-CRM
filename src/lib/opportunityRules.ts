@@ -282,6 +282,8 @@ export const EMPTY_OPP_EXTRA_FIELDS = {
   closeDate: null,
   competitorId: null,
   closeDescription: null,
+  secondaryOwnerId: null,
+  secondaryOwnerName: null,
 } as const;
 
 export const STAGE_FIELD_GROUPS: Record<Stage, FieldKey[]> = {

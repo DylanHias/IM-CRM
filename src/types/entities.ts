@@ -162,6 +162,8 @@ export interface Opportunity {
   closeDate: string | null;
   competitorId: string | null;
   closeDescription: string | null;
+  secondaryOwnerId: string | null;
+  secondaryOwnerName: string | null;
 }
 
 export type TimelineEvent =
