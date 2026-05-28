@@ -149,3 +149,51 @@ export async function getProfilePhoto(userId: string): Promise<string | null> {
   );
   return rows[0]?.profile_photo ?? null;
 }
+
+export interface CachedGraphProfile {
+  jobTitle: string | null;
+  country: string | null;
+  city: string | null;
+  officeLocation: string | null;
+  birthday: string | null;
+}
+
+export async function saveGraphProfile(userId: string, profile: CachedGraphProfile): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE users SET
+       job_title = $1,
+       country = $2,
+       city = $3,
+       office_location = $4,
+       birthday = $5,
+       updated_at = datetime('now')
+     WHERE id = $6`,
+    [profile.jobTitle, profile.country, profile.city, profile.officeLocation, profile.birthday, userId]
+  );
+}
+
+export async function getGraphProfile(userId: string): Promise<CachedGraphProfile | null> {
+  const db = await getDb();
+  const rows = await db.select<{
+    job_title: string | null;
+    country: string | null;
+    city: string | null;
+    office_location: string | null;
+    birthday: string | null;
+  }[]>(
+    `SELECT job_title, country, city, office_location, birthday FROM users WHERE id = $1`,
+    [userId]
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const empty = !row.job_title && !row.country && !row.city && !row.office_location && !row.birthday;
+  if (empty) return null;
+  return {
+    jobTitle: row.job_title,
+    country: row.country,
+    city: row.city,
+    officeLocation: row.office_location,
+    birthday: row.birthday,
+  };
+}

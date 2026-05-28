@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
-  Settings, Keyboard, LogOut, Shield, Bug, Building2, X, HelpCircle,
+  Building2, X, MoreVertical,
   ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair, TrendingUp,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
@@ -20,9 +20,9 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomerStore } from '@/store/customerStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { useD365UserId } from '@/hooks/useD365UserId';
-import { signOut } from '@/lib/auth/authHelpers';
 import { onDataEvent } from '@/lib/dataEvents';
 import { cn } from '@/lib/utils';
+import { ProfileModal } from './ProfileModal';
 import {
   Sidebar,
   SidebarContent,
@@ -42,13 +42,6 @@ import {
 } from '@/components/ui/sidebar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 function getInitials(name: string): string {
   return formatDisplayName(name)
@@ -61,13 +54,13 @@ function getInitials(name: string): string {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
   const { pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
-  const { account, isAdmin, profilePhoto } = useAuthStore();
+  const { account, profilePhoto } = useAuthStore();
+  const [profileOpen, setProfileOpen] = useState(false);
   const d365UserId = useD365UserId();
   const recentCustomerIds = useUIStore((s) => s.recentCustomerIds);
   const clearRecentCustomers = useUIStore((s) => s.clearRecentCustomers);
@@ -298,69 +291,32 @@ export function AppSidebar() {
 
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  tooltip={account?.name ? formatDisplayName(account.name) : 'Account'}
-                  className="data-[state=open]:bg-sidebar-accent"
-                >
-                  <Avatar className="h-7 w-7 flex-shrink-0">
-                    {profilePhoto && (
-                      <AvatarImage src={profilePhoto} alt={account?.name ?? 'User'} />
-                    )}
-                    <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
-                      {account?.name ? getInitials(account.name) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-xs font-semibold truncate">
-                      {account?.name ? formatDisplayName(account.name) : 'User'}
-                    </span>
-                    {account?.username && (
-                      <span className="text-[10px] text-muted-foreground truncate">
-                        {account.username}
-                      </span>
-                    )}
-                  </div>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="end" className="w-56">
-                {isAdmin && (
-                  <DropdownMenuItem onClick={() => router.push('/admin')}>
-                    <Shield size={14} />
-                    Admin panel
-                  </DropdownMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              tooltip={account?.name ? formatDisplayName(account.name) : 'Account'}
+              onClick={() => setProfileOpen(true)}
+              className="group/profile"
+            >
+              <Avatar className="h-7 w-7 flex-shrink-0">
+                {profilePhoto && (
+                  <AvatarImage src={profilePhoto} alt={account?.name ?? 'User'} />
                 )}
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  <Settings size={14} />
-                  Account settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/debug')}>
-                  <Bug size={14} />
-                  Debug
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => useUIStore.getState().setShortcutsGuideOpen(true)}>
-                  <Keyboard size={14} />
-                  Keyboard shortcuts
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/help')}>
-                  <HelpCircle size={14} />
-                  Help
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut size={14} />
-                  Log out
-                  <span className="ml-auto text-[10px] text-muted-foreground">
-                    v{process.env.NEXT_PUBLIC_APP_VERSION}
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
+                  {account?.name ? getInitials(account.name) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs font-semibold truncate flex-1 text-left">
+                {account?.name ? formatDisplayName(account.name) : 'User'}
+              </span>
+              <MoreVertical
+                size={14}
+                className="ml-auto text-muted-foreground group-data-[collapsible=icon]:hidden"
+              />
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
     </Sidebar>
   );
 }

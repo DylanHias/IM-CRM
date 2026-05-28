@@ -69,24 +69,47 @@ export function useAuth() {
 
 export async function loadProfilePhoto(userId: string): Promise<void> {
   try {
-    const { getProfilePhoto, saveProfilePhoto } = await import('@/lib/db/queries/users');
+    const { getProfilePhoto, saveProfilePhoto, getGraphProfile, saveGraphProfile } =
+      await import('@/lib/db/queries/users');
 
-    // Try cached photo from DB first
-    const cached = await getProfilePhoto(userId);
-    if (cached) {
-      useAuthStore.getState().setProfilePhoto(cached);
-      return;
+    // 1. Hydrate from local DB cache immediately so the modal/sidebar can render without waiting on Graph.
+    const [cachedPhoto, cachedProfile] = await Promise.all([
+      getProfilePhoto(userId),
+      getGraphProfile(userId),
+    ]);
+    if (cachedPhoto) useAuthStore.getState().setProfilePhoto(cachedPhoto);
+    if (cachedProfile) {
+      useAuthStore.getState().setUserProfile({
+        ...cachedProfile,
+        mobilePhone: null,
+        businessPhones: [],
+      });
     }
 
-    // Fetch from Graph API
-    const { fetchProfilePhoto } = await import('@/lib/auth/graphApi');
-    const photo = await fetchProfilePhoto();
-    if (photo) {
-      await saveProfilePhoto(userId, photo);
-      useAuthStore.getState().setProfilePhoto(photo);
+    // 2. Refresh from Graph in the background — only call when something is missing or to keep it warm.
+    const { fetchProfilePhoto, fetchUserProfile } = await import('@/lib/auth/graphApi');
+
+    if (!cachedPhoto) {
+      const photo = await fetchProfilePhoto();
+      if (photo) {
+        await saveProfilePhoto(userId, photo);
+        useAuthStore.getState().setProfilePhoto(photo);
+      }
+    }
+
+    const fresh = await fetchUserProfile();
+    if (fresh) {
+      useAuthStore.getState().setUserProfile(fresh);
+      await saveGraphProfile(userId, {
+        jobTitle: fresh.jobTitle,
+        country: fresh.country,
+        city: fresh.city,
+        officeLocation: fresh.officeLocation,
+        birthday: fresh.birthday,
+      });
     }
   } catch (err) {
-    console.error('[auth] Profile photo load failed:', err);
+    console.error('[auth] Profile load failed:', err);
   }
 }
 

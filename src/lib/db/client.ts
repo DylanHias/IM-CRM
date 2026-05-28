@@ -412,6 +412,11 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['users',      'title',           'TEXT'],
     ['users',      'profile_photo',   'TEXT'],
     ['users',      'analytics_tracked', 'INTEGER NOT NULL DEFAULT 0'],
+    ['users',      'job_title',       'TEXT'],
+    ['users',      'country',         'TEXT'],
+    ['users',      'city',            'TEXT'],
+    ['users',      'office_location', 'TEXT'],
+    ['users',      'birthday',        'TEXT'],
     ['opportunities', 'single_or_cross_sell',          'TEXT'],
     ['opportunities', 'estimated_mrr',                 'REAL'],
     ['opportunities', 'annual_revenue',                'REAL'],
@@ -1336,6 +1341,18 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     } catch (err) {
       console.error('[db] migration v47 schema_version bump failed:', err);
+    }
+  }
+
+  if (currentVersion < 48) {
+    // Graph API user profile cache columns (job_title, country, city, office_location, birthday).
+    // ensureAllColumns handles the ALTERs.
+    try {
+      await db.execute(
+        `UPDATE app_settings SET value = '48', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v48 schema_version bump failed:', err);
     }
   }
 }

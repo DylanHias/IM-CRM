@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { armSalesMode, isSalesModeArmed, shouldShowBirthdayToday, isEasterEggsEnabled } from '@/lib/easterEggs';
-import { fetchBirthday } from '@/lib/auth/graphApi';
 import { BirthdayModal } from './BirthdayModal';
 
 const KONAMI = [
@@ -15,6 +14,7 @@ const KONAMI = [
 
 export function EasterEggController() {
   const account = useAuthStore((s) => s.account);
+  const userProfile = useAuthStore((s) => s.userProfile);
   const [birthdayOpen, setBirthdayOpen] = useState(false);
 
   // Konami listener
@@ -43,24 +43,12 @@ export function EasterEggController() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Birthday check — fetch once after login, show modal if today is the day
+  // Birthday check — reads birthday from authStore.userProfile (loaded by useAuth)
   useEffect(() => {
-    if (!account) return;
+    if (!account || !userProfile) return;
     if (!isEasterEggsEnabled()) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const birthday = await fetchBirthday();
-        if (cancelled) return;
-        if (shouldShowBirthdayToday(birthday)) setBirthdayOpen(true);
-      } catch (err) {
-        console.error('[auth] Birthday check failed:', err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [account]);
+    if (shouldShowBirthdayToday(userProfile.birthday)) setBirthdayOpen(true);
+  }, [account, userProfile]);
 
   const firstName = account?.name?.split(' ')[0] ?? 'friend';
 
