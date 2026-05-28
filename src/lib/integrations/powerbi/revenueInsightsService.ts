@@ -12,7 +12,6 @@ import {
   type VendorSalesRow,
 } from '@/store/revenueInsightsStore';
 
-const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
@@ -213,9 +212,9 @@ export async function refreshInsightsFromPowerBi(token: string): Promise<void> {
   const refreshedAt = new Date().toISOString();
 
   const [trendResult, seatResult, vendorResult] = await Promise.all([
-    executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, ARR_TREND_SNAPSHOT_DAX),
-    executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, RESELLER_SEATS_SNAPSHOT_DAX),
-    executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, NET_SALES_SNAPSHOT_DAX),
+    executeDaxQuery(token, null, DATASET_ID, ARR_TREND_SNAPSHOT_DAX),
+    executeDaxQuery(token, null, DATASET_ID, RESELLER_SEATS_SNAPSHOT_DAX),
+    executeDaxQuery(token, null, DATASET_ID, NET_SALES_SNAPSHOT_DAX),
   ]);
 
   const arrTrendRows = parseArrTrend(trendResult.rows ?? []);

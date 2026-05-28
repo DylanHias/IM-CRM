@@ -6,7 +6,6 @@ import {
   type ArrMovementRow,
 } from '@/store/customerRevenueDetailStore';
 
-const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
@@ -124,7 +123,7 @@ export async function refreshArrMovementFromPowerBi(token: string): Promise<void
 
   const result = await executeDaxQuery(
     token,
-    WORKSPACE_ID || null,
+    null,
     DATASET_ID,
     ARR_MOVEMENT_SNAPSHOT_DAX,
   );

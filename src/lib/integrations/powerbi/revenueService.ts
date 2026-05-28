@@ -3,7 +3,6 @@ import { useRevenueStore, type CustomerRevenueRow } from '@/store/revenueStore';
 import { executeDaxQuery } from './client';
 import { CURRENT_ARR_BY_BCN_DAX } from './queries';
 
-const WORKSPACE_ID = process.env.NEXT_PUBLIC_POWERBI_WORKSPACE_ID ?? '';
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
@@ -152,7 +151,7 @@ export async function refreshRevenue(
   try {
     const result = await executeDaxQuery(
       token,
-      WORKSPACE_ID || null,
+      null,
       DATASET_ID,
       CURRENT_ARR_BY_BCN_DAX,
     );

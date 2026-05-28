@@ -127,7 +127,7 @@ interface EvalOutcome {
 
 async function tryEvaluate(token: string, dax: string): Promise<EvalOutcome> {
   try {
-    return { result: await executeDaxQuery(token, WORKSPACE_ID || null, DATASET_ID, dax), error: null };
+    return { result: await executeDaxQuery(token, null, DATASET_ID, dax), error: null };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn(`[powerbi-schema] Query failed: ${dax.slice(0, 60)}…`, msg);
