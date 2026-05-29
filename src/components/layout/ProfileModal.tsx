@@ -76,7 +76,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
       <DialogContent className="max-w-md">
         <DialogTitle className="sr-only">Profile</DialogTitle>
 
-        <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-4">
+        <div className="flex items-center gap-4 p-1">
           <Avatar className="h-16 w-16 shrink-0">
             {profilePhoto && <AvatarImage src={profilePhoto} alt={name} />}
             <AvatarFallback className="text-base bg-primary/10 text-primary font-semibold">
