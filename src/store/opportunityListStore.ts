@@ -28,6 +28,8 @@ interface OpportunityListState {
   filterStage: string | null;
   filterStatus: OpportunityStatus | null;
   filterExpired: ExpiredFilter;
+  filterPrimaryOwnerId: string | null;
+  filterSecondaryOwnerId: string | null;
   filterMineOnly: boolean;
   page: number;
   isLoading: boolean;
@@ -42,6 +44,8 @@ interface OpportunityListState {
   setFilterStage: (s: string | null) => void;
   setFilterStatus: (s: OpportunityStatus | null) => void;
   setFilterExpired: (f: ExpiredFilter) => void;
+  setFilterPrimaryOwnerId: (id: string | null) => void;
+  setFilterSecondaryOwnerId: (id: string | null) => void;
   toggleMineOnly: () => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
@@ -63,6 +67,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       filterStage: null,
       filterStatus: null,
       filterExpired: 'all',
+      filterPrimaryOwnerId: null,
+      filterSecondaryOwnerId: null,
       filterMineOnly: false,
       page: 1,
       isLoading: false,
@@ -77,6 +83,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       setFilterStage: (filterStage) => set({ filterStage, page: 1 }),
       setFilterStatus: (filterStatus) => set({ filterStatus, page: 1 }),
       setFilterExpired: (filterExpired) => set({ filterExpired, page: 1 }),
+      setFilterPrimaryOwnerId: (filterPrimaryOwnerId) => set({ filterPrimaryOwnerId, page: 1 }),
+      setFilterSecondaryOwnerId: (filterSecondaryOwnerId) => set({ filterSecondaryOwnerId, page: 1 }),
       toggleMineOnly: () => set({ filterMineOnly: !get().filterMineOnly, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
@@ -86,23 +94,27 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterStage: null,
         filterStatus: null,
         filterExpired: 'all',
+        filterPrimaryOwnerId: null,
+        filterSecondaryOwnerId: null,
         filterMineOnly: false,
         page: 1,
       }),
 
       getActiveFilterCount: () => {
-        const { filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly } = get();
+        const { filterCustomerId, filterStage, filterStatus, filterExpired, filterPrimaryOwnerId, filterSecondaryOwnerId, filterMineOnly } = get();
         return [
           filterCustomerId,
           filterStage,
           filterStatus,
           filterExpired !== 'all' ? filterExpired : null,
+          filterPrimaryOwnerId,
+          filterSecondaryOwnerId,
           filterMineOnly ? 'mine' : null,
         ].filter(Boolean).length;
       },
 
       getFilteredOpportunities: () => {
-        const { opportunities, customerMap, currentUserIds, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly } = get();
+        const { opportunities, customerMap, currentUserIds, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired, filterPrimaryOwnerId, filterSecondaryOwnerId, filterMineOnly } = get();
 
         let result = opportunities;
 
@@ -130,6 +142,12 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         }
         if (filterStatus) {
           result = result.filter((o) => o.status === filterStatus);
+        }
+        if (filterPrimaryOwnerId) {
+          result = result.filter((o) => o.createdById === filterPrimaryOwnerId);
+        }
+        if (filterSecondaryOwnerId) {
+          result = result.filter((o) => o.secondaryOwnerId === filterSecondaryOwnerId);
         }
         if (filterExpired !== 'all') {
           const today = new Date().toISOString().slice(0, 10);
@@ -170,6 +188,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterStage: state.filterStage,
         filterStatus: state.filterStatus,
         filterExpired: state.filterExpired,
+        filterPrimaryOwnerId: state.filterPrimaryOwnerId,
+        filterSecondaryOwnerId: state.filterSecondaryOwnerId,
         filterMineOnly: state.filterMineOnly,
       }),
     }

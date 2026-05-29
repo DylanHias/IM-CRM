@@ -36,9 +36,9 @@ export function OpportunitiesFilters() {
   const {
     opportunities, customerMap, currentUserIds,
     searchQuery, sortBy, sortDir,
-    filterCustomerId, filterStage, filterStatus, filterExpired, filterMineOnly,
+    filterCustomerId, filterStage, filterStatus, filterExpired, filterPrimaryOwnerId, filterSecondaryOwnerId, filterMineOnly,
     setSearchQuery, setSortBy, setSortDir,
-    setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired, toggleMineOnly,
+    setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired, setFilterPrimaryOwnerId, setFilterSecondaryOwnerId, toggleMineOnly,
     clearFilters, getActiveFilterCount,
   } = useOpportunityListStore();
   const canFilterMine = currentUserIds.length > 0;
@@ -64,9 +64,27 @@ export function OpportunitiesFilters() {
     );
   }, [opportunities]);
 
+  const primaryOwners = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of opportunities) {
+      if (o.createdById && !map.has(o.createdById)) map.set(o.createdById, o.createdByName || o.createdById);
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [opportunities]);
+
+  const secondaryOwners = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of opportunities) {
+      if (o.secondaryOwnerId && !map.has(o.secondaryOwnerId)) map.set(o.secondaryOwnerId, o.secondaryOwnerName || o.secondaryOwnerId);
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [opportunities]);
+
   const toggleSortDir = () => setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
 
   const selectedCompanyName = filterCustomerId ? customerMap.get(filterCustomerId) : null;
+  const selectedPrimaryOwnerName = filterPrimaryOwnerId ? primaryOwners.find((o) => o.id === filterPrimaryOwnerId)?.name : null;
+  const selectedSecondaryOwnerName = filterSecondaryOwnerId ? secondaryOwners.find((o) => o.id === filterSecondaryOwnerId)?.name : null;
 
   return (
     <div className="space-y-3">
@@ -194,6 +212,32 @@ export function OpportunitiesFilters() {
               </SelectContent>
             </Select>
           </div>
+
+          {primaryOwners.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Primary owner</label>
+              <Select value={filterPrimaryOwnerId ?? 'all'} onValueChange={(v) => setFilterPrimaryOwnerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All primary owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All primary owners</SelectItem>
+                  {primaryOwners.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {secondaryOwners.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Secondary owner</label>
+              <Select value={filterSecondaryOwnerId ?? 'all'} onValueChange={(v) => setFilterSecondaryOwnerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All secondary owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All secondary owners</SelectItem>
+                  {secondaryOwners.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
 
@@ -218,6 +262,16 @@ export function OpportunitiesFilters() {
           {filterStatus && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterStatus(null)}>
               {filterStatus} <X size={10} />
+            </Badge>
+          )}
+          {filterPrimaryOwnerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterPrimaryOwnerId(null)}>
+              1 {selectedPrimaryOwnerName ?? 'Primary owner'} <X size={10} />
+            </Badge>
+          )}
+          {filterSecondaryOwnerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterSecondaryOwnerId(null)}>
+              2 {selectedSecondaryOwnerName ?? 'Secondary owner'} <X size={10} />
             </Badge>
           )}
           {filterExpired !== 'all' && (
