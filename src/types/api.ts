@@ -6,6 +6,8 @@ export interface D365AccountCloudDetail {
   '_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'?: string;
   _im360_azureowneruyser_value: string | null;
   '_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'?: string;
+  _im360_servicessalesowneruser_value: string | null;
+  '_im360_servicessalesowneruser_value@OData.Community.Display.V1.FormattedValue'?: string;
 }
 
 export interface D365Customer {

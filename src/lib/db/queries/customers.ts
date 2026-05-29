@@ -21,6 +21,8 @@ function rowToCustomer(row: CustomerRow): Customer {
     awsOwnerName: row.aws_owner_name,
     azureOwnerId: row.azure_owner_id,
     azureOwnerName: row.azure_owner_name,
+    insideSalesOwnerId: row.inside_sales_owner_id,
+    insideSalesOwnerName: row.inside_sales_owner_name,
     accountManagerId: row.account_manager_id,
     accountManagerName: row.account_manager_name,
     mpnId: row.mpn_id,
@@ -86,9 +88,10 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       status, last_activity_at, synced_at, created_at, updated_at,
       customer_success_manager_id, customer_success_manager_name,
       aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+      inside_sales_owner_id, inside_sales_owner_name,
       account_manager_id, account_manager_name,
       mpn_id, apn_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -104,6 +107,8 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       aws_owner_name=excluded.aws_owner_name,
       azure_owner_id=excluded.azure_owner_id,
       azure_owner_name=excluded.azure_owner_name,
+      inside_sales_owner_id=excluded.inside_sales_owner_id,
+      inside_sales_owner_name=excluded.inside_sales_owner_name,
       account_manager_id=excluded.account_manager_id,
       account_manager_name=excluded.account_manager_name,
       mpn_id=excluded.mpn_id,
@@ -118,6 +123,7 @@ export async function upsertCustomer(customer: Customer): Promise<void> {
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
       customer.customerSuccessManagerId, customer.customerSuccessManagerName,
       customer.awsOwnerId, customer.awsOwnerName, customer.azureOwnerId, customer.azureOwnerName,
+      customer.insideSalesOwnerId, customer.insideSalesOwnerName,
       customer.accountManagerId, customer.accountManagerName,
       customer.mpnId, customer.apnId,
     ]
@@ -136,9 +142,10 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       status, last_activity_at, synced_at, created_at, updated_at,
       customer_success_manager_id, customer_success_manager_name,
       aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+      inside_sales_owner_id, inside_sales_owner_name,
       account_manager_id, account_manager_name,
       mpn_id, apn_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35)
     ON CONFLICT(id) DO UPDATE SET
       name=excluded.name, account_number=excluded.account_number,
       industry=excluded.industry, segment=excluded.segment,
@@ -154,6 +161,8 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       aws_owner_name=excluded.aws_owner_name,
       azure_owner_id=excluded.azure_owner_id,
       azure_owner_name=excluded.azure_owner_name,
+      inside_sales_owner_id=excluded.inside_sales_owner_id,
+      inside_sales_owner_name=excluded.inside_sales_owner_name,
       account_manager_id=excluded.account_manager_id,
       account_manager_name=excluded.account_manager_name,
       mpn_id=excluded.mpn_id,
@@ -171,6 +180,7 @@ export async function upsertCustomerBulk(customer: Customer): Promise<boolean> {
       customer.lastActivityAt, customer.syncedAt, customer.createdAt, customer.updatedAt,
       customer.customerSuccessManagerId, customer.customerSuccessManagerName,
       customer.awsOwnerId, customer.awsOwnerName, customer.azureOwnerId, customer.azureOwnerName,
+      customer.insideSalesOwnerId, customer.insideSalesOwnerName,
       customer.accountManagerId, customer.accountManagerName,
       customer.mpnId, customer.apnId,
     ]
@@ -317,7 +327,7 @@ export async function removeCustomerFavorite(customerId: string): Promise<void> 
 export async function bulkUpsertCustomers(customers: Customer[]): Promise<number> {
   if (customers.length === 0) return 0;
   const db = await getDb();
-  const COLS = 33;
+  const COLS = 35;
   const CHUNK = Math.floor(999 / COLS); // ~30 rows per batch
   let changed = 0;
 
@@ -335,6 +345,7 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
       c.lastActivityAt, c.syncedAt, c.createdAt, c.updatedAt,
       c.customerSuccessManagerId, c.customerSuccessManagerName,
       c.awsOwnerId, c.awsOwnerName, c.azureOwnerId, c.azureOwnerName,
+      c.insideSalesOwnerId, c.insideSalesOwnerName,
       c.accountManagerId, c.accountManagerName,
       c.mpnId, c.apnId,
     ]);
@@ -346,6 +357,7 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
         status, last_activity_at, synced_at, created_at, updated_at,
         customer_success_manager_id, customer_success_manager_name,
         aws_owner_id, aws_owner_name, azure_owner_id, azure_owner_name,
+        inside_sales_owner_id, inside_sales_owner_name,
         account_manager_id, account_manager_name,
         mpn_id, apn_id
       ) VALUES ${placeholders}
@@ -364,6 +376,8 @@ export async function bulkUpsertCustomers(customers: Customer[]): Promise<number
         aws_owner_name=excluded.aws_owner_name,
         azure_owner_id=excluded.azure_owner_id,
         azure_owner_name=excluded.azure_owner_name,
+        inside_sales_owner_id=excluded.inside_sales_owner_id,
+        inside_sales_owner_name=excluded.inside_sales_owner_name,
         account_manager_id=excluded.account_manager_id,
         account_manager_name=excluded.account_manager_name,
         mpn_id=excluded.mpn_id,
@@ -385,6 +399,8 @@ export interface CloudOwnerUpdate {
   awsOwnerName: string | null;
   azureOwnerId: string | null;
   azureOwnerName: string | null;
+  insideSalesOwnerId: string | null;
+  insideSalesOwnerName: string | null;
   accountManagerId: string | null;
   accountManagerName: string | null;
 }
@@ -400,14 +416,17 @@ export async function updateCustomerCloudOwners(customerId: string, update: Clou
       aws_owner_name = $4,
       azure_owner_id = $5,
       azure_owner_name = $6,
-      account_manager_id = $7,
-      account_manager_name = $8,
-      updated_at = $9
-     WHERE id = $10`,
+      inside_sales_owner_id = $7,
+      inside_sales_owner_name = $8,
+      account_manager_id = $9,
+      account_manager_name = $10,
+      updated_at = $11
+     WHERE id = $12`,
     [
       update.customerSuccessManagerId, update.customerSuccessManagerName,
       update.awsOwnerId, update.awsOwnerName,
       update.azureOwnerId, update.azureOwnerName,
+      update.insideSalesOwnerId, update.insideSalesOwnerName,
       update.accountManagerId, update.accountManagerName,
       new Date().toISOString(), customerId,
     ],

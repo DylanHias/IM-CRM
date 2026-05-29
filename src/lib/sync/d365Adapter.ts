@@ -72,6 +72,7 @@ export interface AccountCloudOwners {
   customerSuccessManagerId: string | null;
   awsOwnerId: string | null;
   azureOwnerId: string | null;
+  insideSalesOwnerId: string | null;
   accountManagerId: string | null;
 }
 
@@ -143,6 +144,8 @@ function mapD365CustomerToCustomer(d365: D365Customer, now: string): Customer {
     awsOwnerName: d365.im360_clouddetailId?.['_im360_awsowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     azureOwnerId: d365.im360_clouddetailId?._im360_azureowneruyser_value ?? null,
     azureOwnerName: d365.im360_clouddetailId?.['_im360_azureowneruyser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
+    insideSalesOwnerId: d365.im360_clouddetailId?._im360_servicessalesowneruser_value ?? null,
+    insideSalesOwnerName: d365.im360_clouddetailId?.['_im360_servicessalesowneruser_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     accountManagerId: d365._im360_outsidesales1_value ?? null,
     accountManagerName: d365['_im360_outsidesales1_value@OData.Community.Display.V1.FormattedValue'] ?? null,
     mpnId: d365.im360_mpnid ?? null,
@@ -499,7 +502,7 @@ class RealD365Adapter implements ID365Adapter {
       'im360_mainsegmentation',
       'statecode', 'modifiedon',
     ].join(',');
-    const expand = 'im360_clouddetailId($select=im360_accountclouddetailid,_im360_awsowneruser_value,_im360_azureowneruyser_value)';
+    const expand = 'im360_clouddetailId($select=im360_accountclouddetailid,_im360_awsowneruser_value,_im360_azureowneruyser_value,_im360_servicessalesowneruser_value)';
 
     let filter = "statecode eq 0 and (address1_country eq 'BE' or address1_country eq 'NL' or address1_country eq 'LU')";
     if (lastSync) filter += ` and modifiedon gt ${lastSync}`;
@@ -1221,15 +1224,18 @@ class RealD365Adapter implements ID365Adapter {
     const lookupJson = (await lookupRes.json()) as { _im360_clouddetailid_value: string | null };
     let cloudDetailId = lookupJson._im360_clouddetailid_value;
 
-    const [awsNav, azureNav] = await Promise.all([
+    const [awsNav, azureNav, servicesNav] = await Promise.all([
       this.resolveNavProperty(token, 'im360_accountclouddetail', 'im360_awsowneruser'),
       this.resolveNavProperty(token, 'im360_accountclouddetail', 'im360_azureowneruyser'),
+      this.resolveNavProperty(token, 'im360_accountclouddetail', 'im360_servicessalesowneruser'),
     ]);
     const awsBindKey = `${awsNav ?? 'im360_awsowneruser'}@odata.bind`;
     const azureBindKey = `${azureNav ?? 'im360_azureowneruyser'}@odata.bind`;
+    const servicesBindKey = `${servicesNav ?? 'im360_servicessalesowneruser'}@odata.bind`;
     const ownerBody: Record<string, unknown> = {
       [awsBindKey]: owners.awsOwnerId ? `/systemusers(${owners.awsOwnerId})` : null,
       [azureBindKey]: owners.azureOwnerId ? `/systemusers(${owners.azureOwnerId})` : null,
+      [servicesBindKey]: owners.insideSalesOwnerId ? `/systemusers(${owners.insideSalesOwnerId})` : null,
     };
 
     if (!cloudDetailId) {

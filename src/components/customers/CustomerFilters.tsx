@@ -35,10 +35,10 @@ export function CustomerFilters() {
   const {
     customers,
     searchQuery, sortBy, sortDir,
-    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier,
+    filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterInsideSalesOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier,
     setSearchQuery, setSortBy, setSortDir,
     setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
-    setFilterCsmId, setFilterAwsOwnerId, setFilterAzureOwnerId, setFilterAccountManagerId,
+    setFilterCsmId, setFilterAwsOwnerId, setFilterAzureOwnerId, setFilterInsideSalesOwnerId, setFilterAccountManagerId,
     toggleNoRecentActivityFilter, toggleFavoritesFilter, setFilterHealthTier, clearFilters, getActiveFilterCount,
   } = useCustomerStore();
 
@@ -303,6 +303,19 @@ export function CustomerFilters() {
             </div>
           )}
 
+          {cloudUserOptions.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Inside Sales Owner</label>
+              <Select value={filterInsideSalesOwnerId ?? 'all'} onValueChange={(v) => setFilterInsideSalesOwnerId(v === 'all' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="All inside sales owners" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All inside sales owners</SelectItem>
+                  {cloudUserOptions.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {belgiumUserOptions.length > 0 && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Account Manager</label>
@@ -389,6 +402,11 @@ export function CustomerFilters() {
           {filterAzureOwnerId && (
             <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterAzureOwnerId(null)}>
               Azure: {cloudUserOptions.find((u) => u.id === filterAzureOwnerId)?.name ?? 'Unknown'} <X size={10} />
+            </Badge>
+          )}
+          {filterInsideSalesOwnerId && (
+            <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary" onClick={() => setFilterInsideSalesOwnerId(null)}>
+              Inside Sales: {cloudUserOptions.find((u) => u.id === filterInsideSalesOwnerId)?.name ?? 'Unknown'} <X size={10} />
             </Badge>
           )}
           {filterAccountManagerId && (

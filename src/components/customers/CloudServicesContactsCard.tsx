@@ -26,6 +26,7 @@ export function CloudServicesContactsCard({ customer }: Props) {
   const [csmId, setCsmId] = useState<string>(customer.customerSuccessManagerId ?? NONE);
   const [awsId, setAwsId] = useState<string>(customer.awsOwnerId ?? NONE);
   const [azureId, setAzureId] = useState<string>(customer.azureOwnerId ?? NONE);
+  const [insideSalesId, setInsideSalesId] = useState<string>(customer.insideSalesOwnerId ?? NONE);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +47,8 @@ export function CloudServicesContactsCard({ customer }: Props) {
     setCsmId(customer.customerSuccessManagerId ?? NONE);
     setAwsId(customer.awsOwnerId ?? NONE);
     setAzureId(customer.azureOwnerId ?? NONE);
-  }, [customer.customerSuccessManagerId, customer.awsOwnerId, customer.azureOwnerId]);
+    setInsideSalesId(customer.insideSalesOwnerId ?? NONE);
+  }, [customer.customerSuccessManagerId, customer.awsOwnerId, customer.azureOwnerId, customer.insideSalesOwnerId]);
 
   const findName = (id: string): string | null => {
     if (id === NONE) return null;
@@ -64,6 +66,8 @@ export function CloudServicesContactsCard({ customer }: Props) {
         awsOwnerName: awsId === NONE ? null : findName(awsId),
         azureOwnerId: azureId === NONE ? null : azureId,
         azureOwnerName: azureId === NONE ? null : findName(azureId),
+        insideSalesOwnerId: insideSalesId === NONE ? null : insideSalesId,
+        insideSalesOwnerName: insideSalesId === NONE ? null : findName(insideSalesId),
         accountManagerId: customer.accountManagerId,
         accountManagerName: customer.accountManagerName,
       };
@@ -72,6 +76,7 @@ export function CloudServicesContactsCard({ customer }: Props) {
         customerSuccessManagerId: update.customerSuccessManagerId,
         awsOwnerId: update.awsOwnerId,
         azureOwnerId: update.azureOwnerId,
+        insideSalesOwnerId: update.insideSalesOwnerId,
         accountManagerId: update.accountManagerId,
       });
       if (!pushResult.success) {
@@ -105,6 +110,7 @@ export function CloudServicesContactsCard({ customer }: Props) {
     { label: 'Customer Success Manager', name: customer.customerSuccessManagerName },
     { label: 'AWS Owner', name: customer.awsOwnerName },
     { label: 'Azure Owner', name: customer.azureOwnerName },
+    { label: 'Inside Sales Owner', name: customer.insideSalesOwnerName },
     { label: 'Account Manager', name: customer.accountManagerName },
   ];
 
@@ -167,6 +173,16 @@ export function CloudServicesContactsCard({ customer }: Props) {
               <Combobox
                 value={azureId}
                 onValueChange={setAzureId}
+                options={options}
+                searchPlaceholder="Search Cloud Belux Sales..."
+                emptyText="No users found."
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Inside Sales Owner</Label>
+              <Combobox
+                value={insideSalesId}
+                onValueChange={setInsideSalesId}
                 options={options}
                 searchPlaceholder="Search Cloud Belux Sales..."
                 emptyText="No users found."

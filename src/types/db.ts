@@ -13,6 +13,8 @@ export interface CustomerRow {
   aws_owner_name: string | null;
   azure_owner_id: string | null;
   azure_owner_name: string | null;
+  inside_sales_owner_id: string | null;
+  inside_sales_owner_name: string | null;
   account_manager_id: string | null;
   account_manager_name: string | null;
   mpn_id: string | null;

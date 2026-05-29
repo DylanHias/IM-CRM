@@ -10,6 +10,8 @@ const EXTRA_DEFAULTS = {
   awsOwnerName: null,
   azureOwnerId: null,
   azureOwnerName: null,
+  insideSalesOwnerId: null,
+  insideSalesOwnerName: null,
   accountManagerId: null,
   accountManagerName: null,
   mpnId: null,
@@ -18,6 +20,7 @@ const EXTRA_DEFAULTS = {
   Customer,
   'customerSuccessManagerId' | 'customerSuccessManagerName' |
   'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'insideSalesOwnerId' | 'insideSalesOwnerName' |
   'accountManagerId' | 'accountManagerName' |
   'mpnId' | 'apnId'
 >;
@@ -25,6 +28,7 @@ const EXTRA_DEFAULTS = {
 const RAW_CUSTOMERS: Omit<Customer,
   'customerSuccessManagerId' | 'customerSuccessManagerName' |
   'awsOwnerId' | 'awsOwnerName' | 'azureOwnerId' | 'azureOwnerName' |
+  'insideSalesOwnerId' | 'insideSalesOwnerName' |
   'accountManagerId' | 'accountManagerName' |
   'mpnId' | 'apnId'
 >[] = [

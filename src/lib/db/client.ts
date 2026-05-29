@@ -60,6 +60,8 @@ async function ensureTablesExist(db: Database): Promise<void> {
       aws_owner_name  TEXT,
       azure_owner_id  TEXT,
       azure_owner_name TEXT,
+      inside_sales_owner_id   TEXT,
+      inside_sales_owner_name TEXT,
       account_manager_id   TEXT,
       account_manager_name TEXT,
       mpn_id          TEXT,
@@ -393,6 +395,8 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['customers',  'aws_owner_name',  'TEXT'],
     ['customers',  'azure_owner_id',  'TEXT'],
     ['customers',  'azure_owner_name','TEXT'],
+    ['customers',  'inside_sales_owner_id',   'TEXT'],
+    ['customers',  'inside_sales_owner_name', 'TEXT'],
     ['customers',  'account_manager_id',   'TEXT'],
     ['customers',  'account_manager_name', 'TEXT'],
     ['customers',  'mpn_id',          'TEXT'],
@@ -1368,6 +1372,50 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     } catch (err) {
       console.error('[db] migration v49 failed:', err);
+    }
+  }
+
+  if (currentVersion < 50) {
+    await db.execute(
+      `UPDATE users SET role = 'admin', updated_at = datetime('now') WHERE LOWER(email) = 'cyril.delander@ingrammicro.com' AND role != 'admin'`
+    );
+    await db.execute(
+      `UPDATE app_settings SET value = '50', updated_at = datetime('now') WHERE key = 'schema_version'`
+    );
+  }
+
+  if (currentVersion < 51) {
+    // Inside Sales Owner column (maps to D365 Services Sales Owner on im360_accountclouddetail).
+    // ensureAllColumns handles the ALTERs.
+    try {
+      await db.execute(
+        `UPDATE app_settings SET value = '51', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v51 failed:', err);
+    }
+  }
+
+  if (currentVersion < 52) {
+    // Seed default saved queries for the Database tab.
+    try {
+      await db.execute(
+        `INSERT INTO saved_queries (name, sql)
+         SELECT $1, $2
+         WHERE NOT EXISTS (SELECT 1 FROM saved_queries WHERE name = $1)`,
+        ['List all tables', `SELECT name FROM sqlite_master WHERE type='table';`]
+      );
+      await db.execute(
+        `INSERT INTO saved_queries (name, sql)
+         SELECT $1, $2
+         WHERE NOT EXISTS (SELECT 1 FROM saved_queries WHERE name = $1)`,
+        ['List specific table info', `PRAGMA table_info('tablename');`]
+      );
+      await db.execute(
+        `UPDATE app_settings SET value = '52', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v52 failed:', err);
     }
   }
 }
