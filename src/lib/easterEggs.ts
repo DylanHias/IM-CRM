@@ -144,6 +144,47 @@ export function isSalesModeArmed(): boolean {
 }
 
 const BIRTHDAY_SHOWN_KEY = 'crm-easter-egg-birthday-shown';
+const BIRTHDAY_LAST_MESSAGE_KEY = 'crm-easter-egg-birthday-last-message';
+
+export const BIRTHDAY_MESSAGES: readonly string[] = [
+  "Another trip around the sun, another excuse for cake. We hope today is loud, sweet, and exactly your kind of fun. 🎂",
+  "Wishing you a day so good it makes the rest of the year a little jealous. Soak up every second. 🥂",
+  "May your coffee be strong, your cake be unreasonably large, and your day be full of the people who make you laugh hardest. ☕",
+  "Today is officially yours. Dessert first, naps encouraged, no apologies required. 🎉",
+  "Cheers to you — the cake, the candles, and everyone lucky enough to know you. Have a beautiful one. 🥂",
+  "Sending good vibes, warm hugs, and at least one slice of cake we wish we could share. 🎂",
+  "Hope your day is packed with little joys, big smiles, and zero responsibilities you don't feel like having.",
+  "Another year of being unmistakably you — which, honestly, is reason enough to celebrate. 🎈",
+  "May today be soft, sweet, and just chaotic enough to be fun. You deserve all of it. 🎂",
+  "Wishing you a birthday filled with laughter loud enough for the neighbors to complain. 🎉",
+  "Here's to another year of being the kind of person other people are glad to know. Enjoy every minute. 🥳",
+  "Cake is calling, friends are gathering, and the universe is conspiring to make today wonderful. Go enjoy it. 🎂",
+  "Hope your birthday comes with extra frosting, fewer alarms, and at least one moment that takes your breath away. 🎁",
+  "Take the day slow. Eat what you want. Laugh too loud. You've earned all of it. 🥂",
+  "Wishing you a year full of small wins, good people, and the kind of stories worth retelling. 🌟",
+  "Another lap around the sun, completed beautifully. Hope today is everything you'd wish for yourself. 🎈",
+  "May this year bring more of what makes you smile and less of whatever was annoying you last week. 🎂",
+  "Hope someone you love makes you breakfast, someone funny makes you snort-laugh, and someone reminds you how much you mean to them today. 💛",
+  "Cake is a love language. We hope yours is fluent today. 🎂",
+  "Wishing you a day where everything goes a little your way — even the tiny things, like green lights and finding a good parking spot. 🚦",
+  "May today feel like that one perfect song on repeat — warm, familiar, and impossible not to smile at. 🎶",
+  "Hope your birthday is the kind you'll still grin about next Wednesday for absolutely no reason. 🎉",
+  "Another year, another excuse to do whatever you want and call it a tradition. Use it well. 🥳",
+  "Sending wishes for a day stuffed with cake, full of hugs, and gloriously short on to-do lists. 🎂",
+  "Hope today brings you peace, mischief, dessert, and the people who make all three better. 🎈",
+];
+
+export function pickBirthdayMessage(): string {
+  if (typeof window === 'undefined') return BIRTHDAY_MESSAGES[0];
+  const lastRaw = window.localStorage.getItem(BIRTHDAY_LAST_MESSAGE_KEY);
+  const lastIndex = lastRaw === null ? -1 : Number.parseInt(lastRaw, 10);
+  let index = Math.floor(Math.random() * BIRTHDAY_MESSAGES.length);
+  if (BIRTHDAY_MESSAGES.length > 1 && index === lastIndex) {
+    index = (index + 1) % BIRTHDAY_MESSAGES.length;
+  }
+  window.localStorage.setItem(BIRTHDAY_LAST_MESSAGE_KEY, String(index));
+  return BIRTHDAY_MESSAGES[index];
+}
 
 export function markBirthdayShown(): void {
   if (typeof window === 'undefined') return;

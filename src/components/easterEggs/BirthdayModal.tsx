@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { sideCannons, markBirthdayShown } from '@/lib/easterEggs';
+import { sideCannons, markBirthdayShown, pickBirthdayMessage } from '@/lib/easterEggs';
 
 interface Props {
   open: boolean;
@@ -12,8 +12,11 @@ interface Props {
 }
 
 export function BirthdayModal({ open, firstName, onClose }: Props) {
+  const [message, setMessage] = useState<string>('');
+
   useEffect(() => {
     if (!open) return;
+    setMessage(pickBirthdayMessage());
     sideCannons(5000);
     markBirthdayShown();
   }, [open]);
@@ -25,8 +28,7 @@ export function BirthdayModal({ open, firstName, onClose }: Props) {
           <div className="text-6xl select-none">🎂</div>
           <DialogTitle className="text-2xl">Happy birthday, {firstName}!</DialogTitle>
           <DialogDescription className="text-base">
-            Wishing you a brilliant day from the IM-CRM team.
-            Close lots of deals — but only if you feel like it. 🥂
+            {message}
           </DialogDescription>
           <Button onClick={onClose} className="mt-2">Thanks!</Button>
         </div>
