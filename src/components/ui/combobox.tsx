@@ -28,6 +28,8 @@ interface ComboboxProps {
   className?: string;
 }
 
+const MAX_VISIBLE = 100;
+
 export function Combobox({
   options,
   value,
@@ -38,11 +40,28 @@ export function Combobox({
   className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
   const listId = React.useId();
   const selected = options.find((o) => o.value === value);
 
+  const visible = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options.slice(0, MAX_VISIBLE);
+    const starts: ComboboxOption[] = [];
+    const contains: ComboboxOption[] = [];
+    for (const o of options) {
+      const l = o.label.toLowerCase();
+      if (l.startsWith(q)) starts.push(o);
+      else if (l.includes(q)) contains.push(o);
+      if (starts.length >= MAX_VISIBLE) break;
+    }
+    return starts.concat(contains).slice(0, MAX_VISIBLE);
+  }, [options, search]);
+
+  const truncated = options.length > visible.length && !search;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch(''); }}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -65,15 +84,19 @@ export function Combobox({
         align="start"
         className="w-[var(--radix-popover-trigger-width)] p-0"
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {options.map((opt) => (
+              {visible.map((opt) => (
                 <CommandItem
                   key={opt.value}
-                  value={`${opt.label} ${opt.value}`}
+                  value={opt.value}
                   onSelect={() => {
                     onValueChange(opt.value);
                     setOpen(false);
@@ -89,6 +112,11 @@ export function Combobox({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {truncated && (
+              <div className="px-3 py-2 text-xs text-muted-foreground border-t">
+                Showing first {MAX_VISIBLE} of {options.length}. Type to search.
+              </div>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
