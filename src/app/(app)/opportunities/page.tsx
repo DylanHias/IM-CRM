@@ -177,6 +177,8 @@ export default function OpportunitiesPage() {
     serviceName: data.serviceName,
     competitiveWinback: data.competitiveWinback,
     publicSectorSegment: data.publicSectorSegment,
+    secondaryOwnerId: data.secondaryOwnerId,
+    secondaryOwnerName: data.secondaryOwnerName,
     syncStatus: 'pending',
     updatedAt: new Date().toISOString(),
   });
@@ -234,6 +236,8 @@ export default function OpportunitiesPage() {
       closeDate: null,
       competitorId: null,
       closeDescription: null,
+      secondaryOwnerId: data.secondaryOwnerId,
+      secondaryOwnerName: data.secondaryOwnerName,
     };
     if (isTauriApp()) {
       try {
