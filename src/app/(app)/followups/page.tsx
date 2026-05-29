@@ -19,7 +19,7 @@ import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryFollowUpsByUser, completeFollowUp, updateFollowUp as dbUpdateFollowUp, deleteFollowUp as dbDeleteFollowUp } from '@/lib/db/queries/followups';
 import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
-import { queryAllCustomers } from '@/lib/db/queries/customers';
+import { queryCustomerIdNameMap } from '@/lib/db/queries/customers';
 import { onDataEvent, emitDataEvent } from '@/lib/dataEvents';
 import { directPushFollowUp, directDeleteFollowUp } from '@/lib/sync/directPushService';
 import { notifyPush } from '@/lib/sync/pushToast';
@@ -58,12 +58,12 @@ export default function FollowUpsPage() {
     if (!isUserIdResolved) return;
     try {
       if (isTauriApp() && userId) {
-        const [fups, customers] = await Promise.all([
+        const [fups, custMap] = await Promise.all([
           queryFollowUpsByUser(userId, account?.localAccountId ?? undefined),
-          queryAllCustomers(),
+          queryCustomerIdNameMap(),
         ]);
         setFollowUps(fups);
-        setCustomerMap(new Map(customers.map((c) => [c.id, c.name])));
+        setCustomerMap(custMap);
       } else {
         setFollowUps([]);
         setCustomerMap(new Map());

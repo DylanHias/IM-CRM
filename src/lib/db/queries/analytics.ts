@@ -480,7 +480,7 @@ export async function queryMyCustomersCount(userIds: string[]): Promise<number> 
   const placeholders = inClause(n);
   const [row] = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM customers
-     WHERE owner_id IN (${placeholders})
+     WHERE account_manager_id IN (${placeholders})
         OR aws_owner_id IN (${placeholders})
         OR azure_owner_id IN (${placeholders})
         OR customer_success_manager_id IN (${placeholders})`,

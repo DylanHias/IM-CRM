@@ -228,6 +228,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_followups_customer ON follow_ups(customer_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_followups_due ON follow_ups(due_date)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_followups_created_by ON follow_ups(created_by_id)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS sync_records (
@@ -277,6 +278,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_customer ON opportunities(customer_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_created_by ON opportunities(created_by_id)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS users (
@@ -1353,6 +1355,19 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     } catch (err) {
       console.error('[db] migration v48 schema_version bump failed:', err);
+    }
+  }
+
+  if (currentVersion < 49) {
+    // Indexes on created_by_id to speed up user-scoped queries on follow-ups and opportunities.
+    try {
+      await db.execute(`CREATE INDEX IF NOT EXISTS idx_followups_created_by ON follow_ups(created_by_id)`);
+      await db.execute(`CREATE INDEX IF NOT EXISTS idx_opportunities_created_by ON opportunities(created_by_id)`);
+      await db.execute(
+        `UPDATE app_settings SET value = '49', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v49 failed:', err);
     }
   }
 }

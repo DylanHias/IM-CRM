@@ -19,7 +19,7 @@ import {
   insertOpportunity,
   updateOpportunity as dbUpdateOpportunity,
 } from '@/lib/db/queries/opportunities';
-import { queryAllCustomers } from '@/lib/db/queries/customers';
+import { queryAllCustomers, queryCustomerIdNameMap } from '@/lib/db/queries/customers';
 import { queryContactsByCustomer } from '@/lib/db/queries/contacts';
 import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { notifyPush } from '@/lib/sync/pushToast';
@@ -79,25 +79,22 @@ export default function OpportunitiesPage() {
     const gen = ++loadGenRef.current;
     try {
       if (isTauriApp()) {
-        const [opps, custs] = await Promise.all([
+        const [opps, custMap] = await Promise.all([
           queryAllOpportunities(),
-          queryAllCustomers(),
+          queryCustomerIdNameMap(),
         ]);
         if (gen !== loadGenRef.current) return;
         setOpportunities(opps);
-        setCustomers(custs);
-        setCustomerMap(new Map(custs.map((c) => [c.id, c.name])));
+        setCustomerMap(custMap);
       } else {
         if (gen !== loadGenRef.current) return;
         setOpportunities([]);
-        setCustomers([]);
         setCustomerMap(new Map());
       }
     } catch (err) {
       console.error('[opportunity] Failed to load opportunities:', err);
       if (gen !== loadGenRef.current) return;
       setOpportunities([]);
-      setCustomers([]);
       setCustomerMap(new Map());
     } finally {
       setLoading(false);
@@ -113,6 +110,23 @@ export default function OpportunitiesPage() {
       if (e.entity === 'opportunity') loadData();
     });
   }, [loadData]);
+
+  const wizardOpen = addOpen || !!editing;
+  useEffect(() => {
+    if (!wizardOpen) return;
+    if (customers.length > 0) return;
+    if (!isTauriApp()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const custs = await queryAllCustomers();
+        if (!cancelled) setCustomers(custs);
+      } catch (err) {
+        console.error('[opportunity] Failed to load customers:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [wizardOpen, customers.length]);
 
   const [wizardCustomerId, setWizardCustomerId] = useState<string | null>(null);
   const activeCustomerId = wizardCustomerId ?? editing?.customerId ?? null;

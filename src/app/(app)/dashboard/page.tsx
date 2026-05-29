@@ -307,7 +307,7 @@ export default function DashboardPage() {
               label="My Customers"
               value={loading || myCustomersCount === null ? '—' : fmt(myCustomersCount)}
               icon={Building2}
-              sub="Accounts you own"
+              sub="Accounts you manage"
             />
           </motion.div>
         </motion.div>

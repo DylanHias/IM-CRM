@@ -49,6 +49,16 @@ export async function queryAllCustomerIds(): Promise<Set<string>> {
   return new Set(rows.map((r) => r.id));
 }
 
+export async function queryCustomerIdNameMap(): Promise<Map<string, string>> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string; name: string }[]>(
+    `SELECT id, name FROM customers`
+  );
+  const map = new Map<string, string>();
+  for (const r of rows) map.set(r.id, r.name);
+  return map;
+}
+
 export async function queryAllCustomers(): Promise<Customer[]> {
   const db = await getDb();
   const rows = await db.select<CustomerRow[]>(

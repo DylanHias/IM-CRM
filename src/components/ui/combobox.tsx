@@ -84,7 +84,7 @@ export function Combobox({
         align="start"
         className="w-[var(--radix-popover-trigger-width)] p-0"
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} disablePointerSelection>
           <CommandInput
             placeholder={searchPlaceholder}
             value={search}
