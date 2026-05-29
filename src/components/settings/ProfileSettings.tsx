@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { Cake, Save, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Separator } from '@/components/ui/separator';
 import { SettingRow } from './SettingRow';
 import { useAuthStore } from '@/store/authStore';
@@ -100,11 +100,12 @@ export function ProfileSettings() {
           description="Used for the birthday surprise. Stored locally — not synced to D365."
         >
           <div className="flex items-center gap-1.5">
-            <Input
-              type="date"
+            <DatePicker
               value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
-              className="h-8 w-[150px] text-xs"
+              onChange={setBirthday}
+              placeholder="Select birthday"
+              maxDate={new Date()}
+              className="h-8 w-[170px] text-xs"
             />
             {birthday && (
               <Button
