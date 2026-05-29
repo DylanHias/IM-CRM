@@ -67,7 +67,25 @@ export function useAuth() {
   return { isAuthenticated, account, inProgress };
 }
 
+const PROFILE_LOAD_TTL_MS = 60 * 60 * 1000;
+const inFlightProfileLoads = new Map<string, Promise<void>>();
+const lastProfileLoadAt = new Map<string, number>();
+
 export async function loadProfilePhoto(userId: string): Promise<void> {
+  const existing = inFlightProfileLoads.get(userId);
+  if (existing) return existing;
+
+  const last = lastProfileLoadAt.get(userId);
+  if (last && Date.now() - last < PROFILE_LOAD_TTL_MS) return;
+
+  const run = doLoadProfilePhoto(userId).finally(() => {
+    inFlightProfileLoads.delete(userId);
+  });
+  inFlightProfileLoads.set(userId, run);
+  return run;
+}
+
+async function doLoadProfilePhoto(userId: string): Promise<void> {
   try {
     const { getProfilePhoto, saveProfilePhoto, getGraphProfile, saveGraphProfile } =
       await import('@/lib/db/queries/users');
@@ -86,10 +104,18 @@ export async function loadProfilePhoto(userId: string): Promise<void> {
       });
     }
 
-    // 2. Refresh from Graph in the background — only call when something is missing or to keep it warm.
+    // 2. Refresh from Graph only when something is actually missing.
+    // Anything fresh in the DB cache survives until the next TTL window.
+    const needsPhoto = !cachedPhoto;
+    const needsProfile = !cachedProfile;
+    if (!needsPhoto && !needsProfile) {
+      lastProfileLoadAt.set(userId, Date.now());
+      return;
+    }
+
     const { fetchProfilePhoto, fetchUserProfile } = await import('@/lib/auth/graphApi');
 
-    if (!cachedPhoto) {
+    if (needsPhoto) {
       const photo = await fetchProfilePhoto();
       if (photo) {
         await saveProfilePhoto(userId, photo);
@@ -97,17 +123,21 @@ export async function loadProfilePhoto(userId: string): Promise<void> {
       }
     }
 
-    const fresh = await fetchUserProfile();
-    if (fresh) {
-      useAuthStore.getState().setUserProfile(fresh);
-      await saveGraphProfile(userId, {
-        jobTitle: fresh.jobTitle,
-        country: fresh.country,
-        city: fresh.city,
-        officeLocation: fresh.officeLocation,
-        birthday: fresh.birthday,
-      });
+    if (needsProfile) {
+      const fresh = await fetchUserProfile();
+      if (fresh) {
+        useAuthStore.getState().setUserProfile(fresh);
+        await saveGraphProfile(userId, {
+          jobTitle: fresh.jobTitle,
+          country: fresh.country,
+          city: fresh.city,
+          officeLocation: fresh.officeLocation,
+          birthday: fresh.birthday,
+        });
+      }
     }
+
+    lastProfileLoadAt.set(userId, Date.now());
   } catch (err) {
     console.error('[auth] Profile load failed:', err);
   }

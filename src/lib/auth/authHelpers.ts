@@ -49,7 +49,14 @@ async function getTauriAccessToken(scopes: string[]): Promise<string | null> {
     throw err;
   }
   if (result) {
-    useAuthStore.getState().setAccount(result.account, result.accessToken);
+    // Avoid overwriting the existing account with a freshly built copy on every
+    // refresh — doing so creates a new object reference each call and triggers
+    // a re-render storm across every component subscribed to `account`. Only
+    // seed the store when nothing is there yet.
+    const current = useAuthStore.getState().account;
+    if (!current) {
+      useAuthStore.getState().setAccount(result.account, result.accessToken);
+    }
     if (useAuthStore.getState().consentRequiredScopes) {
       useAuthStore.getState().setConsentRequired(null);
     }
