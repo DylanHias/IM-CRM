@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings2, Palette, Database, Bell, RefreshCw, Keyboard } from 'lucide-react';
+import { Settings2, Palette, Database, Bell, RefreshCw, Keyboard, User } from 'lucide-react';
 import { GeneralSettings } from '@/components/settings/GeneralSettings';
+import { ProfileSettings } from '@/components/settings/ProfileSettings';
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings';
 import { DataDefaultsSettings } from '@/components/settings/DataDefaultsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -12,6 +13,7 @@ import { SubSidebar } from '@/components/layout/SubSidebar';
 import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
 
 const TABS = [
+  { id: 'profile', label: 'Profile', icon: User },
   { id: 'general', label: 'General', icon: Settings2 },
   { id: 'appearance', label: 'Appearance', icon: Palette },
   { id: 'data-defaults', label: 'Data & Defaults', icon: Database },
@@ -23,7 +25,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('general');
+  const [activeTab, setActiveTab] = useState<TabId>('profile');
 
   return (
     <div>
@@ -32,6 +34,7 @@ export default function SettingsPage() {
         <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[200px]" />
         <div className="flex-1 min-w-0">
           <AnimatedTabPanels activeKey={activeTab}>
+            {activeTab === 'profile' && <ProfileSettings />}
             {activeTab === 'general' && <GeneralSettings />}
             {activeTab === 'appearance' && <AppearanceSettings />}
             {activeTab === 'data-defaults' && <DataDefaultsSettings />}

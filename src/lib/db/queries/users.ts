@@ -133,6 +133,14 @@ export async function bulkUpsertUsers(users: CrmUser[]): Promise<void> {
   }
 }
 
+export async function saveUserBirthday(userId: string, isoDate: string | null): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE users SET birthday = $1, updated_at = datetime('now') WHERE id = $2`,
+    [isoDate, userId]
+  );
+}
+
 export async function saveProfilePhoto(userId: string, base64Photo: string): Promise<void> {
   const db = await getDb();
   await db.execute(

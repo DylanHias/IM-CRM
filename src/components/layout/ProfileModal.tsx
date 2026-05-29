@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Shield, Settings, Bug, Keyboard, HelpCircle, LogOut, Mail, MapPin, Briefcase, Cake } from 'lucide-react';
+import { Shield, Settings, Bug, Keyboard, HelpCircle, LogOut, Mail, MapPin, Cake } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
@@ -76,46 +76,38 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
       <DialogContent className="max-w-md">
         <DialogTitle className="sr-only">Profile</DialogTitle>
 
-        <div className="flex flex-col items-center text-center pt-2 pb-1">
-          <Avatar className="h-20 w-20 mb-3">
+        <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-4">
+          <Avatar className="h-16 w-16 shrink-0">
             {profilePhoto && <AvatarImage src={profilePhoto} alt={name} />}
-            <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">
+            <AvatarFallback className="text-base bg-primary/10 text-primary font-semibold">
               {getInitials(name)}
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold">{name}</h2>
-            <span
-              className={cn(
-                'text-[10px] font-medium px-1.5 py-0.5 rounded',
-                isAdmin
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground',
-              )}
-            >
-              {isAdmin ? 'Admin' : 'User'}
-            </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-semibold truncate">{name}</h2>
+              <span
+                className={cn(
+                  'text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0',
+                  isAdmin
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground',
+                )}
+              >
+                {isAdmin ? 'Admin' : 'User'}
+              </span>
+            </div>
+            {jobTitle && (
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{jobTitle}</p>
+            )}
           </div>
-
-          {jobTitle && (
-            <p className="text-xs text-muted-foreground mt-0.5">{jobTitle}</p>
-          )}
         </div>
 
-        <div className="mx-auto w-full max-w-xs space-y-1.5 text-xs">
-          {email && (
-            <InfoRow icon={Mail} value={email} />
-          )}
-          {location && (
-            <InfoRow icon={MapPin} value={location} />
-          )}
-          {jobTitle && (
-            <InfoRow icon={Briefcase} value={jobTitle} />
-          )}
-          {birthday && (
-            <InfoRow icon={Cake} value={birthday} />
-          )}
+        <div className="rounded-xl border bg-muted/30 p-3 space-y-2 text-xs">
+          {email && <InfoRow icon={Mail} value={email} />}
+          {location && <InfoRow icon={MapPin} value={location} />}
+          {birthday && <InfoRow icon={Cake} value={birthday} />}
         </div>
 
         <div className="border-t pt-4 mt-2">
