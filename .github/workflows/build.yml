@@ -10,14 +10,22 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CARGO_TERM_COLOR: always
+  RUSTUP_MAX_RETRIES: 10
+
 jobs:
   build-and-release:
     runs-on: windows-latest
     environment: production
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          fetch-tags: true
 
       - name: Read version
         id: version
@@ -35,18 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Get pnpm store path
-        id: pnpm-store
-        shell: bash
-        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: node-cache-${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: node-cache-${{ runner.os }}-pnpm-
+          cache: pnpm
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -82,6 +79,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
+        if: github.ref != 'refs/heads/main'
         run: pnpm test
 
       - name: Build changelog
@@ -137,6 +135,7 @@ jobs:
 
       - name: Build, sign, and release
         uses: tauri-apps/tauri-action@v0.5
+        timeout-minutes: 25
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
