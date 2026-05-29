@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { TableRowsSkeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useShortcutListener } from '@/hooks/useShortcuts';
+import { dedupeUsersByEmail, isAdminUser } from '@/lib/admin/userList';
 
 type SortField = 'name' | 'email' | 'title' | 'lastActiveAt' | 'analyticsTracked';
 type TrackedFilter = 'all' | 'tracked' | 'untracked';
@@ -36,9 +37,11 @@ export function UserManagement() {
     loadUsers();
   }, [loadUsers]);
 
+  const dedupedUsers = useMemo(() => dedupeUsersByEmail(users), [users]);
+
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const rows = users.filter((u) => {
+    const rows = dedupedUsers.filter((u) => {
       if (q && !(
         u.name.toLowerCase().includes(q) ||
         (u.email ?? '').toLowerCase().includes(q) ||
@@ -75,9 +78,9 @@ export function UserManagement() {
     });
 
     return rows;
-  }, [users, searchQuery, sortBy, sortDir, trackedFilter]);
+  }, [dedupedUsers, searchQuery, sortBy, sortDir, trackedFilter]);
 
-  const trackedCount = useMemo(() => users.filter((u) => u.analyticsTracked).length, [users]);
+  const trackedCount = useMemo(() => dedupedUsers.filter((u) => u.analyticsTracked).length, [dedupedUsers]);
   const allVisibleTracked = filtered.length > 0 && filtered.every((u) => u.analyticsTracked);
   const noneVisibleTracked = filtered.every((u) => !u.analyticsTracked);
 
@@ -258,6 +261,11 @@ export function UserManagement() {
                         <td className="px-4 py-3 font-medium">
                           <span className="inline-flex items-center gap-2">
                             {user.name}
+                            {isAdminUser(user) && (
+                              <span className="inline-flex items-center rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                                Admin
+                              </span>
+                            )}
                             {currentEmail && user.email?.toLowerCase() === currentEmail && (
                               <span className="inline-flex items-center rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                                 You

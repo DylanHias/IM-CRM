@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db/client';
+import { isHardcodedAdmin } from '@/lib/auth/adminConfig';
 import type { CrmUser, UserRole } from '@/types/admin';
 import type { UserRow } from '@/types/db';
 
@@ -79,11 +80,8 @@ export async function queryTrackedUserIds(): Promise<string[]> {
   return rows.map((r) => r.id);
 }
 
-export const HARDCODED_ADMIN_EMAILS = ['dylan.hias@ingrammicro.com', 'karim.elouch@ingrammicro.com'];
-
-export function isHardcodedAdmin(email: string): boolean {
-  return HARDCODED_ADMIN_EMAILS.includes(email.toLowerCase());
-}
+export { HARDCODED_ADMIN_EMAILS } from '@/lib/auth/adminConfig';
+export { isHardcodedAdmin };
 
 export async function isUserAdmin(id: string): Promise<boolean> {
   const db = await getDb();
