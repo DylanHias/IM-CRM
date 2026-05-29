@@ -248,7 +248,9 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <GreetingHeader />
-        <QuickAddMenu />
+        <div className="shrink-0">
+          <QuickAddMenu />
+        </div>
       </div>
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />

@@ -14,13 +14,13 @@ export function GreetingHeader() {
   const parts = greeting.split(firstName);
 
   return (
-    <div>
-      <p className="text-2xl font-semibold tracking-tight">
+    <div className="min-w-0">
+      <p className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight break-words">
         {parts.map((part, i) => (
           <span key={i}>
             {part}
             {i < parts.length - 1 && (
-              <Badge variant="purple" className="text-2xl font-semibold px-2 py-0 rounded-md align-middle inline-flex">
+              <Badge variant="purple" className="text-lg sm:text-xl lg:text-2xl font-semibold px-2 py-0 rounded-md align-middle inline-flex">
                 {firstName}
               </Badge>
             )}
