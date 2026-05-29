@@ -36,8 +36,8 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className, onCityCl
   const hoveredCount = hoveredCity ? (cityMap.get(hoveredCity.id) ?? 0) : 0;
 
   return (
-    <div className={cn('rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden', className)}>
-      <div className="px-4 pt-4 pb-2">
+    <div className={cn('rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden flex flex-col h-full', className)}>
+      <div className="px-4 pt-4 pb-2 shrink-0">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
           Customers in Belgium
         </p>
@@ -47,8 +47,8 @@ export function BelgiumMapCard({ cityCounts, totalCustomers, className, onCityCl
         </p>
       </div>
 
-      <div className="px-3 pb-3">
-        <div className="aspect-[4/3] w-full relative">
+      <div className="px-3 pb-3 flex-1 min-h-0">
+        <div className="w-full h-full relative">
           <svg
             viewBox="0 0 800 600"
             className="w-full h-full"

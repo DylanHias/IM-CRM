@@ -253,8 +253,8 @@ export default function DashboardPage() {
 
       <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-stretch">
-        <motion.div {...sectionReveal(0)}>
+      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-stretch lg:h-[clamp(380px,calc(100vh-440px),580px)]">
+        <motion.div {...sectionReveal(0)} className="min-h-0 h-full">
           <BelgiumMapCard
             cityCounts={cityCounts}
             totalCustomers={totalBelgianCustomers}
