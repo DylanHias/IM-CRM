@@ -105,6 +105,8 @@ export function ProfileSettings() {
               onChange={setBirthday}
               placeholder="Select birthday"
               maxDate={new Date()}
+              startMonth={new Date(new Date().getFullYear() - 100, 0)}
+              endMonth={new Date(new Date().getFullYear(), 11)}
               className="h-8 w-[170px] text-xs"
             />
             {birthday && (

@@ -16,6 +16,8 @@ interface DatePickerProps {
   disabled?: boolean;
   minDate?: Date;
   maxDate?: Date;
+  startMonth?: Date;
+  endMonth?: Date;
   className?: string;
 }
 
@@ -27,6 +29,8 @@ export function DatePicker({
   disabled,
   minDate,
   maxDate,
+  startMonth = new Date(2000, 0),
+  endMonth = new Date(2060, 11),
   className,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -74,8 +78,8 @@ export function DatePicker({
             return false;
           }}
           defaultMonth={selected}
-          startMonth={new Date(2000, 0)}
-          endMonth={new Date(2060, 11)}
+          startMonth={startMonth}
+          endMonth={endMonth}
         />
       </PopoverContent>
     </Popover>
