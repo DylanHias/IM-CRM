@@ -2,7 +2,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'llama3.2:1b-instruct-q6_K';
+export const DEFAULT_MODEL = 'llama3.2:3b-instruct-q2_K';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
