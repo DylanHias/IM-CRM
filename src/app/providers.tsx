@@ -130,15 +130,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
         if (restored) {
           const account = useAuthStore.getState().account;
           if (account?.localAccountId) {
+            // Resolve to the D365-keyed row so the admin check and profile load target the
+            // same row profile/birthday data lives on — not a stale MSAL-keyed duplicate.
+            let dbId = account.localAccountId;
             try {
-              const { isUserAdmin } = await import('@/lib/db/queries/users');
-              const admin = await isUserAdmin(account.localAccountId);
+              const { isUserAdmin, resolveUserDbId } = await import('@/lib/db/queries/users');
+              dbId = await resolveUserDbId(account.localAccountId, account.username);
+              const admin = await isUserAdmin(dbId);
               useAuthStore.getState().setIsAdmin(admin);
             } catch (err) {
               console.error('[auth] Admin check after session restore failed:', err);
             }
             const { loadProfilePhoto } = await import('@/hooks/useAuth');
-            await loadProfilePhoto(account.localAccountId);
+            await loadProfilePhoto(dbId);
           }
 
           // Auth restored — kick off background revenue refresh if cache is stale.

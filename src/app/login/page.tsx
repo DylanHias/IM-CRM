@@ -197,30 +197,42 @@ export default function LoginPage() {
 
         // Sync user to DB and check admin status
         if (isTauriApp() && result.account.localAccountId) {
+          // Default to the MSAL id; resolve to the D365-keyed row below so profile
+          // reads/writes target the same row the birthday/profile data lives on.
+          let dbId = result.account.localAccountId;
           try {
-            const { upsertUser, isUserAdmin, isHardcodedAdmin } = await import('@/lib/db/queries/users');
+            const { upsertUser, isUserAdmin, isHardcodedAdmin, queryD365UserIdByEmail, touchUserLastActive } =
+              await import('@/lib/db/queries/users');
             const now = new Date().toISOString();
             const email = result.account.username ?? '';
             const role = isHardcodedAdmin(email) ? 'admin' : 'user';
-            await upsertUser({
-              id: result.account.localAccountId,
-              email,
-              name: result.account.name ?? 'Unknown',
-              role,
-              businessUnit: null,
-              title: null,
-              lastActiveAt: now,
-              profilePhoto: null,
-              analyticsTracked: false,
-              createdAt: now,
-              updatedAt: now,
-            });
-            const admin = await isUserAdmin(result.account.localAccountId);
+            // Reuse the existing D365-synced row when one shares this email — creating a
+            // second MSAL-keyed row would split profile data across two ids.
+            const existingId = email ? await queryD365UserIdByEmail(email) : null;
+            if (existingId) {
+              dbId = existingId;
+              await touchUserLastActive(existingId, now);
+            } else {
+              await upsertUser({
+                id: result.account.localAccountId,
+                email,
+                name: result.account.name ?? 'Unknown',
+                role,
+                businessUnit: null,
+                title: null,
+                lastActiveAt: now,
+                profilePhoto: null,
+                analyticsTracked: false,
+                createdAt: now,
+                updatedAt: now,
+              });
+            }
+            const admin = await isUserAdmin(dbId);
             useAuthStore.getState().setIsAdmin(admin);
           } catch (dbErr) {
             console.error('[login] DB user sync failed (non-fatal):', dbErr);
           }
-          await loadProfilePhoto(result.account.localAccountId);
+          await loadProfilePhoto(dbId);
         }
 
         router.replace('/dashboard');

@@ -7,7 +7,29 @@ vi.mock('@/lib/db/client', () => ({
   getDb: vi.fn(async () => ({ select, execute })),
 }));
 
-import { resolveUserDbId } from '@/lib/db/queries/users';
+import { resolveUserDbId, queryD365UserIdByEmail } from '@/lib/db/queries/users';
+
+describe('queryD365UserIdByEmail', () => {
+  beforeEach(() => {
+    select.mockReset();
+    execute.mockReset();
+  });
+
+  it('orders by profile-data presence then created_at so a stale MSAL duplicate never wins', async () => {
+    select.mockResolvedValueOnce([{ id: 'd365-row-with-birthday' }]);
+    await queryD365UserIdByEmail('dylan@ingrammicro.com');
+    const sql = select.mock.calls[0][0] as string;
+    expect(sql).toContain('ORDER BY');
+    expect(sql).toContain('birthday IS NOT NULL');
+    expect(sql).toContain('created_at ASC');
+  });
+
+  it('returns the resolved row id', async () => {
+    select.mockResolvedValueOnce([{ id: 'd365-row-with-birthday' }]);
+    const id = await queryD365UserIdByEmail('dylan@ingrammicro.com');
+    expect(id).toBe('d365-row-with-birthday');
+  });
+});
 
 describe('resolveUserDbId', () => {
   beforeEach(() => {

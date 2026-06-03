@@ -96,8 +96,16 @@ export async function isUserAdmin(id: string): Promise<boolean> {
 
 export async function queryD365UserIdByEmail(email: string): Promise<string | null> {
   const db = await getDb();
+  // A stale MSAL-keyed row can coexist with the D365-synced row for the same email.
+  // Prefer whichever row actually carries profile data, then the oldest (D365 syncs
+  // before the MSAL self-row), so resolution is deterministic instead of LIMIT-1 luck.
   const rows = await db.select<{ id: string }[]>(
-    `SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+    `SELECT id FROM users WHERE LOWER(email) = LOWER($1)
+     ORDER BY
+       (birthday IS NOT NULL OR job_title IS NOT NULL OR country IS NOT NULL
+         OR city IS NOT NULL OR office_location IS NOT NULL) DESC,
+       created_at ASC
+     LIMIT 1`,
     [email]
   );
   return rows[0]?.id ?? null;
