@@ -4,7 +4,9 @@ import { getRelevantHelpDocs } from './helpContextAi';
 export const AI_NAME = 'Iris';
 
 /** Greeting shown as the first assistant bubble when the chat is opened. */
-export const AI_GREETING = `Hi, I'm ${AI_NAME} 👋 your assistant for the Ingram Micro CRM. I can help you find your way around the app, explain how features work, or look up details about your customers and contacts. What can I help you with?`;
+export const AI_GREETING = `Hi, I'm ${AI_NAME}. 👋 \n
+Your assistant for the Ingram Micro CRM. I can help you find your way around the app, explain how features work, or look up details about your customers and contacts. \n
+What can I help you with?`;
 
 export function buildSystemPrompt(dataContext?: string, userMessage?: string): string {
   const helpDocs = getRelevantHelpDocs(userMessage ?? '');

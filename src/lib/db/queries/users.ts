@@ -103,6 +103,18 @@ export async function queryD365UserIdByEmail(email: string): Promise<string | nu
   return rows[0]?.id ?? null;
 }
 
+// The local user row is usually keyed by the D365 systemuserid (synced from D365),
+// not the MSAL localAccountId. Profile/birthday writes must target that same id or
+// they silently update zero rows. Resolve the effective DB id here.
+export async function resolveUserDbId(
+  localAccountId: string,
+  email: string | null | undefined
+): Promise<string> {
+  if (!email) return localAccountId;
+  const existing = await queryD365UserIdByEmail(email);
+  return existing ?? localAccountId;
+}
+
 export async function bulkUpsertUsers(users: CrmUser[]): Promise<void> {
   const db = await getDb();
   for (const user of users) {

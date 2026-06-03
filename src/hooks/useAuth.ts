@@ -26,8 +26,8 @@ export function useAuth() {
             if (restored) {
               const restoredAccount = useAuthStore.getState().account;
               if (restoredAccount) {
-                await syncUserToDb(restoredAccount, setIsAdmin);
-                await loadProfilePhoto(restoredAccount.localAccountId!);
+                const dbId = await syncUserToDb(restoredAccount, setIsAdmin);
+                if (dbId) await loadProfilePhoto(dbId);
               }
             } else {
               clearAuth();
@@ -48,10 +48,8 @@ export function useAuth() {
         try {
           const result = await instance.acquireTokenSilent({ ...loginRequest, account: accounts[0] });
           setAccount(accounts[0], result.accessToken);
-          await syncUserToDb(accounts[0], setIsAdmin);
-          if (accounts[0].localAccountId) {
-            await loadProfilePhoto(accounts[0].localAccountId);
-          }
+          const dbId = await syncUserToDb(accounts[0], setIsAdmin);
+          if (dbId) await loadProfilePhoto(dbId);
         } catch (err) {
           console.error('[auth] Silent token acquisition failed:', err);
           clearAuth();
@@ -159,8 +157,8 @@ function normalizeDisplayName(raw: string | undefined): string {
 async function syncUserToDb(
   account: { localAccountId?: string; username?: string; name?: string },
   setIsAdmin: (isAdmin: boolean) => void,
-): Promise<void> {
-  if (!isTauriApp() || !account.localAccountId) return;
+): Promise<string | null> {
+  if (!isTauriApp() || !account.localAccountId) return account.localAccountId ?? null;
   try {
     const { upsertUser, isUserAdmin, isHardcodedAdmin, queryD365UserIdByEmail } = await import('@/lib/db/queries/users');
     const now = new Date().toISOString();
@@ -192,7 +190,9 @@ async function syncUserToDb(
     const idToUse = existingId ?? account.localAccountId;
     const admin = await isUserAdmin(idToUse);
     setIsAdmin(admin);
+    return idToUse;
   } catch (dbErr) {
     console.error('[auth] DB user sync failed (staying authenticated):', dbErr);
+    return account.localAccountId ?? null;
   }
 }

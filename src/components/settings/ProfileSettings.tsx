@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { SettingRow } from './SettingRow';
 import { useAuthStore } from '@/store/authStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
-import { saveUserBirthday } from '@/lib/db/queries/users';
+import { saveUserBirthday, resolveUserDbId } from '@/lib/db/queries/users';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { toast } from 'sonner';
 
@@ -47,7 +47,8 @@ export function ProfileSettings() {
     try {
       const isoToSave = birthday ? new Date(birthday).toISOString() : null;
       if (isTauriApp()) {
-        await saveUserBirthday(account.localAccountId, isoToSave);
+        const userId = await resolveUserDbId(account.localAccountId, account.username);
+        await saveUserBirthday(userId, isoToSave);
       }
       setUserProfile({
         jobTitle: userProfile?.jobTitle ?? null,
