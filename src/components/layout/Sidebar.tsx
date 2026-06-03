@@ -6,7 +6,7 @@ import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   Building2, X, MoreVertical,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair, TrendingUp, Sparkles,
+  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair, TrendingUp,
 } from 'lucide-react';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
@@ -59,7 +59,7 @@ export function AppSidebar() {
 
   const { pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
-  const { account, profilePhoto, isAdmin } = useAuthStore();
+  const { account, profilePhoto } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const d365UserId = useD365UserId();
   const recentCustomerIds = useUIStore((s) => s.recentCustomerIds);
@@ -126,18 +126,12 @@ export function AppSidebar() {
     '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
     '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
-    '/ai': { href: '/ai', label: 'AI Assistant', icon: Sparkles },
   };
 
   const navItems = sidebarOrder
     .filter((key) => !sidebarHiddenTabs.includes(key))
-    .filter((key) => key !== '/ai')
     .map((key) => navItemMap[key])
     .filter(Boolean);
-
-  // AI Assistant is admin-only and lives outside the user-reorderable order, so
-  // append it at the bottom for admins only.
-  if (isAdmin) navItems.push(navItemMap['/ai']);
 
   const recentCustomers = recentCustomerIds
     .map((id) => {

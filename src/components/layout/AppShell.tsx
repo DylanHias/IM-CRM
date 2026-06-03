@@ -11,6 +11,7 @@ import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
 import { Walkthrough } from '@/components/walkthrough/Walkthrough';
 import { EasterEggController } from '@/components/easterEggs/EasterEggController';
+import { AiChatWidget } from '@/components/ai-chat';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -39,8 +40,8 @@ export function AppShell({ children }: AppShellProps) {
   useShortcuts();
 
   // Warm up the local Ollama server in the background for admins so the AI
-  // Assistant page is responsive on first open. The model itself is pulled
-  // lazily when the page is opened — this only starts the server process.
+  // Assistant widget is responsive on first open. The model itself is pulled
+  // lazily when the widget is opened — this only starts the server process.
   useEffect(() => {
     if (isAdmin) warmUpOllama();
   }, [isAdmin]);
@@ -74,6 +75,7 @@ export function AppShell({ children }: AppShellProps) {
       </SidebarProvider>
       <Walkthrough />
       <EasterEggController />
+      {isAdmin && <AiChatWidget />}
       <ChangelogDialog />
       <InitialSyncDialog />
       <CommandPalette />

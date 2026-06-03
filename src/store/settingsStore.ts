@@ -19,11 +19,8 @@ export type SyncToastVerbosity = 'silent' | 'errors' | 'all';
 
 export type CustomKeybinding = { key: string; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
-export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | '/opportunities' | '/revenue-overview' | '/insights' | '/analytics' | '/timeline' | '/ai';
+export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | '/opportunities' | '/revenue-overview' | '/insights' | '/analytics' | '/timeline';
 
-// Note: '/ai' is intentionally excluded — it's an admin-only tab appended
-// dynamically in the Sidebar, so it never leaks into non-admin command-palette
-// navigation or the appearance-settings reorder list.
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/dashboard',
   '/customers',

@@ -197,7 +197,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider theme={resolved === 'dark' ? darkTheme : lightTheme}>
         <ThemeSync />
         <Toaster
-          position="bottom-right"
+          position="top-right"
           closeButton
           theme={resolved}
           duration={10000}

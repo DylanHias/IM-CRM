@@ -158,7 +158,7 @@ export function AiChat() {
   const ready = ollamaStatus === 'available';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-150px)] rounded-2xl border border-border bg-background overflow-hidden">
+    <div className="flex flex-col h-full rounded-2xl border border-border bg-background overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">

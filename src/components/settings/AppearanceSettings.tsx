@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff, Sun, Moon, Monitor, Sparkles } from 'lucide-react';
+import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -59,7 +59,6 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
   '/insights': { label: 'Insights', icon: Gauge },
   '/analytics': { label: 'Analytics', icon: LineChart },
   '/timeline': { label: 'Timeline', icon: Clock },
-  '/ai': { label: 'AI Assistant', icon: Sparkles },
 };
 
 function applyThemePreview(theme: Theme) {
