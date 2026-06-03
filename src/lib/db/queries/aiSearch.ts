@@ -246,3 +246,103 @@ export function formatFollowUpContext(rows: FollowUpSearchRow[]): string {
     })
     .join('\n\n');
 }
+
+export interface AccountSummaryStats {
+  contactCount: number;
+  oppTotal: number;
+  oppOpen: number;
+  oppOpenValue: number;
+  topOpps: { subject: string; estimated_revenue: number | null; status: string | null; stage: string | null }[];
+  activityTotal: number;
+  lastActivity: string | null;
+  followUpOpen: number;
+  nextFollowUps: { title: string; due_date: string | null }[];
+}
+
+// Aggregate counts/totals for one account, scoped by customer_id so figures are
+// exact (not capped like the row-level searches). Powers the account overview's
+// high-level summary instead of dumping every contact/opportunity/activity.
+export async function getAccountSummary(customerId: string): Promise<AccountSummaryStats> {
+  const db = await getDb();
+  const [contactRows, oppAgg, topOpps, activityAgg, followUpAgg, nextFollowUps] = await Promise.all([
+    db.select<{ count: number }[]>(
+      `SELECT COUNT(*) AS count FROM contacts WHERE customer_id = $1`,
+      [customerId]
+    ),
+    db.select<{ total: number; open: number; openValue: number | null }[]>(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) AS open,
+              SUM(CASE WHEN status = 'Open' THEN COALESCE(estimated_revenue, 0) ELSE 0 END) AS openValue
+       FROM opportunities WHERE customer_id = $1`,
+      [customerId]
+    ),
+    db.select<AccountSummaryStats['topOpps']>(
+      `SELECT subject, estimated_revenue, status, stage
+       FROM opportunities WHERE customer_id = $1
+       ORDER BY estimated_revenue DESC LIMIT 3`,
+      [customerId]
+    ),
+    db.select<{ total: number; last: string | null }[]>(
+      `SELECT COUNT(*) AS total, MAX(occurred_at) AS last FROM activities WHERE customer_id = $1`,
+      [customerId]
+    ),
+    db.select<{ count: number }[]>(
+      `SELECT COUNT(*) AS count FROM follow_ups WHERE customer_id = $1 AND completed = 0`,
+      [customerId]
+    ),
+    db.select<AccountSummaryStats['nextFollowUps']>(
+      `SELECT title, due_date FROM follow_ups WHERE customer_id = $1 AND completed = 0
+       ORDER BY due_date ASC LIMIT 3`,
+      [customerId]
+    ),
+  ]);
+
+  return {
+    contactCount: contactRows[0]?.count ?? 0,
+    oppTotal: oppAgg[0]?.total ?? 0,
+    oppOpen: oppAgg[0]?.open ?? 0,
+    oppOpenValue: oppAgg[0]?.openValue ?? 0,
+    topOpps,
+    activityTotal: activityAgg[0]?.total ?? 0,
+    lastActivity: activityAgg[0]?.last ?? null,
+    followUpOpen: followUpAgg[0]?.count ?? 0,
+    nextFollowUps,
+  };
+}
+
+export function formatAccountSummary(s: AccountSummaryStats): string {
+  const sections: string[] = [];
+
+  sections.push(
+    [
+      `Contacts on record: ${s.contactCount}`,
+      s.oppOpen > 0
+        ? `Opportunities: ${s.oppTotal} total, ${s.oppOpen} open (€${s.oppOpenValue.toLocaleString()} open pipeline)`
+        : `Opportunities: ${s.oppTotal} total, none currently open`,
+      `Activities logged: ${s.activityTotal}${
+        s.lastActivity ? `, most recent ${s.lastActivity.slice(0, 10)}` : ''
+      }`,
+      `Open follow-ups: ${s.followUpOpen}`,
+    ].join('\n')
+  );
+
+  if (s.topOpps.length > 0) {
+    const opps = s.topOpps
+      .map((o) => {
+        const value = o.estimated_revenue != null ? `€${o.estimated_revenue.toLocaleString()}` : 'value n/a';
+        const state = [o.status, o.stage].filter(Boolean).join(' · ');
+        return `- ${o.subject} — ${value}${state ? ` (${state})` : ''}`;
+      })
+      .join('\n');
+    sections.push(`Top opportunities by value:\n${opps}`);
+  }
+
+  if (s.nextFollowUps.length > 0) {
+    const fus = s.nextFollowUps
+      .map((f) => `- ${f.title}${f.due_date ? ` (due ${f.due_date.slice(0, 10)})` : ''}`)
+      .join('\n');
+    sections.push(`Next open follow-ups:\n${fus}`);
+  }
+
+  return sections.join('\n\n');
+}

@@ -3,14 +3,12 @@ import {
   searchContacts,
   searchOpportunities,
   searchRevenue,
-  searchActivities,
-  searchFollowUps,
+  getAccountSummary,
   formatCustomerContext,
   formatContactContext,
   formatOpportunityContext,
   formatRevenueContext,
-  formatActivityContext,
-  formatFollowUpContext,
+  formatAccountSummary,
 } from '@/lib/db/queries/aiSearch';
 
 /** Ollama function-calling tool definition. */
@@ -38,7 +36,7 @@ export const AI_TOOLS: OllamaTool[] = [
     function: {
       name: 'get_account_overview',
       description:
-        "Get EVERYTHING about a company in one call: its account details, every contact who works there, all associated opportunities/deals, recent activities, open follow-ups, and revenue/ARR figures. ALWAYS prefer this tool when the user asks to know about, summarise, or list everything for a company (e.g. 'tell me about Acme', 'who works for Acme', 'what deals does Acme have'). Returns a single combined report.",
+        "Get a high-level SUMMARY of a company in one call: its account details, counts of contacts/opportunities/activities/follow-ups, open pipeline value, the top few opportunities by value, and the next open follow-ups. ALWAYS prefer this tool when the user asks to know about, summarise, or get an overview of a company (e.g. 'tell me about Acme', 'who works for Acme', 'what deals does Acme have'). It returns totals, NOT a full list — for the full details of a specific opportunity, contact, or deal, follow up with search_opportunities or search_contacts.",
       parameters: {
         type: 'object',
         properties: {
@@ -138,33 +136,18 @@ export async function executeTool(name: string, rawArgs: unknown): Promise<strin
       case 'get_account_overview': {
         const query = readQuery(args);
         if (!query) return 'No company name was provided.';
-        const [customers, contacts, opportunities, revenue, activities, followUps] =
-          await Promise.all([
-            searchCustomers(query),
-            searchContacts(query),
-            searchOpportunities(query),
-            searchRevenue(query),
-            searchActivities(query),
-            searchFollowUps(query),
-          ]);
+        const customers = await searchCustomers(query);
         if (customers.length === 0) return `No customer found matching "${query}".`;
 
+        const account = customers[0];
+        const [summary, revenue] = await Promise.all([
+          getAccountSummary(account.id),
+          searchRevenue(query),
+        ]);
+
         const sections = [
-          `=== ACCOUNT ===\n${formatCustomerContext(customers)}`,
-          `=== CONTACTS ===\n${
-            contacts.length > 0 ? formatContactContext(contacts) : 'No contacts on record.'
-          }`,
-          `=== OPPORTUNITIES ===\n${
-            opportunities.length > 0
-              ? formatOpportunityContext(opportunities)
-              : 'No opportunities on record.'
-          }`,
-          `=== ACTIVITIES ===\n${
-            activities.length > 0 ? formatActivityContext(activities) : 'No activities on record.'
-          }`,
-          `=== FOLLOW-UPS ===\n${
-            followUps.length > 0 ? formatFollowUpContext(followUps) : 'No follow-ups on record.'
-          }`,
+          `=== ACCOUNT ===\n${formatCustomerContext([account])}`,
+          `=== SUMMARY ===\n${formatAccountSummary(summary)}`,
           `=== REVENUE ===\n${
             revenue.length > 0 ? formatRevenueContext(revenue) : 'No revenue data on record.'
           }`,

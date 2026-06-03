@@ -17,7 +17,7 @@ export function AiChatWidget() {
         title={open ? 'Close assistant' : 'Open assistant'}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
         className={cn(
-          'fixed right-0 top-4/5 -translate-y-1/2 z-50 flex items-center justify-center',
+          'fixed right-0 top-[80%] -translate-y-1/2 z-50 flex items-center justify-center',
           'h-16 w-11 rounded-l-2xl bg-primary text-primary-foreground',
           'shadow-lg transition-all hover:w-12 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           open && 'opacity-0 pointer-events-none'
