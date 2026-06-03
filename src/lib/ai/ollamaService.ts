@@ -2,7 +2,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'llama3.2:3b-instruct-q2_K';
+export const DEFAULT_MODEL = 'deepseek-r1:1.5b-qwen-distill-q3_K_M';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
@@ -288,6 +288,62 @@ export function parseTextToolCall(raw: string): ToolCall | null {
   return { function: { name, arguments: args } };
 }
 
+/** Longest suffix of `buf` that is a proper prefix of `tag` (for split-tag detection). */
+function partialTagSuffixLen(buf: string, tag: string): number {
+  const max = Math.min(buf.length, tag.length - 1);
+  for (let len = max; len > 0; len--) {
+    if (tag.startsWith(buf.slice(buf.length - len))) return len;
+  }
+  return 0;
+}
+
+/**
+ * Reasoning models (deepseek-r1) wrap their chain-of-thought in <think>…</think>
+ * inline in the content stream. This strips those blocks so only the final answer
+ * (and any text-encoded tool call after </think>) reaches the UI/tool-call guard.
+ * Streaming-safe: tags split across chunk boundaries are held back until resolved.
+ */
+export function createThinkStripper(onChunk: (text: string) => void) {
+  const OPEN = '<think>';
+  const CLOSE = '</think>';
+  let inThink = false;
+  let buf = '';
+
+  return {
+    onChunk(text: string) {
+      buf += text;
+      while (buf.length > 0) {
+        if (!inThink) {
+          const idx = buf.indexOf(OPEN);
+          if (idx !== -1) {
+            if (idx > 0) onChunk(buf.slice(0, idx));
+            buf = buf.slice(idx + OPEN.length);
+            inThink = true;
+            continue;
+          }
+          const keep = partialTagSuffixLen(buf, OPEN);
+          if (buf.length > keep) onChunk(buf.slice(0, buf.length - keep));
+          buf = buf.slice(buf.length - keep);
+          break;
+        }
+        const idx = buf.indexOf(CLOSE);
+        if (idx !== -1) {
+          buf = buf.slice(idx + CLOSE.length);
+          inThink = false;
+          continue;
+        }
+        buf = buf.slice(buf.length - partialTagSuffixLen(buf, CLOSE));
+        break;
+      }
+    },
+    /** Emit any retained non-think tail once the stream ends. */
+    flush() {
+      if (!inThink && buf) onChunk(buf);
+      buf = '';
+    },
+  };
+}
+
 /**
  * Wraps onChunk so genuine prose streams immediately, but content that looks
  * like it might be a text-encoded tool call (starts with `{` or a code fence)
@@ -424,7 +480,9 @@ export async function chatWithTools(
     if (signal?.aborted) { onDone(); return; }
 
     const guard = createToolCallGuard(onChunk);
-    const structuredCalls = await streamRound(model, working, AI_TOOLS, guard.onChunk, signal);
+    const stripper = createThinkStripper(guard.onChunk);
+    const structuredCalls = await streamRound(model, working, AI_TOOLS, stripper.onChunk, signal);
+    stripper.flush();
 
     // Prefer structured tool calls; otherwise recover a text-encoded one.
     const toolCalls =
@@ -446,6 +504,8 @@ export async function chatWithTools(
 
   // Tool budget exhausted — one final streamed round without tools to force an answer.
   if (signal?.aborted) { onDone(); return; }
-  await streamRound(model, working, undefined, onChunk, signal);
+  const finalStripper = createThinkStripper(onChunk);
+  await streamRound(model, working, undefined, finalStripper.onChunk, signal);
+  finalStripper.flush();
   onDone();
 }

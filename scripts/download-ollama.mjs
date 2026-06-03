@@ -9,7 +9,7 @@
  *   - lib/                → src-tauri/binaries/lib/  (bundled as a resource next to the exe)
  *
  * The GPU runner variants (cuda/rocm) are pruned — they add ~1 GB and we only
- * need the CPU runner for the small llama3.2:1b model.
+ * need the CPU runner for the small deepseek-r1:1.5b model.
  *
  * Run automatically before dev/build via beforeDevCommand / beforeBuildCommand.
  */
@@ -80,7 +80,7 @@ try {
   if (existsSync(LIB_TARGET)) rmSync(LIB_TARGET, { recursive: true, force: true });
   cpSync(extractedLib, LIB_TARGET, { recursive: true });
 
-  // Prune GPU runners (cuda*/rocm*) — CPU is plenty for llama3.2:1b and saves ~1 GB.
+  // Prune GPU runners (cuda*/rocm*) — CPU is plenty for deepseek-r1:1.5b and saves ~1 GB.
   const ollamaLib = join(LIB_TARGET, 'ollama');
   if (existsSync(ollamaLib)) {
     for (const name of readdirSync(ollamaLib)) {
