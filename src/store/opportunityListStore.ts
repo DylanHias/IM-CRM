@@ -125,7 +125,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
             return (
               o.subject.toLowerCase().includes(q) ||
               companyName.toLowerCase().includes(q) ||
-              (o.primaryVendor ?? '').toLowerCase().includes(q)
+              (o.primaryVendor ?? '').toLowerCase().includes(q) ||
+              (o.opportunityNumber ?? '').toLowerCase().includes(q)
             );
           });
         }
