@@ -14,6 +14,8 @@ import { EasterEggController } from '@/components/easterEggs/EasterEggController
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
+import { warmUp as warmUpOllama } from '@/lib/ai/ollamaService';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
@@ -30,10 +32,18 @@ export function AppShell({ children }: AppShellProps) {
   const sidebarRememberLastState = useSettingsStore((s) => s.sidebarRememberLastState);
   const sidebarDefaultExpanded = useSettingsStore((s) => s.sidebarDefaultExpanded);
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   useAutoSync();
   useLaunchAlerts();
   useConnectivityToasts();
   useShortcuts();
+
+  // Warm up the local Ollama server in the background for admins so the AI
+  // Assistant page is responsive on first open. The model itself is pulled
+  // lazily when the page is opened — this only starts the server process.
+  useEffect(() => {
+    if (isAdmin) warmUpOllama();
+  }, [isAdmin]);
 
   // When "remember last sidebar state" is off, force the configured default on each mount.
   // Runs once on mount and again only if the user toggles the remember flag itself.

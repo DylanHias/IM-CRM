@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Ingram Micro CRM",
-  "version": "2.12.128",
+  "version": "2.13.0",
   "identifier": "com.ingramcrm.app",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "pnpm sync-version && pnpm dev",
-    "beforeBuildCommand": "pnpm sync-version && pnpm build"
+    "beforeDevCommand": "node scripts/download-ollama.mjs && pnpm sync-version && pnpm dev",
+    "beforeBuildCommand": "node scripts/download-ollama.mjs && pnpm sync-version && pnpm build"
   },
   "app": {
     "windows": [
@@ -27,7 +27,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' tauri: asset: https://login.microsoftonline.com https://login.microsoft.com https://graph.microsoft.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' ipc: http://ipc.localhost https://login.microsoftonline.com https://login.microsoft.com https://graph.microsoft.com https://*.crm4.dynamics.com https://api.powerbi.com https://analysis.windows.net"
+      "csp": "default-src 'self' tauri: asset: https://login.microsoftonline.com https://login.microsoft.com https://graph.microsoft.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' ipc: http://ipc.localhost http://localhost:11434 https://login.microsoftonline.com https://login.microsoft.com https://graph.microsoft.com https://*.crm4.dynamics.com https://api.powerbi.com https://analysis.windows.net"
     }
   },
   "bundle": {
@@ -39,6 +39,9 @@
     "category": "Business",
     "shortDescription": "A streamlined CRM for Ingram Micro colleagues.",
     "longDescription": "Ingram Micro CRM is a lightweight desktop application built for Ingram Micro account managers. It replaces the cluttered Dynamics 365 interface with a focused tool for managing customers, contacts, activities, follow-ups, and opportunities — all synced with D365 in the background.",
+    "externalBin": [
+      "binaries/ollama"
+    ],
     "createUpdaterArtifacts": "v1Compatible",
     "icon": [
       "icons/32x32.png",

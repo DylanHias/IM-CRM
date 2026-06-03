@@ -6,6 +6,8 @@ use rust_xlsxwriter::{Format, Workbook, Worksheet};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 
@@ -133,6 +135,153 @@ async fn refresh_oauth_token(
         scope: body["scope"].as_str().unwrap_or_default().to_string(),
         token_type: body["token_type"].as_str().unwrap_or("Bearer").to_string(),
     })
+}
+
+// ─── Ollama process management ───────────────────────────────────────────────
+
+/// Force-kill all ollama.exe processes (including spawned runner children).
+/// Ollama spawns runner sub-processes that outlive a tracked sidecar kill, so we
+/// terminate the whole tree by image name. Called both from JS (before updates)
+/// and from the Rust app-exit handlers below — the latter guarantees the process
+/// dies even if the frontend never gets a chance to run, which previously caused
+/// the app to hang on close/update.
+fn force_kill_ollama() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", "ollama.exe", "/T"])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("pkill").arg("-f").arg("ollama").output();
+    }
+}
+
+#[tauri::command]
+fn kill_ollama() {
+    force_kill_ollama();
+}
+
+// ─── Ollama HTTP proxy ───────────────────────────────────────────────────────
+// Routes Ollama requests through Rust/reqwest to avoid Tauri HTTP plugin
+// resource management issues (invalid resource ID errors) on Windows.
+
+#[tauri::command]
+async fn ollama_request(path: String, body: Option<String>) -> Result<String, String> {
+    let url = format!("http://localhost:11434{}", path);
+    let client = reqwest::Client::new();
+
+    let res = if let Some(b) = body {
+        client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .body(b)
+            .send()
+            .await
+    } else {
+        client.get(&url).send().await
+    };
+
+    let res = res.map_err(|e| format!("ollama request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("ollama returned {}", res.status()));
+    }
+
+    res.text().await.map_err(|e| format!("ollama read failed: {e}"))
+}
+
+/// Stream an Ollama chat response token-by-token via a Tauri Channel.
+/// The channel is passed from JS, so there is no listener-registration race condition.
+/// Content tokens stream as `Chunk`; if the model decides to call tools, the raw
+/// tool_calls array is forwarded as `ToolCalls` so the frontend can run them and
+/// continue the conversation — this is what makes streamed tool-calling possible.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "event", content = "data")]
+enum OllamaChunkEvent {
+    Chunk { content: String },
+    ToolCalls { calls: serde_json::Value },
+    Done,
+}
+
+#[tauri::command]
+async fn ollama_chat_stream(
+    model: String,
+    messages: serde_json::Value,
+    tools: Option<serde_json::Value>,
+    on_chunk: tauri::ipc::Channel<OllamaChunkEvent>,
+) -> Result<(), String> {
+    let client = reqwest::Client::new();
+
+    let mut payload = serde_json::json!({ "model": model, "messages": messages, "stream": true });
+    if let Some(t) = tools {
+        if !t.is_null() {
+            payload["tools"] = t;
+        }
+    }
+
+    let mut res = client
+        .post("http://localhost:11434/api/chat")
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| format!("ollama chat failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("ollama returned {}", res.status()));
+    }
+
+    let mut buffer = String::new();
+
+    while let Some(chunk) = res.chunk().await.map_err(|e| format!("ollama read: {e}"))? {
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        while let Some(nl) = buffer.find('\n') {
+            let line = buffer[..nl].trim().to_string();
+            buffer.drain(..=nl);
+
+            if line.is_empty() {
+                continue;
+            }
+
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
+                let content = json["message"]["content"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+                let done = json["done"].as_bool().unwrap_or(false);
+
+                if !content.is_empty() {
+                    on_chunk
+                        .send(OllamaChunkEvent::Chunk { content })
+                        .map_err(|e| format!("channel send failed: {e}"))?;
+                }
+
+                let tool_calls = &json["message"]["tool_calls"];
+                if tool_calls.as_array().is_some_and(|a| !a.is_empty()) {
+                    on_chunk
+                        .send(OllamaChunkEvent::ToolCalls { calls: tool_calls.clone() })
+                        .map_err(|e| format!("channel send failed: {e}"))?;
+                }
+
+                if done {
+                    on_chunk
+                        .send(OllamaChunkEvent::Done)
+                        .map_err(|e| format!("channel send failed: {e}"))?;
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    on_chunk
+        .send(OllamaChunkEvent::Done)
+        .map_err(|e| format!("channel send failed: {e}"))?;
+
+    Ok(())
 }
 
 // ─── Excel Export ────────────────────────────────────────────────────────────
@@ -898,7 +1047,19 @@ pub fn run() {
             export_revenue_overview,
             export_revenue_cache,
             import_revenue_cache,
+            kill_ollama,
+            ollama_request,
+            ollama_chat_stream,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|_app_handle, event| {
+            // Guarantee the Ollama sidecar (and its runner children) are killed
+            // on every shutdown path — normal close, OS shutdown, and updater
+            // relaunch — without relying on the frontend to fire. This is what
+            // previously left the app hanging on exit/update.
+            if let tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit = event {
+                force_kill_ollama();
+            }
+        });
 }

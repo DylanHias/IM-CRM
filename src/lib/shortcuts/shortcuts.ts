@@ -35,6 +35,7 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/insights': 'Go to Insights',
     '/analytics': 'Go to Analytics',
     '/timeline': 'Go to Timeline',
+    '/ai': 'Go to AI Assistant',
   };
 
   return sidebarOrder.map((tab, i) => ({

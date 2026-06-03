@@ -4,7 +4,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
-  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User, LayoutDashboard,
+  Settings, Keyboard, Search, Plus, Filter, ChevronsLeft, HelpCircle, Clock, Building2, User, LayoutDashboard, Sparkles,
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
@@ -29,6 +29,7 @@ const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/insights': Gauge,
   '/analytics': LineChart,
   '/timeline': Clock,
+  '/ai': Sparkles,
 };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {

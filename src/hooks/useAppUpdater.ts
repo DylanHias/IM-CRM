@@ -12,6 +12,21 @@ interface AppUpdaterState {
 
 const POLL_INTERVAL = 15 * 60 * 1000;
 
+/**
+ * Stop the Ollama sidecar before installing an update. The Rust exit handler
+ * also force-kills it, but doing it here first prevents the installer from
+ * stalling on a locked, still-running ollama.exe.
+ */
+async function killOllamaBeforeUpdate(): Promise<void> {
+  if (!isTauriApp()) return;
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('kill_ollama');
+  } catch (err) {
+    console.error('[updater] failed to stop Ollama before update:', err);
+  }
+}
+
 export function useAppUpdater(): AppUpdaterState {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -26,6 +41,7 @@ export function useAppUpdater(): AppUpdaterState {
         setDownloading(true);
         toast.info(`Updating to ${update.version}…`, { duration: 60000 });
         if (update.body) await storeChangelog(update.body, update.version);
+        await killOllamaBeforeUpdate();
         await update.downloadAndInstall();
         const { relaunch } = await import('@tauri-apps/plugin-process');
         await relaunch();
@@ -64,6 +80,7 @@ export function useAppUpdater(): AppUpdaterState {
       if (update.body) {
         await storeChangelog(update.body, update.version);
       }
+      await killOllamaBeforeUpdate();
       await update.downloadAndInstall();
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();

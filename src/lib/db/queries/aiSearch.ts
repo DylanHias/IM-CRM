@@ -86,3 +86,86 @@ export function formatContactContext(rows: ContactSearchRow[]): string {
     })
     .join('\n\n');
 }
+
+interface OpportunitySearchRow {
+  subject: string;
+  status: string | null;
+  stage: string | null;
+  probability: number | null;
+  primary_vendor: string | null;
+  estimated_revenue: number | null;
+  expiration_date: string | null;
+  customer_name: string | null;
+}
+
+interface RevenueSearchRow {
+  name: string;
+  arr: number | null;
+  cloud_customer: number | null;
+  active_end_customers: number | null;
+  as_of_month: string | null;
+}
+
+// Search by deal subject OR company name. Only the columns needed for a useful
+// summary are selected, and results are capped tightly to keep tool output small.
+export async function searchOpportunities(term: string): Promise<OpportunitySearchRow[]> {
+  const db = await getDb();
+  return db.select<OpportunitySearchRow[]>(
+    `SELECT o.subject, o.status, o.stage, o.probability, o.primary_vendor,
+            o.estimated_revenue, o.expiration_date, cust.name AS customer_name
+     FROM opportunities o
+     LEFT JOIN customers cust ON o.customer_id = cust.id
+     WHERE o.subject LIKE '%' || $1 || '%' COLLATE NOCASE
+        OR cust.name LIKE '%' || $1 || '%' COLLATE NOCASE
+     ORDER BY o.estimated_revenue DESC
+     LIMIT 5`,
+    [term]
+  );
+}
+
+// Revenue/ARR lookup for a specific customer, joining the Power BI revenue cache
+// by BCN. Capped to the top few matches by ARR.
+export async function searchRevenue(term: string): Promise<RevenueSearchRow[]> {
+  const db = await getDb();
+  return db.select<RevenueSearchRow[]>(
+    `SELECT c.name, c.arr, c.cloud_customer,
+            r.active_end_customers, r.as_of_month
+     FROM customers c
+     LEFT JOIN customer_revenue r ON c.bcn = r.bcn
+     WHERE c.name LIKE '%' || $1 || '%' COLLATE NOCASE
+     ORDER BY c.arr DESC
+     LIMIT 3`,
+    [term]
+  );
+}
+
+export function formatOpportunityContext(rows: OpportunitySearchRow[]): string {
+  if (rows.length === 0) return '';
+  return rows
+    .map((r) => {
+      const lines = [`Opportunity: ${r.subject}`];
+      if (r.customer_name) lines.push(`  Company: ${r.customer_name}`);
+      if (r.status) lines.push(`  Status: ${r.status}`);
+      if (r.stage) lines.push(`  Stage: ${r.stage}${r.probability != null ? ` (${r.probability}%)` : ''}`);
+      if (r.primary_vendor) lines.push(`  Vendor: ${r.primary_vendor}`);
+      if (r.estimated_revenue != null)
+        lines.push(`  Revenue: €${r.estimated_revenue.toLocaleString()}`);
+      if (r.expiration_date) lines.push(`  Expires: ${r.expiration_date.slice(0, 10)}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+}
+
+export function formatRevenueContext(rows: RevenueSearchRow[]): string {
+  if (rows.length === 0) return '';
+  return rows
+    .map((r) => {
+      const lines = [`Customer: ${r.name}`];
+      lines.push(`  Cloud customer: ${r.cloud_customer ? 'Yes' : 'No'}`);
+      if (r.arr != null) lines.push(`  ARR: €${r.arr.toLocaleString()}`);
+      if (r.active_end_customers != null) lines.push(`  Active end customers: ${r.active_end_customers}`);
+      if (r.as_of_month) lines.push(`  As of: ${r.as_of_month}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+}
