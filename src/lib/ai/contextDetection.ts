@@ -1,12 +1,13 @@
 import { searchCustomers, searchContacts, formatCustomerContext, formatContactContext } from '@/lib/db/queries/aiSearch';
 
 // Patterns that suggest the user is asking about a specific customer or contact
-const CUSTOMER_PATTERNS = [
+export const CUSTOMER_PATTERNS = [
   /\bcustomer\s+([a-z][a-z0-9\s\-&'.]+)/gi,
   /\bcompany\s+([a-z][a-z0-9\s\-&'.]+)/gi,
   /\baccount\s+([a-z][a-z0-9\s\-&'.]+)/gi,
   /\babout\s+([a-z][a-z0-9\s\-&'.]+)/gi,
-  /\binfo\s+(?:on|about|for)\s+([a-z][a-z0-9\s\-&'.]+)/gi,
+  // "info(rmation)/details/data on|about|for X" — also matches "give me information on Dattico".
+  /\b(?:info(?:rmation)?|details|data)\s+(?:on|about|for)\s+([a-z][a-z0-9\s\-&'.]+)/gi,
 ];
 
 const CONTACT_PATTERNS = [
@@ -14,7 +15,7 @@ const CONTACT_PATTERNS = [
   /\bperson\s+([a-z][a-z\s\-'.]+)/gi,
 ];
 
-function extractTerms(message: string, patterns: RegExp[]): string[] {
+export function extractTerms(message: string, patterns: RegExp[]): string[] {
   const terms: string[] = [];
   for (const pattern of patterns) {
     pattern.lastIndex = 0;

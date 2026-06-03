@@ -2,7 +2,10 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'deepseek-r1:1.5b-qwen-distill-q4_K_M';
+// Must be a tool-capable model (Ollama capability "tools"). deepseek-r1 distills
+// are "thinking"-only and silently ignore tool calls, so Iris could never read the
+// CRM. llama3.2:1b has native tool calling and is the smallest/fastest such model.
+export const DEFAULT_MODEL = 'llama3.2:1b-instruct-q4_K_M';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
@@ -226,14 +229,47 @@ async function pullModelViaHttp(
 
 const MAX_TOOL_ROUNDS = 4;
 
-interface ToolCall {
+export interface ToolCall {
   function: { name: string; arguments: Record<string, unknown> | string };
 }
 
-type ChatTurn =
+export type ChatTurn =
   | OllamaMessage
   | { role: 'assistant'; content: string; tool_calls: ToolCall[] }
   | { role: 'tool'; content: string };
+
+/** A data lookup the assistant performed, for live status + post-answer transparency chips. */
+export interface ToolInvocation {
+  /** Present-tense status shown live while the lookup runs (e.g. `Searching customers for "Dattico"…`). */
+  running: string;
+  /** Past-tense label shown as a chip on the finished answer (e.g. `Searched customers for "Dattico"`). */
+  done: string;
+}
+
+/** What chatWithTools returns so the caller can persist the tool round-trip and show what was looked up. */
+export interface ChatToolMeta {
+  /** Assistant tool-call + tool-result turns produced this answer; replay them next turn for follow-up context. */
+  toolTurns: ChatTurn[];
+  /** Human-readable record of each lookup performed. */
+  invocations: ToolInvocation[];
+}
+
+const TOOL_VERBS: Record<string, { running: string; done: string }> = {
+  get_account_overview: { running: 'Looking up', done: 'Looked up' },
+  search_customers: { running: 'Searching customers for', done: 'Searched customers for' },
+  search_contacts: { running: 'Searching contacts for', done: 'Searched contacts for' },
+  search_opportunities: { running: 'Searching deals for', done: 'Searched deals for' },
+  get_revenue: { running: 'Looking up revenue for', done: 'Looked up revenue for' },
+};
+
+function describeInvocation(name: string, rawArgs: Record<string, unknown> | string): ToolInvocation {
+  const q = typeof rawArgs === 'string' ? rawArgs : rawArgs?.query;
+  const query = typeof q === 'string' ? q.trim() : '';
+  const verb = TOOL_VERBS[name];
+  if (!verb) return { running: `Using ${name}…`, done: `Used ${name}` };
+  const suffix = query ? ` "${query}"` : '';
+  return { running: `${verb.running}${suffix}…`, done: `${verb.done}${suffix}` };
+}
 
 const KNOWN_TOOL_NAMES = new Set(AI_TOOLS.map((t) => t.function.name));
 
@@ -469,15 +505,20 @@ async function streamRound(
 
 export async function chatWithTools(
   model: string,
-  messages: OllamaMessage[],
+  messages: ChatTurn[],
   onChunk: (text: string) => void,
-  onDone: () => void,
-  signal?: AbortSignal
-): Promise<void> {
+  signal?: AbortSignal,
+  onToolStatus?: (status: string | null) => void
+): Promise<ChatToolMeta> {
   const working: ChatTurn[] = [...messages];
+  const startLen = working.length;
+  const invocations: ToolInvocation[] = [];
+
+  // Everything appended past the input is the tool round-trip the caller persists.
+  const meta = (): ChatToolMeta => ({ toolTurns: working.slice(startLen), invocations });
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    if (signal?.aborted) { onDone(); return; }
+    if (signal?.aborted) return meta();
 
     const guard = createToolCallGuard(onChunk);
     const stripper = createThinkStripper(guard.onChunk);
@@ -489,23 +530,24 @@ export async function chatWithTools(
       structuredCalls.length > 0 ? structuredCalls : [guard.extractOrFlush()].filter(Boolean) as ToolCall[];
 
     // No tool calls means this round streamed the final answer.
-    if (toolCalls.length === 0 || signal?.aborted) {
-      onDone();
-      return;
-    }
+    if (toolCalls.length === 0 || signal?.aborted) return meta();
 
     // Record the tool request, run each tool, feed results back, and loop.
     working.push({ role: 'assistant', content: '', tool_calls: toolCalls });
     for (const call of toolCalls) {
+      const inv = describeInvocation(call.function?.name, call.function?.arguments ?? {});
+      invocations.push(inv);
+      onToolStatus?.(inv.running);
       const out = await executeTool(call.function?.name, call.function?.arguments);
       working.push({ role: 'tool', content: out });
     }
+    onToolStatus?.(null);
   }
 
   // Tool budget exhausted — one final streamed round without tools to force an answer.
-  if (signal?.aborted) { onDone(); return; }
+  if (signal?.aborted) return meta();
   const finalStripper = createThinkStripper(onChunk);
   await streamRound(model, working, undefined, finalStripper.onChunk, signal);
   finalStripper.flush();
-  onDone();
+  return meta();
 }

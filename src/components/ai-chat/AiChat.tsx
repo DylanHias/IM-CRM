@@ -4,7 +4,9 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { Send, Square, Trash2, RefreshCw, Download, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAiChatStore } from '@/store/aiChatStore';
+import type { StreamMeta } from '@/store/aiChatStore';
 import { chatWithTools, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
+import type { ChatTurn } from '@/lib/ai/ollamaService';
 import { buildSystemPrompt, AI_NAME, AI_GREETING } from '@/lib/ai/systemPrompt';
 import { detectAndFetchContext } from '@/lib/ai/contextDetection';
 import { useTypewriter } from '@/lib/ai/typewriter';
@@ -18,6 +20,10 @@ const GREETING_MESSAGE = {
   timestamp: 0,
 };
 
+// Cap how many prior messages we replay to the model so long chats don't overflow
+// the context window or slow the small local model down.
+const MAX_HISTORY = 12;
+
 interface Props {
   onClose?: () => void;
 }
@@ -27,11 +33,13 @@ export function AiChat({ onClose }: Props) {
     messages,
     isStreaming,
     streamingContent,
+    toolStatus,
     ollamaStatus,
     pullProgress,
     pullStatus,
     addMessage,
     updateStreamingContent,
+    setToolStatus,
     finalizeStreaming,
     setStreaming,
     clearMessages,
@@ -45,6 +53,7 @@ export function AiChat({ onClose }: Props) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const chunkBufferRef = useRef('');
   const rafRef = useRef<number | undefined>(undefined);
+  const pendingMetaRef = useRef<StreamMeta | undefined>(undefined);
 
   // Typewriter reveal drives the visible streaming text at a steady cadence.
   const displayed = useTypewriter(streamingContent);
@@ -59,7 +68,8 @@ export function AiChat({ onClose }: Props) {
   useEffect(() => {
     if (!complete) return;
     if (displayed.length >= streamingContent.length) {
-      finalizeStreaming();
+      finalizeStreaming(pendingMetaRef.current);
+      pendingMetaRef.current = undefined;
       setComplete(false);
     }
   }, [complete, displayed, streamingContent, finalizeStreaming]);
@@ -113,7 +123,9 @@ export function AiChat({ onClose }: Props) {
     addMessage({ role: 'user', content: text });
     setStreaming(true);
     setComplete(false);
+    setToolStatus(null);
     chunkBufferRef.current = '';
+    pendingMetaRef.current = undefined;
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -122,22 +134,38 @@ export function AiChat({ onClose }: Props) {
       const dataContext = await detectAndFetchContext(text);
       const systemPrompt = buildSystemPrompt(dataContext ?? undefined, text);
 
-      const history = useAiChatStore.getState().messages;
-      const ollamaMessages = [
-        { role: 'system' as const, content: systemPrompt },
-        ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      ];
+      // Replay recent turns INCLUDING the tool round-trips that produced past
+      // answers, so follow-ups ("tell me more about that deal") keep their context.
+      const history = useAiChatStore.getState().messages.slice(-MAX_HISTORY);
+      const replayed: ChatTurn[] = [];
+      for (const m of history) {
+        if (m.role === 'user') {
+          replayed.push({ role: 'user', content: m.content });
+        } else {
+          if (m.toolTurns?.length) replayed.push(...m.toolTurns);
+          replayed.push({ role: 'assistant', content: m.content });
+        }
+      }
+      const ollamaMessages: ChatTurn[] = [{ role: 'system', content: systemPrompt }, ...replayed];
 
-      await chatWithTools(DEFAULT_MODEL, ollamaMessages, onChunk, onDone, controller.signal);
+      pendingMetaRef.current = await chatWithTools(
+        DEFAULT_MODEL,
+        ollamaMessages,
+        onChunk,
+        controller.signal,
+        setToolStatus
+      );
+      onDone();
     } catch (err) {
       console.error('[ai] send message error:', err);
       chunkBufferRef.current = '';
+      setToolStatus(null);
       finalizeStreaming();
       addMessage({ role: 'assistant', content: 'Sorry, something went wrong on my end. Please try again.' });
     } finally {
       abortControllerRef.current = null;
     }
-  }, [input, isStreaming, addMessage, setStreaming, onChunk, onDone, finalizeStreaming]);
+  }, [input, isStreaming, addMessage, setStreaming, setToolStatus, onChunk, onDone, finalizeStreaming]);
 
   const stopStreaming = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -227,6 +255,7 @@ export function AiChat({ onClose }: Props) {
             message={{ id: 'streaming', role: 'assistant', content: '', timestamp: 0 }}
             isStreaming
             streamingContent={displayed}
+            statusLabel={toolStatus ?? undefined}
           />
         )}
 

@@ -1,5 +1,7 @@
-// Compact knowledge base for the AI assistant.
-// Kept dense to limit prompt tokens, but detailed enough to answer accurately.
+// Compact knowledge base for the AI assistant — covers every page and feature
+// in the app so Iris can answer questions about anything in it. Kept dense to
+// limit prompt tokens, but detailed enough to answer accurately. Only the
+// keyword-matched sections are injected per message, so adding sections is cheap.
 // The human-readable versions live in docs/help/*.md — keep this in sync with them.
 
 interface HelpSection {
@@ -11,8 +13,8 @@ interface HelpSection {
 const SECTIONS: HelpSection[] = [
   {
     title: 'Dashboard',
-    keywords: ['dashboard', 'today', 'due', 'overview', 'home', 'map', 'metric', 'recent', 'landing'],
-    content: `DASHBOARD: The home/landing screen (configurable in Settings > Appearance > Default landing tab). Top: a greeting with today's date and a full-width "Search everything" bar that searches customers, contacts, opportunities, and activities at once — type for instant results grouped by category, arrow keys to navigate, Enter to open; press / to focus it. Three metric cards: (1) follow-ups due today (yours, not completed), (2) activities you logged in the last 7 days, (3) total pipeline value across all open opportunities. Cards below: "Due Today" lists your incomplete follow-ups due today — click the circle to complete instantly, click the title to open that customer's follow-ups tab; "Recent Activities" shows the 10 most recent activities system-wide, click a row to open that customer; "Open Opportunities" lists all Open deals sorted by estimated revenue (highest first), click to open. A Belgium map shows a dot per city where you have customers — dot size = customer count, hover for the exact number.`,
+    keywords: ['dashboard', 'today', 'due', 'overview', 'home', 'map', 'belgium', 'metric', 'metric card', 'recent', 'recent activity', 'landing', 'widget', 'next 7 days', 'week', 'strip', 'stale', 'pipeline', 'quick add'],
+    content: `DASHBOARD: The home/landing screen (set which page opens on launch in Settings > Appearance > Sidebar & navigation > Default landing tab). TOP: a greeting with your name and today's date, plus a "Quick add" button (top-right) — a dropdown with "Log activity" and "New follow-up" (each asks you to pick a customer, then opens the new-item form) and "New opportunity" (opens the new-opportunity form). Below it a full-width "Search everything" bar searches customers, contacts, opportunities, activities and follow-ups at once — type for instant results grouped by category, arrow keys to navigate, Enter to open; press / to focus it. MAIN ROW (three columns): (1) a BELGIUM MAP with a dot per city where you have customers — dot size = customer count, hover for the exact number, click a city to open Customers filtered to it; (2) four METRIC CARDS — "Total Activities" (all-time count, with % change vs the last 7 days), "Opportunities" (all-time count, % vs last 7 days), "Open Pipeline" (total value of your open deals in euro, % vs 7 days ago) and "My Customers" (number of accounts you manage); (3) two stacked panels — "Recent Activity" (your latest 15 activities and opportunity updates, newest first; each row shows a type icon, subject, customer, status badge and date — click to open that customer's Activities or Opportunities tab) and "Stale Opportunities" (your open deals untouched for 30+ days, each with a days-stale badge and value — click to open; cobwebs creep in on very stale deals as a playful nudge). BOTTOM — the "NEXT 7 DAYS" widget: a strip of seven day-columns starting today (today is highlighted). Each column lists your incomplete follow-ups due that day (up to 3, then "+N more"), showing the follow-up title and its customer; click one to jump to that customer's Follow-Ups tab. The badge in the strip header is the total follow-ups due across the week; empty days show a dash.`,
   },
   {
     title: 'Getting Started',
@@ -72,7 +74,32 @@ const SECTIONS: HelpSection[] = [
   {
     title: 'Shortcuts',
     keywords: ['shortcut', 'keyboard', 'hotkey', 'key binding', 'ctrl', 'cmd', 'keybinding', 'command palette'],
-    content: `SHORTCUTS: Ctrl+K (Cmd+K on Mac) = command palette — type any action or page name to jump instantly; arrow keys to navigate, Enter to select. N = new item (activity/follow-up/contact/opportunity). / = focus search bar. ? = show all shortcuts. Number keys 1–6 = navigate sidebar pages (mapped to your sidebar order). F = open filter panel on pages with filters. Esc = close panels/dialogs. CUSTOMIZE in Settings > Keybindings: click a shortcut, press the new combination — conflict detection warns on duplicates; reset individual shortcuts or all to defaults.`,
+    content: `SHORTCUTS: Ctrl+K (Cmd+K on Mac) = command palette — type any action or page name to jump instantly; arrow keys to navigate, Enter to select. The command palette also searches customers (by name, account number, BCN, city) and contacts (by name, email, job title) and jumps straight to them. N = new item (activity/follow-up/contact/opportunity). / = focus search bar. ? = show all shortcuts. Number keys 1–6 = navigate sidebar pages (mapped to your sidebar order). Ctrl+B (Cmd+B) = collapse/expand the sidebar. F = open filter panel on pages with filters. Esc = close panels/dialogs. CUSTOMIZE in Settings > Keybindings: click a shortcut, press the new combination — conflict detection warns on duplicates; reset individual shortcuts or all to defaults.`,
+  },
+  {
+    title: 'Assistant (Iris)',
+    keywords: ['iris', 'assistant', 'chatbot', 'sparkles', 'who are you', 'what can you do'],
+    content: `ASSISTANT (Iris): The app's built-in AI helper — that's me. I'm available to admins only, opened from the sparkles button on the right edge of the window, which slides out a chat panel. I answer questions about how this CRM works and look up live details about your customers, contacts, opportunities, activities and revenue from your local data. I run on a local AI model (Ollama) that downloads once on first use (progress is shown). I can only READ data — I never change anything. Use the clear button to reset the chat and the stop button to halt a reply. I only help with this CRM and your data, not unrelated topics.`,
+  },
+  {
+    title: 'Profile & Account',
+    keywords: ['profile', 'avatar', 'photo', 'birthday', 'job title', 'log out', 'logout', 'sign out', 'user menu', 'my info'],
+    content: `PROFILE: Click your photo and name at the bottom of the sidebar to open your profile card. It shows your photo, name, role, job title, email, location and birthday — all pulled from your Microsoft 365 / Dynamics 365 account (edit your details there or in Settings). From this card you can open Account settings, Help, Keyboard shortcuts, and — for admins only — the Admin panel and Debug page, or Log out. The current app version is shown at the bottom.`,
+  },
+  {
+    title: 'Notifications & Updates',
+    keywords: ['notification', 'toast', 'updater', 'update available', 'new version', 'autostart', 'walkthrough', 'tour', 'reminder', 'status pill'],
+    content: `ALERTS & UPDATES: On launch you can be alerted to overdue and due-today follow-ups and stale opportunities (toggle in Settings > Notifications). Toasts confirm syncs and connectivity changes; the title bar shows a live Online/Offline status pill. The app checks for updates automatically — when one is ready an "Update available" button appears in the sidebar footer (with download progress); installing it restarts the app and then shows the new version's changelog. Settings > General has an Autostart-on-startup option. A one-time guided walkthrough runs on first launch and can be replayed from settings. Everything works offline — changes queue locally and sync on reconnect.`,
+  },
+  {
+    title: 'Admin & Debug',
+    keywords: ['admin', 'administrator', 'database', 'sql', 'user management', 'power bi discovery', 'debug', 'developer console'],
+    content: `ADMIN (admins only): The Admin panel (opened from your profile menu) has tabs for system Analytics, User management, Data export/import, a Database explorer (inspect tables and run read-only queries), a Power BI schema viewer and discovery tools, and Revenue sync configuration. The Debug page adds a live app console, sync logs/stats, and revenue-cache utilities. Regular users never see these pages.`,
+  },
+  {
+    title: 'Easter Eggs',
+    keywords: ['easter egg', 'confetti', 'celebration', 'whale', 'konami', 'cobweb'],
+    content: `EASTER EGGS: Small celebrations, on by default — toggle them off in Settings, and they automatically respect the Reduce motion setting. Marking an opportunity Won pops confetti: the first win of the day, plus a bigger fireworks-and-stars burst for "whale" deals worth €1,000,000+. Entering the Konami code (Up Up Down Down Left Right Left Right B A) arms "Sales Mode" so your next won deal gets a hero's welcome. On your birthday you get a surprise message and confetti cannons. Opportunities left untouched for months slowly grow cobwebs as a gentle nudge to follow up.`,
   },
 ];
 
