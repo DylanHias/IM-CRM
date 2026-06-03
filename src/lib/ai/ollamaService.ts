@@ -4,8 +4,19 @@ import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 const OLLAMA_BASE = 'http://localhost:11434';
 // Must be a tool-capable model (Ollama capability "tools"). deepseek-r1 distills
 // are "thinking"-only and silently ignore tool calls, so Iris could never read the
-// CRM. llama3.2:1b has native tool calling and is the smallest/fastest such model.
-export const DEFAULT_MODEL = 'llama3.2:1b-instruct-q4_K_M';
+// CRM. llama3.2:1b had tools but was too weak to follow grounding/scope rules — it
+// invented UI, fabricated contacts, and answered off-topic prompts. qwen2.5:3b is
+// tool-capable AND a far stronger small instruction-follower, so it stays on-scope
+// and grounds answers in the provided data/reference.
+export const DEFAULT_MODEL = 'qwen2.5:3b-instruct-q4_K_M';
+
+// Keep the model resident in RAM between messages so there's no multi-second cold
+// reload after an idle pause (Ollama unloads after 5 min by default).
+const KEEP_ALIVE = '30m';
+// Cap the context window — the system prompt + trimmed help docs + MAX_HISTORY(12)
+// fit well under 4k, and CPU prompt-processing cost scales with context size.
+// num_predict bounds the worst-case reply length (and thus latency).
+const CHAT_OPTIONS = { num_ctx: 4096, num_predict: 768 } as const;
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
@@ -114,6 +125,29 @@ export async function warmUp(): Promise<void> {
     await checkAvailability();
   } catch (err) {
     console.error('[ai] warm-up failed:', err);
+  }
+}
+
+/**
+ * Warm the model weights into RAM (an empty /api/generate loads the model without
+ * generating) and keep them resident, so the user's first real message streams
+ * instantly instead of paying a cold load. Fire-and-forget; never throws.
+ */
+export async function preloadModel(model: string): Promise<void> {
+  const body = JSON.stringify({ model, keep_alive: KEEP_ALIVE });
+  try {
+    if (isTauriApp()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('ollama_request', { path: '/api/generate', body });
+    } else {
+      await fetch(`${OLLAMA_BASE}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+    }
+  } catch (err) {
+    console.error('[ai] model preload failed:', err);
   }
 }
 
@@ -293,35 +327,62 @@ function extractFirstJsonObject(text: string): string | null {
   return null;
 }
 
-/**
- * Small models (llama3.2:1b) sometimes print a tool call as plain text instead
- * of emitting a structured tool_calls array. Detect that shape and convert it
- * into a real ToolCall so we can execute it rather than show raw JSON.
- */
-export function parseTextToolCall(raw: string): ToolCall | null {
+/** Parse the first JSON object out of possibly fenced/trailing-prose text. */
+function extractObject(raw: string): Record<string, unknown> | null {
   let text = raw.trim();
   const fence = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   if (fence) text = fence[1].trim();
   const json = extractFirstJsonObject(text);
   if (!json) return null;
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(json);
+    const parsed = JSON.parse(json);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
   } catch {
     return null;
   }
-  if (!parsed || typeof parsed !== 'object') return null;
+}
+
+/**
+ * Small models sometimes print a tool call as plain text instead of emitting a
+ * structured tool_calls array. Detect that shape and convert it into a real
+ * ToolCall so we can execute it rather than show raw JSON.
+ */
+export function parseTextToolCall(raw: string): ToolCall | null {
+  const parsed = extractObject(raw);
+  if (!parsed) return null;
   // Tolerate both the bare shape ({name, parameters}) and the full tool-schema
   // shape ({type, function: {name, parameters}}) that small models sometimes echo.
-  const top = parsed as Record<string, unknown>;
   const fn =
-    top.function && typeof top.function === 'object'
-      ? (top.function as Record<string, unknown>)
-      : top;
+    parsed.function && typeof parsed.function === 'object'
+      ? (parsed.function as Record<string, unknown>)
+      : parsed;
   const name = fn.name;
   if (typeof name !== 'string' || !KNOWN_TOOL_NAMES.has(name)) return null;
   const args = (fn.parameters ?? fn.arguments ?? {}) as Record<string, unknown> | string;
   return { function: { name, arguments: args } };
+}
+
+/** True if the object looks like a tool call / tool schema the model echoed as text. */
+function hasToolCallShape(obj: Record<string, unknown>): boolean {
+  const fn =
+    obj.function && typeof obj.function === 'object'
+      ? (obj.function as Record<string, unknown>)
+      : obj;
+  return typeof fn.name === 'string' || 'parameters' in fn || 'arguments' in fn || obj.type === 'function';
+}
+
+/**
+ * Decide what to do with held-back text that began with `{` or a code fence:
+ * run it as a real tool call, silently suppress it when it's a hallucinated or
+ * echoed tool-call shape (so raw JSON never reaches the user), or flush it as
+ * genuine prose that merely happened to start with `{`.
+ */
+export function classifyTextToolCall(raw: string): { call: ToolCall | null; suppress: boolean } {
+  const call = parseTextToolCall(raw);
+  if (call) return { call, suppress: false };
+  const obj = extractObject(raw);
+  if (obj && hasToolCallShape(obj)) return { call: null, suppress: true };
+  return { call: null, suppress: false };
 }
 
 /** Longest suffix of `buf` that is a proper prefix of `tag` (for split-tag detection). */
@@ -389,10 +450,12 @@ export function createThinkStripper(onChunk: (text: string) => void) {
 function createToolCallGuard(onChunk: (text: string) => void) {
   let buffer = '';
   let passthrough = false;
+  let emitted = false;
 
   return {
     onChunk(text: string) {
       if (passthrough) {
+        if (text) emitted = true;
         onChunk(text);
         return;
       }
@@ -401,21 +464,30 @@ function createToolCallGuard(onChunk: (text: string) => void) {
       if (trimmed === '') return;
       if (trimmed[0] !== '{' && !trimmed.startsWith('```')) {
         passthrough = true;
+        emitted = true;
         onChunk(buffer);
         buffer = '';
       }
     },
-    /** Returns a tool call if the buffer was one; otherwise flushes it as prose. */
-    extractOrFlush(): ToolCall | null {
-      if (passthrough || buffer === '') return null;
-      const call = parseTextToolCall(buffer);
-      if (call) {
-        buffer = '';
-        return call;
-      }
-      onChunk(buffer);
+    /**
+     * Resolve the held buffer: a real tool call to run, a suppressed hallucination
+     * (raw tool-call JSON the model emitted instead of calling a tool — never shown
+     * to the user), or genuine prose flushed as-is.
+     */
+    resolve(): { call: ToolCall | null; suppressed: boolean } {
+      if (passthrough || buffer === '') return { call: null, suppressed: false };
+      const held = buffer;
       buffer = '';
-      return null;
+      const { call, suppress } = classifyTextToolCall(held);
+      if (call) return { call, suppressed: false };
+      if (suppress) return { call: null, suppressed: true };
+      emitted = true;
+      onChunk(held);
+      return { call: null, suppressed: false };
+    },
+    /** Whether any genuine prose has reached the user through this guard. */
+    get emitted() {
+      return emitted;
     },
   };
 }
@@ -456,8 +528,14 @@ async function streamRound(
 
       signal?.addEventListener('abort', () => resolve());
 
-      invoke('ollama_chat_stream', { model, messages, tools: tools ?? null, onChunk: channel })
-        .catch(reject);
+      invoke('ollama_chat_stream', {
+        model,
+        messages,
+        tools: tools ?? null,
+        keepAlive: KEEP_ALIVE,
+        options: CHAT_OPTIONS,
+        onChunk: channel,
+      }).catch(reject);
     });
     return collected;
   }
@@ -466,7 +544,7 @@ async function streamRound(
   const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages, tools, stream: true }),
+    body: JSON.stringify({ model, messages, tools, stream: true, keep_alive: KEEP_ALIVE, options: CHAT_OPTIONS }),
     signal,
   });
 
@@ -513,9 +591,18 @@ export async function chatWithTools(
   const working: ChatTurn[] = [...messages];
   const startLen = working.length;
   const invocations: ToolInvocation[] = [];
+  let emittedAnswer = false;
 
   // Everything appended past the input is the tool round-trip the caller persists.
   const meta = (): ChatToolMeta => ({ toolTurns: working.slice(startLen), invocations });
+
+  // Shown when a round produced no answer the user could see — e.g. the model
+  // emitted a hallucinated tool call (which we suppress) instead of replying.
+  const fallback = () => {
+    if (!emittedAnswer && !signal?.aborted) {
+      onChunk("I'm not quite sure what you're after. I can help you find your way around the CRM, or look up your customers, contacts, deals, activities and revenue — what would you like to do?");
+    }
+  };
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (signal?.aborted) return meta();
@@ -525,12 +612,20 @@ export async function chatWithTools(
     const structuredCalls = await streamRound(model, working, AI_TOOLS, stripper.onChunk, signal);
     stripper.flush();
 
-    // Prefer structured tool calls; otherwise recover a text-encoded one.
-    const toolCalls =
-      structuredCalls.length > 0 ? structuredCalls : [guard.extractOrFlush()].filter(Boolean) as ToolCall[];
+    // Prefer structured tool calls; otherwise recover (or suppress) a text-encoded one.
+    let toolCalls = structuredCalls;
+    if (structuredCalls.length === 0) {
+      const { call } = guard.resolve();
+      toolCalls = call ? [call] : [];
+    }
+    if (guard.emitted) emittedAnswer = true;
 
-    // No tool calls means this round streamed the final answer.
-    if (toolCalls.length === 0 || signal?.aborted) return meta();
+    // No tool calls means this round streamed the final answer (or a suppressed
+    // hallucination, in which case the fallback covers the empty bubble).
+    if (toolCalls.length === 0 || signal?.aborted) {
+      fallback();
+      return meta();
+    }
 
     // Record the tool request, run each tool, feed results back, and loop.
     working.push({ role: 'assistant', content: '', tool_calls: toolCalls });
@@ -546,8 +641,12 @@ export async function chatWithTools(
 
   // Tool budget exhausted — one final streamed round without tools to force an answer.
   if (signal?.aborted) return meta();
-  const finalStripper = createThinkStripper(onChunk);
+  const finalGuard = createToolCallGuard(onChunk);
+  const finalStripper = createThinkStripper(finalGuard.onChunk);
   await streamRound(model, working, undefined, finalStripper.onChunk, signal);
   finalStripper.flush();
+  finalGuard.resolve();
+  if (finalGuard.emitted) emittedAnswer = true;
+  fallback();
   return meta();
 }

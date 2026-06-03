@@ -8,8 +8,8 @@
  *   - ollama.exe          → src-tauri/binaries/ollama-x86_64-pc-windows-msvc.exe (the Tauri sidecar)
  *   - lib/                → src-tauri/binaries/lib/  (bundled as a resource next to the exe)
  *
- * The GPU runner variants (cuda/rocm) are pruned — they add ~1 GB and we only
- * need the CPU runner for the small llama3.2:1b model.
+ * The GPU runner variants (cuda/rocm) are pruned — they add ~1 GB and the CPU
+ * runner is plenty for the small qwen2.5:3b model.
  *
  * Run automatically before dev/build via beforeDevCommand / beforeBuildCommand.
  */
@@ -80,7 +80,7 @@ try {
   if (existsSync(LIB_TARGET)) rmSync(LIB_TARGET, { recursive: true, force: true });
   cpSync(extractedLib, LIB_TARGET, { recursive: true });
 
-  // Prune GPU runners (cuda*/rocm*) — CPU is plenty for llama3.2:1b and saves ~1 GB.
+  // Prune GPU runners (cuda*/rocm*) — CPU is plenty for qwen2.5:3b and saves ~1 GB.
   const ollamaLib = join(LIB_TARGET, 'ollama');
   if (existsSync(ollamaLib)) {
     for (const name of readdirSync(ollamaLib)) {

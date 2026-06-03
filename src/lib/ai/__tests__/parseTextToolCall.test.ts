@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTextToolCall } from '../ollamaService';
+import { parseTextToolCall, classifyTextToolCall } from '../ollamaService';
 
 describe('parseTextToolCall', () => {
   it('parses the bare {name, parameters} shape', () => {
@@ -46,5 +46,28 @@ describe('parseTextToolCall', () => {
 
   it('returns null for an unknown tool name', () => {
     expect(parseTextToolCall('{"name": "delete_everything", "parameters": {}}')).toBeNull();
+  });
+});
+
+describe('classifyTextToolCall', () => {
+  it('runs a valid known tool call', () => {
+    const { call, suppress } = classifyTextToolCall('{"name": "search_customers", "parameters": {"query": "Dattico"}}');
+    expect(suppress).toBe(false);
+    expect(call).toEqual({ function: { name: 'search_customers', arguments: { query: 'Dattico' } } });
+  });
+
+  it('suppresses a hallucinated tool call with an unknown name (the greeting bug)', () => {
+    // The exact blob Iris leaked into the chat when greeted with "hey".
+    const raw = '{"name": "prompt_search", "parameters": {"description": "Please enter a customer or contact name to find them in the CRM database", "type": "function"}}';
+    expect(classifyTextToolCall(raw)).toEqual({ call: null, suppress: true });
+  });
+
+  it('suppresses an echoed tool schema shape with an unknown name', () => {
+    const raw = '{"type":"function","function":{"name":"do_magic","parameters":{}}}';
+    expect(classifyTextToolCall(raw)).toEqual({ call: null, suppress: true });
+  });
+
+  it('does not suppress genuine prose', () => {
+    expect(classifyTextToolCall('Here is a summary of Dattico.')).toEqual({ call: null, suppress: false });
   });
 });

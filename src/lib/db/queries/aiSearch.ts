@@ -167,7 +167,7 @@ export function formatRevenueContext(rows: RevenueSearchRow[]): string {
       lines.push(`  Cloud customer: ${r.cloud_customer ? 'Yes' : 'No'}`);
       if (r.arr != null) lines.push(`  ARR: €${r.arr.toLocaleString()}`);
       if (r.active_end_customers != null) lines.push(`  Active end customers: ${r.active_end_customers}`);
-      if (r.as_of_month) lines.push(`  As of: ${r.as_of_month}`);
+      if (r.as_of_month) lines.push(`  As of: ${r.as_of_month.slice(0, 10)}`);
       return lines.join('\n');
     })
     .join('\n\n');

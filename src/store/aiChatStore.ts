@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { checkAvailability, pullModel, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
+import { checkAvailability, pullModel, preloadModel, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
 import type { ChatTurn, ToolInvocation } from '@/lib/ai/ollamaService';
 
 export interface ChatMessage {
@@ -111,5 +111,7 @@ export const useAiChatStore = create<AiChatState>()((set) => ({
       }
     }
     set({ ollamaStatus: 'available', isPulling: false, pullProgress: 0, pullStatus: '' });
+    // Warm the weights so the first message streams instantly (fire-and-forget).
+    void preloadModel(DEFAULT_MODEL);
   },
 }));

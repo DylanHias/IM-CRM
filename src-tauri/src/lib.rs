@@ -211,6 +211,8 @@ async fn ollama_chat_stream(
     model: String,
     messages: serde_json::Value,
     tools: Option<serde_json::Value>,
+    keep_alive: Option<String>,
+    options: Option<serde_json::Value>,
     on_chunk: tauri::ipc::Channel<OllamaChunkEvent>,
 ) -> Result<(), String> {
     let client = reqwest::Client::new();
@@ -219,6 +221,15 @@ async fn ollama_chat_stream(
     if let Some(t) = tools {
         if !t.is_null() {
             payload["tools"] = t;
+        }
+    }
+    // Keep the model resident between messages and cap context — both cut latency.
+    if let Some(k) = keep_alive {
+        payload["keep_alive"] = serde_json::Value::String(k);
+    }
+    if let Some(o) = options {
+        if !o.is_null() {
+            payload["options"] = o;
         }
     }
 
