@@ -235,7 +235,7 @@ async function ensureTablesExist(db: Database): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS sync_records (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','powerbi_arr','push_activities','push_followups','push_opportunities')),
+      sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','powerbi_arr','powerbi_insights','powerbi_arr_movement','push_activities','push_followups','push_opportunities')),
       status         TEXT NOT NULL CHECK(status IN ('running','success','partial','error')),
       started_at     TEXT NOT NULL,
       finished_at    TEXT,
@@ -1416,6 +1416,39 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       );
     } catch (err) {
       console.error('[db] migration v52 failed:', err);
+    }
+  }
+
+  if (currentVersion < 53) {
+    // Widen sync_records.sync_type CHECK constraint to include the snapshot sync
+    // types (powerbi_insights, powerbi_arr_movement) written by the revenue
+    // insights / ARR movement background refreshes. SQLite cannot ALTER a CHECK,
+    // so rebuild the table preserving existing rows.
+    try {
+      await db.execute(`
+        CREATE TABLE sync_records_v53 (
+          id             INTEGER PRIMARY KEY AUTOINCREMENT,
+          sync_type      TEXT NOT NULL CHECK(sync_type IN ('d365','powerbi_arr','powerbi_insights','powerbi_arr_movement','push_activities','push_followups','push_opportunities')),
+          status         TEXT NOT NULL CHECK(status IN ('running','success','partial','error')),
+          started_at     TEXT NOT NULL,
+          finished_at    TEXT,
+          records_pulled INTEGER DEFAULT 0,
+          records_pushed INTEGER DEFAULT 0,
+          error_message  TEXT,
+          created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      await db.execute(`
+        INSERT INTO sync_records_v53 (id, sync_type, status, started_at, finished_at, records_pulled, records_pushed, error_message, created_at)
+        SELECT id, sync_type, status, started_at, finished_at, records_pulled, records_pushed, error_message, created_at FROM sync_records
+      `);
+      await db.execute(`DROP TABLE sync_records`);
+      await db.execute(`ALTER TABLE sync_records_v53 RENAME TO sync_records`);
+      await db.execute(
+        `UPDATE app_settings SET value = '53', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v53 failed:', err);
     }
   }
 }
