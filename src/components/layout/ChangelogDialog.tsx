@@ -21,6 +21,17 @@ interface ChangelogEntry {
 interface ChangelogPayload {
   body: string;
   version: string;
+  fromVersion?: string;
+}
+
+function compareVersions(a: string, b: string): number {
+  const pa = a.replace(/^v/, '').split('.').map(Number);
+  const pb = b.replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }
 
 function parseChangelog(body: string): ChangelogSection[] {
@@ -56,17 +67,18 @@ function parseChangelog(body: string): ChangelogSection[] {
   return sections;
 }
 
-export async function storeChangelog(body: string, version: string) {
+export async function storeChangelog(body: string, version: string, fromVersion?: string) {
   if (isTauriApp()) {
     try {
       const { writeTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-      await writeTextFile(CHANGELOG_FILE, JSON.stringify({ body, version }), { baseDir: BaseDirectory.AppLocalData });
+      await writeTextFile(CHANGELOG_FILE, JSON.stringify({ body, version, fromVersion }), { baseDir: BaseDirectory.AppLocalData });
     } catch (err) {
       console.error('[changelog] Failed to write changelog file:', err);
     }
   } else {
     localStorage.setItem('pending-changelog', body);
     localStorage.setItem('pending-changelog-version', version);
+    if (fromVersion) localStorage.setItem('pending-changelog-from', fromVersion);
   }
 }
 
@@ -87,9 +99,11 @@ async function readAndClearChangelog(): Promise<ChangelogPayload | null> {
     const body = localStorage.getItem('pending-changelog');
     const version = localStorage.getItem('pending-changelog-version');
     if (body && version) {
+      const fromVersion = localStorage.getItem('pending-changelog-from') ?? undefined;
       localStorage.removeItem('pending-changelog');
       localStorage.removeItem('pending-changelog-version');
-      return { body, version };
+      localStorage.removeItem('pending-changelog-from');
+      return { body, version, fromVersion };
     }
     return null;
   }
@@ -102,7 +116,16 @@ export function ChangelogDialog() {
     const load = async () => {
       const payload = await readAndClearChangelog();
       if (payload) {
-        setEntry({ version: payload.version, sections: parseChangelog(payload.body) });
+        let sections = parseChangelog(payload.body);
+        // Show only versions newer than the one we updated from — guards against
+        // a release body that contains the full changelog history.
+        if (payload.fromVersion) {
+          const from = payload.fromVersion;
+          sections = sections.filter(
+            (s) => !s.heading || compareVersions(s.heading, from) > 0
+          );
+        }
+        setEntry({ version: payload.version, sections });
       }
     };
     load();

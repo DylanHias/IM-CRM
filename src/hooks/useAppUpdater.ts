@@ -17,6 +17,17 @@ const POLL_INTERVAL = 15 * 60 * 1000;
  * also force-kills it, but doing it here first prevents the installer from
  * stalling on a locked, still-running ollama.exe.
  */
+async function getCurrentVersion(): Promise<string | undefined> {
+  if (!isTauriApp()) return undefined;
+  try {
+    const { getVersion } = await import('@tauri-apps/api/app');
+    return await getVersion();
+  } catch (err) {
+    console.error('[updater] failed to read current app version:', err);
+    return undefined;
+  }
+}
+
 async function killOllamaBeforeUpdate(): Promise<void> {
   if (!isTauriApp()) return;
   try {
@@ -40,7 +51,7 @@ export function useAppUpdater(): AppUpdaterState {
       if (autoInstall) {
         setDownloading(true);
         toast.info(`Updating to ${update.version}…`, { duration: 60000 });
-        if (update.body) await storeChangelog(update.body, update.version);
+        if (update.body) await storeChangelog(update.body, update.version, await getCurrentVersion());
         await killOllamaBeforeUpdate();
         await update.downloadAndInstall();
         const { relaunch } = await import('@tauri-apps/plugin-process');
@@ -78,7 +89,7 @@ export function useAppUpdater(): AppUpdaterState {
         return;
       }
       if (update.body) {
-        await storeChangelog(update.body, update.version);
+        await storeChangelog(update.body, update.version, await getCurrentVersion());
       }
       await killOllamaBeforeUpdate();
       await update.downloadAndInstall();
