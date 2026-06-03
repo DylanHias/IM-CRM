@@ -11,7 +11,7 @@ export function AiChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="w-[380px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-7rem)] shadow-2xl rounded-2xl animate-in fade-in slide-in-from-bottom-2 zoom-in-95 duration-200">
+        <div className="w-[460px] max-w-[calc(100vw-3rem)] h-[720px] max-h-[calc(100vh-7rem)] shadow-2xl rounded-2xl animate-in fade-in slide-in-from-bottom-2 zoom-in-95 duration-200">
           <AiChat />
         </div>
       )}
