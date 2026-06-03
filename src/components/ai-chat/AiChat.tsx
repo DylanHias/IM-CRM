@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { Send, Square, Trash2, RefreshCw, Download, Sparkles } from 'lucide-react';
+import { Send, Square, Trash2, RefreshCw, Download, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAiChatStore } from '@/store/aiChatStore';
 import { chatWithTools, DEFAULT_MODEL } from '@/lib/ai/ollamaService';
@@ -18,7 +18,11 @@ const GREETING_MESSAGE = {
   timestamp: 0,
 };
 
-export function AiChat() {
+interface Props {
+  onClose?: () => void;
+}
+
+export function AiChat({ onClose }: Props) {
   const {
     messages,
     isStreaming,
@@ -197,6 +201,17 @@ export function AiChat() {
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={onClose}
+            title="Close assistant"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
