@@ -3,10 +3,14 @@ import {
   searchContacts,
   searchOpportunities,
   searchRevenue,
+  searchActivities,
+  searchFollowUps,
   formatCustomerContext,
   formatContactContext,
   formatOpportunityContext,
   formatRevenueContext,
+  formatActivityContext,
+  formatFollowUpContext,
 } from '@/lib/db/queries/aiSearch';
 
 /** Ollama function-calling tool definition. */
@@ -32,6 +36,21 @@ export const AI_TOOLS: OllamaTool[] = [
   {
     type: 'function',
     function: {
+      name: 'get_account_overview',
+      description:
+        "Get EVERYTHING about a company in one call: its account details, every contact who works there, all associated opportunities/deals, recent activities, open follow-ups, and revenue/ARR figures. ALWAYS prefer this tool when the user asks to know about, summarise, or list everything for a company (e.g. 'tell me about Acme', 'who works for Acme', 'what deals does Acme have'). Returns a single combined report.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Full or partial company/account name.' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'search_customers',
       description:
         'Search the local CRM database for customers/accounts by name. Use this whenever the user asks about a specific company, its owner, ARR, industry, location, or status. Returns up to 5 matches with their details.',
@@ -49,11 +68,11 @@ export const AI_TOOLS: OllamaTool[] = [
     function: {
       name: 'search_contacts',
       description:
-        'Search the local CRM database for contacts (people) by name. Use this whenever the user asks about a specific person, their job title, email, phone, or which company they belong to. Returns up to 5 matches with their details.',
+        'Search the local CRM database for contacts (people) by person name OR by company name. Use this whenever the user asks about a specific person (their job title, email, phone) or asks who works at / who the contacts are for a given company. Returns up to 5 matches with their details.',
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'Full or partial person name to search for.' },
+          query: { type: 'string', description: 'A person name, or a company name to list its contacts.' },
         },
         required: ['query'],
       },
@@ -116,6 +135,42 @@ export async function executeTool(name: string, rawArgs: unknown): Promise<strin
 
   try {
     switch (name) {
+      case 'get_account_overview': {
+        const query = readQuery(args);
+        if (!query) return 'No company name was provided.';
+        const [customers, contacts, opportunities, revenue, activities, followUps] =
+          await Promise.all([
+            searchCustomers(query),
+            searchContacts(query),
+            searchOpportunities(query),
+            searchRevenue(query),
+            searchActivities(query),
+            searchFollowUps(query),
+          ]);
+        if (customers.length === 0) return `No customer found matching "${query}".`;
+
+        const sections = [
+          `=== ACCOUNT ===\n${formatCustomerContext(customers)}`,
+          `=== CONTACTS ===\n${
+            contacts.length > 0 ? formatContactContext(contacts) : 'No contacts on record.'
+          }`,
+          `=== OPPORTUNITIES ===\n${
+            opportunities.length > 0
+              ? formatOpportunityContext(opportunities)
+              : 'No opportunities on record.'
+          }`,
+          `=== ACTIVITIES ===\n${
+            activities.length > 0 ? formatActivityContext(activities) : 'No activities on record.'
+          }`,
+          `=== FOLLOW-UPS ===\n${
+            followUps.length > 0 ? formatFollowUpContext(followUps) : 'No follow-ups on record.'
+          }`,
+          `=== REVENUE ===\n${
+            revenue.length > 0 ? formatRevenueContext(revenue) : 'No revenue data on record.'
+          }`,
+        ];
+        return sections.join('\n\n');
+      }
       case 'search_customers': {
         const query = readQuery(args);
         if (!query) return 'No search term was provided.';

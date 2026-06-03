@@ -38,6 +38,8 @@ export async function searchCustomers(term: string): Promise<CustomerSearchRow[]
   );
 }
 
+// Match by person name OR company name, so "who works for <company>" resolves
+// the contacts attached to that account — not just people literally named the term.
 export async function searchContacts(term: string): Promise<ContactSearchRow[]> {
   const db = await getDb();
   return db.select<ContactSearchRow[]>(
@@ -46,6 +48,7 @@ export async function searchContacts(term: string): Promise<ContactSearchRow[]> 
      FROM contacts c
      LEFT JOIN customers cust ON c.customer_id = cust.id
      WHERE (c.first_name || ' ' || c.last_name) LIKE '%' || $1 || '%' COLLATE NOCASE
+        OR cust.name LIKE '%' || $1 || '%' COLLATE NOCASE
      ORDER BY c.last_name COLLATE NOCASE, c.first_name COLLATE NOCASE
      LIMIT 5`,
     [term]
@@ -165,6 +168,80 @@ export function formatRevenueContext(rows: RevenueSearchRow[]): string {
       if (r.arr != null) lines.push(`  ARR: €${r.arr.toLocaleString()}`);
       if (r.active_end_customers != null) lines.push(`  Active end customers: ${r.active_end_customers}`);
       if (r.as_of_month) lines.push(`  As of: ${r.as_of_month}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+}
+
+interface ActivitySearchRow {
+  subject: string;
+  type: string | null;
+  activity_status: string | null;
+  occurred_at: string | null;
+  created_by_name: string | null;
+  customer_name: string | null;
+}
+
+interface FollowUpSearchRow {
+  title: string;
+  due_date: string | null;
+  completed: number | null;
+  created_by_name: string | null;
+  customer_name: string | null;
+}
+
+// Recent activities for the accounts matching the term, most recent first.
+export async function searchActivities(term: string): Promise<ActivitySearchRow[]> {
+  const db = await getDb();
+  return db.select<ActivitySearchRow[]>(
+    `SELECT a.subject, a.type, a.activity_status, a.occurred_at, a.created_by_name,
+            cust.name AS customer_name
+     FROM activities a
+     LEFT JOIN customers cust ON a.customer_id = cust.id
+     WHERE cust.name LIKE '%' || $1 || '%' COLLATE NOCASE
+     ORDER BY a.occurred_at DESC
+     LIMIT 8`,
+    [term]
+  );
+}
+
+// Follow-ups for the accounts matching the term; open ones first, by due date.
+export async function searchFollowUps(term: string): Promise<FollowUpSearchRow[]> {
+  const db = await getDb();
+  return db.select<FollowUpSearchRow[]>(
+    `SELECT f.title, f.due_date, f.completed, f.created_by_name,
+            cust.name AS customer_name
+     FROM follow_ups f
+     LEFT JOIN customers cust ON f.customer_id = cust.id
+     WHERE cust.name LIKE '%' || $1 || '%' COLLATE NOCASE
+     ORDER BY f.completed ASC, f.due_date ASC
+     LIMIT 8`,
+    [term]
+  );
+}
+
+export function formatActivityContext(rows: ActivitySearchRow[]): string {
+  if (rows.length === 0) return '';
+  return rows
+    .map((r) => {
+      const lines = [`Activity: ${r.subject}`];
+      if (r.type) lines.push(`  Type: ${r.type}`);
+      if (r.activity_status) lines.push(`  Status: ${r.activity_status}`);
+      if (r.occurred_at) lines.push(`  Date: ${r.occurred_at.slice(0, 10)}`);
+      if (r.created_by_name) lines.push(`  By: ${r.created_by_name}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+}
+
+export function formatFollowUpContext(rows: FollowUpSearchRow[]): string {
+  if (rows.length === 0) return '';
+  return rows
+    .map((r) => {
+      const lines = [`Follow-up: ${r.title}`];
+      lines.push(`  Status: ${r.completed ? 'Completed' : 'Open'}`);
+      if (r.due_date) lines.push(`  Due: ${r.due_date.slice(0, 10)}`);
+      if (r.created_by_name) lines.push(`  By: ${r.created_by_name}`);
       return lines.join('\n');
     })
     .join('\n\n');

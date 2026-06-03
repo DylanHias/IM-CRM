@@ -2,7 +2,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'llama3.2:1b-instruct-q4_K_M';
+export const DEFAULT_MODEL = 'llama3.2:1b-instruct-q6_K';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
@@ -235,6 +235,99 @@ type ChatTurn =
   | { role: 'assistant'; content: string; tool_calls: ToolCall[] }
   | { role: 'tool'; content: string };
 
+const KNOWN_TOOL_NAMES = new Set(AI_TOOLS.map((t) => t.function.name));
+
+/** Extract the first balanced { … } object from a string, ignoring trailing prose. */
+function extractFirstJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inStr = false;
+    } else if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return text.slice(start, i + 1);
+  }
+  return null;
+}
+
+/**
+ * Small models (llama3.2:1b) sometimes print a tool call as plain text instead
+ * of emitting a structured tool_calls array. Detect that shape and convert it
+ * into a real ToolCall so we can execute it rather than show raw JSON.
+ */
+export function parseTextToolCall(raw: string): ToolCall | null {
+  let text = raw.trim();
+  const fence = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  if (fence) text = fence[1].trim();
+  const json = extractFirstJsonObject(text);
+  if (!json) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object') return null;
+  // Tolerate both the bare shape ({name, parameters}) and the full tool-schema
+  // shape ({type, function: {name, parameters}}) that small models sometimes echo.
+  const top = parsed as Record<string, unknown>;
+  const fn =
+    top.function && typeof top.function === 'object'
+      ? (top.function as Record<string, unknown>)
+      : top;
+  const name = fn.name;
+  if (typeof name !== 'string' || !KNOWN_TOOL_NAMES.has(name)) return null;
+  const args = (fn.parameters ?? fn.arguments ?? {}) as Record<string, unknown> | string;
+  return { function: { name, arguments: args } };
+}
+
+/**
+ * Wraps onChunk so genuine prose streams immediately, but content that looks
+ * like it might be a text-encoded tool call (starts with `{` or a code fence)
+ * is held back until the round ends, then either extracted as a tool call or
+ * flushed as-is. Prose never starts with `{`, so streaming UX is unaffected.
+ */
+function createToolCallGuard(onChunk: (text: string) => void) {
+  let buffer = '';
+  let passthrough = false;
+
+  return {
+    onChunk(text: string) {
+      if (passthrough) {
+        onChunk(text);
+        return;
+      }
+      buffer += text;
+      const trimmed = buffer.trimStart();
+      if (trimmed === '') return;
+      if (trimmed[0] !== '{' && !trimmed.startsWith('```')) {
+        passthrough = true;
+        onChunk(buffer);
+        buffer = '';
+      }
+    },
+    /** Returns a tool call if the buffer was one; otherwise flushes it as prose. */
+    extractOrFlush(): ToolCall | null {
+      if (passthrough || buffer === '') return null;
+      const call = parseTextToolCall(buffer);
+      if (call) {
+        buffer = '';
+        return call;
+      }
+      onChunk(buffer);
+      buffer = '';
+      return null;
+    },
+  };
+}
+
 /**
  * One streaming /api/chat round. Forwards content tokens via onChunk and returns
  * any tool calls the model requested. Does NOT signal completion — the caller
@@ -330,7 +423,12 @@ export async function chatWithTools(
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (signal?.aborted) { onDone(); return; }
 
-    const toolCalls = await streamRound(model, working, AI_TOOLS, onChunk, signal);
+    const guard = createToolCallGuard(onChunk);
+    const structuredCalls = await streamRound(model, working, AI_TOOLS, guard.onChunk, signal);
+
+    // Prefer structured tool calls; otherwise recover a text-encoded one.
+    const toolCalls =
+      structuredCalls.length > 0 ? structuredCalls : [guard.extractOrFlush()].filter(Boolean) as ToolCall[];
 
     // No tool calls means this round streamed the final answer.
     if (toolCalls.length === 0 || signal?.aborted) {
