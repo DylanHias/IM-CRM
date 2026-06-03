@@ -2,7 +2,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
 
 const OLLAMA_BASE = 'http://localhost:11434';
-export const DEFAULT_MODEL = 'deepseek-r1:1.5b-qwen-distill-q3_K_M';
+export const DEFAULT_MODEL = 'deepseek-r1:1.5b-qwen-distill-q4_K_M';
 
 export interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';

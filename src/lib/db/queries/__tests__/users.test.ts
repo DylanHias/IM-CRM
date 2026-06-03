@@ -7,7 +7,7 @@ vi.mock('@/lib/db/client', () => ({
   getDb: vi.fn(async () => ({ select, execute })),
 }));
 
-import { resolveUserDbId, queryD365UserIdByEmail } from '@/lib/db/queries/users';
+import { resolveUserDbId, queryD365UserIdByEmail, getGraphProfile } from '@/lib/db/queries/users';
 
 describe('queryD365UserIdByEmail', () => {
   beforeEach(() => {
@@ -53,5 +53,35 @@ describe('resolveUserDbId', () => {
     const id = await resolveUserDbId('msal-local-account-id', '');
     expect(id).toBe('msal-local-account-id');
     expect(select).not.toHaveBeenCalled();
+  });
+});
+
+describe('getGraphProfile', () => {
+  beforeEach(() => {
+    select.mockReset();
+    execute.mockReset();
+  });
+
+  it('falls back to the D365 title when the Graph job_title is empty', async () => {
+    select.mockResolvedValueOnce([
+      { job_title: null, title: 'Technical Account Manager', country: 'BE', city: null, office_location: null, birthday: null },
+    ]);
+    const profile = await getGraphProfile('d365-row');
+    expect(profile?.jobTitle).toBe('Technical Account Manager');
+  });
+
+  it('prefers the Graph job_title over the D365 title when present', async () => {
+    select.mockResolvedValueOnce([
+      { job_title: 'Graph Title', title: 'D365 Title', country: null, city: null, office_location: null, birthday: null },
+    ]);
+    const profile = await getGraphProfile('d365-row');
+    expect(profile?.jobTitle).toBe('Graph Title');
+  });
+
+  it('returns null when every profile field is empty', async () => {
+    select.mockResolvedValueOnce([
+      { job_title: null, title: null, country: null, city: null, office_location: null, birthday: null },
+    ]);
+    expect(await getGraphProfile('d365-row')).toBeNull();
   });
 });

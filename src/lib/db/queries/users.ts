@@ -203,20 +203,23 @@ export async function getGraphProfile(userId: string): Promise<CachedGraphProfil
   const db = await getDb();
   const rows = await db.select<{
     job_title: string | null;
+    title: string | null;
     country: string | null;
     city: string | null;
     office_location: string | null;
     birthday: string | null;
   }[]>(
-    `SELECT job_title, country, city, office_location, birthday FROM users WHERE id = $1`,
+    `SELECT job_title, title, country, city, office_location, birthday FROM users WHERE id = $1`,
     [userId]
   );
   const row = rows[0];
   if (!row) return null;
-  const empty = !row.job_title && !row.country && !row.city && !row.office_location && !row.birthday;
+  // D365-sourced rows populate `title`, while Graph cache writes `job_title`; fall back to title.
+  const jobTitle = row.job_title ?? row.title;
+  const empty = !jobTitle && !row.country && !row.city && !row.office_location && !row.birthday;
   if (empty) return null;
   return {
-    jobTitle: row.job_title,
+    jobTitle,
     country: row.country,
     city: row.city,
     officeLocation: row.office_location,
