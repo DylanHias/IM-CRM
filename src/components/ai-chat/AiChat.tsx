@@ -148,13 +148,15 @@ export function AiChat({ onClose }: Props) {
       }
       const ollamaMessages: ChatTurn[] = [{ role: 'system', content: systemPrompt }, ...replayed];
 
-      pendingMetaRef.current = await chatWithTools(
+      const result = await chatWithTools(
         DEFAULT_MODEL,
         ollamaMessages,
         onChunk,
         controller.signal,
         setToolStatus
       );
+      // chatWithTools returns `invocations`; persist them as the message's `tools` chips.
+      pendingMetaRef.current = { toolTurns: result.toolTurns, tools: result.invocations };
       onDone();
     } catch (err) {
       console.error('[ai] send message error:', err);
