@@ -419,7 +419,6 @@ async fn export_revenue_overview(
             email: String,
             cloud: Option<i64>,
             arr: Option<f64>,
-            currency: Option<String>,
         }
 
         let mut row_map: std::collections::HashMap<String, Row> =
@@ -434,9 +433,19 @@ async fn export_revenue_overview(
                 .take(chunk.len())
                 .collect::<Vec<_>>()
                 .join(",");
+            // Mirror the UI's effective-ARR resolution (src/lib/revenue/effectiveArr.ts):
+            // prefer the Power BI cache (customer_revenue.arr_lc) matched by BCN first,
+            // then by reseller account, and only fall back to the D365-synced c.arr.
             let sql = format!(
                 "SELECT
-                    c.id, c.name, c.phone, c.email, c.cloud_customer, c.arr, c.arr_currency,
+                    c.id, c.name, c.phone, c.email, c.cloud_customer,
+                    CASE
+                      WHEN EXISTS (SELECT 1 FROM customer_revenue WHERE bcn = c.bcn)
+                        THEN COALESCE((SELECT arr_lc FROM customer_revenue WHERE bcn = c.bcn), c.arr)
+                      WHEN EXISTS (SELECT 1 FROM customer_revenue WHERE reseller_account = c.account_number)
+                        THEN COALESCE((SELECT arr_lc FROM customer_revenue WHERE reseller_account = c.account_number LIMIT 1), c.arr)
+                      ELSE c.arr
+                    END AS eff_arr,
                     con.first_name, con.last_name, con.phone, con.mobile, con.email
                  FROM customers c
                  LEFT JOIN contacts con ON con.id = (
@@ -459,12 +468,11 @@ async fn export_revenue_overview(
                     let cust_email: Option<String> = r.get(3)?;
                     let cloud: Option<i64> = r.get(4)?;
                     let arr: Option<f64> = r.get(5)?;
-                    let currency: Option<String> = r.get(6)?;
-                    let con_first: Option<String> = r.get(7)?;
-                    let con_last: Option<String> = r.get(8)?;
-                    let con_phone: Option<String> = r.get(9)?;
-                    let con_mobile: Option<String> = r.get(10)?;
-                    let con_email: Option<String> = r.get(11)?;
+                    let con_first: Option<String> = r.get(6)?;
+                    let con_last: Option<String> = r.get(7)?;
+                    let con_phone: Option<String> = r.get(8)?;
+                    let con_mobile: Option<String> = r.get(9)?;
+                    let con_email: Option<String> = r.get(10)?;
 
                     let contact_name = match (&con_first, &con_last) {
                         (Some(f), Some(l)) => format!("{} {}", f, l),
@@ -485,7 +493,6 @@ async fn export_revenue_overview(
                             email,
                             cloud,
                             arr,
-                            currency,
                         },
                     ))
                 })
@@ -511,7 +518,6 @@ async fn export_revenue_overview(
             "Email",
             "Cloud Customer",
             "ARR",
-            "Currency",
         ];
         for (col, h) in headers.iter().enumerate() {
             sheet
@@ -528,15 +534,13 @@ async fn export_revenue_overview(
                 _ => "",
             };
             let arr_str = row.arr.map(|v| v.to_string()).unwrap_or_default();
-            let currency_str = row.currency.clone().unwrap_or_default();
-            let cells: [&str; 7] = [
+            let cells: [&str; 6] = [
                 &row.name,
                 &row.contact_name,
                 &row.phone,
                 &row.email,
                 cloud_str,
                 &arr_str,
-                &currency_str,
             ];
             for (col, val) in cells.iter().enumerate() {
                 sheet
