@@ -636,7 +636,10 @@ export async function chatWithTools(
       const out = await executeTool(call.function?.name, call.function?.arguments);
       working.push({ role: 'tool', content: out });
     }
-    onToolStatus?.(null);
+    // Leave the running label up — local DB lookups finish in milliseconds, so
+    // clearing it here makes the status flash invisibly. It stays visible while
+    // the model composes the answer and is cleared once content streams (the
+    // `!content` status block hides) or by finalizeStreaming.
   }
 
   // Tool budget exhausted — one final streamed round without tools to force an answer.
