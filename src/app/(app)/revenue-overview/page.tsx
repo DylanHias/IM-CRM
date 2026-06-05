@@ -319,8 +319,7 @@ export default function RevenueOverviewPage() {
           Phone: getPhone(c, allContacts),
           Email: getEmail(c, allContacts),
           'Cloud Customer': c.cloudCustomer === true ? 'Yes' : c.cloudCustomer === false ? 'No' : '',
-          ARR: c.arr ?? '',
-          Currency: c.arrCurrency ?? '',
+          ARR: effectiveByCustomerId.get(c.id)?.value ?? '',
         }));
 
         const payload = JSON.stringify({ tables: [{ name: 'Revenue Overview', rows }], bookType: 'xlsx' });
