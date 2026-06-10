@@ -203,9 +203,9 @@ export function shouldShowBirthdayToday(birthdayIso: string | null): boolean {
   return window.localStorage.getItem(BIRTHDAY_SHOWN_KEY) !== yearKey;
 }
 
-const ONE_MILLION = 1_000_000;
+const WHALE_THRESHOLD = 500_000;
 
 export function isWhaleDeal(actualRevenue: number, _currency: string): boolean {
   void _currency;
-  return actualRevenue >= ONE_MILLION;
+  return actualRevenue >= WHALE_THRESHOLD;
 }
