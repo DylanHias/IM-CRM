@@ -516,12 +516,18 @@ async function runSchema(db: Database): Promise<void> {
 
   // Fresh install — set initial metadata
   await db.execute(
-    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '45')`
+    `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('schema_version', '${LATEST_SCHEMA_VERSION}')`
   );
   await db.execute(
     `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('last_d365_sync', '')`
   );
 }
+
+// The schema version stamped on a fresh install. MUST equal the highest version
+// in runMigrations below — otherwise new installs replay v46+ on their second launch
+// (dropping first-session snapshots and forcing a full re-sync).
+// Guarded by src/lib/db/__tests__/schemaVersion.test.ts.
+export const LATEST_SCHEMA_VERSION = 53;
 
 async function runMigrations(db: Database, currentVersion: number): Promise<void> {
   if (currentVersion < 2) {
