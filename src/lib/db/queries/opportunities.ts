@@ -88,14 +88,14 @@ export async function queryExpiringOpportunityCount(withinDays: number, userId?:
   const nowIso = now.toISOString();
   if (userId && altUserId && altUserId !== userId) {
     const rows = await db.select<{ count: number }[]>(
-      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND expiration_date IS NOT NULL AND expiration_date >= $1 AND expiration_date <= $2 AND created_by_id IN ($3, $4)`,
+      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND expiration_date IS NOT NULL AND date(expiration_date) >= date($1) AND date(expiration_date) <= date($2) AND created_by_id IN ($3, $4)`,
       [nowIso, horizon, userId, altUserId]
     );
     return rows[0]?.count ?? 0;
   }
   if (userId) {
     const rows = await db.select<{ count: number }[]>(
-      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND expiration_date IS NOT NULL AND expiration_date >= $1 AND expiration_date <= $2 AND created_by_id = $3`,
+      `SELECT COUNT(*) as count FROM opportunities WHERE status = 'Open' AND expiration_date IS NOT NULL AND date(expiration_date) >= date($1) AND date(expiration_date) <= date($2) AND created_by_id = $3`,
       [nowIso, horizon, userId]
     );
     return rows[0]?.count ?? 0;
