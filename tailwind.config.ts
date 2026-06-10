@@ -15,16 +15,16 @@ const config: Config = {
   		fontFamily: {
   			sans: [
   				'var(--font-sans)',
-  				'DM Sans"',
+  				'"DM Sans"',
   				'-apple-system',
   				'BlinkMacSystemFont',
-  				'Segoe UI"',
+  				'"Segoe UI"',
   				'Arial',
   				'sans-serif'
   			],
   			serif: [
   				'var(--font-serif)',
-  				'Playfair Display"',
+  				'"Playfair Display"',
   				'Georgia',
   				'serif'
   			]
