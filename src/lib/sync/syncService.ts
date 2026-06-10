@@ -332,11 +332,12 @@ export async function syncPowerBiArr(): Promise<void> {
     return;
   }
   powerBiSyncInFlight = true;
-  const startedAt = new Date().toISOString();
-  const recordId = await insertSyncRecord('powerbi_arr', 'running', startedAt);
+  let recordId: Awaited<ReturnType<typeof insertSyncRecord>> | undefined;
   let updated = 0;
 
   try {
+    const startedAt = new Date().toISOString();
+    recordId = await insertSyncRecord('powerbi_arr', 'running', startedAt);
     const token = await getAccessToken(powerBiRequest.scopes);
     if (!token) {
       const consentScopes = useAuthStore.getState().consentRequiredScopes;
@@ -383,7 +384,7 @@ export async function syncPowerBiArr(): Promise<void> {
       console.warn(`[sync] PowerBI ARR skipped: ${err.message}`);
       store.setPowerBiAccessDenied(true);
       try {
-        await updateSyncRecord(recordId, 'error', updated, 0, err.message);
+        if (recordId !== undefined) await updateSyncRecord(recordId, 'error', updated, 0, err.message);
       } catch (recordErr) {
         console.error('[sync] Failed to update sync record after PowerBI access error:', recordErr instanceof Error ? recordErr.message : recordErr);
       }
@@ -393,7 +394,7 @@ export async function syncPowerBiArr(): Promise<void> {
     const message = err instanceof Error ? err.message : 'PowerBI ARR sync failed';
     console.error(`[sync] PowerBI ARR error: ${message}`, err);
     try {
-      await updateSyncRecord(recordId, 'error', updated, 0, message);
+      if (recordId !== undefined) await updateSyncRecord(recordId, 'error', updated, 0, message);
     } catch (recordErr) {
       console.error('[sync] Failed to update sync record after PowerBI error:', recordErr instanceof Error ? recordErr.message : recordErr);
     }
