@@ -21,6 +21,7 @@ import sync from '../../../docs/help/sync.md';
 import settings from '../../../docs/help/settings.md';
 import timeline from '../../../docs/help/timeline.md';
 import shortcuts from '../../../docs/help/shortcuts.md';
+import { rankHelpSections } from './helpRanking';
 
 interface HelpSection {
   title: string;
@@ -112,11 +113,13 @@ const SECTIONS: HelpSection[] = [
   },
 ];
 
+// Keep the injected help well under the model's num_ctx budget (the system rules and
+// MAX_HISTORY must also fit), so the grounding rules are never silently truncated. (B11)
+const MAX_HELP_SECTIONS = 3;
+const MAX_HELP_CHARS = 6000;
+
 export function getRelevantHelpDocs(userMessage: string): string {
-  const lower = userMessage.toLowerCase();
-  const matched = SECTIONS.filter(({ keywords }) =>
-    keywords.some((kw) => lower.includes(kw))
-  );
-  const docs = matched.length > 0 ? matched : SECTIONS.slice(0, 2);
-  return docs.map(({ content }) => content).join('\n\n');
+  return rankHelpSections(SECTIONS, userMessage, MAX_HELP_SECTIONS, MAX_HELP_CHARS)
+    .map(({ content }) => content)
+    .join('\n\n');
 }

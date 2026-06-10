@@ -1,5 +1,6 @@
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { AI_TOOLS, executeTool, type OllamaTool } from './tools';
+import { readNdjsonStream } from './ndjson';
 
 const OLLAMA_BASE = 'http://localhost:11434';
 // Must be a tool-capable model (Ollama capability "tools"). deepseek-r1 distills
@@ -223,36 +224,26 @@ async function pullModelViaHttp(
   if (!res.body) throw new Error('No response body');
 
   const reader = res.body.getReader();
-  const decoder = new TextDecoder();
+  let succeeded = false;
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const text = decoder.decode(value, { stream: true });
-      for (const line of text.split('\n')) {
-        if (!line.trim()) continue;
-        try {
-          const chunk: OllamaPullChunk = JSON.parse(line);
-          const percent =
-            chunk.total && chunk.completed
-              ? Math.round((chunk.completed / chunk.total) * 100)
-              : 0;
-          onProgress(percent, chunk.status);
-          if (chunk.status === 'success') {
-            onDone();
-            return;
-          }
-        } catch {
-          // partial line — skip
-        }
+  await readNdjsonStream(reader, (line) => {
+    try {
+      const chunk: OllamaPullChunk = JSON.parse(line);
+      const percent =
+        chunk.total && chunk.completed
+          ? Math.round((chunk.completed / chunk.total) * 100)
+          : 0;
+      onProgress(percent, chunk.status);
+      if (chunk.status === 'success') {
+        onDone();
+        succeeded = true;
+        return true;
       }
+    } catch {
+      // malformed line — skip
     }
-    onDone();
-  } finally {
-    reader.releaseLock();
-  }
+  });
+  if (!succeeded) onDone();
 }
 
 // ─── Streamed tool-calling chat ────────────────────────────────────────────
@@ -552,33 +543,21 @@ async function streamRound(
   if (!res.body) throw new Error('No response body');
 
   const reader = res.body.getReader();
-  const decoder = new TextDecoder();
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const text = decoder.decode(value, { stream: true });
-      for (const line of text.split('\n')) {
-        if (!line.trim()) continue;
-        try {
-          const chunk = JSON.parse(line) as {
-            message?: { content?: string; tool_calls?: ToolCall[] };
-            done: boolean;
-          };
-          if (chunk.message?.content) onChunk(chunk.message.content);
-          if (chunk.message?.tool_calls?.length) collected.push(...chunk.message.tool_calls);
-          if (chunk.done) return collected;
-        } catch {
-          // partial JSON line — skip
-        }
-      }
+  await readNdjsonStream(reader, (line) => {
+    try {
+      const chunk = JSON.parse(line) as {
+        message?: { content?: string; tool_calls?: ToolCall[] };
+        done: boolean;
+      };
+      if (chunk.message?.content) onChunk(chunk.message.content);
+      if (chunk.message?.tool_calls?.length) collected.push(...chunk.message.tool_calls);
+      if (chunk.done) return true;
+    } catch {
+      // malformed line — skip
     }
-    return collected;
-  } finally {
-    reader.releaseLock();
-  }
+  });
+  return collected;
 }
 
 export async function chatWithTools(
