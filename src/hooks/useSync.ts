@@ -12,15 +12,21 @@ import { useOnlineStatus } from './useOnlineStatus';
 export function useSync() {
   const { isSyncing, lastD365SyncAt, syncErrors, pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } =
     useSyncStore();
-  const { isAuthenticated } = useAuthStore();
   const isOnline = useOnlineStatus();
 
+  // Stable identity: read volatile auth/online/syncing state at call time rather than
+  // closing over subscribed values. Otherwise getToken — and triggerSync/triggerPushPending,
+  // which depend on it — churned on every isSyncing flip, tearing down all auto-sync timers
+  // and resetting the focus-sync debounce on each sync. (B7)
   const getToken = useCallback(async () => {
-    if (!isAuthenticated || !isOnline || isSyncing) return null;
+    const online = typeof navigator === 'undefined' ? true : navigator.onLine;
+    if (!useAuthStore.getState().isAuthenticated || !online || useSyncStore.getState().isSyncing) {
+      return null;
+    }
     const token = await getAccessToken(d365Request.scopes);
     if (!token) console.warn('[useSync] No token available');
     return token;
-  }, [isAuthenticated, isOnline, isSyncing]);
+  }, []);
 
   const triggerSync = useCallback(async (scope?: SyncScope) => {
     const token = await getToken();

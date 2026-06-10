@@ -1,6 +1,31 @@
 import '@testing-library/jest-dom';
 import { vi, beforeEach } from 'vitest';
 
+// --- Mock localStorage ---
+// Node 22's experimental built-in localStorage shadows jsdom's and is unavailable
+// without --localstorage-file, which breaks zustand's persist middleware. Provide a
+// simple in-memory implementation so persisted stores work under test.
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    key: (index: number) => Object.keys(store)[index] ?? null,
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+})();
+vi.stubGlobal('localStorage', localStorageMock);
+
 // --- Mock Tauri plugins ---
 vi.mock('@tauri-apps/plugin-sql', () => ({
   default: {
