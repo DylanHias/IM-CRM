@@ -253,7 +253,8 @@ export async function bulkUpsertContacts(
           country_id=excluded.country_id, country_name=excluded.country_name,
           cloud_contact=excluded.cloud_contact,
           sync_status='synced', source='d365',
-          synced_at=excluded.synced_at, updated_at=excluded.updated_at`,
+          synced_at=excluded.synced_at, updated_at=excluded.updated_at
+        WHERE contacts.sync_status != 'pending'`,
         values,
       );
       changed += result.rowsAffected;

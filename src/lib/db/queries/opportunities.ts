@@ -436,7 +436,8 @@ export async function bulkUpsertOpportunities(
           status_reason=excluded.status_reason, actual_revenue=excluded.actual_revenue,
           close_date=excluded.close_date, competitor_id=excluded.competitor_id,
           close_description=excluded.close_description, opportunity_number=excluded.opportunity_number,
-          secondary_owner_id=excluded.secondary_owner_id, secondary_owner_name=excluded.secondary_owner_name`,
+          secondary_owner_id=excluded.secondary_owner_id, secondary_owner_name=excluded.secondary_owner_name
+        WHERE opportunities.sync_status != 'pending'`,
         values,
       );
       updated += result.rowsAffected;

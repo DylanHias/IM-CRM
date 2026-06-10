@@ -372,7 +372,8 @@ export async function bulkUpsertFollowUps(
           customer_id=excluded.customer_id, title=excluded.title, description=excluded.description,
           due_date=excluded.due_date, completed=excluded.completed, completed_at=excluded.completed_at,
           created_by_id=excluded.created_by_id, created_by_name=excluded.created_by_name,
-          sync_status='synced', source='d365', updated_at=excluded.updated_at`,
+          sync_status='synced', source='d365', updated_at=excluded.updated_at
+        WHERE follow_ups.sync_status != 'pending'`,
         values,
       );
       updated += result.rowsAffected;

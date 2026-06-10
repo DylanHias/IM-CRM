@@ -295,7 +295,8 @@ export async function bulkUpsertActivities(
           occurred_at=excluded.occurred_at, start_time=excluded.start_time,
           activity_status=excluded.activity_status, direction=excluded.direction,
           created_by_id=excluded.created_by_id, created_by_name=excluded.created_by_name,
-          sync_status='synced', source='d365', updated_at=excluded.updated_at`,
+          sync_status='synced', source='d365', updated_at=excluded.updated_at
+        WHERE activities.sync_status != 'pending'`,
         values,
       );
       updated += result.rowsAffected;
