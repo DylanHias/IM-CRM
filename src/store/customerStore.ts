@@ -254,7 +254,6 @@ export const useCustomerStore = create<CustomerState>()(
     {
       name: 'crm-customer-store',
       partialize: (state) => ({
-        searchQuery: state.searchQuery,
         sortDir: state.sortDir,
         filterOwnerId: state.filterOwnerId,
         filterStatus: state.filterStatus,
