@@ -261,6 +261,7 @@ export const EMPTY_OPP_EXTRA_FIELDS = {
   opportunityNumber: null,
   singleOrCrossSell: null,
   estimatedMRR: null,
+  estimatedMargin: null,
   annualRevenue: null,
   apnId: null,
   awsPartnerType: null,

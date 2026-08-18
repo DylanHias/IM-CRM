@@ -131,6 +131,22 @@ describe('OpportunityWizard', () => {
     fireEvent.click(validated);
     expect(screen.getByText(/Stage:/).textContent).toContain('Validated');
   });
+
+  it('shows Est. Margin and prefills it from an existing opportunity', () => {
+    const customer = createCustomer();
+    const opportunity = createOpportunity({ customerId: customer.id, estimatedMargin: 1234.5 });
+    render(
+      <OpportunityWizard
+        customer={customer}
+        contacts={[]}
+        opportunity={opportunity}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/Est\. Margin/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1,234.50')).toBeInTheDocument();
+  });
 });
 
 function createContacts(_n: number) {

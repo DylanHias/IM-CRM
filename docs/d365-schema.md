@@ -279,6 +279,7 @@ All custom fields use the `im360_` prefix. OData API version: `v9.2`.
 | `im360_publicsectorsegment` | Public Sector Segment (picklist) |
 | `im360_estimatedmrr` | Estimated MRR (money) |
 | `im360_annualrevenue` | Annual Revenue (money) |
+| `im360_estimatedmarginvalue` | Est. Margin (money) |
 | `_im360_primaryvendor_value` | Legacy primary vendor lookup |
 | `_im360_primaryvendorid_value` | Primary vendor → `im360_vendor` lookup (preferred) |
 | `_im360_servicename1_value` | Service Name → `im360_servicename` lookup |

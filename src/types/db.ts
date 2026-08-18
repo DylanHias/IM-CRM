@@ -130,6 +130,7 @@ export interface OpportunityRow {
   updated_at: string;
   single_or_cross_sell: string | null;
   estimated_mrr: number | null;
+  estimated_margin: number | null;
   annual_revenue: number | null;
   apn_id: string | null;
   aws_partner_type: string | null;

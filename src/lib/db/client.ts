@@ -425,6 +425,7 @@ async function ensureAllColumns(db: Database): Promise<void> {
     ['users',      'birthday',        'TEXT'],
     ['opportunities', 'single_or_cross_sell',          'TEXT'],
     ['opportunities', 'estimated_mrr',                 'REAL'],
+    ['opportunities', 'estimated_margin',              'REAL'],
     ['opportunities', 'annual_revenue',                'REAL'],
     ['opportunities', 'apn_id',                        'TEXT'],
     ['opportunities', 'aws_partner_type',              'TEXT'],

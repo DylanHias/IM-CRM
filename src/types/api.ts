@@ -175,6 +175,7 @@ export interface D365Opportunity {
   im360_competitivewinback: string | null;
   im360_publicsectorsegment: number | null;
   im360_estimatedmrr: number | null;
+  im360_estimatedmarginvalue: number | null;
   im360_annualrevenue: number | null;
   _im360_primaryvendor_value: string | null;
   _im360_primaryvendorid_value: string | null;

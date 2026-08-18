@@ -44,6 +44,7 @@ export interface WizardFormData {
   expirationDate: string | null;
   estimatedRevenue: number | null;
   estimatedMRR: number | null;
+  estimatedMargin: number | null;
   annualRevenue: number | null;
   currency: string;
   country: string;
@@ -110,6 +111,7 @@ export function OpportunityWizard({
   const estimatedRevenue = opportunity?.estimatedRevenue?.toString() ?? '';
   const [estimatedMRR, setEstimatedMRR] = useState(opportunity?.estimatedMRR?.toString() ?? '');
   const [annualRevenue, setAnnualRevenue] = useState(opportunity?.annualRevenue?.toString() ?? '');
+  const [estimatedMargin, setEstimatedMargin] = useState(opportunity?.estimatedMargin?.toString() ?? '');
 
   const updateEstimatedMRR = (raw: string) => {
     setEstimatedMRR(raw);
@@ -299,6 +301,7 @@ export function OpportunityWizard({
         estimatedRevenue: estimatedRevenue ? parseFloat(estimatedRevenue) : null,
         estimatedMRR: estimatedMRR ? parseFloat(estimatedMRR) : null,
         annualRevenue: annualRevenue ? parseFloat(annualRevenue) : null,
+        estimatedMargin: estimatedMargin ? parseFloat(estimatedMargin) : null,
         currency,
         country,
         customerNeed: customerNeed.trim() || null,
@@ -667,6 +670,9 @@ export function OpportunityWizard({
             </Field>
             <Field label={`Annual Revenue (${currency})`} required error={hasError('annualRevenue')}>
               <MoneyInput value={annualRevenue} onValueChange={updateAnnualRevenue} currency={currency} />
+            </Field>
+            <Field label={`Est. Margin ()`}>
+              <MoneyInput value={estimatedMargin} onValueChange={setEstimatedMargin} currency={currency} />
             </Field>
             <Field label="Expiration Date">
               <DatePicker value={expirationDate} onChange={setExpirationDate} />

@@ -10,6 +10,7 @@ const NEW_FIELD_DEFAULTS = {
   opportunityNumber: null,
   singleOrCrossSell: null,
   estimatedMRR: null,
+  estimatedMargin: null,
   annualRevenue: null,
   apnId: null,
   awsPartnerType: null,

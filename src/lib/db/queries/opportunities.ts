@@ -33,6 +33,7 @@ function rowToOpportunity(row: OpportunityRow): Opportunity {
     updatedAt: row.updated_at,
     singleOrCrossSell: row.single_or_cross_sell ?? null,
     estimatedMRR: row.estimated_mrr ?? null,
+    estimatedMargin: row.estimated_margin ?? null,
     annualRevenue: row.annual_revenue ?? null,
     apnId: row.apn_id ?? null,
     awsPartnerType: row.aws_partner_type ?? null,
@@ -138,9 +139,9 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
       public_sector_segment, status_reason, actual_revenue, close_date,
       competitor_id, close_description, opportunity_number,
-      secondary_owner_id, secondary_owner_name
+      secondary_owner_id, secondary_owner_name, estimated_margin
     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,
-              $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51)`,
+              $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52)`,
     [
       opp.id, opp.customerId, opp.contactId, opp.status, opp.subject, opp.bcn,
       opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -155,6 +156,7 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       opp.competitiveWinback,
       opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
       opp.competitorId, opp.closeDescription, opp.opportunityNumber,
+      opp.estimatedMargin,
       opp.secondaryOwnerId, opp.secondaryOwnerName,
     ]
   );
@@ -177,8 +179,8 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
       competitive_winback=$35, public_sector_segment=$36,
       status_reason=$37, actual_revenue=$38, close_date=$39,
       competitor_id=$40, close_description=$41,
-      secondary_owner_id=$42, secondary_owner_name=$43
-    WHERE id=$44`,
+      secondary_owner_id=$42, secondary_owner_name=$43, estimated_margin=$44
+    WHERE id=$45`,
     [
       opp.contactId, opp.status, opp.subject, opp.bcn,
       opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -193,7 +195,7 @@ export async function updateOpportunity(opp: Opportunity): Promise<void> {
       opp.competitiveWinback,
       opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
       opp.competitorId, opp.closeDescription,
-      opp.secondaryOwnerId, opp.secondaryOwnerName,
+      opp.secondaryOwnerId, opp.secondaryOwnerName, opp.estimatedMargin,
       opp.id,
     ]
   );
@@ -335,7 +337,7 @@ export async function bulkUpsertOpportunities(
     }
   }
 
-  const COLS = 51;
+  const COLS = 52;
   const CHUNK = Math.floor(999 / COLS); // ~19 rows per batch
   let inserted = 0;
   let errors = 0;
@@ -353,6 +355,7 @@ export async function bulkUpsertOpportunities(
     o.msCspTenant, o.mpnId, o.migrationType, o.serviceName, o.competitiveWinback,
     o.publicSectorSegment, o.statusReason, o.actualRevenue, o.closeDate,
     o.competitorId, o.closeDescription, o.opportunityNumber,
+    o.estimatedMargin,
     o.secondaryOwnerId, o.secondaryOwnerName,
   ];
 
@@ -376,7 +379,7 @@ export async function bulkUpsertOpportunities(
           ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
           public_sector_segment, status_reason, actual_revenue, close_date,
           competitor_id, close_description, opportunity_number,
-          secondary_owner_id, secondary_owner_name
+          secondary_owner_id, secondary_owner_name, estimated_margin
         ) VALUES ${placeholders}`,
         values,
       );
@@ -410,7 +413,7 @@ export async function bulkUpsertOpportunities(
           ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
           public_sector_segment, status_reason, actual_revenue, close_date,
           competitor_id, close_description, opportunity_number,
-          secondary_owner_id, secondary_owner_name
+          secondary_owner_id, secondary_owner_name, estimated_margin
         ) VALUES ${placeholders}
         ON CONFLICT(id) DO UPDATE SET
           customer_id=excluded.customer_id, contact_id=excluded.contact_id, status=excluded.status,
@@ -436,7 +439,8 @@ export async function bulkUpsertOpportunities(
           status_reason=excluded.status_reason, actual_revenue=excluded.actual_revenue,
           close_date=excluded.close_date, competitor_id=excluded.competitor_id,
           close_description=excluded.close_description, opportunity_number=excluded.opportunity_number,
-          secondary_owner_id=excluded.secondary_owner_id, secondary_owner_name=excluded.secondary_owner_name`,
+          secondary_owner_id=excluded.secondary_owner_id, secondary_owner_name=excluded.secondary_owner_name,
+          estimated_margin=excluded.estimated_margin`,
         values,
       );
       updated += result.rowsAffected;
@@ -489,8 +493,8 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         competitive_winback=$36, public_sector_segment=$37,
         status_reason=$38, actual_revenue=$39, close_date=$40,
         competitor_id=$41, close_description=$42, opportunity_number=$43,
-        secondary_owner_id=$44, secondary_owner_name=$45
-       WHERE remote_id=$46`,
+        secondary_owner_id=$44, secondary_owner_name=$45, estimated_margin=$46
+       WHERE remote_id=$47`,
       [
         opp.customerId, contactId, opp.status, opp.subject, opp.bcn,
         opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -505,7 +509,7 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         opp.competitiveWinback, opp.publicSectorSegment,
         opp.statusReason, opp.actualRevenue, opp.closeDate,
         opp.competitorId, opp.closeDescription, opp.opportunityNumber,
-        opp.secondaryOwnerId, opp.secondaryOwnerName,
+        opp.secondaryOwnerId, opp.secondaryOwnerName, opp.estimatedMargin,
         opp.remoteId,
       ]
     );
@@ -523,9 +527,9 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         ms_csp_tenant, mpn_id, migration_type, service_name, competitive_winback,
         public_sector_segment, status_reason, actual_revenue, close_date,
         competitor_id, close_description, opportunity_number,
-        secondary_owner_id, secondary_owner_name
+        secondary_owner_id, secondary_owner_name, estimated_margin
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,
-                $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51)`,
+                $26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52)`,
       [
         opp.id, opp.customerId, contactId, opp.status, opp.subject, opp.bcn,
         opp.multiVendorOpportunity ? 1 : 0, opp.sellType, opp.primaryVendor,
@@ -539,6 +543,7 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName, opp.competitiveWinback,
         opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
         opp.competitorId, opp.closeDescription, opp.opportunityNumber,
+        opp.estimatedMargin,
         opp.secondaryOwnerId, opp.secondaryOwnerName,
       ]
     );

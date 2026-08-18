@@ -78,6 +78,7 @@ describe('useOpportunities', () => {
         customerNeed: null,
         singleOrCrossSell: null,
         estimatedMRR: null,
+        estimatedMargin: null,
         annualRevenue: null,
         apnId: null,
         awsPartnerType: null,

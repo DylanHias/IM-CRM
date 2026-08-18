@@ -77,6 +77,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
     singleOrCrossSell: data.singleOrCrossSell,
     estimatedMRR: data.estimatedMRR,
     annualRevenue: data.annualRevenue,
+    estimatedMargin: data.estimatedMargin,
     apnId: data.apnId,
     awsPartnerType: data.awsPartnerType,
     awsServiceType: data.awsServiceType,

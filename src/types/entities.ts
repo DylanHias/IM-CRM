@@ -143,6 +143,7 @@ export interface Opportunity {
   updatedAt: string;
   singleOrCrossSell: string | null;
   estimatedMRR: number | null;
+  estimatedMargin: number | null;
   annualRevenue: number | null;
   apnId: string | null;
   awsPartnerType: string | null;

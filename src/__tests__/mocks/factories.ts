@@ -135,6 +135,7 @@ export function createOpportunity(overrides?: Partial<Opportunity>): Opportunity
     updatedAt: NOW,
     singleOrCrossSell: null,
     estimatedMRR: null,
+    estimatedMargin: null,
     annualRevenue: null,
     apnId: null,
     awsPartnerType: null,

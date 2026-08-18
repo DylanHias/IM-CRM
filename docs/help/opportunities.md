@@ -47,6 +47,7 @@ The global Opportunities list is paginated. Use the page controls at the bottom 
    - **Sell Type** — Type of sale (New business, Add-on, etc.)
    - **Primary Vendor** — The main vendor for this deal
    - **Estimated Revenue** — Expected deal value
+   - **Est. Margin** — Expected margin on the deal (optional)
    - **Expiration Date** — When the opportunity expires
    - **Customer Need** — What the customer is looking for
    - **Related Contact** — Which person at the company is involved

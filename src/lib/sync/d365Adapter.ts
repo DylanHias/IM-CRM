@@ -421,6 +421,7 @@ function mapD365OpportunityToOpportunity(r: D365Opportunity, now: string): Oppor
     updatedAt: r.modifiedon ?? now,
     singleOrCrossSell: r['im360_singleorcrosssell@OData.Community.Display.V1.FormattedValue'] ?? null,
     estimatedMRR: r.im360_estimatedmrr ?? null,
+    estimatedMargin: r.im360_estimatedmarginvalue ?? null,
     annualRevenue: r.im360_annualrevenue ?? null,
     apnId: r.im360_apnid ?? null,
     awsPartnerType: r['im360_awspartnertype1@OData.Community.Display.V1.FormattedValue'] ?? null,
@@ -626,6 +627,7 @@ class RealD365Adapter implements ID365Adapter {
       'im360_mscsptenant', 'im360_mpnid', 'im360_migrationtype',
       'im360_competitivewinback', 'im360_publicsectorsegment',
       'im360_estimatedmrr', 'im360_annualrevenue',
+      'im360_estimatedmarginvalue',
       '_im360_primaryvendor_value', '_im360_primaryvendorid_value',
       '_im360_servicename1_value', '_im360_country_value', '_transactioncurrencyid_value',
       '_parentaccountid_value', '_parentcontactid_value', '_ownerid_value',
@@ -941,6 +943,7 @@ class RealD365Adapter implements ID365Adapter {
     // Strings + scalars
     if (opportunity.estimatedMRR != null) body.im360_estimatedmrr = opportunity.estimatedMRR;
     if (opportunity.annualRevenue != null) body.im360_annualrevenue = opportunity.annualRevenue;
+    body.im360_estimatedmarginvalue = opportunity.estimatedMargin;
     if (opportunity.apnId) body.im360_apnid = opportunity.apnId;
     if (opportunity.payerAccount) body.im360_payeraccount = opportunity.payerAccount;
     if (opportunity.existingPayeeAccount) body.im360_existingpayeeaccount = opportunity.existingPayeeAccount;
