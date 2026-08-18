@@ -156,8 +156,8 @@ export async function insertOpportunity(opp: Opportunity): Promise<void> {
       opp.competitiveWinback,
       opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
       opp.competitorId, opp.closeDescription, opp.opportunityNumber,
-      opp.estimatedMargin,
       opp.secondaryOwnerId, opp.secondaryOwnerName,
+      opp.estimatedMargin,
     ]
   );
 }
@@ -355,8 +355,8 @@ export async function bulkUpsertOpportunities(
     o.msCspTenant, o.mpnId, o.migrationType, o.serviceName, o.competitiveWinback,
     o.publicSectorSegment, o.statusReason, o.actualRevenue, o.closeDate,
     o.competitorId, o.closeDescription, o.opportunityNumber,
-    o.estimatedMargin,
     o.secondaryOwnerId, o.secondaryOwnerName,
+    o.estimatedMargin,
   ];
 
   for (let i = 0; i < toInsert.length; i += CHUNK) {
@@ -543,8 +543,8 @@ export async function upsertPulledOpportunity(opp: Opportunity): Promise<boolean
         opp.msCspTenant, opp.mpnId, opp.migrationType, opp.serviceName, opp.competitiveWinback,
         opp.publicSectorSegment, opp.statusReason, opp.actualRevenue, opp.closeDate,
         opp.competitorId, opp.closeDescription, opp.opportunityNumber,
-        opp.estimatedMargin,
         opp.secondaryOwnerId, opp.secondaryOwnerName,
+        opp.estimatedMargin,
       ]
     );
   }

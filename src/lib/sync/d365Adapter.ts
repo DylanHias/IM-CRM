@@ -943,7 +943,7 @@ class RealD365Adapter implements ID365Adapter {
     // Strings + scalars
     if (opportunity.estimatedMRR != null) body.im360_estimatedmrr = opportunity.estimatedMRR;
     if (opportunity.annualRevenue != null) body.im360_annualrevenue = opportunity.annualRevenue;
-    body.im360_estimatedmarginvalue = opportunity.estimatedMargin;
+    if (opportunity.estimatedMargin != null) body.im360_estimatedmarginvalue = opportunity.estimatedMargin;
     if (opportunity.apnId) body.im360_apnid = opportunity.apnId;
     if (opportunity.payerAccount) body.im360_payeraccount = opportunity.payerAccount;
     if (opportunity.existingPayeeAccount) body.im360_existingpayeeaccount = opportunity.existingPayeeAccount;
