@@ -75,6 +75,13 @@ pnpm sync-version     # propagate package.json version → tauri.conf.json + Car
 - Exception: intentional silences with a comment explaining why
 - Interceptor: `src/lib/logCapture.ts` (side-effect import in `providers.tsx`)
 
+## DB Queries
+
+- `src/lib/db/queries/*.ts` build SQL with positional `$N` params against hand-written column lists. Adding a column means appending it to the column list AND the params array at the *same* position — a mismatch shifts neighbouring columns silently (counts still match, SQLite won't complain)
+- After changing the opportunities columns, add a distinctive value to `MARKERS` in `src/lib/db/queries/__tests__/opportunities.test.ts` — it asserts every write path binds each column to its own value
+- Renumber the trailing `WHERE id=$N` / `WHERE remote_id=$N` placeholder when you add to a SET clause
+- Never hand-maintain a column-count constant — derive it (`insertValuesFor(x).length`)
+
 ## Tauri / Async
 
 - Guard Tauri APIs with `isTauriApp()` (`src/lib/utils/offlineUtils.ts`)

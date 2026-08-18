@@ -337,11 +337,6 @@ export async function bulkUpsertOpportunities(
     }
   }
 
-  const COLS = 52;
-  const CHUNK = Math.floor(999 / COLS); // ~19 rows per batch
-  let inserted = 0;
-  let errors = 0;
-
   const insertValuesFor = (o: Opportunity): unknown[] => [
     o.id, o.customerId, o.contactId, o.status, o.subject, o.bcn,
     o.multiVendorOpportunity ? 1 : 0, o.sellType, o.primaryVendor,
@@ -358,6 +353,12 @@ export async function bulkUpsertOpportunities(
     o.secondaryOwnerId, o.secondaryOwnerName,
     o.estimatedMargin,
   ];
+
+  // Derived, never hand-maintained — the column list and this count must not drift.
+  const COLS = insertValuesFor(opps[0]).length;
+  const CHUNK = Math.floor(999 / COLS);
+  let inserted = 0;
+  let errors = 0;
 
   for (let i = 0; i < toInsert.length; i += CHUNK) {
     const chunk = toInsert.slice(i, i + CHUNK);
