@@ -297,6 +297,19 @@ async fn ollama_chat_stream(
 
 // ─── Excel Export ────────────────────────────────────────────────────────────
 
+/// Excel refuses any cell string longer than this, failing the whole workbook.
+const EXCEL_MAX_CELL_CHARS: usize = 32_767;
+
+/// Clip over-long text so one huge field can't abort the entire export.
+fn truncate_for_excel(s: String) -> String {
+    if s.chars().count() <= EXCEL_MAX_CELL_CHARS {
+        return s;
+    }
+    let mut out: String = s.chars().take(EXCEL_MAX_CELL_CHARS - 1).collect();
+    out.push('…');
+    out
+}
+
 /// Write one SQLite value into a worksheet cell.
 fn write_cell(
     sheet: &mut Worksheet,
@@ -308,7 +321,7 @@ fn write_cell(
         Value::Null => { sheet.write(row, col, "")?; }
         Value::Integer(n) => { sheet.write(row, col, n)?; }
         Value::Real(f) => { sheet.write(row, col, f)?; }
-        Value::Text(s) => { sheet.write(row, col, s)?; }
+        Value::Text(s) => { sheet.write(row, col, truncate_for_excel(s))?; }
         Value::Blob(_) => { sheet.write(row, col, "[blob]")?; }
     }
     Ok(())
@@ -1077,4 +1090,19 @@ pub fn run() {
                 force_kill_ollama();
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{truncate_for_excel, EXCEL_MAX_CELL_CHARS};
+
+    #[test]
+    fn truncates_only_over_the_limit() {
+        let short = "é".repeat(10);
+        assert_eq!(truncate_for_excel(short.clone()), short);
+
+        let long = truncate_for_excel("é".repeat(EXCEL_MAX_CELL_CHARS + 100));
+        assert_eq!(long.chars().count(), EXCEL_MAX_CELL_CHARS);
+        assert!(long.ends_with('…'));
+    }
 }
