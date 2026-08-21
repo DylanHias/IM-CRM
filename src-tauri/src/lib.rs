@@ -1095,6 +1095,7 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{truncate_for_excel, EXCEL_MAX_CELL_CHARS};
+    use rust_xlsxwriter::Workbook;
 
     #[test]
     fn truncates_only_over_the_limit() {
@@ -1104,5 +1105,22 @@ mod tests {
         let long = truncate_for_excel("é".repeat(EXCEL_MAX_CELL_CHARS + 100));
         assert_eq!(long.chars().count(), EXCEL_MAX_CELL_CHARS);
         assert!(long.ends_with('…'));
+    }
+
+    #[test]
+    fn saves_text_with_a_unicode_escape_beside_a_multibyte_char() {
+        // Panicked in rust_xlsxwriter < 0.84.2: the "_xABCD_" lookahead sliced by
+        // byte index, landing mid-char when a multibyte char follows "_x".
+        let truncated = truncate_for_excel(format!(
+            "{}_xA{}",
+            "é".repeat(EXCEL_MAX_CELL_CHARS - 6),
+            "é".repeat(10)
+        ));
+
+        let mut workbook = Workbook::new();
+        let sheet = workbook.add_worksheet();
+        sheet.write(0, 0, "note_xAé…tail").unwrap();
+        sheet.write(1, 0, truncated).unwrap();
+        assert!(workbook.save_to_buffer().is_ok());
     }
 }
