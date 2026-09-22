@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback } from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, User } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, User, Combine, Split } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +40,7 @@ export function OpportunitiesFilters() {
     setSearchQuery, setSortBy, setSortDir,
     setFilterCustomerId, setFilterStage, setFilterStatus, setFilterExpired, setFilterPrimaryOwnerId, setFilterSecondaryOwnerId, toggleMineOnly,
     clearFilters, getActiveFilterCount,
+    filterMode, setFilterMode,
   } = useOpportunityListStore();
   const canFilterMine = currentUserIds.length > 0;
 
@@ -152,6 +153,19 @@ export function OpportunitiesFilters() {
             </span>
           )}
         </Button>
+
+        {activeFilterCount > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => setFilterMode(filterMode === 'and' ? 'or' : 'and')}
+            title={filterMode === 'and' ? 'Opportunities must match every filter' : 'Opportunities may match any filter'}
+          >
+            {filterMode === 'and' ? <Combine size={13} /> : <Split size={13} />}
+            {filterMode === 'and' ? 'Match all' : 'Match any'}
+          </Button>
+        )}
 
         {activeFilterCount > 0 && (
           <Button variant="ghost" size="sm" className="h-9 text-muted-foreground" onClick={clearFilters}>

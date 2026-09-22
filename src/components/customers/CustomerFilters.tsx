@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Bookmark } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, Bookmark, Combine, Split } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ export function CustomerFilters() {
     setFilterOwnerId, setFilterStatus, setFilterIndustry, setFilterSegment, setFilterCountry, setFilterCity,
     setFilterCsmId, setFilterAwsOwnerId, setFilterAzureOwnerId, setFilterInsideSalesOwnerId, setFilterAccountManagerId,
     toggleNoRecentActivityFilter, toggleFavoritesFilter, setFilterHealthTier, clearFilters, getActiveFilterCount,
+    filterMode, setFilterMode,
   } = useCustomerStore();
 
   const noRecentActivityDays = useSettingsStore((s) => s.noRecentActivityDays);
@@ -175,6 +176,19 @@ export function CustomerFilters() {
             </span>
           )}
         </Button>
+
+        {activeFilterCount > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => setFilterMode(filterMode === 'and' ? 'or' : 'and')}
+            title={filterMode === 'and' ? 'Customers must match every filter' : 'Customers may match any filter'}
+          >
+            {filterMode === 'and' ? <Combine size={13} /> : <Split size={13} />}
+            {filterMode === 'and' ? 'Match all' : 'Match any'}
+          </Button>
+        )}
 
         {activeFilterCount > 0 && (
           <Button variant="ghost" size="sm" className="h-9 text-muted-foreground" onClick={clearFilters}>

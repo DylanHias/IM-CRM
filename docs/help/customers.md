@@ -63,6 +63,15 @@ Press **F** or click the filter button to open the filter panel. You can filter 
 
 You can combine multiple filters. Active filters are shown as badges — click the X on any badge to remove it, or click "Clear all" to reset.
 
+### Match all or match any
+
+As soon as two or more filters are active, a button appears next to **Filters** showing how they combine:
+
+- **Match all** — a customer must meet *every* filter to show up. This is the default.
+- **Match any** — a customer shows up if it meets *at least one* filter. Useful for questions like "show me everything in Belgium plus everything in Retail".
+
+Click the button to switch between the two. Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
+
 ## Bookmarking Favorites
 
 Hover over a customer row and click the **bookmark icon** on the right side to mark it as a favorite. Bookmarked customers can be quickly found using the "Favorites" filter.

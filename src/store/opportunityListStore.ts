@@ -5,6 +5,7 @@ import type { Opportunity, OpportunityStatus } from '@/types/entities';
 export type OppSortBy = 'createdAt' | 'subject' | 'estimatedRevenue' | 'expirationDate' | 'stage';
 export type SortDir = 'asc' | 'desc';
 export type ExpiredFilter = 'all' | 'expired' | 'active';
+export type FilterMode = 'and' | 'or';
 
 const STAGE_ORDER: Record<string, number> = {
   'Prospecting': 1,
@@ -31,6 +32,7 @@ interface OpportunityListState {
   filterPrimaryOwnerId: string | null;
   filterSecondaryOwnerId: string | null;
   filterMineOnly: boolean;
+  filterMode: FilterMode;
   page: number;
   isLoading: boolean;
 
@@ -47,6 +49,7 @@ interface OpportunityListState {
   setFilterPrimaryOwnerId: (id: string | null) => void;
   setFilterSecondaryOwnerId: (id: string | null) => void;
   toggleMineOnly: () => void;
+  setFilterMode: (m: FilterMode) => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -70,6 +73,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       filterPrimaryOwnerId: null,
       filterSecondaryOwnerId: null,
       filterMineOnly: false,
+      filterMode: 'and',
       page: 1,
       isLoading: false,
 
@@ -86,6 +90,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       setFilterPrimaryOwnerId: (filterPrimaryOwnerId) => set({ filterPrimaryOwnerId, page: 1 }),
       setFilterSecondaryOwnerId: (filterSecondaryOwnerId) => set({ filterSecondaryOwnerId, page: 1 }),
       toggleMineOnly: () => set({ filterMineOnly: !get().filterMineOnly, page: 1 }),
+      setFilterMode: (filterMode) => set({ filterMode, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -97,6 +102,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterPrimaryOwnerId: null,
         filterSecondaryOwnerId: null,
         filterMineOnly: false,
+        filterMode: 'and',
         page: 1,
       }),
 
@@ -114,7 +120,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       },
 
       getFilteredOpportunities: () => {
-        const { opportunities, customerMap, currentUserIds, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired, filterPrimaryOwnerId, filterSecondaryOwnerId, filterMineOnly } = get();
+        const { opportunities, customerMap, currentUserIds, searchQuery, sortBy, sortDir, filterCustomerId, filterStage, filterStatus, filterExpired, filterPrimaryOwnerId, filterSecondaryOwnerId, filterMineOnly, filterMode } = get();
 
         let result = opportunities;
 
@@ -131,32 +137,40 @@ export const useOpportunityListStore = create<OpportunityListState>()(
           });
         }
 
+        const predicates: ((o: Opportunity) => boolean)[] = [];
+
         if (filterMineOnly && currentUserIds.length > 0) {
           const ids = new Set(currentUserIds);
-          result = result.filter((o) => ids.has(o.createdById));
+          predicates.push((o) => ids.has(o.createdById));
         }
         if (filterCustomerId) {
-          result = result.filter((o) => o.customerId === filterCustomerId);
+          predicates.push((o) => o.customerId === filterCustomerId);
         }
         if (filterStage) {
-          result = result.filter((o) => o.stage === filterStage);
+          predicates.push((o) => o.stage === filterStage);
         }
         if (filterStatus) {
-          result = result.filter((o) => o.status === filterStatus);
+          predicates.push((o) => o.status === filterStatus);
         }
         if (filterPrimaryOwnerId) {
-          result = result.filter((o) => o.createdById === filterPrimaryOwnerId);
+          predicates.push((o) => o.createdById === filterPrimaryOwnerId);
         }
         if (filterSecondaryOwnerId) {
-          result = result.filter((o) => o.secondaryOwnerId === filterSecondaryOwnerId);
+          predicates.push((o) => o.secondaryOwnerId === filterSecondaryOwnerId);
         }
         if (filterExpired !== 'all') {
           const today = new Date().toISOString().slice(0, 10);
-          result = result.filter((o) => {
+          predicates.push((o) => {
             if (!o.expirationDate) return filterExpired === 'active';
             const isExpired = o.expirationDate.slice(0, 10) < today;
             return filterExpired === 'expired' ? isExpired : !isExpired;
           });
+        }
+
+        if (predicates.length > 0) {
+          result = filterMode === 'or'
+            ? result.filter((o) => predicates.some((p) => p(o)))
+            : result.filter((o) => predicates.every((p) => p(o)));
         }
 
         result = [...result].sort((a, b) => {
@@ -192,6 +206,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterPrimaryOwnerId: state.filterPrimaryOwnerId,
         filterSecondaryOwnerId: state.filterSecondaryOwnerId,
         filterMineOnly: state.filterMineOnly,
+        filterMode: state.filterMode,
       }),
     }
   )

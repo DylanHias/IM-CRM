@@ -334,3 +334,77 @@ describe('customerStore', () => {
     });
   });
 });
+
+describe('customerStore filter mode', () => {
+  const acme = createCustomer({ id: 'a', name: 'Acme', industry: 'Retail', addressCountry: 'BE' });
+  const globex = createCustomer({ id: 'g', name: 'Globex', industry: 'Finance', addressCountry: 'NL' });
+
+  beforeEach(() => {
+    useCustomerStore.setState({
+      customers: [acme, globex],
+      favoriteIds: new Set<string>(),
+      searchQuery: '',
+      filterOwnerId: null,
+      filterStatus: 'all',
+      filterIndustry: null,
+      filterSegment: null,
+      filterCountry: null,
+      filterCity: null,
+      filterCsmId: null,
+      filterAwsOwnerId: null,
+      filterAzureOwnerId: null,
+      filterInsideSalesOwnerId: null,
+      filterAccountManagerId: null,
+      filterNoRecentActivity: false,
+      filterFavorites: false,
+      filterHealthTier: null,
+      filterMode: 'and',
+    });
+  });
+
+  it('returns nothing when AND-combining two mutually exclusive filters', () => {
+    useCustomerStore.getState().setFilterIndustry('Retail');
+    useCustomerStore.getState().setFilterCountry('NL');
+
+    expect(useCustomerStore.getState().getFilteredCustomers()).toHaveLength(0);
+  });
+
+  it('returns both matches when OR-combining the same two filters', () => {
+    useCustomerStore.getState().setFilterIndustry('Retail');
+    useCustomerStore.getState().setFilterCountry('NL');
+    useCustomerStore.getState().setFilterMode('or');
+
+    const result = useCustomerStore.getState().getFilteredCustomers();
+    expect(result.map((c) => c.name).sort()).toEqual(['Acme', 'Globex']);
+  });
+
+  it('keeps search as an AND condition in OR mode', () => {
+    useCustomerStore.getState().setFilterIndustry('Retail');
+    useCustomerStore.getState().setFilterCountry('NL');
+    useCustomerStore.getState().setFilterMode('or');
+    useCustomerStore.getState().setSearchQuery('globex');
+
+    const result = useCustomerStore.getState().getFilteredCustomers();
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Globex');
+  });
+
+  it('returns everything in OR mode when no filter is active', () => {
+    useCustomerStore.getState().setFilterMode('or');
+
+    expect(useCustomerStore.getState().getFilteredCustomers()).toHaveLength(2);
+  });
+
+  it('excludes filter mode from the active filter count', () => {
+    useCustomerStore.getState().setFilterMode('or');
+
+    expect(useCustomerStore.getState().getActiveFilterCount()).toBe(0);
+  });
+
+  it('resets filter mode to and on clearFilters', () => {
+    useCustomerStore.getState().setFilterMode('or');
+    useCustomerStore.getState().clearFilters();
+
+    expect(useCustomerStore.getState().filterMode).toBe('and');
+  });
+});

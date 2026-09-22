@@ -8,6 +8,7 @@ import { healthTier, type HealthTier } from '@/lib/customers/healthScore';
 
 export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry' | 'health';
 export type SortDir = 'asc' | 'desc';
+export type FilterMode = 'and' | 'or';
 
 interface CustomerState {
   customers: Customer[];
@@ -31,6 +32,7 @@ interface CustomerState {
   filterNoRecentActivity: boolean;
   filterFavorites: boolean;
   filterHealthTier: HealthTier | null;
+  filterMode: FilterMode;
   page: number;
   isLoading: boolean;
 
@@ -56,6 +58,7 @@ interface CustomerState {
   toggleNoRecentActivityFilter: () => void;
   toggleFavoritesFilter: () => void;
   setFilterHealthTier: (t: HealthTier | null) => void;
+  setFilterMode: (m: FilterMode) => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -88,6 +91,7 @@ export const useCustomerStore = create<CustomerState>()(
       filterNoRecentActivity: false,
       filterFavorites: false,
       filterHealthTier: null,
+      filterMode: 'and',
       page: 1,
       isLoading: false,
 
@@ -130,6 +134,7 @@ export const useCustomerStore = create<CustomerState>()(
       toggleFavoritesFilter: () =>
         set((s) => ({ filterFavorites: !s.filterFavorites, page: 1 })),
       setFilterHealthTier: (filterHealthTier) => set({ filterHealthTier, page: 1 }),
+      setFilterMode: (filterMode) => set({ filterMode, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -149,6 +154,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterNoRecentActivity: false,
         filterFavorites: false,
         filterHealthTier: null,
+        filterMode: 'and',
         page: 1,
       }),
 
@@ -161,7 +167,7 @@ export const useCustomerStore = create<CustomerState>()(
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterInsideSalesOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterInsideSalesOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier, filterMode,
         } = get();
 
         let result = customers;
@@ -178,49 +184,57 @@ export const useCustomerStore = create<CustomerState>()(
           );
         }
 
+        const predicates: ((c: Customer) => boolean)[] = [];
+
         if (filterStatus !== 'all') {
-          result = result.filter((c) => c.status === filterStatus);
+          predicates.push((c) => c.status === filterStatus);
         }
         if (filterOwnerId) {
-          result = result.filter((c) => c.ownerId === filterOwnerId);
+          predicates.push((c) => c.ownerId === filterOwnerId);
         }
         if (filterIndustry) {
-          result = result.filter((c) => c.industry === filterIndustry);
+          predicates.push((c) => c.industry === filterIndustry);
         }
         if (filterSegment) {
-          result = result.filter((c) => c.segment === filterSegment);
+          predicates.push((c) => c.segment === filterSegment);
         }
         if (filterCountry) {
-          result = result.filter((c) => c.addressCountry === filterCountry);
+          predicates.push((c) => c.addressCountry === filterCountry);
         }
         if (filterCity) {
-          result = result.filter((c) => normalizeCity(c.addressCity) === filterCity);
+          predicates.push((c) => normalizeCity(c.addressCity) === filterCity);
         }
         if (filterCsmId) {
-          result = result.filter((c) => c.customerSuccessManagerId === filterCsmId);
+          predicates.push((c) => c.customerSuccessManagerId === filterCsmId);
         }
         if (filterAwsOwnerId) {
-          result = result.filter((c) => c.awsOwnerId === filterAwsOwnerId);
+          predicates.push((c) => c.awsOwnerId === filterAwsOwnerId);
         }
         if (filterAzureOwnerId) {
-          result = result.filter((c) => c.azureOwnerId === filterAzureOwnerId);
+          predicates.push((c) => c.azureOwnerId === filterAzureOwnerId);
         }
         if (filterInsideSalesOwnerId) {
-          result = result.filter((c) => c.insideSalesOwnerId === filterInsideSalesOwnerId);
+          predicates.push((c) => c.insideSalesOwnerId === filterInsideSalesOwnerId);
         }
         if (filterAccountManagerId) {
-          result = result.filter((c) => c.accountManagerId === filterAccountManagerId);
+          predicates.push((c) => c.accountManagerId === filterAccountManagerId);
         }
         if (filterNoRecentActivity) {
           const thresholdDays = useSettingsStore.getState().noRecentActivityDays;
           const cutoff = new Date(Date.now() - thresholdDays * 86400000).toISOString();
-          result = result.filter((c) => !c.lastActivityAt || c.lastActivityAt < cutoff);
+          predicates.push((c) => !c.lastActivityAt || c.lastActivityAt < cutoff);
         }
         if (filterFavorites) {
-          result = result.filter((c) => favoriteIds.has(c.id));
+          predicates.push((c) => favoriteIds.has(c.id));
         }
         if (filterHealthTier) {
-          result = result.filter((c) => healthTier(c.healthScore) === filterHealthTier);
+          predicates.push((c) => healthTier(c.healthScore) === filterHealthTier);
+        }
+
+        if (predicates.length > 0) {
+          result = filterMode === 'or'
+            ? result.filter((c) => predicates.some((p) => p(c)))
+            : result.filter((c) => predicates.every((p) => p(c)));
         }
 
         result = [...result].sort((a, b) => {
@@ -270,6 +284,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterNoRecentActivity: state.filterNoRecentActivity,
         filterFavorites: state.filterFavorites,
         filterHealthTier: state.filterHealthTier,
+        filterMode: state.filterMode,
       }),
     }
   )

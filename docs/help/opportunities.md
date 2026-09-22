@@ -31,6 +31,15 @@ On the global Opportunities page you can:
 
 Active filters appear as badges you can click to clear individually, or use **Clear all** to reset everything. Your sort and filter choices are remembered between sessions.
 
+### Match all or match any
+
+As soon as two or more filters are active, a button appears next to **Filters** showing how they combine:
+
+- **Match all** — an opportunity must meet *every* filter to show up. This is the default.
+- **Match any** — an opportunity shows up if it meets *at least one* filter. Useful for questions like "show me everything at Qualified stage plus everything owned by Sarah".
+
+Click the button to switch between the two. Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
+
 ## Pagination
 
 The global Opportunities list is paginated. Use the page controls at the bottom to move between pages, and change the **Rows per page** dropdown to show 10, 25, 50, or 100 opportunities at a time. Your preference is remembered.

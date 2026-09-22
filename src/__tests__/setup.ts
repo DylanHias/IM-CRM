@@ -72,6 +72,22 @@ vi.mock('@azure/msal-react', () => ({
   useIsAuthenticated: () => false,
 }));
 
+// --- Mock localStorage ---
+// Node >=22 exposes a global `localStorage` that jsdom does not replace, so
+// zustand's persist middleware resolves it to something without getItem/setItem.
+const storage = new Map<string, string>();
+Object.defineProperty(globalThis, 'localStorage', {
+  writable: true,
+  value: {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => { storage.set(key, String(value)); },
+    removeItem: (key: string) => { storage.delete(key); },
+    clear: () => storage.clear(),
+    key: (index: number) => Array.from(storage.keys())[index] ?? null,
+    get length() { return storage.size; },
+  },
+});
+
 // --- Mock window.matchMedia ---
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
