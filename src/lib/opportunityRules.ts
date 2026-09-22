@@ -10,15 +10,18 @@ export const STAGES = [
 ] as const;
 export type Stage = typeof STAGES[number];
 
+// D365 rejects any other closeprobability with "Invalid Probability value".
+export const D365_ALLOWED_PROBABILITIES = [5, 20, 40, 60, 80, 95] as const;
+
 export const STAGE_PROBABILITY: Record<Stage, number> = {
   'Prospecting': 5,
-  'Validated': 25,
-  'Qualified': 50,
-  'Verbal Received': 75,
-  'Contract Received': 100,
-  'Billing Rejection': 100,
-  'Pending Vendor Confirmation': 100,
-  'Purchased': 100,
+  'Validated': 20,
+  'Qualified': 40,
+  'Verbal Received': 80,
+  'Contract Received': 95,
+  'Billing Rejection': 95,
+  'Pending Vendor Confirmation': 95,
+  'Purchased': 95,
 };
 
 export const AWS_VENDORS = ['AWS - CONSOLIDATED', 'AWS - STANDALONE'] as const;

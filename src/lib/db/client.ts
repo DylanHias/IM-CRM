@@ -1452,5 +1452,27 @@ async function runMigrations(db: Database, currentVersion: number): Promise<void
       console.error('[db] migration v53 failed:', err);
     }
   }
-}
 
+  if (currentVersion < 54) {
+    // D365 only accepts closeprobability in (5,20,40,60,80,95); older rows were
+    // written with the previous 25/50/75/100 stage map and fail every push.
+    // Rows already holding an accepted value (incl. ones pulled from D365) are left alone.
+    try {
+      await db.execute(`
+        UPDATE opportunities SET probability = CASE
+          WHEN probability < 13 THEN 5
+          WHEN probability <= 30 THEN 20
+          WHEN probability <= 50 THEN 40
+          WHEN probability <= 70 THEN 60
+          WHEN probability <= 88 THEN 80
+          ELSE 95 END
+        WHERE probability NOT IN (5, 20, 40, 60, 80, 95)
+      `);
+      await db.execute(
+        `UPDATE app_settings SET value = '54', updated_at = datetime('now') WHERE key = 'schema_version'`
+      );
+    } catch (err) {
+      console.error('[db] migration v54 failed:', err);
+    }
+  }
+}

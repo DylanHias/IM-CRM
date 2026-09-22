@@ -7,9 +7,9 @@ import { createContact, createCustomer, createOpportunity } from '@/__tests__/mo
 vi.mock('@/hooks/useOpportunities', () => ({
   stageToProbability: (stage: string) => {
     const map: Record<string, number> = {
-      Prospecting: 5, Validated: 25, Qualified: 50,
-      'Verbal Received': 75, 'Contract Received': 100,
-      'Billing Rejection': 100, 'Pending Vendor Confirmation': 100, Purchased: 100,
+      Prospecting: 5, Validated: 20, Qualified: 40,
+      'Verbal Received': 80, 'Contract Received': 95,
+      'Billing Rejection': 95, 'Pending Vendor Confirmation': 95, Purchased: 95,
     };
     return map[stage] ?? 5;
   },

@@ -8,24 +8,14 @@ import { refreshCustomerHealth } from '@/lib/customers/refreshHealth';
 import { directPushOpportunity } from '@/lib/sync/directPushService';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
+import { STAGE_PROBABILITY, type Stage } from '@/lib/opportunityRules';
 import type { Opportunity, OpportunityStage } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 
-const STAGE_PROBABILITY: Record<string, number> = {
-  'Prospecting': 5,
-  'Validated': 25,
-  'Qualified': 50,
-  'Verbal Received': 75,
-  'Contract Received': 100,
-  'Billing Rejection': 100,
-  'Pending Vendor Confirmation': 100,
-  'Purchased': 100,
-};
-
 export function stageToProbability(stage: OpportunityStage): number {
-  return STAGE_PROBABILITY[stage] ?? 5;
+  return STAGE_PROBABILITY[stage as Stage] ?? 5;
 }
 
 export function useOpportunities(customerId: string) {
