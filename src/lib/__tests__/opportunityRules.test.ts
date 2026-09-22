@@ -165,9 +165,9 @@ describe('opportunityRules', () => {
   describe('stage helpers', () => {
     it('maps stages to probabilities', () => {
       expect(getStageProbability('Prospecting')).toBe(5);
-      expect(getStageProbability('Qualified')).toBe(50);
-      expect(getStageProbability('Verbal Received')).toBe(75);
-      expect(getStageProbability('Purchased')).toBe(100);
+      expect(getStageProbability('Qualified')).toBe(40);
+      expect(getStageProbability('Verbal Received')).toBe(80);
+      expect(getStageProbability('Purchased')).toBe(95);
     });
 
     it('navigates next/previous stages', () => {
