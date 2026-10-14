@@ -61,23 +61,18 @@ The list shows a page of deals at a time. The pager under the list shows which d
 
 1. Go to a customer's **Opportunities** tab, the **Pipeline** page, or use **New** at the top of the sidebar
 2. Click **New opportunity** or press **N**
-3. Fill in the details:
-   - **Subject** — Deal name (required)
-   - **Status** — Open, Won, or Lost
-   - **Stage** — Select the current sales stage (Prospecting, Qualification, Proposal, Negotiation, etc.)
-   - **Probability** — Auto-filled based on the stage you select
-   - **Sell Type** — Type of sale (New business, Add-on, etc.)
-   - **Primary Vendor** — The main vendor for this deal
-   - **Estimated Revenue** — Expected deal value
-   - **Est. Margin** — Expected margin on the deal (optional)
-   - **Expiration Date** — When the opportunity expires
-   - **Customer Need** — What the customer is looking for
-   - **Related Contact** — Which person at the company is involved
-4. Click **Save**
+3. The form opens with a list of steps on the left. Work through them with **Next** and **Back**, or click any step to jump straight to it:
+   - **Customer** — the customer, the contact at that company, the BCN (filled in from the customer) and an optional secondary owner
+   - **Deal** — the subject, the stage (click a stage; the chance of winning fills in by itself), single or cross sell, type, opportunity type and what the customer needs
+   - **Vendor** — the primary vendor. Picking AWS or Microsoft adds the extra fields that vendor needs; they become required from the Qualified stage
+   - **Financials** — country, currency, monthly and yearly revenue (fill in one and the other is worked out for you), the expected margin and the expiration date
+   - **Review** — everything at a glance, with an **Edit** link per part
+4. Each step shows how many required fields it has. The bottom of the form counts how many required fields are filled in.
+5. Click **Create opportunity**. If something is still missing, the form jumps to **Review**, lists what is needed, and marks the steps that need attention in red.
 
 ## Updating an Opportunity
 
-Click **Edit** on a deal (or double-click it in the list) to update any details. As a deal progresses, update the stage and status to keep your pipeline accurate.
+Click **Edit** on a deal (or double-click it in the list) to open the same form. It starts on **Review**, so you can check the deal and jump to the part you want to change. Click **Save** when you're done. While a deal is open, **Close as Won** and **Close as Lost** sit at the bottom of the steps list.
 
 ## Stale Opportunities
 

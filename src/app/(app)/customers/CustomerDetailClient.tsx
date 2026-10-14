@@ -13,11 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ActivityTypePicker } from '@/components/activities/ActivityTypePicker';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { ContactList } from '@/components/contacts/ContactList';
@@ -625,14 +626,14 @@ export default function CustomerDetailClient({ customerId, trackRecent = true }:
       <DialogContent className="sm:max-w-[80vw] w-[80vw] h-[80vh] max-h-[80vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Edit Activity</DialogTitle>
+          <DialogDescription>{customer.name}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSaveActivity} className="flex flex-col flex-1 min-h-0 gap-4">
           <div className="grid grid-cols-[3fr_7fr] gap-4 flex-1 min-h-0">
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label>Type</Label>
-                <Select value={editType} onValueChange={(v) => {
-                  const newType = v as Activity['type'];
+                <ActivityTypePicker value={editType} onChange={(newType) => {
                   const wasAppt = editType === 'meeting' || editType === 'visit';
                   const isNowAppt = newType === 'meeting' || newType === 'visit';
                   setEditType(newType);
@@ -641,15 +642,7 @@ export default function CustomerDetailClient({ customerId, trackRecent = true }:
                     setEditStartTime(now);
                     setEditOccurredAt(isNowAppt ? addHoursLocal(now, 1) : todayISO());
                   }
-                }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="visit">Visit</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
+                }} />
               </div>
               {editType === 'call' && (
                 <div className="space-y-1">
@@ -731,14 +724,14 @@ export default function CustomerDetailClient({ customerId, trackRecent = true }:
       <DialogContent className="sm:max-w-[80vw] w-[80vw] h-[80vh] max-h-[80vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add Activity</DialogTitle>
+          <DialogDescription>{customer.name}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreateActivity} className="flex flex-col flex-1 min-h-0 gap-4">
           <div className="grid grid-cols-[3fr_7fr] gap-4 flex-1 min-h-0">
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label>Type</Label>
-                <Select value={newActType ?? defaultActivityType} onValueChange={(v) => {
-                  const newType = v as Activity['type'];
+                <ActivityTypePicker value={newActType ?? defaultActivityType} onChange={(newType) => {
                   const prevType = newActType ?? defaultActivityType;
                   const wasAppt = prevType === 'meeting' || prevType === 'visit';
                   const isNowAppt = newType === 'meeting' || newType === 'visit';
@@ -748,15 +741,7 @@ export default function CustomerDetailClient({ customerId, trackRecent = true }:
                     setNewActStartTime(now);
                     setNewActDate(isNowAppt ? addHoursLocal(now, 1) : todayISO());
                   }
-                }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="visit">Visit</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
+                }} />
               </div>
               {(newActType ?? defaultActivityType) === 'call' && (
                 <div className="space-y-1">

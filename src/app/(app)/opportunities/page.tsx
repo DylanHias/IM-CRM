@@ -521,7 +521,7 @@ export default function OpportunitiesPage() {
       </FullBleed>
 
       <Dialog open={addOpen} onOpenChange={(isOpen) => { setAddOpen(isOpen); }}>
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
           <DialogTitle className="sr-only">New Opportunity</DialogTitle>
           <OpportunityWizard
             customers={customers}
@@ -534,7 +534,7 @@ export default function OpportunitiesPage() {
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(isOpen) => { if (!isOpen) setEditing(null); }}>
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
           <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
           {editing && (
             <OpportunityWizard

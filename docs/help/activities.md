@@ -18,7 +18,7 @@ Each type is shown with a distinct color so you can quickly scan the timeline.
 1. Go to a customer's **Activities** tab
 2. Click **Log Activity** or press **N**
 3. Fill in the form:
-   - **Type** — Select Meeting, Visit, Call, or Note
+   - **Type** — Click Meeting, Visit, Call, or Note; the picked type lights up in its own colour
    - **Subject** — A short summary of what happened (required)
    - **Description** — Detailed notes, outcomes, or next steps
    - **Date/Time** — For Meetings and Visits, set a start and end time. For Calls and Notes, set just the date

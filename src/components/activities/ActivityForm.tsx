@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
+import { ActivityTypePicker } from '@/components/activities/ActivityTypePicker';
 import { useActivities } from '@/hooks/useActivities';
 import { useSettingsStore } from '@/store/settingsStore';
 import { todayISO, nowDatetimeLocal, addHoursLocal } from '@/lib/utils/dateUtils';
@@ -22,13 +23,6 @@ interface ActivityFormProps {
   customerName: string;
   contacts: Contact[];
 }
-
-const ACTIVITY_TYPES = [
-  { value: 'meeting', label: 'Meeting' },
-  { value: 'visit', label: 'Visit' },
-  { value: 'call', label: 'Call' },
-  { value: 'note', label: 'Note' },
-] as const;
 
 const ACTIVITY_STATUSES = [
   { value: 'open', label: 'Open' },
@@ -135,9 +129,8 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="type">Activity Type *</Label>
-        <Select value={type} onValueChange={(v) => {
-          const newType = v as 'meeting' | 'visit' | 'call' | 'note';
+        <Label>Activity Type *</Label>
+        <ActivityTypePicker value={type} onChange={(newType) => {
           setTypeOverride(newType);
           const wasAppointment = type === 'meeting' || type === 'visit';
           const isNowAppointment = newType === 'meeting' || newType === 'visit';
@@ -146,16 +139,7 @@ export function ActivityForm({ customerId, customerName, contacts }: ActivityFor
             setStartTime(now);
             setOccurredAt(isNowAppointment ? addHoursLocal(now, defaultAppointmentDurationHours) : todayISO());
           }
-        }}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ACTIVITY_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        }} />
       </div>
 
       {type === 'call' && (
