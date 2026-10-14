@@ -22,7 +22,6 @@ import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
 import { useShortcuts } from '@/hooks/useShortcuts';
 import { useSyncShortcut } from '@/hooks/useSyncShortcut';
 import { ViewBarSlotContext } from '@/components/ui/view-bar';
-import { cn } from '@/lib/utils';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -57,7 +56,12 @@ export function AppShell({ children }: AppShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sidebarRememberLastState]);
 
-  const paddingClass = density === 'compact' ? 'px-3 pt-2.5' : density === 'cozy' ? 'px-4 pt-3' : 'px-4 pt-3.5';
+  // Page padding as CSS vars so full-bleed pages (split views) can cancel it exactly.
+  const pagePadding = {
+    '--page-px': density === 'compact' ? '12px' : '16px',
+    '--page-pt': density === 'compact' ? '10px' : density === 'cozy' ? '12px' : '14px',
+    '--page-pb': '28px',
+  } as React.CSSProperties;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-chrome transition-colors">
@@ -69,7 +73,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="flex-1 flex flex-col overflow-hidden rounded-tl-[10px] border-l border-t border-border bg-background">
           <div ref={setViewBarSlot} className="shrink-0 empty:hidden" />
           <ViewBarSlotContext.Provider value={viewBarSlot}>
-            <div className={cn('flex-1 overflow-y-auto pb-7', paddingClass)}>
+            <div className="flex-1 overflow-y-auto px-[var(--page-px)] pb-[var(--page-pb)] pt-[var(--page-pt)]" style={pagePadding}>
               <PageMotion key={pathname}>{children}</PageMotion>
             </div>
           </ViewBarSlotContext.Provider>

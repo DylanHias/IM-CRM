@@ -9,6 +9,7 @@ import { healthTier, type HealthTier } from '@/lib/customers/healthScore';
 export type SortBy = 'name' | 'lastActivity' | 'city' | 'industry' | 'health';
 export type SortDir = 'asc' | 'desc';
 export type FilterMode = 'and' | 'or';
+export type CloudScope = 'all' | 'cloud' | 'noncloud';
 
 interface CustomerState {
   customers: Customer[];
@@ -33,6 +34,8 @@ interface CustomerState {
   filterFavorites: boolean;
   filterHealthTier: HealthTier | null;
   filterMode: FilterMode;
+  /** Cloud / non-cloud scope toggle in the toolbar; not a filter, so Clear all keeps it. */
+  filterCloud: CloudScope;
   page: number;
   isLoading: boolean;
 
@@ -59,6 +62,7 @@ interface CustomerState {
   toggleFavoritesFilter: () => void;
   setFilterHealthTier: (t: HealthTier | null) => void;
   setFilterMode: (m: FilterMode) => void;
+  setFilterCloud: (scope: CloudScope) => void;
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
@@ -92,6 +96,7 @@ export const useCustomerStore = create<CustomerState>()(
       filterFavorites: false,
       filterHealthTier: null,
       filterMode: 'and',
+      filterCloud: 'all',
       page: 1,
       isLoading: false,
 
@@ -135,6 +140,7 @@ export const useCustomerStore = create<CustomerState>()(
         set((s) => ({ filterFavorites: !s.filterFavorites, page: 1 })),
       setFilterHealthTier: (filterHealthTier) => set({ filterHealthTier, page: 1 }),
       setFilterMode: (filterMode) => set({ filterMode, page: 1 }),
+      setFilterCloud: (filterCloud) => set({ filterCloud, page: 1 }),
       setPage: (page) => set({ page }),
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -167,10 +173,14 @@ export const useCustomerStore = create<CustomerState>()(
       getFilteredCustomers: () => {
         const {
           customers, searchQuery, sortBy, sortDir, favoriteIds,
-          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterInsideSalesOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier, filterMode,
+          filterOwnerId, filterStatus, filterIndustry, filterSegment, filterCountry, filterCity, filterCsmId, filterAwsOwnerId, filterAzureOwnerId, filterInsideSalesOwnerId, filterAccountManagerId, filterNoRecentActivity, filterFavorites, filterHealthTier, filterMode, filterCloud,
         } = get();
 
         let result = customers;
+
+        if (filterCloud !== 'all') {
+          result = result.filter((c) => (filterCloud === 'cloud' ? c.cloudCustomer === true : c.cloudCustomer !== true));
+        }
 
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
@@ -285,6 +295,7 @@ export const useCustomerStore = create<CustomerState>()(
         filterFavorites: state.filterFavorites,
         filterHealthTier: state.filterHealthTier,
         filterMode: state.filterMode,
+        filterCloud: state.filterCloud,
       }),
     }
   )

@@ -69,7 +69,7 @@ export function Combobox({
           aria-expanded={open}
           aria-controls={listId}
           className={cn(
-            'flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-[30px] w-full items-center justify-between gap-1.5 rounded-md border border-input bg-card px-[9px] py-1 text-[13px] transition-[border-color,box-shadow] placeholder:text-muted-foreground hover:border-faint focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50',
             className
           )}
         >

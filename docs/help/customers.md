@@ -1,22 +1,35 @@
 # Customers
 
-The Customers page is your central hub for managing all your customer accounts.
+The Customers page is your central hub for managing all your customer accounts. It shows your customer list on the left and the selected customer on the right, so you can move through accounts without leaving the page.
 
-## Viewing Your Customers
+## The Toolbar
 
-When you open the Customers page, you'll see a list of all your customers. Each row shows:
+At the top you'll find:
 
-- **Company name** with an Active or Inactive status badge
-- **Industry** and **city**
-- **Assigned owner** (the sales rep responsible)
-- **Health score** — an automatic 0–100 rating showing how engaged the account is
-- **Last activity date** (e.g., "2 days ago")
+- **Customer count** — how many customers match, out of the total
+- **All / Cloud / Non-cloud** — limit the list to cloud customers, non-cloud customers or everyone. This is remembered and stays as it is when you clear filters.
+- **Favorites** — show only the customers you bookmarked
+- **Filters** — open every filter in a small panel (see below). A number shows how many filters are on.
 
-Click any customer to open their detail page.
+## The Customer List
+
+Each row shows:
+
+- The company's initials and name
+- A coloured **health** dot with the score, the **city** and how long ago the **last activity** was
+- The yearly recurring revenue (**ARR**) on the right
+
+Click a row to open that customer on the right. Use the **↑** and **↓** keys to move through the list (it turns the page for you), and **Enter** to jump to the customer's tabs. Drag the thin line between the list and the customer to make the list wider or narrower.
+
+Below the list, the pager shows which customers you're looking at (for example "11–20 of 63") with buttons for the previous and next page.
+
+### Right-click menu
+
+Right-click a customer in the list to open it, add an activity, follow-up or opportunity, add or remove it from favorites, copy its account number, or open it in Dynamics 365.
 
 ## Health Score
 
-Each customer gets an automatic health score between 0 and 100 that shows at a glance how engaged the relationship is. Hover the score to see the breakdown.
+Each customer gets an automatic health score between 0 and 100 that shows at a glance how engaged the relationship is. Hover the score at the top of a customer to see the breakdown.
 
 The score combines three signals:
 
@@ -34,75 +47,86 @@ The score updates automatically after every activity, opportunity, or sync.
 
 ## Searching
 
-Use the search bar at the top to find customers by name, account number, BCN, city, email, or industry. Results update as you type. Press **/** to quickly focus the search bar.
+Use the **Search customers…** box at the top of the list to find customers by name, account number, BCN, city, email, or industry. Results update as you type. Press **/** to jump to the search box.
 
 ## Sorting
 
-Click the sort button to change how customers are ordered:
+Click the sort button next to the search box to change how customers are ordered:
 
-- **Last Activity** — Most recently active customers first (default)
+- **Last activity** — Most recently active customers first (default)
 - **Health** — Highest or lowest health score first
 - **Name** — Alphabetical order
 - **City** — Grouped by location
 - **Industry** — Grouped by industry
 
-You can also toggle between ascending and descending order.
+In the same menu you can switch between descending and ascending.
 
 ## Filtering
 
-Press **F** or click the filter button to open the filter panel. You can filter by:
+Press **F** or click **Filters** in the toolbar. You can filter by:
 
-- **Status** — Show only Active or Inactive customers
-- **Owner** — Filter by the assigned sales rep
-- **Industry** — Show only customers in a specific industry
-- **Segment** — Filter by customer segment
-- **Country** — Filter by country
-- **No recent activity** — Find customers that haven't had any interaction in a while
-- **Health** — Show only Healthy, At risk, or Critical customers
-- **Favorites** — Show only your bookmarked customers
+- **Status** — Active or Inactive
+- **Owner** — the assigned sales rep
+- **Industry**, **Segment**, **Country** and **City**
+- **Customer Success Manager**, **AWS owner**, **Azure owner**, **Inside sales owner** and **Account manager**
+- **Health** — Healthy, At risk, or Critical
+- **Activity** — customers without any activity for a while
 
-You can combine multiple filters. Active filters are shown as badges — click the X on any badge to remove it, or click "Clear all" to reset.
+Active filters show as small labels above the list — click one to remove it, or click **Clear all** to reset.
 
 ### Match all or match any
 
-As soon as two or more filters are active, a button appears next to **Filters** showing how they combine:
+As soon as two or more filters are on, the filter panel shows how they combine:
 
 - **Match all** — a customer must meet *every* filter to show up. This is the default.
 - **Match any** — a customer shows up if it meets *at least one* filter. Useful for questions like "show me everything in Belgium plus everything in Retail".
 
-Click the button to switch between the two. Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
+Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
 
 ## Bookmarking Favorites
 
-Hover over a customer row and click the **bookmark icon** on the right side to mark it as a favorite. Bookmarked customers can be quickly found using the "Favorites" filter.
+Hover over a customer row and click the **bookmark icon** to mark it as a favorite. Favorites appear in the sidebar and can be shown on their own with the **Favorites** button.
 
-## Customer Detail Page
+## The Selected Customer
 
-When you click a customer, you'll see their detail page with several tabs:
+The top of the customer shows its name and status, with its email, phone and website underneath. Click the email or phone to copy it, or the website to open it. On the right:
+
+- **Open in Dynamics** — opens the account in Dynamics 365 in your browser
+- **Follow-up** — add a follow-up for this customer
+- **Log activity** — log a meeting, visit, call or note
+
+Below that, a row of numbers shows the **health** score, **ARR** (live Power BI numbers when available, otherwise Dynamics 365), and the number of **activities**, **open follow-ups** and **contacts**.
+
+The tabs underneath show everything else:
 
 ### Overview
-The overview shows the customer's profile information including name, status, industry, location, owner, and ARR. You can view and edit contact details like phone, email, and website. There's also a notes section for internal comments.
-
-A **Health** card shows the current score and tier alongside the three component sub-scores (Recency, Pipeline, Frequency) so you can see what's driving it.
-
-If the account is flagged as a **Cloud Customer** in D365, you'll see a **Cloud Customer: Yes** indicator in the Company Details card.
-
-The **Cloud and Services Contacts** card lets you assign a **Customer Success Manager**, **AWS Owner**, **Azure Owner**, and **Inside Sales Owner** for the account. Click the pencil icon to pick from the Cloud Belux Sales team — your changes save back to Dynamics 365 immediately. You can also filter the customer list by Inside Sales Owner.
+Recent activity for this customer, the primary contact with their email and phone, and the open opportunities.
 
 ### Activities
-See all logged interactions with this customer. Read more in the **Activities** help section.
+All logged interactions with this customer. Read more in the **Activities** help section.
 
 ### Contacts
-View and manage the people at this customer's company. Read more in the **Contacts** help section.
+The people at this customer's company. Read more in the **Contacts** help section.
 
 ### Follow-Ups
-Track tasks and reminders for this customer. Read more in the **Follow-Ups** help section.
+Tasks and reminders for this customer. Read more in the **Follow-Ups** help section.
 
 ### Opportunities
-Manage sales deals for this customer. Read more in the **Opportunities** help section.
+Sales deals for this customer. Read more in the **Opportunities** help section.
+
+### Revenue
+ARR and how it moved over time. Read more in the **Revenue Overview** help section.
+
+### Details
+Every company field the CRM holds, grouped into **Company**, **Identifiers**, **Contact** and **Account team**. Click any field to copy it.
+
+- **Edit** on Identifiers changes the **MPN ID** and **APN ID**.
+- **Edit** on Account team lets you assign a **Customer Success Manager**, **AWS owner**, **Azure owner** and **Inside sales owner** from the Cloud Belux Sales team.
+
+Both save back to Dynamics 365 immediately.
 
 ## Navigation Tips
 
 - Use the **Favorites** and **Recent** sections in the sidebar to jump back to customers
-- Press number keys (**1-6**) to quickly navigate between sidebar pages
-- Use **Ctrl+K** to search for a specific action
+- Press number keys (**1-9**) to quickly navigate between sidebar pages
+- Use **Ctrl+K** to search for a specific customer or action

@@ -88,6 +88,11 @@ Object.defineProperty(globalThis, 'localStorage', {
   },
 });
 
+// --- jsdom lacks scrollIntoView ---
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = vi.fn();
+}
+
 // --- Mock window.matchMedia ---
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
