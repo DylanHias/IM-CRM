@@ -11,11 +11,9 @@ import { CommandPalette } from './CommandPalette';
 import { ShortcutsGuide } from './ShortcutsGuide';
 import { Walkthrough } from '@/components/walkthrough/Walkthrough';
 import { EasterEggController } from '@/components/easterEggs/EasterEggController';
-import { AiChatWidget } from '@/components/ai-chat';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
-import { warmUp as warmUpOllama } from '@/lib/ai/ollamaService';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
@@ -39,13 +37,6 @@ export function AppShell({ children }: AppShellProps) {
   useConnectivityToasts();
   useShortcuts();
   useSyncShortcut();
-
-  // Warm up the local Ollama server in the background so the AI Assistant
-  // widget is responsive on first open. The model itself is pulled lazily when
-  // the widget is opened — this only starts the server process.
-  useEffect(() => {
-    warmUpOllama();
-  }, []);
 
   // When "remember last sidebar state" is off, force the configured default on each mount.
   // Runs once on mount and again only if the user toggles the remember flag itself.
@@ -81,7 +72,6 @@ export function AppShell({ children }: AppShellProps) {
       </SidebarProvider>
       <Walkthrough />
       <EasterEggController />
-      <AiChatWidget />
       <ChangelogDialog />
       <InitialSyncDialog />
       <CommandPalette />
