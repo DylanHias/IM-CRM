@@ -105,7 +105,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
           {open.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-2">Scheduled ({open.length})</p>
-              <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
+              <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden divide-y divide-border/40">
               {open.map((f, i) => (
                 <motion.div
                   key={f.id}
@@ -126,7 +126,7 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
           {done.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-2">Completed ({done.length})</p>
-              <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm divide-y divide-border/40">
+              <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden divide-y divide-border/40">
                 {done.map((f, i) => (
                   <motion.div
                     key={f.id}

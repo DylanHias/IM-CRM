@@ -39,7 +39,7 @@ Click the **trash icon** and confirm to remove a contact.
 
 ## Primary Contact
 
-You can mark one contact per customer as the primary contact. The primary contact appears at the top of the Revenue Overview with a star icon.
+You can mark one contact per customer as the primary contact. The primary contact appears at the top of the Reports customer table with a star icon.
 
 To set a primary contact:
 

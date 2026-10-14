@@ -48,7 +48,7 @@ export function RefreshButton({
       size={size}
       onClick={handleRefresh}
       disabled={isRefreshing}
-      className={cn('h-9 gap-1.5', className)}
+      className={cn('gap-1.5', className)}
     >
       {isRefreshing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
       {isRefreshing ? 'Refreshing…' : label}

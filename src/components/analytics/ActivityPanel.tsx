@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
-import { PeriodPicker, periodToRange } from '@/components/analytics/PeriodPicker';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { periodToRange } from '@/components/analytics/PeriodPicker';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
@@ -30,12 +28,11 @@ const heatmapConfig = {
 };
 
 interface Props {
+  period: PeriodKey;
   refreshKey?: number;
-  onRefresh?: () => void;
 }
 
-export function ActivityPanel({ refreshKey, onRefresh }: Props) {
-  const [period, setPeriod] = useState<PeriodKey>('30d');
+export function ActivityPanel({ refreshKey, period }: Props) {
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
 
@@ -75,20 +72,10 @@ export function ActivityPanel({ refreshKey, onRefresh }: Props) {
   const totalCalls = a ? (a.callDirection.incoming + a.callDirection.outgoing + a.callDirection.unknown) : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Activity Patterns</h2>
-        <div className="flex items-center gap-2">
-          <PeriodPicker value={period} onChange={setPeriod} />
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+    <div className="grid content-start gap-3">
 
       {/* Activity type mix — mine vs team */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Activity Type Mix</p>
         <p className="text-xs text-muted-foreground mb-4">My activities vs the rest of the team</p>
         {a && a.typeMix.some((t) => t.mine + t.team > 0) ? (
@@ -114,7 +101,7 @@ export function ActivityPanel({ refreshKey, onRefresh }: Props) {
       {/* Call direction + heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Call direction */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Call Direction</p>
           <p className="text-xs text-muted-foreground mb-3">
             {totalCalls > 0 ? `${totalCalls} call${totalCalls !== 1 ? 's' : ''} total` : 'No calls in this period'}
@@ -153,7 +140,7 @@ export function ActivityPanel({ refreshKey, onRefresh }: Props) {
         </div>
 
         {/* Activity heatmap by day */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Activity by Day of Week</p>
           <p className="text-xs text-muted-foreground mb-3">When activities are typically logged</p>
           <ChartContainer config={heatmapConfig} className="aspect-auto h-[180px] w-full">
@@ -170,7 +157,7 @@ export function ActivityPanel({ refreshKey, onRefresh }: Props) {
 
       {/* Most active customers */}
       {a && a.mostActiveCustomers.length > 0 && (
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Most Active Customers
           </p>

@@ -56,7 +56,7 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
   '/sync': { label: 'Sync', icon: RefreshCw },
   '/followups': { label: 'Follow-Ups', icon: CheckSquare },
   '/opportunities': { label: 'Pipeline', icon: Target },
-  '/revenue-overview': { label: 'Revenue Overview', icon: BarChart2 },
+  '/revenue-overview': { label: 'Reports', icon: BarChart2 },
   '/insights': { label: 'Insights', icon: Gauge },
   '/analytics': { label: 'Analytics', icon: LineChart },
   '/timeline': { label: 'Activity', icon: Clock },

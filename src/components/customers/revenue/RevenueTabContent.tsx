@@ -71,7 +71,7 @@ function ActiveEndCustomersCard({ count, className }: { count: number | null; cl
   return (
     <div
       className={cn(
-        'rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3',
+        'rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 space-y-3',
         className,
       )}
     >

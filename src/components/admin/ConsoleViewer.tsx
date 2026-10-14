@@ -90,7 +90,7 @@ export function ConsoleViewer() {
       </div>
 
       <div
-        className="rounded-xl border border-border/60 bg-card overflow-y-auto shadow-sm"
+        className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-y-auto"
         style={{ maxHeight: 'calc(100vh - 320px)', minHeight: '300px' }}
       >
         {filtered.length === 0 ? (

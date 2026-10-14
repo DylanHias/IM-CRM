@@ -144,7 +144,7 @@ export function SyncAdministration() {
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {metrics.map(({ label, value }) => (
-          <div key={label} className="rounded-xl border border-border/60 bg-card p-3 shadow-sm">
+          <div key={label} className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-3">
             <p className="text-[11px] text-muted-foreground">{label}</p>
             <p className="text-lg font-semibold">{value}</p>
           </div>
@@ -230,7 +230,7 @@ export function SyncAdministration() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="bg-card border border-border/70 rounded-xl p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 shadow-sm">
+          <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Sync Type</label>
               <Select value={filterType} onValueChange={setFilterType}>
@@ -256,7 +256,7 @@ export function SyncAdministration() {
         )}
 
         {/* Table */}
-        <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

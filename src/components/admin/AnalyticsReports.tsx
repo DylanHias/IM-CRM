@@ -192,7 +192,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
           isRefreshing={isRefreshingFromD365}
           onRefresh={handleRefresh}
         />
-        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-dashed border-border bg-card p-10 text-center">
           <BarChart3 size={32} className="mx-auto text-muted-foreground/60 mb-3" />
           <h3 className="text-base font-semibold">No users tracked yet</h3>
           <p className="mt-1.5 text-sm text-muted-foreground max-w-md mx-auto">
@@ -219,7 +219,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
         />
 
         {/* Team totals — sum of every tracked user */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="metric-grid grid grid-cols-2 lg:grid-cols-5 gap-3">
           <MetricCard
             label="Team Activities"
             value={isLoadingAnalytics ? '—' : fmt(teamTotals.activities)}
@@ -282,7 +282,7 @@ export function AnalyticsReports({ onGoToUsers }: Props) {
         </div>
 
         {/* Leaderboard */}
-        <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/60 bg-muted/20">
             <div>
               <h2 className="text-sm font-semibold">Team Leaderboard</h2>
@@ -624,7 +624,7 @@ function DrilldownPanel({
   return (
     <div className="px-6 py-5 space-y-5 border-t border-border/60">
       {/* Mini-stat strip specific to this user */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="Total Activities"
           value={fmt(row.activityTotal)}
@@ -652,7 +652,7 @@ function DrilldownPanel({
       </div>
 
       {/* Daily output */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Daily Output</p>
@@ -856,7 +856,7 @@ function ListPanel({
   const items = Array.isArray(children) ? children : [children];
   const isEmpty = items.length === 0 || (items.length === 1 && !items[0]);
   return (
-    <div className="rounded-xl border border-border/60 bg-card shadow-sm">
+    <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-muted/20">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
         {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}

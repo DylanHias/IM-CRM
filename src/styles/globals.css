@@ -360,3 +360,21 @@
     @apply bg-muted-foreground;
   }
 }
+
+/* A grid of MetricCards renders as one joined strip, like the redesign's key-figure rows. */
+@layer components {
+  .metric-grid {
+    gap: 0 !important;
+    overflow: hidden;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) * 1.5);
+    background: hsl(var(--card));
+  }
+  .metric-grid > * {
+    border-width: 0 0 0 1px !important;
+    border-radius: 0 !important;
+  }
+  .metric-grid > *:first-child {
+    border-left-width: 0 !important;
+  }
+}

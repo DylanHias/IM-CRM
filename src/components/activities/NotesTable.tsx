@@ -42,7 +42,7 @@ export function NotesTable({ notes, contacts, onEdit, onDelete, onPreview }: Not
 
   return (
     <div className="space-y-2">
-      <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/50 text-left text-xs text-muted-foreground">

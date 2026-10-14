@@ -1,45 +1,56 @@
-# Revenue Overview
+# Reports
 
-The Revenue Overview is a financial dashboard that shows ARR (Annual Recurring Revenue) data for all your customers. It's useful for pipeline reviews, quota management, and reporting.
+**Reports** in the sidebar brings revenue, pipeline, customer and personal numbers together on one page. Switch between four tabs at the top: **Revenue**, **Pipeline**, **Customers** and **My activity**. The Pipeline, Customers and My activity tabs are explained on the **Report tabs** help page.
 
-## What You'll See
+## Revenue tab
 
-The page displays a table with the following information per customer:
+The toolbar on this tab has:
+
+- **Region** — All Benelux, Belgium, Netherlands or Luxembourg
+- **Period** — 6M, 12M, 18M or 24M for the charts
+- **Updated …** — when revenue was last refreshed from Power BI, with a **Refresh** button
+
+The tab shows:
+
+- **Key figures** — Total ARR, active customers, average ARR and how many customers have live Power BI numbers
+- **Resellers and seats** — active resellers and seats, and how they grew
+- **ARR trend** — month-end ARR over the selected period
+- **Net sales by vendor** — monthly net sales per vendor
+- **All customers** — the ARR table described below
+
+## All customers
+
+The table shows, per customer:
 
 - **Customer name**
 - **Contact** — The most recent contact person
 - **Phone** and **Email** — Quick contact details
 - **Cloud Customer** — Whether the customer is a cloud customer (Yes/No)
-- **Language** — The customer's preferred language
-- **ARR** — The Annual Recurring Revenue amount, shown in the customer's currency. Pulled from the Power BI dashboard on every sync.
+- **ARR** — The Annual Recurring Revenue amount. Live Power BI numbers are used where available, otherwise the value from Dynamics 365.
 
-## Searching and Filtering
+### Searching and Filtering
 
-Use the search bar to find specific customers by name. You can also filter by:
+Use **Search by name…** in the table header to find customers by name. Click **Filters** to filter by:
 
-- **Cloud Customer** — Yes, No, or All
-- **Language** — Filter by the customer's language
-- **ARR Range** — Set a minimum and/or maximum revenue to narrow results
+- **Country** and **City**
+- **Cloud customer** — Yes, No, or All
+- **ARR source** — Live (Power BI) or Synced (D365)
+- **ARR min / max** — a revenue range
 
-Active filters appear as badges above the table. Click the X on any badge to remove it.
+Active filters appear as small labels above the table. Click one to remove it, or **Clear all** to reset.
 
-## Sorting
+### Sorting
 
-Sort the table by clicking the sort controls:
+Use the sort button next to the search box, or click a column header, to sort by **ARR** (highest first by default), **Name** or **Cloud**.
 
-- **ARR** — Highest or lowest revenue first (default: highest first)
-- **Name** — Alphabetical order
-- **Cloud Customer** — Group by cloud status
-- **Language** — Group by language
-
-## Choosing Columns
+### Choosing Columns
 
 Click the **column picker** button to choose which columns are visible. Your selection is saved for future sessions.
 
-## Exporting to Excel
+### Exporting to Excel
 
-Click the **Export** button to download the current view as an Excel file (.xlsx). The export respects your active filters and column selection, so what you see is what you get in the export. This is handy for reports and presentations.
+Click **Export to Excel** to download the current view as an Excel file (.xlsx). The export respects your active filters and column selection, so what you see is what you get in the export.
 
-## Pagination
+### Pages
 
-If you have many customers, use the pagination controls at the bottom to navigate through pages. You can choose how many rows to show per page: 10, 25, 50, or 100.
+Use the controls under the table to move between pages and choose how many rows to show: 10, 25, 50, or 100.

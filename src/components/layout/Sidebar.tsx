@@ -115,7 +115,7 @@ export function AppSidebar() {
     '/dashboard': { href: '/dashboard', label: 'Home', icon: House },
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
     '/opportunities': { href: '/opportunities', label: 'Pipeline', icon: Target },
-    '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
+    '/revenue-overview': { href: '/revenue-overview', label: 'Reports', icon: BarChart2 },
     '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
     '/timeline': {

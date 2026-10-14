@@ -72,7 +72,7 @@ export function DataManagement() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {isLoading && tableStats.length === 0
             ? Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
+                <div key={i} className="flex items-center gap-2 rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-2.5">
                   <Skeleton className="h-3.5 w-3.5 rounded shrink-0" />
                   <div className="flex-1 space-y-1.5">
                     <Skeleton className="h-3 w-20" />
@@ -83,7 +83,7 @@ export function DataManagement() {
             : (
               <>
                 {tableStats.map(({ tableName, rowCount }) => (
-                  <div key={tableName} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-2.5 shadow-sm">
+                  <div key={tableName} className="flex items-center gap-2 rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-2.5">
                     <Database size={14} className="text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">{tableName}</p>

@@ -115,7 +115,7 @@ Tasks and reminders for this customer. Read more in the **Follow-Ups** help sect
 Sales deals for this customer. Read more in the **Opportunities** help section.
 
 ### Revenue
-ARR and how it moved over time. Read more in the **Revenue Overview** help section.
+ARR and how it moved over time. Read more in the **Reports** help section.
 
 ### Details
 Every company field the CRM holds, grouped into **Company**, **Identifiers**, **Contact** and **Account team**. Click any field to copy it.

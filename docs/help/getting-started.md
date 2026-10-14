@@ -6,7 +6,7 @@ Welcome to the Ingram Micro CRM! This guide will help you get up and running qui
 
 When you open the app for the first time, you'll be asked to sign in with your Microsoft account. After signing in, the app will run an initial sync to pull your customer data from Dynamics 365. This may take a few minutes depending on the amount of data.
 
-Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Pipeline, Revenue Overview, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
+Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Pipeline, Reports, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
 
 ## Home
 
@@ -24,7 +24,7 @@ The **sidebar** on the left is your main navigation. At the top, the **New** but
 
 - **Customers** — Your full customer list
 - **Pipeline** — All your opportunities, as a list or a board
-- **Revenue Overview** — Annual Recurring Revenue dashboard
+- **Reports** — Revenue, pipeline, customer and personal numbers in one place
 - **Activity** — A timeline of all activities, follow-ups and opportunities across every customer, plus Your Follow-Ups
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.

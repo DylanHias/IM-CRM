@@ -40,7 +40,7 @@ function MetricCard({ label, value, hint, icon: Icon, delta }: MetricProps) {
   const isUp = delta !== undefined && delta !== null && delta >= 0;
   const showDelta = delta !== undefined && delta !== null;
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3">
+    <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         <Icon size={13} />
         {label}
@@ -79,11 +79,11 @@ export function ActivityMetrics({ region, monthsBack, className }: Props) {
 
   if (!latest && !isHydrated) {
     return (
-      <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
+      <div className={cn('metric-grid grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-xl border border-border/60 bg-card p-5 shadow-sm flex items-center justify-center h-28 text-xs text-muted-foreground"
+            className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 flex items-center justify-center h-28 text-xs text-muted-foreground"
           >
             <Loader2 size={14} className="mr-2 animate-spin" />
             Loading…
@@ -94,7 +94,7 @@ export function ActivityMetrics({ region, monthsBack, className }: Props) {
   }
 
   return (
-    <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
+    <div className={cn('metric-grid grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
       <MetricCard
         label="Active resellers"
         icon={Users2}

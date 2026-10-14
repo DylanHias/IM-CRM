@@ -55,7 +55,7 @@ export function Timeline({ activities, followUps, opportunities, paginate, onEdi
 
   return (
     <div className="space-y-2">
-      <div className="relative bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm">
+      <div className="relative bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden">
         {visibleEvents.map((event, i) => (
           <motion.div
             key={`${event.kind}-${event.id}`}

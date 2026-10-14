@@ -47,8 +47,9 @@ interface PopoverProps {
   title: string;
   /** Number of active filters shown on the button. */
   count: number;
-  mode: 'and' | 'or';
-  onModeChange: (mode: 'and' | 'or') => void;
+  /** How multiple filters combine; leave out for lists that only support "match all". */
+  mode?: 'and' | 'or';
+  onModeChange?: (mode: 'and' | 'or') => void;
   onClear: () => void;
   children: React.ReactNode;
 }
@@ -73,7 +74,7 @@ export function FilterPopover({ title, count, mode, onModeChange, onClear, child
       <PopoverContent align="start" className="w-[min(560px,calc(100vw-24px))] p-0">
         <div className="flex items-center gap-2 border-b border-border px-3 py-2">
           <b className="text-[13px] font-semibold">{title}</b>
-          {count >= 2 && (
+          {count >= 2 && mode && onModeChange && (
             <div className="ml-auto inline-flex rounded-md border border-border-strong p-0.5" role="group" aria-label="Combine filters">
               {(['and', 'or'] as const).map((m) => (
                 <button

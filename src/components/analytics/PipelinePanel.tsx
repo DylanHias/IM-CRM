@@ -7,8 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, TrendingUp, Layers, Users, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Target, TrendingUp, Layers, Users } from 'lucide-react';
 import type { StageFunnelPoint } from '@/types/analytics';
 
 const STAGE_ORDER: Record<string, number> = {
@@ -59,10 +58,9 @@ type ExpiryWindow = '7d' | '30d';
 
 interface Props {
   refreshKey?: number;
-  onRefresh?: () => void;
 }
 
-export function PipelinePanel({ refreshKey, onRefresh }: Props) {
+export function PipelinePanel({ refreshKey }: Props) {
   const [expiryWindow, setExpiryWindow] = useState<ExpiryWindow>('30d');
   const { pipeline, isLoadingPipeline, loadPipeline } = useAnalyticsStore();
 
@@ -86,17 +84,10 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
   }) : [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Pipeline & Forecast</h2>
-        <Button variant="outline" size="sm" onClick={onRefresh}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-          Refresh
-        </Button>
-      </div>
+    <div className="grid content-start gap-3">
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="Open Deals"
           value={p ? p.kpis.openCount : '—'}
@@ -123,7 +114,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
 
       {/* Stage funnel + Win Rate side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Stage Funnel</p>
           <p className="text-xs text-muted-foreground mb-4">Open deals per stage · hover for revenue</p>
           {funnel.length > 0 ? (
@@ -182,7 +173,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
             { name: 'Open', value: p.winRate.open },
           ].filter((d) => d.value > 0);
           return (
-            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Win Rate</p>
               <p className="text-xs text-muted-foreground mb-4">Won · Lost · Open — all time</p>
               <ChartContainer config={winRateChartConfig} className="aspect-auto h-[200px] w-full">
@@ -210,7 +201,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
 
       {/* Forecast over time */}
       {p && p.forecast.length > 0 && (
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Forecast by Month</p>
           <p className="text-xs text-muted-foreground mb-4">Weighted vs total revenue from open deals expiring per month</p>
           <ChartContainer config={forecastConfig} className="aspect-auto h-[200px] w-full">
@@ -245,7 +236,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
       )}
 
       {/* Expiring deals */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
         <div className="flex items-start justify-between mb-3">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expiring Soon</p>
@@ -287,7 +278,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
       {p && (p.bySellType.length > 0 || p.byVendor.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {p.bySellType.length > 0 && (
-            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">By Sell Type</p>
               <p className="text-xs text-muted-foreground mb-3">Average deal size</p>
               <ChartContainer config={sellTypeConfig} className="w-full" style={{ height: Math.max(120, p.bySellType.length * 40) }}>
@@ -308,7 +299,7 @@ export function PipelinePanel({ refreshKey, onRefresh }: Props) {
           )}
 
           {p.byVendor.length > 0 && (
-            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+            <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">By Reseller</p>
               <p className="text-xs text-muted-foreground mb-3">Average deal size · top 10</p>
               <ChartContainer config={vendorConfig} className="w-full" style={{ height: Math.max(120, p.byVendor.length * 40) }}>

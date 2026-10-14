@@ -65,12 +65,12 @@ const SECTIONS: HelpSection[] = [
     content: opportunities,
   },
   {
-    title: 'Revenue Overview',
+    title: 'Reports',
     keywords: ['revenue', 'arr', 'billing', 'payment', 'finance', 'money', 'euro', 'amount', 'cloud', 'language', 'export'],
     content: revenueOverview,
   },
   {
-    title: 'Analytics',
+    title: 'Report tabs',
     keywords: ['analytic', 'report', 'chart', 'graph', 'statistic', 'performance', 'metric', 'trend', 'insight', 'forecast', 'funnel', 'win rate'],
     content: analytics,
   },

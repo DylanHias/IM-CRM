@@ -10,6 +10,14 @@ describe('navigation', () => {
     expect(tabs).toContain('/timeline');
   });
 
+  it('folds Insights and Analytics into Reports', () => {
+    const tabs = visibleSidebarTabs(DEFAULT_SIDEBAR_ORDER);
+    expect(tabs).not.toContain('/insights');
+    expect(tabs).not.toContain('/analytics');
+    expect(NAV_LABELS['/revenue-overview']).toBe('Reports');
+    expect(isNavActive('/revenue-overview', '/analytics')).toBe(true);
+  });
+
   it('also respects tabs the user hid', () => {
     expect(visibleSidebarTabs(['/dashboard', '/customers', '/timeline'], ['/customers'])).toEqual(['/dashboard', '/timeline']);
   });

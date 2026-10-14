@@ -72,7 +72,7 @@ export function TableRowsSkeleton({ rows = 6, cols = 4 }: TableRowsSkeletonProps
 
 export function MetricCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+    <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-2">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-4 w-4 rounded shrink-0" />
@@ -110,7 +110,7 @@ interface ChartCardSkeletonProps {
 
 export function ChartCardSkeleton({ height = 200, className }: ChartCardSkeletonProps) {
   return (
-    <div className={cn('rounded-xl border border-border/60 bg-card p-4 shadow-sm', className)}>
+    <div className={cn('rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4', className)}>
       <Skeleton className="h-3 w-32 mb-2" />
       <Skeleton className="h-3 w-48 mb-4" />
       <Skeleton className="w-full" style={{ height }} />

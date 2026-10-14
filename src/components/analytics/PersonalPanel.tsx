@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import { MetricCard } from '@/components/analytics/MetricCard';
-import { PeriodPicker, periodToRange, prevPeriodRange } from '@/components/analytics/PeriodPicker';
+import { periodToRange, prevPeriodRange } from '@/components/analytics/PeriodPicker';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Activity, CheckSquare, Target, Trophy, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Activity, CheckSquare, Target, Trophy } from 'lucide-react';
 import type { PeriodKey } from '@/types/analytics';
 
 function fmt(n: number): string {
@@ -27,12 +26,11 @@ const timelineConfig = {
 };
 
 interface Props {
+  period: PeriodKey;
   refreshKey?: number;
-  onRefresh?: () => void;
 }
 
-export function PersonalPanel({ refreshKey, onRefresh }: Props) {
-  const [period, setPeriod] = useState<PeriodKey>('30d');
+export function PersonalPanel({ refreshKey, period }: Props) {
   const { account } = useAuthStore();
   const d365UserId = useD365UserId();
   const lastD365SyncAt = useSyncStore((s) => s.lastD365SyncAt);
@@ -70,20 +68,10 @@ export function PersonalPanel({ refreshKey, onRefresh }: Props) {
     : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">My Performance</h2>
-        <div className="flex items-center gap-2">
-          <PeriodPicker value={period} onChange={setPeriod} />
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Refresh
-          </Button>
-        </div>
-      </div>
+    <div className="grid content-start gap-3">
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="My Activities"
           value={p ? fmt(p.activityCount.current) : '—'}
@@ -112,7 +100,7 @@ export function PersonalPanel({ refreshKey, onRefresh }: Props) {
       </div>
 
       {/* Activity timeline */}
-      <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
           My Activity Timeline
         </p>
@@ -153,16 +141,16 @@ export function PersonalPanel({ refreshKey, onRefresh }: Props) {
 
       {/* Follow-up detail */}
       {p && p.followUpCompletion.total > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="metric-grid grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Completed Follow-Ups</p>
             <p className="mt-2 text-2xl font-semibold">{p.followUpCompletion.completed}</p>
           </div>
-          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total Created</p>
             <p className="mt-2 text-2xl font-semibold">{p.followUpCompletion.total}</p>
           </div>
-          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Avg Days to Complete</p>
             <p className="mt-2 text-2xl font-semibold">
               {p.followUpCompletion.avgDaysToComplete > 0 ? `${p.followUpCompletion.avgDaysToComplete}d` : '—'}
@@ -173,7 +161,7 @@ export function PersonalPanel({ refreshKey, onRefresh }: Props) {
 
       {/* Weighted forecast */}
       {p && (
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Weighted Forecast (My Pipeline)</p>
           <p className="mt-2 text-2xl font-semibold">{fmtEur(p.pipeline.weightedForecast)}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">probability-adjusted open pipeline</p>

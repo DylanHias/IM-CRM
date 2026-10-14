@@ -10,7 +10,6 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
 import { directPushActivity } from '@/lib/sync/directPushService';
 import { notifyPush } from '@/lib/sync/pushToast';
-import { toast } from 'sonner';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';

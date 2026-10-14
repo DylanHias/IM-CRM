@@ -226,7 +226,7 @@ export function UserManagement() {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

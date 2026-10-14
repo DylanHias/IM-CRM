@@ -1,7 +1,6 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MetricCardProps {
@@ -14,33 +13,29 @@ interface MetricCardProps {
   className?: string;
 }
 
+/** One key figure. Inside a `.metric-grid` container the cards join into a single strip. */
 export function MetricCard({ label, value, icon: Icon, delta, deltaLabel, sub, className }: MetricCardProps) {
   const hasDelta = delta !== undefined && delta !== null;
   const isPositive = hasDelta && delta > 0;
   const isNeutral = hasDelta && delta === 0;
-  const DeltaIcon = isNeutral ? Minus : isPositive ? TrendingUp : TrendingDown;
 
   return (
-    <div className={cn('rounded-xl border border-border/60 bg-card p-4 shadow-sm', className)}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider leading-tight">
-          {label}
-        </p>
-        {Icon && <Icon size={15} className="text-muted-foreground/60 shrink-0 mt-0.5" />}
+    <div className={cn('grid min-w-0 content-start gap-[3px] rounded-[calc(var(--radius)*1.5)] border border-border bg-card px-3.5 py-3', className)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[11.5px] font-medium text-muted-foreground">{label}</p>
+        {Icon && <Icon size={13} className="shrink-0 text-faint" />}
       </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
-      {hasDelta && (
-        <div
-          className={cn(
-            'mt-2 flex items-center gap-1 text-[11px] font-medium',
-            isNeutral ? 'text-muted-foreground' : isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive',
+      <p className="text-[21px] font-semibold tabular-nums tracking-[-0.02em]">{value}</p>
+      {(sub || hasDelta) && (
+        <p className="truncate text-xs text-muted-foreground">
+          {hasDelta && (
+            <span className={cn('mr-1 text-[11.5px] font-semibold', isNeutral ? 'text-muted-foreground' : isPositive ? 'text-success' : 'text-destructive')}>
+              {isPositive ? '+' : ''}{delta}
+            </span>
           )}
-        >
-          <DeltaIcon size={12} />
-          <span>{isPositive ? '+' : ''}{delta}</span>
-          {deltaLabel && <span className="text-muted-foreground font-normal">{deltaLabel}</span>}
-        </div>
+          {hasDelta && deltaLabel}
+          {sub && (hasDelta ? ` · ${sub}` : sub)}
+        </p>
       )}
     </div>
   );
