@@ -44,7 +44,7 @@ export function TitleBar() {
         </button>
       }
     >
-      <span className={cn(PILL, isOnline ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
+      <span data-tour="online-status" className={cn(PILL, isOnline ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
         {isOnline ? <Wifi size={11} /> : <WifiOff size={11} />}
         {isOnline ? 'Online' : 'Offline'}
       </span>

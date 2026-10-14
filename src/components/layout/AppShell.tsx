@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AppSidebar } from './Sidebar';
 import { TitleBar } from './TitleBar';
@@ -21,6 +21,7 @@ import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
 import { useShortcuts } from '@/hooks/useShortcuts';
 import { useSyncShortcut } from '@/hooks/useSyncShortcut';
+import { ViewBarSlotContext } from '@/components/ui/view-bar';
 import { cn } from '@/lib/utils';
 
 interface AppShellProps {
@@ -33,6 +34,7 @@ export function AppShell({ children }: AppShellProps) {
   const sidebarRememberLastState = useSettingsStore((s) => s.sidebarRememberLastState);
   const sidebarDefaultExpanded = useSettingsStore((s) => s.sidebarDefaultExpanded);
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const [viewBarSlot, setViewBarSlot] = useState<HTMLDivElement | null>(null);
   useAutoSync();
   useLaunchAlerts();
   useConnectivityToasts();
@@ -55,7 +57,7 @@ export function AppShell({ children }: AppShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sidebarRememberLastState]);
 
-  const paddingClass = density === 'compact' ? 'px-5 py-4' : density === 'cozy' ? 'px-6 py-5' : 'px-7 py-6';
+  const paddingClass = density === 'compact' ? 'px-3 pt-2.5' : density === 'cozy' ? 'px-4 pt-3' : 'px-4 pt-3.5';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-chrome transition-colors">
@@ -65,12 +67,12 @@ export function AppShell({ children }: AppShellProps) {
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <AppSidebar />
         <main className="flex-1 flex flex-col overflow-hidden rounded-tl-[10px] border-l border-t border-border bg-background">
-          <div className={cn('flex-1 overflow-y-auto', paddingClass)}>
-            <PageMotion key={pathname}>
-              {children}
-              <div className="h-12" />
-            </PageMotion>
-          </div>
+          <div ref={setViewBarSlot} className="shrink-0 empty:hidden" />
+          <ViewBarSlotContext.Provider value={viewBarSlot}>
+            <div className={cn('flex-1 overflow-y-auto pb-7', paddingClass)}>
+              <PageMotion key={pathname}>{children}</PageMotion>
+            </div>
+          </ViewBarSlotContext.Provider>
         </main>
       </SidebarProvider>
       <Walkthrough />

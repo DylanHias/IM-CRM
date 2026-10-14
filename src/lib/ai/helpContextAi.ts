@@ -30,8 +30,8 @@ interface HelpSection {
 
 const SECTIONS: HelpSection[] = [
   {
-    title: 'Dashboard',
-    keywords: ['dashboard', 'today', 'due', 'overview', 'home', 'map', 'belgium', 'metric', 'metric card', 'recent', 'recent activity', 'landing', 'widget', 'next 7 days', 'week', 'strip', 'stale', 'pipeline', 'quick add'],
+    title: 'Home',
+    keywords: ['home', 'dashboard', 'today', 'due', 'due today', 'overview', 'metric', 'key figures', 'win rate', 'portfolio', 'arr', 'recent', 'recent activity', 'landing', 'this week', 'week', 'quiet', 'stale', 'pipeline', 'stage', 'log activity', 'follow-up'],
     content: today,
   },
   {

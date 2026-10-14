@@ -50,7 +50,7 @@ const THEME_OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
 ];
 
 const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }> = {
-  '/dashboard': { label: 'Dashboard', icon: LayoutDashboard },
+  '/dashboard': { label: 'Home', icon: LayoutDashboard },
   '/customers': { label: 'Customers', icon: Users },
   '/sync': { label: 'Sync', icon: RefreshCw },
   '/followups': { label: 'Follow-Ups', icon: CheckSquare },

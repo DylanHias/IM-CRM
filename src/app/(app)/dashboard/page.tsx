@@ -1,336 +1,368 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, Target, Wallet, Building2 } from 'lucide-react';
+import { AlertCircle, CalendarClock, Check, CheckCircle2, Clock, Plus, Inbox } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { listContainerVariants, listItemVariants, sectionReveal } from '@/lib/motion';
-import { MetricCard } from '@/components/analytics/MetricCard';
-import { GreetingHeader } from '@/components/today/GreetingHeader';
-import { GlobalSearchBar } from '@/components/today/GlobalSearchBar';
-import { BelgiumMapCard } from '@/components/dashboard/BelgiumMapCard';
-import { RecentActivityPanel } from '@/components/dashboard/RecentActivityPanel';
-import { WeekStripPanel } from '@/components/dashboard/WeekStripPanel';
-import { StaleOpportunitiesPanel } from '@/components/dashboard/StaleOpportunitiesPanel';
-import { QuickAddMenu } from '@/components/dashboard/QuickAddMenu';
+import { listContainerVariants, listItemVariants } from '@/lib/motion';
+import { ViewBar, ViewBarSpacer } from '@/components/ui/view-bar';
+import { Panel, PanelHeader, PanelBody, PanelLink } from '@/components/ui/panel';
+import { MetricStrip, Metric } from '@/components/ui/metric-strip';
+import { HBars } from '@/components/ui/hbars';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
+import { Skeleton } from '@/components/ui/skeleton';
+import { QuickAddButton } from '@/components/dashboard/QuickAddMenu';
+import { ActivityTypeIcon } from '@/components/activities/ActivityTypeIcon';
+import { CobwebOverlay } from '@/components/easterEggs/CobwebOverlay';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
 import { useCustomerStore } from '@/store/customerStore';
+import { useRevenueStore } from '@/store/revenueStore';
 import { useCustomers } from '@/hooks/useCustomers';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { BELGIAN_CITIES, normalizeCityKey } from '@/lib/geo/belgianCities';
-import { normalizeCity } from '@/lib/utils/cityProvince';
-import type { Activity as ActivityType, FollowUp, Opportunity } from '@/types/entities';
+import { getEffectiveArr } from '@/lib/revenue/effectiveArr';
+import { completeFollowUpEverywhere } from '@/lib/followups/completeFollowUp';
+import { onDataEvent } from '@/lib/dataEvents';
+import { STAGES } from '@/lib/opportunityRules';
+import { selectDueToday, workWeek, isoWeekNumber, overdueLabel, winRatePct } from '@/lib/today/home';
+import { cn } from '@/lib/utils';
+import type { Activity, FollowUp } from '@/types/entities';
 import type { StaleOpportunity } from '@/lib/db/queries/opportunities';
 
-function fmt(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toString();
-}
+const DAY_MS = 86_400_000;
 
 function fmtEur(n: number): string {
-  if (n >= 1_000_000) return `€${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `€${Math.round(n / 1_000)}k`;
+  if (n >= 1_000_000) return `€${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `€${Math.round(n / 1_000)}K`;
   return `€${Math.round(n)}`;
 }
 
 function pctDelta(current: number, previous: number): number | null {
-  if (previous === 0) return current === 0 ? 0 : null;
-  return Math.round(((current - previous) / previous) * 100);
+  if (previous === 0) return null;
+  return ((current - previous) / previous) * 100;
 }
 
-interface CityCount {
-  cityId: string;
-  n: number;
+function whenLabel(iso: string, now: Date): string {
+  const d = new Date(iso);
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (d.getTime() >= startToday) return d.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
+  if (d.getTime() >= startToday - DAY_MS) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-interface DashboardCache {
-  recentActivities: ActivityType[];
-  recentOpportunities: Opportunity[];
-  allFollowUps: FollowUp[];
-  activitiesCount: number;
-  opportunitiesCount: number;
-  openPipelineValue: number;
-  cityCounts: CityCount[];
-  totalBelgianCustomers: number;
-  staleOpportunities: StaleOpportunity[];
-  activityTrend: { current: number; previous: number };
-  opportunityTrend: { current: number; previous: number };
-  pipelineDelta: { currentValue: number; previousValue: number };
-  myCustomersCount: number;
+interface HomeData {
+  recentActivities: Activity[];
+  followUps: FollowUp[];
+  openPipeline: number;
+  pipelinePrevious: number;
+  winRate: { won: number; lost: number };
+  stale: StaleOpportunity[];
+  byStage: { stage: string; total: number }[];
   forUserId: string;
 }
-let cache: DashboardCache | null = null;
+let cache: HomeData | null = null;
 
 export default function DashboardPage() {
   const router = useRouter();
-  const setFilterCity = useCustomerStore((s) => s.setFilterCity);
   const account = useAuthStore((s) => s.account);
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+  const customers = useCustomerStore((s) => s.customers);
+  const byBcn = useRevenueStore((s) => s.byBcn);
+  const byResellerAccount = useRevenueStore((s) => s.byResellerAccount);
   const userId = callerD365UserId ?? account?.localAccountId ?? null;
-  const altUserId =
-    account?.localAccountId && account.localAccountId !== userId
-      ? account.localAccountId
-      : null;
+  const altUserId = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
 
   useCustomers();
 
-  const [recentActivities, setRecentActivities] = useState<ActivityType[]>(
-    cache?.recentActivities ?? [],
-  );
-  const [recentOpportunities, setRecentOpportunities] = useState<Opportunity[]>(
-    cache?.recentOpportunities ?? [],
-  );
-  const [allFollowUps, setAllFollowUps] = useState<FollowUp[]>(cache?.allFollowUps ?? []);
-  const [activitiesCount, setActivitiesCount] = useState<number | null>(
-    cache?.activitiesCount ?? null,
-  );
-  const [opportunitiesCount, setOpportunitiesCount] = useState<number | null>(
-    cache?.opportunitiesCount ?? null,
-  );
-  const [openPipelineValue, setOpenPipelineValue] = useState<number | null>(
-    cache?.openPipelineValue ?? null,
-  );
-  const [cityCounts, setCityCounts] = useState<CityCount[]>(cache?.cityCounts ?? []);
-  const [totalBelgianCustomers, setTotalBelgianCustomers] = useState<number>(
-    cache?.totalBelgianCustomers ?? 0,
-  );
-  const [staleOpportunities, setStaleOpportunities] = useState<StaleOpportunity[]>(
-    cache?.staleOpportunities ?? [],
-  );
-  const [activityTrend, setActivityTrend] = useState<{ current: number; previous: number } | null>(
-    cache?.activityTrend ?? null,
-  );
-  const [opportunityTrend, setOpportunityTrend] = useState<{ current: number; previous: number } | null>(
-    cache?.opportunityTrend ?? null,
-  );
-  const [pipelineDelta, setPipelineDelta] = useState<{ currentValue: number; previousValue: number } | null>(
-    cache?.pipelineDelta ?? null,
-  );
-  const [myCustomersCount, setMyCustomersCount] = useState<number | null>(
-    cache?.myCustomersCount ?? null,
-  );
+  const [data, setData] = useState<HomeData | null>(cache);
   const [loading, setLoading] = useState(cache === null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const loadedFor = useRef<string | null>(null);
+  const now = useMemo(() => new Date(), []);
 
-  const loadedForUserId = useRef<string | null>(null);
-
-  const handleCityClick = useCallback(
-    (cityId: string) => {
-      const city = BELGIAN_CITIES.find((c) => c.id === cityId);
-      const canonical = city ? normalizeCity(city.displayName) : null;
-      if (canonical) setFilterCity(canonical);
-      router.push('/customers');
-    },
-    [router, setFilterCity],
-  );
+  useEffect(() => onDataEvent((e) => {
+    if (e.entity === 'followup' || e.entity === 'activity' || e.entity === 'opportunity') setReloadKey((k) => k + 1);
+  }), []);
 
   useEffect(() => {
     if (!isTauriApp() || !userId) {
       setLoading(false);
       return;
     }
-    if (loadedForUserId.current === userId && cache?.forUserId === userId) return;
+    if (reloadKey === 0 && loadedFor.current === userId && cache?.forUserId === userId) return;
 
     const load = async () => {
       try {
-        const userIds = [userId, altUserId].filter(Boolean) as string[];
-
-        const [
-          {
-            queryMyActivitiesCountAllTime,
-            queryMyOpportunitiesCountAllTime,
-            queryBelgianCustomersByCity,
-            queryMyPipeline,
-            queryMyActivityWeeklyTrend,
-            queryMyOpportunityWeeklyTrend,
-            queryMyPipelineWeeklyDelta,
-            queryMyCustomersCount,
-          },
-          { queryFollowUpsByUser },
-          { queryMyRecentActivitiesLatest },
-          { queryMyRecentOpportunitiesLatest, queryMyStaleOpportunities },
-        ] = await Promise.all([
+        const userIds = [userId, altUserId].filter((v): v is string => Boolean(v));
+        const since = new Date(Date.now() - 90 * DAY_MS).toISOString();
+        const [analytics, followups, activities, opportunities, revenue] = await Promise.all([
           import('@/lib/db/queries/analytics'),
           import('@/lib/db/queries/followups'),
           import('@/lib/db/queries/activities'),
           import('@/lib/db/queries/opportunities'),
+          import('@/lib/integrations/powerbi/revenueService'),
         ]);
-
-        const [
-          recentActs,
-          recentOpps,
-          allFUs,
-          actCount,
-          oppCount,
-          pipeline,
-          rawCities,
-          stale,
-          actTrend,
-          oppTrend,
-          pipeDelta,
-          myCustCount,
-        ] = await Promise.all([
-          queryMyRecentActivitiesLatest(userId, altUserId, 15),
-          queryMyRecentOpportunitiesLatest(userId, altUserId, 15),
-          queryFollowUpsByUser(userId, altUserId ?? undefined),
-          queryMyActivitiesCountAllTime(userIds),
-          queryMyOpportunitiesCountAllTime(userIds),
-          queryMyPipeline(userIds),
-          queryBelgianCustomersByCity(),
-          queryMyStaleOpportunities(userId, altUserId, 30, 25),
-          queryMyActivityWeeklyTrend(userIds),
-          queryMyOpportunityWeeklyTrend(userIds),
-          queryMyPipelineWeeklyDelta(userIds),
-          queryMyCustomersCount(userIds),
+        const [recentActivities, followUps, pipeline, delta, winRate, stale, byStage] = await Promise.all([
+          activities.queryMyRecentActivitiesLatest(userId, altUserId, 5),
+          followups.queryFollowUpsByUser(userId, altUserId ?? undefined),
+          analytics.queryMyPipeline(userIds),
+          analytics.queryMyPipelineWeeklyDelta(userIds),
+          analytics.queryMyWinRateSince(userIds, since),
+          opportunities.queryMyStaleOpportunities(userId, altUserId, 30, 6),
+          analytics.queryMyPipelineByStage(userIds),
+          useRevenueStore.getState().isHydrated ? Promise.resolve() : revenue.loadRevenueFromDb(),
         ]);
-
-        const cityAgg = new Map<string, number>();
-        for (const r of rawCities) {
-          const canonical = normalizeCity(r.cityKey);
-          const cityId = canonical ? normalizeCityKey(canonical) : null;
-          if (cityId) cityAgg.set(cityId, (cityAgg.get(cityId) ?? 0) + r.n);
-        }
-        const normalizedCities = Array.from(cityAgg.entries()).map(([cityId, n]) => ({ cityId, n }));
-        const totalBE = rawCities.reduce((s, r) => s + r.n, 0);
-
         cache = {
-          recentActivities: recentActs,
-          recentOpportunities: recentOpps,
-          allFollowUps: allFUs,
-          activitiesCount: actCount,
-          opportunitiesCount: oppCount,
-          openPipelineValue: pipeline.openValue,
-          cityCounts: normalizedCities,
-          totalBelgianCustomers: totalBE,
-          staleOpportunities: stale,
-          activityTrend: actTrend,
-          opportunityTrend: oppTrend,
-          pipelineDelta: pipeDelta,
-          myCustomersCount: myCustCount,
+          recentActivities,
+          followUps,
+          openPipeline: pipeline.openValue,
+          pipelinePrevious: delta.previousValue,
+          winRate,
+          stale,
+          byStage,
           forUserId: userId,
         };
-        loadedForUserId.current = userId;
-
-        setRecentActivities(recentActs);
-        setRecentOpportunities(recentOpps);
-        setAllFollowUps(allFUs);
-        setActivitiesCount(actCount);
-        setOpportunitiesCount(oppCount);
-        setOpenPipelineValue(pipeline.openValue);
-        setCityCounts(normalizedCities);
-        setTotalBelgianCustomers(totalBE);
-        setStaleOpportunities(stale);
-        setActivityTrend(actTrend);
-        setOpportunityTrend(oppTrend);
-        setPipelineDelta(pipeDelta);
-        setMyCustomersCount(myCustCount);
+        loadedFor.current = userId;
+        setData(cache);
       } catch (err) {
-        console.error('[dashboard] Failed to load dashboard data:', err);
+        console.error('[dashboard] Failed to load home data:', err);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [userId, altUserId]);
+  }, [userId, altUserId, reloadKey]);
 
-  const activityDelta = activityTrend
-    ? pctDelta(activityTrend.current, activityTrend.previous)
-    : null;
-  const opportunityDelta = opportunityTrend
-    ? pctDelta(opportunityTrend.current, opportunityTrend.previous)
-    : null;
-  const pipelineDeltaPct = pipelineDelta
-    ? pctDelta(pipelineDelta.currentValue, pipelineDelta.previousValue)
-    : null;
+  const followUps = data?.followUps ?? [];
+  const dueToday = selectDueToday(followUps, now);
+  const overdueCount = dueToday.filter((f) => overdueLabel(f.dueDate, now) !== 'Today').length;
+  const week = workWeek(followUps, now);
+  const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? '';
+
+  const portfolio = useMemo(() => {
+    let total = 0;
+    let count = 0;
+    for (const c of customers) {
+      const row = (c.bcn ? byBcn.get(c.bcn) : undefined) ?? (c.accountNumber ? byResellerAccount.get(c.accountNumber) : undefined) ?? null;
+      const { value } = getEffectiveArr(c, row);
+      if (value && value > 0) {
+        total += value;
+        count++;
+      }
+    }
+    return { total, count };
+  }, [customers, byBcn, byResellerAccount]);
+
+  const pipelineDelta = data ? pctDelta(data.openPipeline, data.pipelinePrevious) : null;
+  const winRate = data ? winRatePct(data.winRate) : null;
+  const stageRows = STAGES.filter((s) => s !== 'Purchased' && s !== 'Billing Rejection').map((s) => ({
+    label: s,
+    value: data?.byStage.find((r) => r.stage === s)?.total ?? 0,
+  }));
+
+  const complete = async (f: FollowUp) => {
+    try {
+      const updated = await completeFollowUpEverywhere(f);
+      setData((prev) => (prev ? { ...prev, followUps: prev.followUps.map((x) => (x.id === f.id ? updated : x)) } : prev));
+    } catch (err) {
+      console.error('[followup] Failed to complete from Home:', err);
+    }
+  };
+
+  const dash = loading ? <Skeleton className="h-6 w-20" /> : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <GreetingHeader />
-        <div className="shrink-0">
-          <QuickAddMenu />
+    <div className="grid content-start gap-3">
+      <ViewBar
+        title="Home"
+        meta={`${now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · Week ${isoWeekNumber(now)}`}
+      >
+        <ViewBarSpacer />
+        <QuickAddButton target="followup" variant="outline">
+          <Clock size={14} />
+          New follow-up
+        </QuickAddButton>
+        <QuickAddButton target="activity">
+          <Plus size={14} />
+          Log activity
+        </QuickAddButton>
+      </ViewBar>
+
+      <MetricStrip aria-label="Key figures">
+        <Metric
+          label="Open pipeline"
+          value={dash ?? fmtEur(data?.openPipeline ?? 0)}
+          delta={pipelineDelta !== null ? { text: `${pipelineDelta >= 0 ? '+' : '−'}${Math.abs(pipelineDelta).toFixed(1)}%`, positive: pipelineDelta >= 0 } : undefined}
+          sub={pipelineDelta !== null ? 'vs 7 days ago' : 'Your open deals'}
+        />
+        <Metric
+          label="Portfolio ARR"
+          value={fmtEur(portfolio.total)}
+          sub={`${portfolio.count} ${portfolio.count === 1 ? 'customer' : 'customers'} with ARR`}
+        />
+        <Metric
+          label="Win rate · 90 days"
+          value={dash ?? (winRate === null ? '—' : `${winRate}%`)}
+          sub={data ? `${data.winRate.won} won · ${data.winRate.lost} lost` : undefined}
+        />
+        <Metric
+          label="Follow-ups due today"
+          value={dash ?? dueToday.length}
+          aside={<PanelLink onClick={() => router.push('/followups')}>Open tasks</PanelLink>}
+          sub={
+            overdueCount > 0 ? (
+              <Badge variant="destructive"><AlertCircle size={11} /> {overdueCount} overdue</Badge>
+            ) : (
+              <Badge variant="success">Nothing overdue</Badge>
+            )
+          }
+        />
+      </MetricStrip>
+
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 content-start gap-3">
+          <Panel>
+            <PanelHeader title="Due today" sub={`${dueToday.length} open`} />
+            {dueToday.length === 0 ? (
+              <EmptyState icon={CheckCircle2} title="Nothing due today" description="Enjoy the quiet." />
+            ) : (
+              <motion.ul variants={listContainerVariants} initial="hidden" animate="visible">
+                {dueToday.map((f) => {
+                  const label = overdueLabel(f.dueDate, now);
+                  return (
+                    <motion.li
+                      key={f.id}
+                      variants={listItemVariants}
+                      className="flex min-h-10 items-center gap-2.5 border-t border-border px-3 py-1.5 first:border-t-0 hover:bg-surface-2"
+                    >
+                      <ConfirmPopover message={`Mark "${f.title}" as complete?`} confirmLabel="Complete" variant="default" align="start" onConfirm={() => complete(f)}>
+                        <button
+                          type="button"
+                          title="Mark as complete"
+                          className="group/check grid size-4 shrink-0 place-items-center rounded border-[1.5px] border-border-strong bg-card transition-colors hover:border-primary"
+                        >
+                          <Check size={11} className="text-transparent group-hover/check:text-primary" />
+                        </button>
+                      </ConfirmPopover>
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/customers?id=${f.customerId}&tab=followups`)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <div className="truncate text-[13px] font-medium">{f.title}</div>
+                        <div className="truncate text-xs text-muted-foreground">{customerName(f.customerId)}</div>
+                      </button>
+                      <span className={cn('shrink-0 whitespace-nowrap text-[11.5px] tabular-nums', label === 'Today' ? 'text-muted-foreground' : 'font-semibold text-destructive')}>
+                        {label}
+                      </span>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+            )}
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="Recent activity">
+              <PanelLink onClick={() => router.push('/timeline')}>Open timeline</PanelLink>
+            </PanelHeader>
+            {(data?.recentActivities.length ?? 0) === 0 ? (
+              <EmptyState icon={Inbox} title="No activity yet" description="Activities you log on a customer show up here." />
+            ) : (
+              <ul>
+                {data?.recentActivities.map((a) => (
+                  <li key={a.id} className="border-t border-border first:border-t-0">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/customers?id=${a.customerId}&tab=activities`)}
+                      className="grid w-full grid-cols-[30px_minmax(0,1fr)_auto] items-start gap-2.5 px-3 py-2.5 text-left hover:bg-surface-2"
+                    >
+                      <ActivityTypeIcon type={a.type} />
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-medium">{a.subject}</div>
+                        <p className="truncate text-xs text-muted-foreground">{customerName(a.customerId)}</p>
+                      </div>
+                      <span className="whitespace-nowrap text-[11.5px] tabular-nums text-muted-foreground">{whenLabel(a.occurredAt, now)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
+
+        <div className="grid min-w-0 content-start gap-3">
+          <Panel>
+            <PanelHeader title="This week" sub="Follow-ups per day" />
+            <PanelBody>
+              <div className="grid grid-cols-5 gap-1.5">
+                {week.map((d) => (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => router.push('/followups')}
+                    title={`${d.count} ${d.count === 1 ? 'follow-up' : 'follow-ups'}`}
+                    className={cn(
+                      'grid min-w-0 gap-1 rounded-md border px-2 py-1.5 text-left transition-colors',
+                      d.isToday ? 'border-primary bg-accent' : 'border-border bg-card hover:border-border-strong',
+                    )}
+                  >
+                    <span className={cn('text-[10.5px] uppercase tracking-[0.05em]', d.isToday ? 'text-accent-foreground' : 'text-muted-foreground')}>{d.label}</span>
+                    <span className="text-base font-semibold tabular-nums">{d.day}</span>
+                    <span className="flex min-h-1.5 flex-wrap gap-[3px]">
+                      {Array.from({ length: Math.min(d.count, 12) }).map((_, i) => (
+                        <i key={i} className={cn('size-1.5 rounded-full', d.isToday ? 'bg-primary' : 'bg-faint')} />
+                      ))}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </PanelBody>
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="Deals going quiet">
+              <Badge variant="warning">30+ days idle</Badge>
+            </PanelHeader>
+            {(data?.stale.length ?? 0) === 0 ? (
+              <EmptyState icon={CalendarClock} title="No deals going quiet" description="Every open deal had an update in the last 30 days." />
+            ) : (
+              <ul>
+                {data?.stale.map((o) => (
+                  <li key={o.id} className="relative border-t border-border first:border-t-0">
+                    <CobwebOverlay daysStale={o.daysStale} />
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/customers?id=${o.customerId}&tab=opportunities`)}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium">{o.subject}</div>
+                        <div className="truncate text-xs text-muted-foreground">{o.customerName} · {o.stage}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="whitespace-nowrap font-semibold tabular-nums">{o.estimatedRevenue != null ? fmtEur(o.estimatedRevenue) : '—'}</div>
+                        <div className="whitespace-nowrap text-[11.5px] font-semibold tabular-nums text-warning">{o.daysStale} days</div>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="Open pipeline by stage">
+              <PanelLink onClick={() => router.push('/opportunities')}>Open pipeline</PanelLink>
+            </PanelHeader>
+            <PanelBody>
+              <HBars rows={stageRows} format={fmtEur} />
+            </PanelBody>
+          </Panel>
         </div>
       </div>
-
-      <GlobalSearchBar activities={recentActivities} followUps={allFollowUps} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-[45fr_20fr_35fr] gap-6 items-stretch lg:h-[clamp(380px,calc(100vh-440px),580px)]">
-        <motion.div {...sectionReveal(0)} className="min-h-0 h-full">
-          <BelgiumMapCard
-            cityCounts={cityCounts}
-            totalCustomers={totalBelgianCustomers}
-            onCityClick={handleCityClick}
-          />
-        </motion.div>
-
-        <motion.div
-          className="flex flex-col gap-3 h-full min-h-0"
-          variants={listContainerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
-            <MetricCard
-              className="h-full"
-              label="Total Activities"
-              value={loading || activitiesCount === null ? '—' : fmt(activitiesCount)}
-              icon={Activity}
-              sub="All time"
-              delta={activityDelta ?? undefined}
-              deltaLabel="% vs last 7d"
-            />
-          </motion.div>
-          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
-            <MetricCard
-              className="h-full"
-              label="Opportunities"
-              value={loading || opportunitiesCount === null ? '—' : fmt(opportunitiesCount)}
-              icon={Target}
-              sub="All time"
-              delta={opportunityDelta ?? undefined}
-              deltaLabel="% vs last 7d"
-            />
-          </motion.div>
-          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
-            <MetricCard
-              className="h-full"
-              label="Open Pipeline"
-              value={loading || openPipelineValue === null ? '—' : fmtEur(openPipelineValue)}
-              icon={Wallet}
-              sub="Your open deals"
-              delta={pipelineDeltaPct ?? undefined}
-              deltaLabel="% vs 7d ago"
-            />
-          </motion.div>
-          <motion.div variants={listItemVariants} className="flex-1 min-h-0">
-            <MetricCard
-              className="h-full"
-              label="My Customers"
-              value={loading || myCustomersCount === null ? '—' : fmt(myCustomersCount)}
-              icon={Building2}
-              sub="Accounts you manage"
-            />
-          </motion.div>
-        </motion.div>
-
-        <div className="flex flex-col gap-4 h-full min-h-0">
-          <motion.div {...sectionReveal(0.08)} className="flex-1 min-h-0">
-            <RecentActivityPanel
-              activities={recentActivities}
-              opportunities={recentOpportunities}
-              loading={loading}
-            />
-          </motion.div>
-          <motion.div {...sectionReveal(0.14)} className="flex-1 min-h-0">
-            <StaleOpportunitiesPanel opportunities={staleOpportunities} loading={loading} />
-          </motion.div>
-        </div>
-      </div>
-
-      <motion.div {...sectionReveal(0.2)}>
-        <WeekStripPanel followUps={allFollowUps} loading={loading} />
-      </motion.div>
     </div>
   );
 }

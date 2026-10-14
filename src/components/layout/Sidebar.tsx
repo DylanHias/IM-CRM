@@ -6,7 +6,7 @@ import {
   Users, CheckSquare, BarChart2, Target, LineChart, Gauge,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   X, MoreVertical, Plus,
-  LayoutDashboard, Clock, Bookmark, CalendarClock,
+  House, Clock, Bookmark, CalendarClock,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -114,7 +114,7 @@ export function AppSidebar() {
   const sidebarHiddenTabs = useSettingsStore((s) => s.sidebarHiddenTabs);
 
   const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
-    '/dashboard': { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    '/dashboard': { href: '/dashboard', label: 'Home', icon: House },
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
     '/followups': {
       href: '/followups',

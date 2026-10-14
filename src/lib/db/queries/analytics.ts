@@ -106,6 +106,33 @@ async function queryMyWinRate(userIds: string[]): Promise<{ won: number; lost: n
   return { won: map['Won'] ?? 0, lost: map['Lost'] ?? 0 };
 }
 
+/** Won/lost counts for deals the user closed on or after `sinceIso`. */
+export async function queryMyWinRateSince(userIds: string[], sinceIso: string): Promise<{ won: number; lost: number }> {
+  const db = await getDb();
+  const rows = await db.select<{ status: string; count: number }[]>(
+    `SELECT status, COUNT(*) as count FROM opportunities
+     WHERE created_by_id IN (${inClause(userIds.length)}) AND status IN ('Won', 'Lost')
+       AND close_date >= $${userIds.length + 1}
+     GROUP BY status`,
+    [...userIds, sinceIso],
+  );
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.status] = r.count;
+  return { won: map['Won'] ?? 0, lost: map['Lost'] ?? 0 };
+}
+
+/** Open pipeline value and deal count per stage for the given users. */
+export async function queryMyPipelineByStage(userIds: string[]): Promise<{ stage: string; total: number; count: number }[]> {
+  const db = await getDb();
+  return db.select<{ stage: string; total: number; count: number }[]>(
+    `SELECT stage, COALESCE(SUM(estimated_revenue), 0) as total, COUNT(*) as count
+     FROM opportunities
+     WHERE created_by_id IN (${inClause(userIds.length)}) AND status = 'Open'
+     GROUP BY stage`,
+    userIds,
+  );
+}
+
 export async function queryPersonalStats(
   userIds: string[],
   range: DateRange,
@@ -347,21 +374,6 @@ export async function queryMyOpportunitiesCountAllTime(userIds: string[]): Promi
   );
   return row?.count ?? 0;
 }
-
-export async function queryBelgianCustomersByCity(): Promise<{ cityKey: string; n: number }[]> {
-  const db = await getDb();
-  return db.select<{ cityKey: string; n: number }[]>(
-    `SELECT LOWER(TRIM(address_city)) AS cityKey, COUNT(*) AS n
-     FROM customers
-     WHERE address_country = 'BE'
-       AND address_city IS NOT NULL
-       AND address_city != ''
-     GROUP BY LOWER(TRIM(address_city))
-     ORDER BY n DESC`,
-  );
-}
-
-// ── Activity ──────────────────────────────────────────────────────────────────
 
 export async function queryActivityPatternsData(
   userIds: string[],
