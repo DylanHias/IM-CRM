@@ -4,7 +4,8 @@ import { X } from 'lucide-react';
 import { useCustomerStore } from '@/store/customerStore';
 import { displayCity } from '@/lib/utils/cityProvince';
 import { HEALTH_TIER_OPTIONS } from '@/components/customers/CustomerFilterPopover';
-import type { CustomerFilterOptions, FilterOption } from '@/hooks/useCustomerFilterOptions';
+import type { CustomerFilterOptions } from '@/hooks/useCustomerFilterOptions';
+import type { FilterOption } from '@/components/ui/filter-popover';
 
 const nameOf = (list: FilterOption[], id: string) => list.find((o) => o.id === id)?.name ?? 'Unknown';
 

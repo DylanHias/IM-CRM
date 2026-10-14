@@ -42,7 +42,7 @@ const TABS = [
   { id: 'activities', label: 'Activities', icon: Calendar },
   { id: 'follow-ups', label: 'Follow-Ups', icon: CheckSquare },
   { id: 'contacts', label: 'Contacts', icon: Contact },
-  { id: 'opportunities', label: 'Opportunities', icon: Target },
+  { id: 'opportunities', label: 'Pipeline', icon: Target },
   { id: 'revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
   { id: 'analytics', label: 'Analytics', icon: LineChart },
   { id: 'sync', label: 'Sync', icon: RefreshCw },

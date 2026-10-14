@@ -6,6 +6,7 @@ export type OppSortBy = 'createdAt' | 'subject' | 'estimatedRevenue' | 'expirati
 export type SortDir = 'asc' | 'desc';
 export type ExpiredFilter = 'all' | 'expired' | 'active';
 export type FilterMode = 'and' | 'or';
+export type PipelineView = 'list' | 'board';
 
 const STAGE_ORDER: Record<string, number> = {
   'Prospecting': 1,
@@ -35,6 +36,8 @@ interface OpportunityListState {
   filterMode: FilterMode;
   page: number;
   isLoading: boolean;
+  view: PipelineView;
+  selectedId: string | null;
 
   setOpportunities: (opps: Opportunity[]) => void;
   setCustomerMap: (map: Map<string, string>) => void;
@@ -51,6 +54,8 @@ interface OpportunityListState {
   toggleMineOnly: () => void;
   setFilterMode: (m: FilterMode) => void;
   setPage: (page: number) => void;
+  setView: (view: PipelineView) => void;
+  setSelectedId: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   clearFilters: () => void;
   getActiveFilterCount: () => number;
@@ -76,6 +81,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       filterMode: 'and',
       page: 1,
       isLoading: false,
+      view: 'list',
+      selectedId: null,
 
       setOpportunities: (opportunities) => set({ opportunities }),
       setCustomerMap: (customerMap) => set({ customerMap }),
@@ -92,6 +99,8 @@ export const useOpportunityListStore = create<OpportunityListState>()(
       toggleMineOnly: () => set({ filterMineOnly: !get().filterMineOnly, page: 1 }),
       setFilterMode: (filterMode) => set({ filterMode, page: 1 }),
       setPage: (page) => set({ page }),
+      setView: (view) => set({ view }),
+      setSelectedId: (selectedId) => set({ selectedId }),
       setLoading: (isLoading) => set({ isLoading }),
 
       clearFilters: () => set({
@@ -207,6 +216,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
         filterSecondaryOwnerId: state.filterSecondaryOwnerId,
         filterMineOnly: state.filterMineOnly,
         filterMode: state.filterMode,
+        view: state.view,
       }),
     }
   )

@@ -8,10 +8,7 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryAllCloudBeluxUsers, type CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
 import { queryAllBelgiumTeamUsers, type BelgiumTeamUser } from '@/lib/db/queries/belgiumTeamUsers';
 
-export interface FilterOption {
-  id: string;
-  name: string;
-}
+import type { FilterOption } from '@/components/ui/filter-popover';
 
 const byName = (a: FilterOption, b: FilterOption) => a.name.localeCompare(b.name);
 

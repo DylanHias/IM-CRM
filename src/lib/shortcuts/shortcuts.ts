@@ -30,7 +30,7 @@ function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinitio
     '/customers': 'Go to Customers',
     '/sync': 'Go to Sync',
     '/followups': 'Go to Follow-Ups',
-    '/opportunities': 'Go to Opportunities',
+    '/opportunities': 'Go to Pipeline',
     '/revenue-overview': 'Go to Revenue Overview',
     '/insights': 'Go to Insights',
     '/analytics': 'Go to Analytics',

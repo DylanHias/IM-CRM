@@ -124,7 +124,7 @@ export function AppSidebar() {
       badgeVariant: 'destructive',
       badgeStyle: 'count',
     },
-    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
+    '/opportunities': { href: '/opportunities', label: 'Pipeline', icon: Target },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
     '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
