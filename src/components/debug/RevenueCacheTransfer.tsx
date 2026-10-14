@@ -73,10 +73,9 @@ export function RevenueCacheTransfer() {
   const busy = isExporting || isImporting;
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto grid max-w-[860px] content-start gap-4">
       <div>
-        <h2 className="text-base font-semibold">Revenue Cache Transfer</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="max-w-[70ch] text-[13px] text-muted-foreground">
           Export your locally cached Power BI revenue data to a file you can send to a colleague.
           On their machine, importing the file fills in the same ARR numbers without needing Power BI access.
         </p>

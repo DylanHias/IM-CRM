@@ -1,37 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Terminal, RefreshCw, ArrowLeftRight } from 'lucide-react';
-import { ConsoleViewer } from '@/components/admin/ConsoleViewer';
-import { SyncAdministration } from '@/components/admin/SyncAdministration';
-import { RevenueCacheTransfer } from '@/components/admin/RevenueCacheTransfer';
-import { SubSidebar } from '@/components/layout/SubSidebar';
-import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
+import { ConsoleViewer } from '@/components/debug/ConsoleViewer';
+import { SyncLogs } from '@/components/debug/SyncLogs';
+import { RevenueCacheTransfer } from '@/components/debug/RevenueCacheTransfer';
+import { ViewBar } from '@/components/ui/view-bar';
+import { Segmented } from '@/components/ui/segmented';
 
-const TABS = [
-  { id: 'console', label: 'Console', icon: Terminal },
-  { id: 'sync', label: 'Sync Logs', icon: RefreshCw },
-  { id: 'revenue-cache', label: 'Revenue Cache', icon: ArrowLeftRight },
-] as const;
+type TabId = 'console' | 'sync' | 'revenue-cache';
 
-type TabId = (typeof TABS)[number]['id'];
+const TABS: { value: TabId; label: string }[] = [
+  { value: 'console', label: 'Console' },
+  { value: 'sync', label: 'Sync Logs' },
+  { value: 'revenue-cache', label: 'Revenue Cache' },
+];
 
 export default function DebugPage() {
   const [activeTab, setActiveTab] = useState<TabId>('console');
+  const tabs = <Segmented aria-label="Debug view" value={activeTab} onChange={setActiveTab} options={TABS} />;
 
+  if (activeTab === 'console') return <ConsoleViewer tabs={tabs} />;
+  if (activeTab === 'sync') return <SyncLogs tabs={tabs} />;
   return (
-    <div>
-      <h1 className="text-lg font-semibold mb-6">Debug</h1>
-      <div className="flex gap-8 min-h-0">
-        <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="flex-1 min-w-0">
-          <AnimatedTabPanels activeKey={activeTab}>
-            {activeTab === 'console' && <ConsoleViewer />}
-            {activeTab === 'sync' && <SyncAdministration />}
-            {activeTab === 'revenue-cache' && <RevenueCacheTransfer />}
-          </AnimatedTabPanels>
-        </div>
-      </div>
-    </div>
+    <>
+      <ViewBar title="Debug">{tabs}</ViewBar>
+      <RevenueCacheTransfer />
+    </>
   );
 }

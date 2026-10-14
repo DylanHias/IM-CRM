@@ -373,8 +373,7 @@ function Header({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 className="text-sm font-semibold">Team Analytics</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground">
           Per-user activity for {RANGE_LABELS[rangeKey].toLowerCase()}
         </p>
       </div>

@@ -1,9 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { underlineSpring } from '@/lib/motion';
 
 interface Tab {
   id: string;
@@ -17,39 +15,39 @@ interface SubSidebarProps<T extends string> {
   activeTab: T;
   onTabChange: (tab: T) => void;
   className?: string;
-  layoutIdPrefix?: string;
+  'aria-label'?: string;
 }
 
-export function SubSidebar<T extends string>({
-  tabs, activeTab, onTabChange, className, layoutIdPrefix = 'subsidebar',
-}: SubSidebarProps<T>) {
+/** Secondary navigation column for pages with their own sections (Help). Becomes a scrolling row on narrow windows. */
+export function SubSidebar<T extends string>({ tabs, activeTab, onTabChange, className, ...props }: SubSidebarProps<T>) {
   return (
-    <nav className={cn('flex flex-col gap-0.5 min-w-[180px] flex-shrink-0', className)}>
+    <nav
+      aria-label={props['aria-label']}
+      className={cn(
+        'flex min-h-0 flex-col gap-px overflow-y-auto border-r border-border bg-card p-2 max-md:flex-row max-md:overflow-x-auto max-md:border-b max-md:border-r-0',
+        className,
+      )}
+    >
       {tabs.map(({ id, label, icon: Icon, dividerAfter }) => {
         const isActive = activeTab === id;
         return (
-          <div key={id}>
+          <div key={id} className="contents">
             <button
+              type="button"
               onClick={() => onTabChange(id as T)}
+              aria-current={isActive ? 'page' : undefined}
+              data-active={isActive}
               className={cn(
-                'relative flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium w-full',
-                'outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
-                isActive
-                  ? 'text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors duration-150',
+                'relative flex h-8 w-full shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors max-md:w-auto',
+                'outline-none hover:bg-sunken hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+                'before:absolute before:left-0 before:top-1/2 before:-mt-2 before:h-4 before:w-[3px] before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100',
+                isActive && 'bg-sunken text-foreground',
               )}
             >
-              {isActive && (
-                <motion.span
-                  layoutId={`${layoutIdPrefix}-pill`}
-                  className="absolute inset-0 bg-sidebar-accent rounded-md -z-10"
-                  transition={underlineSpring}
-                />
-              )}
-              <Icon size={15} className="shrink-0 relative z-10" />
-              <span className="relative z-10">{label}</span>
+              <Icon size={15} className="shrink-0" />
+              <span className="truncate">{label}</span>
             </button>
-            {dividerAfter && <div className="my-2 border-t border-sidebar-border/60" />}
+            {dividerAfter && <hr className="mx-1 my-1.5 border-border max-md:hidden" />}
           </div>
         );
       })}

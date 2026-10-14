@@ -16,7 +16,7 @@ import { useSyncStore } from '@/store/syncStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatCurrency } from '@/lib/utils/currencyUtils';
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/dateUtils';
-import { pendingBreakdown, summarizeLastDay } from '@/lib/sync/historySummary';
+import { SYNC_TYPE_LABELS, pendingBreakdown, summarizeLastDay } from '@/lib/sync/historySummary';
 import type { Activity } from '@/types/entities';
 import type { SyncRecord } from '@/types/sync';
 import type { PendingActivitySyncItem } from '@/lib/db/queries/activities';
@@ -28,16 +28,6 @@ const STATUS_CONFIG = {
   success: { icon: CheckCircle, variant: 'success' as const, label: 'Success' },
   partial: { icon: AlertTriangle, variant: 'warning' as const, label: 'Partial' },
   error: { icon: XCircle, variant: 'destructive' as const, label: 'Error' },
-};
-
-const SYNC_TYPE_LABELS: Record<string, string> = {
-  d365: 'Dynamics 365',
-  powerbi_arr: 'Power BI ARR',
-  powerbi_insights: 'Power BI Insights',
-  powerbi_arr_movement: 'Power BI ARR Movement',
-  push_activities: 'Push activities',
-  push_followups: 'Push follow-ups',
-  push_opportunities: 'Push opportunities',
 };
 
 const ACTIVITY_TYPE_LABELS: Record<string, string> = { meeting: 'Meeting', visit: 'Visit', call: 'Call', note: 'Note' };

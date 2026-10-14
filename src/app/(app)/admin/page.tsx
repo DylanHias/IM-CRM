@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, BarChart3, HardDrive, TerminalSquare, PieChart, Search, RefreshCw } from 'lucide-react';
-import { AdminGuard } from '@/components/admin/AdminGuard';
+import { ShieldX } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AnalyticsReports } from '@/components/admin/AnalyticsReports';
 import { DataManagement } from '@/components/admin/DataManagement';
@@ -10,43 +9,56 @@ import { DatabaseExplorer } from '@/components/admin/DatabaseExplorer';
 import { PowerBiSchemaViewer } from '@/components/admin/PowerBiSchemaViewer';
 import { PowerBiDiscovery } from '@/components/admin/PowerBiDiscovery';
 import { RevenueAdmin } from '@/components/admin/RevenueAdmin';
-import { SubSidebar } from '@/components/layout/SubSidebar';
 import { AnimatedTabPanels } from '@/components/layout/AnimatedTabPanels';
+import { ViewBar, ViewBarSeparator } from '@/components/ui/view-bar';
+import { Segmented } from '@/components/ui/segmented';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useAuthStore } from '@/store/authStore';
 
-const TABS = [
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'users', label: 'Users', icon: Users, dividerAfter: true },
-  { id: 'data', label: 'Data', icon: HardDrive },
-  { id: 'database', label: 'Database', icon: TerminalSquare },
-  { id: 'powerbi', label: 'PowerBI', icon: PieChart },
-  { id: 'powerbi-discovery', label: 'PowerBI Discovery', icon: Search },
-  { id: 'revenue-sync', label: 'Revenue Sync', icon: RefreshCw },
-] as const;
+type TabId = 'analytics' | 'users' | 'data' | 'database' | 'powerbi' | 'powerbi-discovery' | 'revenue-sync';
 
-type TabId = (typeof TABS)[number]['id'];
+const PEOPLE_TABS: { value: TabId; label: string }[] = [
+  { value: 'analytics', label: 'Analytics' },
+  { value: 'users', label: 'Users' },
+];
+
+const SYSTEM_TABS: { value: TabId; label: string }[] = [
+  { value: 'data', label: 'Data' },
+  { value: 'database', label: 'Database' },
+  { value: 'powerbi', label: 'PowerBI' },
+  { value: 'powerbi-discovery', label: 'Discovery' },
+  { value: 'revenue-sync', label: 'Revenue Sync' },
+];
 
 export default function AdminPage() {
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const [activeTab, setActiveTab] = useState<TabId>('analytics');
 
+  if (!isAdmin) {
+    return (
+      <>
+        <ViewBar title="Admin" />
+        <EmptyState icon={ShieldX} title="Access denied" description="You need admin privileges to view this page." className="py-20" />
+      </>
+    );
+  }
+
   return (
-    <AdminGuard>
-      <div>
-        <h1 className="text-lg font-semibold mb-6">Admin Panel</h1>
-        <div className="flex gap-8 min-h-0">
-          <SubSidebar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} className="min-w-[200px]" />
-          <div className="flex-1 min-w-0">
-            <AnimatedTabPanels activeKey={activeTab}>
-              {activeTab === 'users' && <UserManagement />}
-              {activeTab === 'analytics' && <AnalyticsReports onGoToUsers={() => setActiveTab('users')} />}
-              {activeTab === 'data' && <DataManagement />}
-              {activeTab === 'database' && <DatabaseExplorer />}
-              {activeTab === 'powerbi' && <PowerBiSchemaViewer />}
-              {activeTab === 'powerbi-discovery' && <PowerBiDiscovery />}
-              {activeTab === 'revenue-sync' && <RevenueAdmin />}
-            </AnimatedTabPanels>
-          </div>
-        </div>
-      </div>
-    </AdminGuard>
+    <div className="mx-auto max-w-[1280px]">
+      <ViewBar title="Admin">
+        <Segmented aria-label="People" value={activeTab} onChange={setActiveTab} options={PEOPLE_TABS} />
+        <ViewBarSeparator />
+        <Segmented aria-label="System" value={activeTab} onChange={setActiveTab} options={SYSTEM_TABS} />
+      </ViewBar>
+      <AnimatedTabPanels activeKey={activeTab}>
+        {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'analytics' && <AnalyticsReports onGoToUsers={() => setActiveTab('users')} />}
+        {activeTab === 'data' && <DataManagement />}
+        {activeTab === 'database' && <DatabaseExplorer />}
+        {activeTab === 'powerbi' && <PowerBiSchemaViewer />}
+        {activeTab === 'powerbi-discovery' && <PowerBiDiscovery />}
+        {activeTab === 'revenue-sync' && <RevenueAdmin />}
+      </AnimatedTabPanels>
+    </div>
   );
 }

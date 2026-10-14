@@ -64,8 +64,6 @@ export function DataManagement() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-sm font-semibold">Data Management</h2>
-
       {/* Table Stats */}
       <div>
         <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Table Statistics</h3>

@@ -1,4 +1,14 @@
-import type { SyncRecord } from '@/types/sync';
+import type { SyncRecord, SyncType } from '@/types/sync';
+
+export const SYNC_TYPE_LABELS: Record<SyncType, string> = {
+  d365: 'Dynamics 365',
+  powerbi_arr: 'Power BI ARR',
+  powerbi_insights: 'Power BI Insights',
+  powerbi_arr_movement: 'Power BI ARR Movement',
+  push_activities: 'Push activities',
+  push_followups: 'Push follow-ups',
+  push_opportunities: 'Push opportunities',
+};
 
 export interface DaySummary {
   runs: number;
