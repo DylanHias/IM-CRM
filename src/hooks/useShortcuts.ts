@@ -6,6 +6,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getAllShortcuts, isInputFocused, isDialogOpen } from '@/lib/shortcuts/shortcuts';
 import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
+import { useNavOrder } from '@/hooks/useNavOrder';
 
 /**
  * Global keyboard shortcut listener — mounted once in AppShell.
@@ -14,7 +15,7 @@ import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
 export function useShortcuts() {
   const router = useRouter();
   const pathname = usePathname();
-  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const sidebarOrder = useNavOrder();
   const customKeybindings = useSettingsStore((s) => s.customKeybindings);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 

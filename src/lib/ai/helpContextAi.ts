@@ -85,8 +85,8 @@ const SECTIONS: HelpSection[] = [
     content: settings,
   },
   {
-    title: 'Timeline',
-    keywords: ['timeline', 'history', 'chronolog', 'recent', 'feed', 'all activities'],
+    title: 'Activity',
+    keywords: ['activity', 'timeline', 'history', 'chronolog', 'recent', 'feed', 'all activities', 'your follow-ups'],
     content: timeline,
   },
   {

@@ -23,10 +23,9 @@ See the Home help page for details.
 The **sidebar** on the left is your main navigation. At the top, the **New** button lets you log an activity, add a follow-up or start an opportunity from anywhere. Below it you'll find:
 
 - **Customers** — Your full customer list
-- **Follow-Ups** — All your pending tasks and reminders
 - **Pipeline** — All your opportunities, as a list or a board
 - **Revenue Overview** — Annual Recurring Revenue dashboard
-- **Timeline** — A chronological feed of all activities, follow-ups, and opportunities across every customer
+- **Activity** — A timeline of all activities, follow-ups and opportunities across every customer, plus Your Follow-Ups
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.
 

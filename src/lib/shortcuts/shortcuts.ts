@@ -1,4 +1,5 @@
 import type { SidebarTab } from '@/store/settingsStore';
+import { NAV_LABELS } from '@/lib/navigation';
 
 type ShortcutSection = 'Navigation' | 'General' | 'Page Actions' | 'List Navigation' | 'Data';
 
@@ -25,22 +26,10 @@ const SHORTCUT_SECTIONS: ShortcutSection[] = [
 ];
 
 function buildNavigationShortcuts(sidebarOrder: SidebarTab[]): ShortcutDefinition[] {
-  const labelMap: Record<SidebarTab, string> = {
-    '/dashboard': 'Go to Home',
-    '/customers': 'Go to Customers',
-    '/sync': 'Go to Sync',
-    '/followups': 'Go to Follow-Ups',
-    '/opportunities': 'Go to Pipeline',
-    '/revenue-overview': 'Go to Revenue Overview',
-    '/insights': 'Go to Insights',
-    '/analytics': 'Go to Analytics',
-    '/timeline': 'Go to Timeline',
-  };
-
   return sidebarOrder.map((tab, i) => ({
     id: `nav-${i + 1}`,
     key: String(i + 1),
-    label: labelMap[tab],
+    label: `Go to ${NAV_LABELS[tab]}`,
     section: 'Navigation' as const,
   }));
 }

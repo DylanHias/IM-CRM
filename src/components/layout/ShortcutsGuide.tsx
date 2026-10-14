@@ -8,11 +8,12 @@ import { KbdGroup } from '@/components/ui/kbd';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcuts/shortcuts';
+import { useNavOrder } from '@/hooks/useNavOrder';
 
 export function ShortcutsGuide() {
   const open = useUIStore((s) => s.shortcutsGuideOpen);
   const setOpen = useUIStore((s) => s.setShortcutsGuideOpen);
-  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const sidebarOrder = useNavOrder();
   const customKeybindings = useSettingsStore((s) => s.customKeybindings);
 
   const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);

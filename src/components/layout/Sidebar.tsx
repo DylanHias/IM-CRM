@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Users, CheckSquare, BarChart2, Target, LineChart, Gauge,
+  Users, BarChart2, Target, LineChart, Gauge, Activity as ActivityIcon,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
   X, MoreVertical, Plus,
-  House, Clock, Bookmark, CalendarClock,
+  House, Clock, Bookmark,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -15,7 +15,9 @@ import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import type { SidebarTab } from '@/store/settingsStore';
+import { useNavOrder } from '@/hooks/useNavOrder';
+import { isNavActive } from '@/lib/navigation';
 import { useCustomerStore } from '@/store/customerStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { useD365UserId } from '@/hooks/useD365UserId';
@@ -49,9 +51,6 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase();
 }
-
-// Sync lives in the account modal and the title-bar pending pill, not in the sidebar.
-const HIDDEN_FROM_SIDEBAR = new Set(['/sync']);
 
 // Accent bar on the left edge of the active item.
 const NAV_ITEM_ACTIVE =
@@ -110,31 +109,26 @@ export function AppSidebar() {
   const { updateAvailable, downloading, install } = useAppUpdater();
   const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
-  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
-  const sidebarHiddenTabs = useSettingsStore((s) => s.sidebarHiddenTabs);
+  const navOrder = useNavOrder();
 
   const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
     '/dashboard': { href: '/dashboard', label: 'Home', icon: House },
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
-    '/followups': {
-      href: '/followups',
-      label: 'Follow-Ups',
-      icon: CheckSquare,
-      badge: overdueCount > 0 ? overdueCount : undefined,
-      badgeVariant: 'destructive',
-      badgeStyle: 'count',
-    },
     '/opportunities': { href: '/opportunities', label: 'Pipeline', icon: Target },
     '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
     '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
     '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
-    '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
+    '/timeline': {
+      href: '/timeline',
+      label: 'Activity',
+      icon: ActivityIcon,
+      badge: overdueCount > 0 ? overdueCount : undefined,
+      badgeVariant: 'destructive',
+      badgeStyle: 'count',
+    },
   };
 
-  const navItems = sidebarOrder
-    .filter((key) => !sidebarHiddenTabs.includes(key) && !HIDDEN_FROM_SIDEBAR.has(key))
-    .map((key) => navItemMap[key])
-    .filter(Boolean);
+  const navItems = navOrder.map((key) => navItemMap[key]).filter(Boolean);
 
   const recentCustomers = recentCustomerIds
     .map((id) => {
@@ -172,7 +166,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle, disabled, disabledTooltip }) => {
-                const isActive = !disabled && pathname.startsWith(href);
+                const isActive = !disabled && isNavActive(href as SidebarTab, pathname);
                 if (disabled) {
                   return (
                     <SidebarMenuItem key={href}>

@@ -17,6 +17,7 @@ import {
 } from '@/lib/shortcuts/shortcuts';
 import type { CustomKeybinding } from '@/lib/shortcuts/shortcuts';
 import { cn } from '@/lib/utils';
+import { useNavOrder } from '@/hooks/useNavOrder';
 
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta']);
 
@@ -32,7 +33,8 @@ function captureBinding(e: KeyboardEvent): CustomKeybinding | null {
 }
 
 export function KeybindingsSettings() {
-  const { customKeybindings, sidebarOrder, updateSetting, resetSection } = useSettingsStore();
+  const { customKeybindings, updateSetting, resetSection } = useSettingsStore();
+  const sidebarOrder = useNavOrder();
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ id: string; label: string } | null>(null);
 

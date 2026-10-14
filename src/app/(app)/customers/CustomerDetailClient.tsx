@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,6 +90,17 @@ export default function CustomerDetailClient({ customerId, trackRecent = true }:
 
   // "Add …" from the customer right-click menu arrives as ?action=…
   const actionParam = searchParams.get('action');
+  const actionActivityId = searchParams.get('activityId');
+  const handledEditRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (actionParam !== 'edit-activity' || !actionActivityId || handledEditRef.current === actionActivityId) return;
+    const target = activities.find((a) => a.id === actionActivityId);
+    if (!target) return;
+    handledEditRef.current = actionActivityId;
+    openEditActivity(target);
+    // openEditActivity only sets state; it is recreated every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionParam, actionActivityId, activities]);
   useEffect(() => {
     if (actionParam === 'activity') setAddActivityOpen(true);
     else if (actionParam === 'followup') setAddFollowUpOpen(true);

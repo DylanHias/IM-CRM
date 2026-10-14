@@ -18,6 +18,7 @@ import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcu
 import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
 import type { LucideIcon } from 'lucide-react';
 import type { SidebarTab } from '@/store/settingsStore';
+import { useNavOrder } from '@/hooks/useNavOrder';
 
 const NAV_ICONS: Record<SidebarTab, LucideIcon> = {
   '/dashboard': LayoutDashboard,
@@ -54,7 +55,7 @@ function getIcon(shortcut: ShortcutDefinition, sidebarOrder: SidebarTab[]): Luci
 export function CommandPalette() {
   const open = useUIStore((s) => s.commandPaletteOpen);
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
-  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
+  const sidebarOrder = useNavOrder();
   const customKeybindings = useSettingsStore((s) => s.customKeybindings);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const customers = useCustomerStore((s) => s.customers);

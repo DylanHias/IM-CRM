@@ -30,6 +30,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 import { EasterEggsSettings } from './EasterEggsSettings';
+import { HIDDEN_FROM_SIDEBAR } from '@/lib/navigation';
 
 type Theme = 'light' | 'dark' | 'system';
 type AccentColor = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
@@ -58,7 +59,7 @@ const SIDEBAR_TAB_META: Record<SidebarTab, { label: string; icon: typeof Users }
   '/revenue-overview': { label: 'Revenue Overview', icon: BarChart2 },
   '/insights': { label: 'Insights', icon: Gauge },
   '/analytics': { label: 'Analytics', icon: LineChart },
-  '/timeline': { label: 'Timeline', icon: Clock },
+  '/timeline': { label: 'Activity', icon: Clock },
 };
 
 function applyThemePreview(theme: Theme) {
@@ -367,7 +368,7 @@ export function AppearanceSettings() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(Object.keys(SIDEBAR_TAB_META) as SidebarTab[]).map((tab) => (
+              {(Object.keys(SIDEBAR_TAB_META) as SidebarTab[]).filter((tab) => !HIDDEN_FROM_SIDEBAR.has(tab)).map((tab) => (
                 <SelectItem key={tab} value={tab}>{SIDEBAR_TAB_META[tab].label}</SelectItem>
               ))}
             </SelectContent>
@@ -402,7 +403,7 @@ export function AppearanceSettings() {
         >
           <SortableContext items={sidebarOrder} strategy={verticalListSortingStrategy}>
             <div className="space-y-1">
-              {sidebarOrder.map((tab) => (
+              {sidebarOrder.filter((tab) => !HIDDEN_FROM_SIDEBAR.has(tab)).map((tab) => (
                 <SortableTabItem
                   key={tab}
                   id={tab}

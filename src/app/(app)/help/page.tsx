@@ -47,7 +47,7 @@ const TABS = [
   { id: 'analytics', label: 'Analytics', icon: LineChart },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'settings', label: 'Settings', icon: Settings2 },
-  { id: 'timeline', label: 'Timeline', icon: CalendarClock },
+  { id: 'timeline', label: 'Activity', icon: CalendarClock },
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
 ] as const;
 
