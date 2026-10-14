@@ -1,0 +1,32 @@
+<div class="window windowed" id="win" data-elev="border">
+  <header class="titlebar" id="titlebar"></header>
+  <nav class="side" id="side" aria-label="Main"></nav>
+  <main class="sheet" id="sheet"></main>
+</div>
+
+<section class="tool-win" id="tuner" aria-label="Design controls">
+  <div class="tw-bar" id="tunerBar"><span>Design controls</span><button class="tb-btn" type="button" id="closeTuner" aria-label="Close design controls"><svg class="ic" width="12" height="12" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0 0 10" stroke="currentColor" stroke-width="1.2"/></svg></button></div>
+  <div class="tw-body">
+    <div class="tfield"><div class="flabel">Logo</div><div class="logo-pick" id="logoPick"></div></div>
+    <div class="tfield"><div class="flabel">Theme</div><div class="seg" id="themeSeg"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
+    <div class="tfield"><div class="flabel">Accent <span class="val" id="accentVal"></span></div><div class="swatches" id="swatches"></div></div>
+    <div class="tfield"><label for="fontSel">Typeface</label><select class="sl" id="fontSel"></select></div>
+    <div class="tfield"><label for="radius">Corner radius <span class="val" id="radiusVal"></span></label><input type="range" id="radius" min="0" max="12" step="1"></div>
+    <div class="tfield"><div class="flabel">Density</div><div class="seg" id="densitySeg"><button type="button" data-v="compact">Compact</button><button type="button" data-v="cozy">Cozy</button><button type="button" data-v="comfortable">Comfortable</button></div></div>
+    <div class="tfield"><div class="flabel">Panels</div><div class="seg" id="elevSeg"><button type="button" data-v="border">Border</button><button type="button" data-v="shadow">Shadow</button><button type="button" data-v="both">Both</button></div></div>
+    <div class="tfield"><div class="flabel">Preview window</div><div class="seg" id="winSeg"><button type="button" data-v="windowed">Windowed</button><button type="button" data-v="max">Maximized</button></div></div>
+    <div class="tfield"><label for="export">Tokens for globals.css</label><textarea class="export" id="export" readonly spellcheck="false"></textarea>
+      <div class="row-flex"><button class="btn primary" type="button" id="copyTokens" style="flex:1">Copy tokens</button><button class="btn" type="button" id="resetTokens" style="flex:1">Reset</button></div>
+      <p class="note">Paste the copied block back into the chat and I'll wire it into the app.</p></div>
+  </div>
+</section>
+
+<div id="modalRoot"></div>
+<div id="chatRoot"></div>
+<div id="idxRoot"></div>
+<div class="palette-root" id="pRoot" hidden><div class="palette" role="dialog" aria-label="Command palette"><input id="pIn" placeholder="Search customers, contacts, or type a command…" autocomplete="off" aria-label="Search"><ul id="pList"></ul></div></div>
+<div class="picker" id="picker" hidden></div>
+<div class="picker selmenu" id="selMenu" hidden role="listbox"></div>
+<div class="wt-ring" id="wtRing" hidden></div>
+<div class="wt-card" id="wtCard" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
