@@ -49,7 +49,7 @@ export const CustomerList = forwardRef<HTMLDivElement, CustomerListProps>(({ cus
   }
 
   return (
-    <div ref={ref} role="listbox" aria-label="Customers" className="grid">
+    <div ref={ref} role="listbox" aria-label="Customers" className="stagger-in grid">
       {customers.map((c) => {
         const selected = c.id === selectedId;
         const fav = favoriteIds.has(c.id);

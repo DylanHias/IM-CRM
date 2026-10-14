@@ -179,7 +179,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
         {opportunities.length === 0 ? (
           <EmptyState icon={Target} title="No opportunities yet" />
         ) : (
-          <div role="listbox" aria-label="Opportunities" className="grid">
+          <div role="listbox" aria-label="Opportunities" className="stagger-in grid">
             {opportunities.map((o) => (
               <OpportunityRow
                 key={o.id}

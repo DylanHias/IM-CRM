@@ -488,7 +488,7 @@ export default function OpportunitiesPage() {
                 ) : paged.length === 0 ? (
                   <EmptyState icon={Target} title="No opportunities found" description="Try adjusting your search or filters" />
                 ) : (
-                  <div role="listbox" aria-label="Opportunities" className="grid">
+                  <div role="listbox" aria-label="Opportunities" className="stagger-in grid">
                     {paged.map((o) => (
                       <OpportunityContextMenu key={o.id} opportunity={o} onOpen={() => openEdit(o)} onCloseAs={(out) => closeAs(o, out)}>
                         <OpportunityRow

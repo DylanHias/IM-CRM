@@ -482,7 +482,7 @@ export function ActivityPage({ mode }: { mode: ActivityMode }) {
                 <EmptyState icon={CheckSquare} title="No follow-ups" description={query ? 'Nothing matches this search.' : 'Follow-ups you add on a customer show up here.'} />
               )
             ) : (
-              <div role="listbox" aria-label={mode === 'timeline' ? 'Timeline' : 'Follow-ups'}>
+              <div role="listbox" aria-label={mode === 'timeline' ? 'Timeline' : 'Follow-ups'} className="stagger-in">
                 {groups.map((g) => (
                   <div key={g.label}>
                     <div

@@ -143,7 +143,7 @@ function PendingQueue({
       {total === 0 ? (
         <EmptyState icon={CheckCircle2} title="Nothing waiting" description="Every change is in Dynamics 365." />
       ) : (
-        <div className="max-h-[560px] overflow-y-auto">
+        <div className="stagger-in max-h-[560px] overflow-y-auto">
           {activities.length > 0 && (
             <>
               <div className={groupClass}>Activities <span className="tabular-nums text-faint">{activities.length}</span></div>
@@ -223,7 +223,7 @@ function SyncHistory({ records }: { records: SyncRecord[] }) {
                   <th className={`${th} text-right`}>Pushed</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="stagger-in">
                 {paged.map((r) => {
                   const config = STATUS_CONFIG[r.status];
                   const Icon = config.icon;
