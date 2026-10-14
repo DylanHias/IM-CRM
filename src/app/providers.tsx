@@ -15,6 +15,7 @@ import { useLookupTableStore } from '@/store/lookupTableStore';
 import { useAuthStore } from '@/store/authStore';
 import { ThemeSync } from '@/components/layout/ThemeSync';
 import { ErrorScreen } from '@/components/layout/ErrorScreen';
+import { StartupSplash } from '@/components/layout/StartupSplash';
 import { Toaster } from 'sonner';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
@@ -188,9 +189,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   if (!msalInstance || !dbReady) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-      </div>
+      <StartupSplash />
     );
   }
 

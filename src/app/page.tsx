@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMsal } from '@azure/msal-react';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { StartupSplash } from '@/components/layout/StartupSplash';
 
 export default function RootPage() {
   const router = useRouter();
@@ -24,8 +25,6 @@ export default function RootPage() {
   }, [accounts, inProgress, router, isAuthenticated, defaultLandingTab, sidebarHiddenTabs]);
 
   return (
-    <div className="flex h-screen items-center justify-center bg-background">
-      <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-    </div>
+    <StartupSplash />
   );
 }
