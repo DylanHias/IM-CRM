@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { SettingRow } from './SettingRow';
 import {
   isEasterEggsEnabled,
@@ -28,7 +27,6 @@ export function EasterEggsSettings() {
 
   return (
     <>
-      <Separator />
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-muted-foreground" />

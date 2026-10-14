@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { Separator } from '@/components/ui/separator';
-import { RotateCcw, GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
+import { GripVertical, Users, RefreshCw, CheckSquare, Target, BarChart2, LineChart, Gauge, Clock, LayoutDashboard, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -100,7 +99,6 @@ export function AppearanceSettings() {
     sidebarOrder,
     sidebarHiddenTabs,
     updateSetting,
-    resetSection,
   } = useSettingsStore();
 
   const [hexDraft, setHexDraft] = useState(customAccentHex ?? '');
@@ -146,17 +144,7 @@ export function AppearanceSettings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Appearance</h2>
-        <ConfirmPopover message="Reset all appearance settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('appearance')}>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
-            <RotateCcw size={12} className="mr-1" />
-            Reset all
-          </Button>
-        </ConfirmPopover>
-      </div>
-
+    <div className="grid content-start gap-5">
       {/* THEME & COLORS */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -282,8 +270,6 @@ export function AppearanceSettings() {
         </SettingRow>
       </div>
 
-      <Separator />
-
       {/* LAYOUT & TYPOGRAPHY */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -325,7 +311,7 @@ export function AppearanceSettings() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sans">DM Sans</SelectItem>
+              <SelectItem value="sans">Geist</SelectItem>
               <SelectItem value="system">System</SelectItem>
               <SelectItem value="serif">Serif</SelectItem>
               <SelectItem value="mono">Monospace</SelectItem>
@@ -350,8 +336,6 @@ export function AppearanceSettings() {
           <Switch checked={reduceMotion} onCheckedChange={(v) => updateSetting('reduceMotion', v)} />
         </SettingRow>
       </div>
-
-      <Separator />
 
       {/* SIDEBAR & NAVIGATION */}
       <div className="space-y-3">
@@ -386,8 +370,6 @@ export function AppearanceSettings() {
           />
         </SettingRow>
       </div>
-
-      <Separator />
 
       <div className="space-y-3">
         <div>

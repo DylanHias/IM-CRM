@@ -4,10 +4,7 @@ import { useSettingsStore, type SyncToastVerbosity } from '@/store/settingsStore
 import { SettingRow } from './SettingRow';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RotateCcw } from 'lucide-react';
 
 export function NotificationSettings() {
   const {
@@ -17,21 +14,11 @@ export function NotificationSettings() {
     muteAllNonCriticalToasts, syncToastVerbosity, syncFailureNotificationThreshold,
     quietHoursEnabled, quietHoursStart, quietHoursEnd,
     nativeOsNotifications, soundOnAlertEnabled, toastDurationSeconds,
-    updateSetting, resetSection,
+    updateSetting,
   } = useSettingsStore();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Notifications & Reminders</h2>
-        <ConfirmPopover message="Reset notification settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('notifications')}>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
-            <RotateCcw size={12} className="mr-1" />
-            Reset
-          </Button>
-        </ConfirmPopover>
-      </div>
-
+    <div className="grid content-start gap-5">
       <div className="space-y-5">
         <SettingRow label="Mute non-critical toasts" description="Suppress success/info toasts everywhere; errors still come through">
           <Switch

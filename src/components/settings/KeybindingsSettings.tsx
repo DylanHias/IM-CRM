@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RotateCcw, Pencil, Undo2 } from 'lucide-react';
+import { Pencil, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { Separator } from '@/components/ui/separator';
 import { KbdGroup } from '@/components/ui/kbd';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
@@ -33,7 +31,7 @@ function captureBinding(e: KeyboardEvent): CustomKeybinding | null {
 }
 
 export function KeybindingsSettings() {
-  const { customKeybindings, updateSetting, resetSection } = useSettingsStore();
+  const { customKeybindings, updateSetting } = useSettingsStore();
   const sidebarOrder = useNavOrder();
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ id: string; label: string } | null>(null);
@@ -101,29 +99,14 @@ export function KeybindingsSettings() {
     .filter((g) => g.items.length > 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Keybindings</h2>
-        <ConfirmPopover
-          message="Reset all keybindings to defaults?"
-          confirmLabel="Reset"
-          onConfirm={() => resetSection('keybindings')}
-        >
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
-            <RotateCcw size={12} className="mr-1" />
-            Reset All
-          </Button>
-        </ConfirmPopover>
-      </div>
-
+    <div className="grid content-start gap-5">
       <div className="space-y-5">
-        {grouped.map(({ section, items }, gi) => (
+        {grouped.map(({ section, items }) => (
           <div key={section}>
-            {gi > 0 && <Separator className="mb-4" />}
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               {section}
             </h3>
-            <div className="space-y-1">
+            <div>
               {items.map((shortcut) => {
                 const isRecording = recordingId === shortcut.id;
                 const hasConflict = isRecording && conflict !== null;
@@ -131,15 +114,15 @@ export function KeybindingsSettings() {
                 const defaultBinding = getDefaultBinding(shortcut.id, sidebarOrder);
 
                 return (
-                  <div key={shortcut.id} className="space-y-1">
+                  <div key={shortcut.id} className="setting-row space-y-1">
                     <div
                       className={cn(
-                        'flex items-center justify-between gap-4 py-1.5 px-2 rounded-md transition-colors',
-                        isRecording && 'bg-secondary/50'
+                        'flex items-center justify-between gap-4 rounded-md transition-colors',
+                        isRecording && 'bg-accent'
                       )}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm">{shortcut.label}</p>
+                        <p className="text-[13px] font-medium">{shortcut.label}</p>
                         {custom && defaultBinding && (
                           <p className="text-[11px] text-muted-foreground">
                             Default: {getDisplayKey(defaultBinding)}

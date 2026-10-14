@@ -377,4 +377,23 @@
   .metric-grid > *:first-child {
     border-left-width: 0 !important;
   }
+
+  /* Settings: consecutive rows join into one card with dividers between them. */
+  .setting-row {
+    padding: 10px 14px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+  }
+  .setting-row + .setting-row {
+    margin-top: 0 !important;
+    border-top-width: 0;
+  }
+  .setting-row:not(.setting-row + .setting-row) {
+    border-top-left-radius: calc(var(--radius) * 1.5);
+    border-top-right-radius: calc(var(--radius) * 1.5);
+  }
+  .setting-row:not(:has(+ .setting-row)) {
+    border-bottom-left-radius: calc(var(--radius) * 1.5);
+    border-bottom-right-radius: calc(var(--radius) * 1.5);
+  }
 }

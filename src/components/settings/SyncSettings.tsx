@@ -7,8 +7,6 @@ import { SettingRow } from './SettingRow';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getLastSyncTimes, type LastSyncTimes } from '@/lib/db/queries/sync';
 import { formatRelative } from '@/lib/utils/dateUtils';
@@ -32,7 +30,7 @@ export function SyncSettings() {
     syncIntervalMinutes, syncPendingIntervalMinutes, powerBiRefreshIntervalMinutes,
     syncScopeD365, syncScopePowerBi, syncScopePushPending,
     syncHistoryRetentionDays, showSyncToasts,
-    updateSetting, resetSection,
+    updateSetting,
   } = useSettingsStore();
 
   const isSyncing = useSyncStore((s) => s.isSyncing);
@@ -48,17 +46,7 @@ export function SyncSettings() {
   }, [isSyncing]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Sync</h2>
-        <ConfirmPopover message="Reset sync settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('sync')}>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
-            <RotateCcw size={12} className="mr-1" />
-            Reset
-          </Button>
-        </ConfirmPopover>
-      </div>
-
+    <div className="grid content-start gap-5">
       {/* General */}
       <div className="space-y-5">
         <SectionHeader>General</SectionHeader>

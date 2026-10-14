@@ -5,9 +5,6 @@ import { SettingRow } from './SettingRow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { RotateCcw } from 'lucide-react';
 import { STAGES, type Stage } from '@/lib/opportunityRules';
 import type { ReactNode } from 'react';
 
@@ -26,21 +23,10 @@ export function DataDefaultsSettings() {
     defaultOpportunityExpirationDays,
     defaultFollowUpDueDays,
     updateSetting,
-    resetSection,
   } = useSettingsStore();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Data & Defaults</h2>
-        <ConfirmPopover message="Reset data & defaults settings to defaults?" confirmLabel="Reset" onConfirm={() => resetSection('dataDefaults')}>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground">
-            <RotateCcw size={12} className="mr-1" />
-            Reset
-          </Button>
-        </ConfirmPopover>
-      </div>
-
+    <div className="grid content-start gap-5">
       <Category title="Customers">
         <SettingRow label="Default customer sort" description="Initial sort when viewing the customer list">
           <Select value={defaultCustomerSort} onValueChange={(v) => updateSetting('defaultCustomerSort', v as 'name' | 'lastActivity' | 'city' | 'industry' | 'health')}>

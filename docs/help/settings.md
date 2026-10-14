@@ -1,6 +1,15 @@
 # Settings
 
-Access Settings from your account menu (click your name at the bottom of the sidebar), or press the shortcut key for Settings. The Settings page has six tabs.
+Access Settings from your account menu (click your name at the bottom of the sidebar), or press the shortcut key for Settings. 
+The Settings page opens with your profile at the top (your name, email and birthday) and a tile for each group of settings underneath. Click a tile to open that group, and use the back arrow at the top to return.
+
+## Find a setting
+
+Type in the **Find a setting** box to search every setting by name or description, for example "theme" or "sync". Click a result to open the group it belongs to.
+
+## Reset to defaults
+
+When a group is open, **Reset to defaults** at the top right puts every setting in that group back to how it was. You'll be asked to confirm first. General has no reset of its own; use **Reset settings** inside it to reset everything at once.
 
 ## General
 
@@ -22,7 +31,7 @@ Access Settings from your account menu (click your name at the bottom of the sid
 **Layout & typography**
 - **Density** — Comfortable, Cozy, or Compact. Controls spacing across the entire app.
 - **Font size** — Small, Medium, or Large. Scales all text proportionally.
-- **UI font** — Choose between DM Sans (default), System, Serif, or Monospace
+- **UI font** — Choose between Geist (default), System, Serif, or Monospace
 - **Table row density** — Comfortable, Cozy, or Compact row padding for every data table
 - **Reduce motion** — Disable transitions and animations across the app
 
@@ -33,7 +42,7 @@ Access Settings from your account menu (click your name at the bottom of the sid
 - **Sidebar order** — Drag and drop navigation items to reorder them; use the eye icon to show or hide a tab
 
 **Resets**
-- **Reset all** — Restore every appearance setting to defaults
+- **Reset all** — Use **Reset to defaults** at the top to restore every appearance setting
 - **Per-section reset** — Each subsection has its own Reset button for targeted resets
 
 ## Data & Defaults
@@ -64,4 +73,4 @@ Access Settings from your account menu (click your name at the bottom of the sid
 - **Customize shortcuts** — Click any shortcut and press a new key combination to remap it
 - **Conflict detection** — The app warns you if you assign the same key to multiple shortcuts
 - **Reset individual** — Restore a single shortcut to its default
-- **Reset all** — Restore all shortcuts to their defaults
+- **Reset all** — Use **Reset to defaults** at the top to restore all shortcuts
