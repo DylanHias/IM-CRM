@@ -44,8 +44,7 @@ You can mark one contact per customer as the primary contact. The primary contac
 To set a primary contact:
 
 1. Go to a customer's **Contacts** tab
-2. Hover over a contact card
-3. Click the **star icon** to make that contact the primary one
+2. Click the **star icon** on a contact card to make that contact the primary one. The primary contact shows an amber star on its initials and a **Primary** label next to the name
 
 Only one contact can be primary at a time — setting a new one automatically removes the previous designation. The change syncs to Dynamics 365.
 

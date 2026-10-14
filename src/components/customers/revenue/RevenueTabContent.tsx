@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Users } from 'lucide-react';
-import { sectionReveal } from '@/lib/motion';
+import { AlertCircle, BarChart3, Loader2 } from 'lucide-react';
 import { LastRefreshedBadge } from '@/components/revenue/LastRefreshedBadge';
 import { RefreshButton } from '@/components/revenue/RefreshButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { ArrSummaryCard } from './ArrSummaryCard';
+import { MetricStrip, Metric } from '@/components/ui/metric-strip';
+import { Panel, PanelHeader, PanelBody } from '@/components/ui/panel';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ArrMovementChart } from './ArrMovementChart';
 import { useCustomerRevenue } from '@/hooks/useCustomerRevenue';
-import { cn } from '@/lib/utils';
+import { useArrMovement } from '@/hooks/useArrMovement';
+import { getEffectiveArr } from '@/lib/revenue/effectiveArr';
 import type { Customer } from '@/types/entities';
 
 interface Props {
@@ -25,70 +25,89 @@ const MONTHS_OPTIONS = [
   { value: '24', label: 'Last 24 months' },
 ] as const;
 
+function formatArr(value: number | null, currency: string | null): string {
+  if (value === null) return '—';
+  const cur = currency ?? 'EUR';
+  try {
+    return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(value);
+  } catch {
+    // Intentional: Intl rejects unknown currency codes — fall back to a plain string.
+    return `${cur} ${value.toLocaleString('nl-BE', { maximumFractionDigits: 0 })}`;
+  }
+}
+
+function formatMonth(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  return d.toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
+}
+
 export function RevenueTabContent({ customer }: Props) {
   const [monthsBack, setMonthsBack] = useState<number>(12);
   const revenue = useCustomerRevenue(customer.bcn, customer.accountNumber);
+  const effective = getEffectiveArr(customer, revenue, 'LC');
+  const { rows, isHydrated } = useArrMovement(customer.bcn, monthsBack);
+
+  const isLive = effective.source === 'powerbi';
+  const asOf = formatMonth(effective.asOfMonth);
+  const activeEndCustomers = revenue?.activeEndCustomers ?? null;
+
+  const arrSub =
+    effective.source === 'none'
+      ? 'No revenue data yet'
+      : isLive
+        ? asOf ? `as of ${asOf}` : 'from Power BI'
+        : 'from the last sync';
 
   return (
-    <div className="space-y-4">
-      <motion.div className="flex flex-wrap items-center gap-3" {...sectionReveal(0)}>
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Period</Label>
-          <Select value={String(monthsBack)} onValueChange={(v) => setMonthsBack(Number(v))}>
-            <SelectTrigger className="h-9 w-[160px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <LastRefreshedBadge />
-          <RefreshButton />
-        </div>
-      </motion.div>
-
-      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4" {...sectionReveal(0.05)}>
-        <div className="space-y-4">
-          <ArrSummaryCard customer={customer} currency="LC" />
-          <ActiveEndCustomersCard count={revenue?.activeEndCustomers ?? null} />
-        </div>
-        <div className="md:col-span-2">
-          <ArrMovementChart bcn={customer.bcn} monthsBack={monthsBack} />
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function ActiveEndCustomersCard({ count, className }: { count: number | null; className?: string }) {
-  return (
-    <div
-      className={cn(
-        'rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 space-y-3',
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Users size={13} />
-        Active end customers
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={String(monthsBack)} onValueChange={(v) => setMonthsBack(Number(v))}>
+          <SelectTrigger aria-label="Period" className="h-[26px] w-[160px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="flex-1" />
+        <LastRefreshedBadge className="h-[22px] rounded-full border border-border bg-sunken px-2 text-[11px] font-medium text-foreground-2" />
+        <RefreshButton />
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-semibold tabular-nums text-foreground">
-          {count === null ? '—' : count.toLocaleString('nl-BE')}
-        </span>
-      </div>
-      <div className="text-xs text-muted-foreground">
-        {count === null
-          ? 'No revenue data yet — refresh in Admin → Revenue Sync'
-          : 'End customers with active ARR this month'}
-      </div>
+
+      <MetricStrip>
+        <Metric label="Current ARR" value={formatArr(effective.value, effective.currency)} sub={arrSub} />
+        {activeEndCustomers !== null && (
+          <Metric label="Active end customers" value={activeEndCustomers.toLocaleString('nl-BE')} sub="this month" />
+        )}
+        {effective.source !== 'none' && (
+          <Metric label="Source" value={isLive ? 'Live' : 'Synced'} sub={isLive ? 'Power BI' : 'Dynamics 365'} />
+        )}
+      </MetricStrip>
+
+      <Panel>
+        <PanelHeader title="ARR movement" sub={`last ${monthsBack} months`} />
+        <PanelBody>
+          {!customer.bcn ? (
+            <EmptyState icon={AlertCircle} title="No movement data" description="This customer has no BCN in Dynamics 365." />
+          ) : rows.length > 0 ? (
+            <ArrMovementChart rows={rows} />
+          ) : !isHydrated ? (
+            <EmptyState icon={Loader2} title="Loading movement data…" className="[&_svg]:animate-spin" />
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="No movement data"
+              description={`Nothing recorded in the last ${monthsBack} months.`}
+            />
+          )}
+        </PanelBody>
+      </Panel>
     </div>
   );
 }

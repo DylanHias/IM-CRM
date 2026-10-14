@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { rowSlideIn } from '@/lib/motion';
 import { Plus, CheckSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Panel } from '@/components/ui/panel';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -71,74 +71,57 @@ export function FollowUpList({ followUps, customerId, onComplete, onAdd }: Follo
     }
   };
 
+  const section = (label: string, items: FollowUp[], renderItem: (f: FollowUp) => React.ReactNode, empty?: string) => {
+    const headingId = `followups-${label.toLowerCase()}-heading`;
+    return (
+      <div role="region" aria-labelledby={headingId} className="space-y-2">
+        <h3 id={headingId} className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          {label} ({items.length})
+        </h3>
+        <Panel>
+          {items.length > 0 ? (
+            <div className="stagger-in">{items.map(renderItem)}</div>
+          ) : (
+            empty && <div className="px-4 py-6 text-center text-[12.5px] text-muted-foreground">{empty}</div>
+          )}
+        </Panel>
+      </div>
+    );
+  };
+
   return (
-    <div>
+    <div className="space-y-4">
+      <div className="flex items-center">
+        <span className="flex-1" />
+        <Button size="sm" onClick={onAdd}>
+          <Plus size={13} />
+          Add Follow-Up
+        </Button>
+      </div>
+
       {followUps.length === 0 ? (
-        <div>
-          <div className="flex justify-end mb-3">
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={onAdd}
-            >
-              <Plus size={13} />
-              Add Follow-Up
-            </Button>
-          </div>
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <CheckSquare size={28} className="text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">No follow-ups yet</p>
-          </div>
-        </div>
+        <Panel>
+          <EmptyState icon={CheckSquare} title="No follow-ups yet" />
+        </Panel>
       ) : (
-        <div className="space-y-3">
-          <div className="flex justify-end mb-2">
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={onAdd}
-            >
-              <Plus size={13} />
-              Add Follow-Up
-            </Button>
-          </div>
-          {open.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Scheduled ({open.length})</p>
-              <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden divide-y divide-border/40">
-              {open.map((f, i) => (
-                <motion.div
-                  key={f.id}
-                  {...rowSlideIn(i)}
-                >
-                  <FollowUpItem
-                    followUp={f}
-                    onComplete={onComplete}
-                    onEdit={() => openEdit(f)}
-                    onDelete={() => handleDelete(f)}
-                    onPreview={() => setPreviewFollowUp(f)}
-                  />
-                </motion.div>
-              ))}
-              </div>
-            </div>
+        <>
+          {section('Scheduled', open, (f) => (
+            <FollowUpItem
+              key={f.id}
+              followUp={f}
+              onComplete={onComplete}
+              onEdit={() => openEdit(f)}
+              onDelete={() => handleDelete(f)}
+              onPreview={() => setPreviewFollowUp(f)}
+            />
+          ))}
+          {section(
+            'Completed',
+            done,
+            (f) => <FollowUpItem key={f.id} followUp={f} onPreview={() => setPreviewFollowUp(f)} />,
+            'No completed follow-ups yet.',
           )}
-          {done.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Completed ({done.length})</p>
-              <div className="bg-card border border-border rounded-[calc(var(--radius)*1.5)] overflow-hidden divide-y divide-border/40">
-                {done.map((f, i) => (
-                  <motion.div
-                    key={f.id}
-                    {...rowSlideIn(i)}
-                  >
-                    <FollowUpItem followUp={f} onPreview={() => setPreviewFollowUp(f)} />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        </>
       )}
 
       <FollowUpPreviewDialog

@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { rowSlideIn } from '@/lib/motion';
-import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, Search, X, Star } from 'lucide-react';
+import { Mail, Phone, Smartphone, Plus, Pencil, Trash2, Search, Star, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CompactPager } from '@/components/ui/compact-pager';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { ContactForm } from '@/components/contacts/ContactForm';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { deleteContact } from '@/lib/db/queries/contacts';
 import { directDeleteContact } from '@/lib/sync/directPushService';
+import { cn } from '@/lib/utils';
 import type { Contact } from '@/types/entities';
 
 interface ContactListProps {
@@ -25,12 +25,14 @@ interface ContactListProps {
   onPrimaryChanged?: (contactId: string) => void;
 }
 
+const ICON_BTN = 'size-[26px] shrink-0 text-muted-foreground';
+
 export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, onContactUpdated, onContactDeleted, onPrimaryChanged }: ContactListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('contacts');
+  const { pageSize } = usePaginationPreference('contacts');
 
   const filteredContacts = useMemo(() => {
     if (!searchQuery.trim()) return contacts;
@@ -86,27 +88,24 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
     }
   };
 
+  const isSearching = searchQuery.trim().length > 0;
+
   return (
-    <div className="space-y-3">
+    <div className="grid gap-3">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-[320px] flex-1">
+          <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
           <Input
-            placeholder="Search contacts..."
+            type="search"
+            placeholder="Search contacts…"
+            aria-label="Search contacts"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-            className="h-9 w-full pl-8 pr-8 text-xs"
+            className="pl-8"
           />
-          {searchQuery && (
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => { setSearchQuery(''); setPage(1); }}
-            >
-              <X size={14} />
-            </button>
-          )}
         </div>
-        <Button size="sm" className="gap-1.5" onClick={openAdd}>
+        <span className="flex-1" />
+        <Button onClick={openAdd}>
           <Plus size={13} />
           Add Contact
         </Button>
@@ -121,110 +120,112 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
       />
 
       {filteredContacts.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-sm text-muted-foreground">
-            {searchQuery.trim() ? 'No contacts match your search.' : 'No contacts found for this customer.'}
-          </p>
-        </div>
+        isSearching ? (
+          <EmptyState icon={Search} title="No matching contacts" description="Try a different name." />
+        ) : (
+          <EmptyState icon={Users} title="No contacts yet" description="Add the people you work with at this customer." />
+        )
       ) : (
-        <div className="grid gap-3">
-          {pagedContacts.map((contact, i) => (
-            <motion.div
-              key={contact.id}
-              className="bg-card border rounded-lg p-4 group"
-              {...rowSlideIn(i)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
-                      {contact.firstName[0]}{contact.lastName[0]}
-                    </div>
+        <div className="stagger-in grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[10px]">
+          {pagedContacts.map((contact) => {
+            const fullName = `${contact.firstName} ${contact.lastName}`.trim();
+            return (
+              <article
+                key={contact.id}
+                aria-label={fullName}
+                className="relative grid min-w-0 content-start gap-2 rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-3"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="relative grid size-9 shrink-0 place-items-center rounded-full border border-border bg-sunken text-xs font-semibold text-foreground-2">
+                    {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
                     {contact.isPrimary && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center">
-                        <Star size={9} className="text-warning-foreground fill-warning-foreground" />
-                      </span>
+                      <Star size={11} aria-hidden className="absolute -bottom-[3px] -right-[3px] fill-current text-warning" />
                     )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-semibold text-sm text-foreground">
-                        {contact.firstName} {contact.lastName}
-                      </p>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-foreground">
+                      {fullName}
                       {contact.isPrimary && (
-                        <span className="text-[10px] font-medium text-warning leading-none">Primary</span>
+                        <span className="ml-1.5 text-[11px] font-medium text-warning">Primary</span>
                       )}
                     </div>
                     {contact.jobTitle && (
-                      <p className="text-xs text-muted-foreground">{contact.jobTitle}</p>
+                      <div className="truncate text-[11.5px] text-muted-foreground">{contact.jobTitle}</div>
                     )}
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                   {onPrimaryChanged && !contact.isPrimary && (
-                    <button
-                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-warning/10 hover:text-warning transition-all duration-150 active:scale-95"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(ICON_BTN, 'hover:text-warning')}
                       onClick={() => onPrimaryChanged(contact.id)}
                       title="Set as primary contact"
+                      aria-label="Set as primary contact"
                     >
-                      <Star size={11} />
-                    </button>
+                      <Star size={13} />
+                    </Button>
                   )}
-                  <button
-                    className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={ICON_BTN}
                     onClick={() => openEdit(contact)}
                     title="Edit"
+                    aria-label="Edit"
                   >
-                    <Pencil size={11} />
-                  </button>
-                  <ConfirmPopover message={`Delete ${contact.firstName} ${contact.lastName}?`} confirmLabel="Delete" onConfirm={() => handleDelete(contact)}>
-                    <button
-                      className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+                    <Pencil size={13} />
+                  </Button>
+                  <ConfirmPopover message={`Delete ${fullName}?`} confirmLabel="Delete" onConfirm={() => handleDelete(contact)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(ICON_BTN, 'hover:text-destructive')}
                       title="Delete"
+                      aria-label="Delete"
                     >
-                      <Trash2 size={11} />
-                    </button>
+                      <Trash2 size={13} />
+                    </Button>
                   </ConfirmPopover>
                 </div>
-              </div>
 
-              <div className="mt-3 flex flex-wrap gap-3">
-                {contact.email && (
-                  <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                    <Mail size={12} />
-                    {contact.email}
-                  </a>
+                {(contact.email || contact.phone || contact.mobile) && (
+                  <div className="grid select-text gap-[3px] text-xs text-foreground-2">
+                    {contact.email && (
+                      <a href={`mailto:${contact.email}`} className="flex min-w-0 items-center gap-1.5 text-accent-foreground hover:underline">
+                        <Mail size={11} className="shrink-0" />
+                        <span className="truncate">{contact.email}</span>
+                      </a>
+                    )}
+                    {contact.phone && (
+                      <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 hover:text-foreground">
+                        <Phone size={11} className="shrink-0 text-muted-foreground" />
+                        {contact.phone}
+                      </a>
+                    )}
+                    {contact.mobile && (
+                      <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 hover:text-foreground">
+                        <Smartphone size={11} className="shrink-0 text-muted-foreground" />
+                        {contact.mobile}
+                      </a>
+                    )}
+                  </div>
                 )}
-                {contact.phone && (
-                  <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Phone size={12} />
-                    {contact.phone}
-                  </a>
-                )}
-                {contact.mobile && (
-                  <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Smartphone size={12} />
-                    {contact.mobile}
-                  </a>
-                )}
-              </div>
 
-              {contact.notes && (
-                <p className="mt-2 text-xs text-muted-foreground italic border-t pt-2">{contact.notes}</p>
-              )}
-            </motion.div>
-          ))}
+                {contact.notes && (
+                  <p className="select-text border-t border-border pt-1.5 text-xs italic text-muted-foreground">{contact.notes}</p>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
 
-      <TablePagination
-        totalItems={filteredContacts.length}
+      <CompactPager
         page={safePage}
         pageSize={pageSize}
-        pageSizeOptions={pageSizeOptions}
+        total={filteredContacts.length}
         onPageChange={setPage}
-        onPageSizeChange={setPageSize}
+        className="rounded-[calc(var(--radius)*1.5)] border"
       />
     </div>
   );

@@ -5,6 +5,7 @@ import { Plus, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { OpportunityRow } from './OpportunityRow';
+import { OpportunityContextMenu } from './OpportunityContextMenu';
 import { Panel } from '@/components/ui/panel';
 import { EmptyState } from '@/components/ui/empty-state';
 import { compactMoney } from '@/lib/opportunities/display';
@@ -33,6 +34,9 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [closeOutcome, setCloseOutcome] = useState<'Won' | 'Lost' | null>(null);
+  /** Deal being closed straight from the row's right-click menu (no wizard open). */
+  const [closing, setClosing] = useState<Opportunity | null>(null);
+  const closeTarget = closing ?? editing;
 
   const customerMap = useMemo(
     () => new Map(customer ? [[customer.id, customer.name]] : []),
@@ -137,9 +141,9 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   };
 
   const handleClose = async (data: CloseFormData) => {
-    if (!editing) return;
+    if (!closeTarget) return;
     try {
-      const currentOpp = opportunities.find((o) => o.id === editing.id) ?? editing;
+      const currentOpp = opportunities.find((o) => o.id === closeTarget.id) ?? closeTarget;
       await editOpportunity({
         ...currentOpp,
         status: data.outcome,
@@ -152,6 +156,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
         updatedAt: new Date().toISOString(),
       });
       setCloseOutcome(null);
+      setClosing(null);
       setEditing(null);
     } catch (err) {
       console.error('[opportunity] Failed to close:', err);
@@ -181,13 +186,22 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
         ) : (
           <div role="listbox" aria-label="Opportunities" className="stagger-in grid">
             {opportunities.map((o) => (
-              <OpportunityRow
+              <OpportunityContextMenu
                 key={o.id}
                 opportunity={o}
-                companyName={customerMap.get(o.customerId) ?? ''}
-                hideCompany
-                onClick={() => setEditing(o)}
-              />
+                onOpen={() => setEditing(o)}
+                onCloseAs={(outcome) => {
+                  setClosing(o);
+                  setCloseOutcome(outcome);
+                }}
+              >
+                <OpportunityRow
+                  opportunity={o}
+                  companyName={customerMap.get(o.customerId) ?? ''}
+                  hideCompany
+                  onClick={() => setEditing(o)}
+                />
+              </OpportunityContextMenu>
             ))}
           </div>
         )}
@@ -225,8 +239,11 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       <CloseOpportunityDialog
         open={!!closeOutcome}
         outcome={closeOutcome ?? 'Won'}
-        currency={editing?.currency ?? 'USD'}
-        onClose={() => setCloseOutcome(null)}
+        currency={closeTarget?.currency ?? 'USD'}
+        onClose={() => {
+          setCloseOutcome(null);
+          setClosing(null);
+        }}
         onConfirm={handleClose}
       />
     </div>

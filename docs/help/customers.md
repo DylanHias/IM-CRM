@@ -112,10 +112,10 @@ The people at this customer's company. Read more in the **Contacts** help sectio
 Tasks and reminders for this customer. Read more in the **Follow-Ups** help section.
 
 ### Opportunities
-Sales deals for this customer. Read more in the **Opportunities** help section.
+Sales deals for this customer, with the number of open deals and their total value at the top. Right-click a deal to open it, close it as won or lost, copy its ID or open it in Dynamics 365. Read more in the **Opportunities** help section.
 
 ### Revenue
-ARR and how it moved over time. Read more in the **Reports** help section.
+Pick a period at the top left; **Refresh** at the top right fetches the latest numbers. A row of figures shows the current ARR, the number of active end customers (when Power BI has it) and where the numbers come from. Below it, **ARR movement** shows new sales, upgrades, downgrades and cancellations per month. Read more in the **Reports** help section.
 
 ### Details
 Every company field the CRM holds, grouped into **Company**, **Identifiers**, **Contact** and **Account team**. Click any field to copy it.

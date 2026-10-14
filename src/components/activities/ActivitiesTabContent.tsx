@@ -57,35 +57,27 @@ export function ActivitiesTabContent({
   }, [kanbanActivities.length, notes.length, onFilteredCountChange]);
 
   return (
-    <div className="space-y-6">
+    <div className="grid content-start gap-3">
       {notes.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-foreground mb-2">Notes</h3>
-          <NotesTable
-            notes={notes}
-            contacts={contacts}
-            onEdit={onEditActivity}
-            onDelete={onDeleteActivity}
-            onPreview={setPreviewActivity}
-          />
-        </div>
+        <NotesTable
+          notes={notes}
+          contacts={contacts}
+          onEdit={onEditActivity}
+          onDelete={onDeleteActivity}
+          onPreview={setPreviewActivity}
+        />
       )}
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Activities</h3>
-            {rangeLabel && (
-              <span className="text-xs text-muted-foreground">{rangeLabel}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <ActivityDateFilter onChange={handleDateChange} />
-            <Button size="sm" className="gap-1.5" onClick={onAddActivity}>
-              <Plus size={13} />
-              Add Activity
-            </Button>
-          </div>
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-[13px] font-semibold text-foreground">Activities</h3>
+          {rangeLabel && <span className="text-xs tabular-nums text-muted-foreground">{rangeLabel}</span>}
+          <span className="flex-1" />
+          <ActivityDateFilter onChange={handleDateChange} />
+          <Button size="sm" className="gap-1.5" onClick={onAddActivity}>
+            <Plus size={13} />
+            Add Activity
+          </Button>
         </div>
         <ActivityKanbanBoard
           activities={kanbanActivities}

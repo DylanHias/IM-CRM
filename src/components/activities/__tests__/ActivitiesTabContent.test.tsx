@@ -83,4 +83,23 @@ describe('ActivitiesTabContent', () => {
     expect(screen.getByText('Recent call')).toBeInTheDocument();
     expect(screen.getByText('Old visit')).toBeInTheDocument();
   });
+
+  it('only renders the notes table when there are notes', () => {
+    const { rerender } = render(<ActivitiesTabContent {...baseProps} activities={[createActivity({ type: 'call' })]} />);
+    expect(screen.queryByTestId('notes-table')).toBeNull();
+    rerender(<ActivitiesTabContent {...baseProps} activities={[createActivity({ type: 'note' })]} />);
+    expect(screen.getByTestId('notes-table')).toBeInTheDocument();
+  });
+
+  it('shows the Activities heading', () => {
+    render(<ActivitiesTabContent {...baseProps} activities={[]} />);
+    expect(screen.getByRole('heading', { name: 'Activities' })).toBeInTheDocument();
+  });
+
+  it('calls onAddActivity from the Add Activity button', () => {
+    const onAddActivity = vi.fn();
+    render(<ActivitiesTabContent {...baseProps} onAddActivity={onAddActivity} activities={[]} />);
+    screen.getByRole('button', { name: /Add Activity/ }).click();
+    expect(onAddActivity).toHaveBeenCalled();
+  });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useRef, type ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -110,5 +110,46 @@ describe('ActivityKanbanCard', () => {
     const badges = container.querySelectorAll('[data-slot="badge"]');
     const contactBadge = Array.from(badges).find(b => b.textContent === 'Karim Elouch');
     expect(contactBadge).toBeUndefined();
+  });
+
+  it('shows the activity type icon tile', () => {
+    render(<ActivityKanbanCard activity={makeActivity({ type: 'meeting', direction: null })} {...defaultProps} />, {
+      wrapper: DndWrapper,
+    });
+    const header = screen.getByTestId('activity-card-header');
+    expect(header.querySelector('[title="Meeting"]')).not.toBeNull();
+  });
+
+  it('shows subject, description, creator and date', () => {
+    render(
+      <ActivityKanbanCard
+        activity={makeActivity({ subject: 'Quarterly review', description: '<p>Talked budgets</p>', createdByName: 'Jan Janssens' })}
+        {...defaultProps}
+      />,
+      { wrapper: DndWrapper },
+    );
+    expect(screen.getByText('Quarterly review')).toBeInTheDocument();
+    expect(screen.getByText('Talked budgets').className).toContain('line-clamp-2');
+    expect(screen.getByText('Jan Janssens')).toBeInTheDocument();
+  });
+
+  it('edit button calls onEdit and not onPreview', () => {
+    const onEdit = vi.fn();
+    const onPreview = vi.fn();
+    render(<ActivityKanbanCard activity={makeActivity()} onEdit={onEdit} onDelete={vi.fn()} onPreview={onPreview} />, {
+      wrapper: DndWrapper,
+    });
+    fireEvent.click(screen.getByLabelText('Edit'));
+    expect(onEdit).toHaveBeenCalled();
+    expect(onPreview).not.toHaveBeenCalled();
+  });
+
+  it('only open cards are draggable', () => {
+    const { rerender } = render(<ActivityKanbanCard activity={makeActivity({ activityStatus: 'open' })} {...defaultProps} />, {
+      wrapper: DndWrapper,
+    });
+    expect(screen.getByRole('button', { name: /Test call/ })).toHaveAttribute('draggable', 'true');
+    rerender(<ActivityKanbanCard activity={makeActivity({ activityStatus: 'completed' })} {...defaultProps} />);
+    expect(screen.getByRole('button', { name: /Test call/ })).toHaveAttribute('draggable', 'false');
   });
 });
