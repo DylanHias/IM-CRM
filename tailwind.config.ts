@@ -14,6 +14,7 @@ const config: Config = {
   	extend: {
   		fontFamily: {
   			sans: [
+  				'var(--font-geist-sans)',
   				'var(--font-sans)',
   				'DM Sans"',
   				'-apple-system',
@@ -27,10 +28,27 @@ const config: Config = {
   				'Playfair Display"',
   				'Georgia',
   				'serif'
+  			],
+  			mono: [
+  				'var(--font-geist-mono)',
+  				'ui-monospace',
+  				'Consolas',
+  				'monospace'
   			]
   		},
   		colors: {
   			border: 'hsl(var(--border))',
+  			'border-strong': 'hsl(var(--border-strong))',
+  			chrome: {
+  				DEFAULT: 'hsl(var(--chrome))',
+  				hover: 'hsl(var(--chrome-hover))',
+  				selected: 'hsl(var(--chrome-selected))'
+  			},
+  			'foreground-2': 'hsl(var(--foreground-2))',
+  			faint: 'hsl(var(--faint))',
+  			sunken: 'hsl(var(--sunken))',
+  			'surface-2': 'hsl(var(--surface-2))',
+  			overlay: 'hsl(var(--overlay))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
   			background: 'hsl(var(--background))',

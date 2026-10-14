@@ -40,7 +40,7 @@ Sync history is automatically cleaned up on app start. Choose how long to keep e
 
 To trigger a sync manually:
 
-1. Go to the **Sync** page from the sidebar
+1. Open the **Sync** page from your account menu (click your name at the bottom of the sidebar), or click the **pending** label in the title bar
 2. Click **Run Full Sync**
 
 The button shows a loading spinner while syncing. It's disabled when you're offline.
@@ -73,9 +73,9 @@ A table at the bottom of the Sync page shows your recent sync runs, including:
 
 Items waiting to sync show a small **"Pending sync"** badge in their respective lists (Activities, Follow-Ups). If a previous sync failed, you'll see an **error badge** instead. These items will retry on the next sync.
 
-## Sidebar Badge
+## Pending Label
 
-The **Sync** link in the sidebar shows an orange badge with the number of pending items, so you always know if data is waiting to be synced.
+When changes are waiting to sync, an orange **pending** label appears in the title bar next to **Online**, with the number of waiting changes. Hover over it to see what kind of changes they are, and click it to open the Sync page. While a sync runs it shows **Syncing…**, and it disappears once everything has been sent.
 
 ## Working Offline
 

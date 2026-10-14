@@ -1,93 +1,69 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Wifi, WifiOff, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Wifi, WifiOff, Search, Upload, Loader2 } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSyncStore } from '@/store/syncStore';
+import { useUIStore } from '@/store/uiStore';
+import { cn } from '@/lib/utils';
+import { Kbd } from '@/components/ui/kbd';
 import { WindowFrame } from './WindowFrame';
-import styled from 'styled-components';
 
-const NoDrag = styled.div`
-  display: flex;
-  align-items: center;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-`;
+const PILL = 'inline-flex h-[22px] items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[11px] font-medium';
 
-const AppControls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-right: 4px;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-`;
-
-const BackLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: hsl(var(--titlebar-fg) / 0.6);
-  text-decoration: none;
-  transition: color 0.15s ease;
-  white-space: nowrap;
-  margin-left: 16px;
-
-  &:hover {
-    color: hsl(var(--titlebar-fg));
-  }
-`;
-
-const StatusPill = styled.div<{ $online: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10.5px;
-  font-weight: 500;
-  color: ${(p) =>
-    p.$online ? 'hsl(var(--success))' : 'hsl(var(--destructive))'};
-  padding: 2px 7px;
-  border-radius: 20px;
-  background-color: ${(p) =>
-    p.$online
-      ? 'hsl(var(--success) / 0.08)'
-      : 'hsl(var(--destructive) / 0.08)'};
-`;
-
-function useBackLink(): { label: string; href: string } | undefined {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  if (pathname === '/customers' && searchParams.get('id'))
-    return { label: 'All customers', href: '/customers' };
-  return undefined;
+function pendingTitle(activities: number, followUps: number, opportunities: number): string {
+  const parts = [
+    activities ? `${activities} ${activities === 1 ? 'activity' : 'activities'}` : '',
+    followUps ? `${followUps} ${followUps === 1 ? 'follow-up' : 'follow-ups'}` : '',
+    opportunities ? `${opportunities} ${opportunities === 1 ? 'opportunity' : 'opportunities'}` : '',
+  ].filter(Boolean);
+  return `${parts.join(' · ')} waiting to sync`;
 }
 
 export function TitleBar() {
-  const backLink = useBackLink();
+  const router = useRouter();
   const isOnline = useOnlineStatus();
+  const isSyncing = useSyncStore((s) => s.isSyncing);
+  const pendingActivityCount = useSyncStore((s) => s.pendingActivityCount);
+  const pendingFollowUpCount = useSyncStore((s) => s.pendingFollowUpCount);
+  const pendingOpportunityCount = useSyncStore((s) => s.pendingOpportunityCount);
+  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const totalPending = pendingActivityCount + pendingFollowUpCount + pendingOpportunityCount;
 
   return (
     <WindowFrame
-      leftContent={
-        backLink ? (
-          <NoDrag>
-            <BackLink href={backLink.href}>
-              <ArrowLeft size={12} />
-              {backLink.label}
-            </BackLink>
-          </NoDrag>
-        ) : undefined
+      centerContent={
+        <button
+          type="button"
+          onClick={() => setCommandPaletteOpen(true)}
+          className="flex h-7 w-[min(380px,32vw)] items-center gap-2 rounded-md border border-border bg-card px-2.5 text-[12.5px] text-muted-foreground transition-colors hover:border-border-strong"
+        >
+          <Search size={14} className="shrink-0" />
+          <span className="flex-1 text-left">Search</span>
+          <Kbd className="h-[18px] bg-sunken font-sans text-[10.5px]">Ctrl K</Kbd>
+        </button>
       }
     >
-      <AppControls>
-        <StatusPill $online={isOnline}>
-          {isOnline ? <Wifi size={10} /> : <WifiOff size={10} />}
-          {isOnline ? 'Online' : 'Offline'}
-        </StatusPill>
-
-      </AppControls>
+      <span className={cn(PILL, isOnline ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
+        {isOnline ? <Wifi size={11} /> : <WifiOff size={11} />}
+        {isOnline ? 'Online' : 'Offline'}
+      </span>
+      {isSyncing ? (
+        <span className={cn(PILL, 'bg-accent text-accent-foreground')}>
+          <Loader2 size={11} className="animate-spin" />
+          Syncing…
+        </span>
+      ) : totalPending > 0 ? (
+        <button
+          type="button"
+          onClick={() => router.push('/sync')}
+          title={pendingTitle(pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount)}
+          className={cn(PILL, 'bg-warning/10 text-warning transition-colors hover:bg-warning/20')}
+        >
+          <Upload size={11} />
+          {totalPending} pending
+        </button>
+      ) : null}
     </WindowFrame>
   );
 }

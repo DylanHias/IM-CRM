@@ -25,7 +25,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "200px"
+const SIDEBAR_WIDTH = "216px"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -225,7 +225,7 @@ const Sidebar = React.forwardRef<
         ref={ref}
         className={cn(
           "group peer hidden h-full text-sidebar-foreground md:flex md:flex-col",
-          "w-[--sidebar-width] transition-[width] duration-200 ease-linear",
+          "w-[--sidebar-width] transition-[width] duration-200 ease-out",
           "group-data-[collapsible=offcanvas]:w-0",
           state === "collapsed" && collapsible === "icon" && "w-[--sidebar-width-icon]",
           className
@@ -240,7 +240,6 @@ const Sidebar = React.forwardRef<
           data-sidebar="sidebar"
           className={cn(
             "flex h-full w-full flex-col bg-sidebar overflow-hidden",
-            "border-r border-border",
             "group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           )}
         >

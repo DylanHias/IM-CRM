@@ -56,13 +56,13 @@ export function AppShell({ children }: AppShellProps) {
   const paddingClass = density === 'compact' ? 'px-5 py-4' : density === 'cozy' ? 'px-6 py-5' : 'px-7 py-6';
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background transition-colors">
+    <div className="flex flex-col h-screen overflow-hidden bg-chrome transition-colors">
       <Suspense>
         <TitleBar />
       </Suspense>
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <AppSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden bg-background">
+        <main className="flex-1 flex flex-col overflow-hidden rounded-tl-[10px] border-l border-t border-border bg-background">
           <div className={cn('flex-1 overflow-y-auto', paddingClass)}>
             <PageMotion key={pathname}>
               {children}

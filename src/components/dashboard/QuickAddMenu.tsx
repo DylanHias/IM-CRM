@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity as ActivityIcon, CalendarClock, Crosshair, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,12 @@ import { useCustomerStore } from '@/store/customerStore';
 
 type QuickAddTarget = 'activity' | 'followup';
 
-export function QuickAddMenu() {
+interface Props {
+  trigger?: ReactElement;
+  align?: 'start' | 'end';
+}
+
+export function QuickAddMenu({ trigger, align = 'end' }: Props) {
   const router = useRouter();
   const customers = useCustomerStore((s) => s.customers);
   const [target, setTarget] = useState<QuickAddTarget | null>(null);
@@ -55,12 +60,14 @@ export function QuickAddMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" className="gap-1.5">
-            <Plus size={13} />
-            Quick add
-          </Button>
+          {trigger ?? (
+            <Button size="sm" className="gap-1.5">
+              <Plus size={13} />
+              Quick add
+            </Button>
+          )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align={align} className="w-48">
           <DropdownMenuItem onSelect={() => open('activity')}>
             <ActivityIcon size={14} className="mr-2" /> Log activity
           </DropdownMenuItem>

@@ -1,6 +1,6 @@
 # Settings
 
-Access Settings from the user menu at the bottom of the sidebar, or press the shortcut key for Settings. The Settings page has six tabs.
+Access Settings from your account menu (click your name at the bottom of the sidebar), or press the shortcut key for Settings. The Settings page has six tabs.
 
 ## General
 

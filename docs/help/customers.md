@@ -103,6 +103,6 @@ Manage sales deals for this customer. Read more in the **Opportunities** help se
 
 ## Navigation Tips
 
-- Use the **Recent Customers** section in the sidebar to jump back to recently viewed customers
+- Use the **Favorites** and **Recent** sections in the sidebar to jump back to customers
 - Press number keys (**1-6**) to quickly navigate between sidebar pages
 - Use **Ctrl+K** to search for a specific action
