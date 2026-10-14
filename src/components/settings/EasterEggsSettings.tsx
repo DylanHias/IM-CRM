@@ -37,7 +37,7 @@ export function EasterEggsSettings() {
 
         <SettingRow
           label="Celebrate wins"
-          description="Confetti on your first won opp of the day, fireworks for >€1M ARR, and a birthday surprise."
+          description="Confetti on your first won opp of the day, fireworks for deals of €500k or more, and a birthday surprise."
         >
           <Switch checked={enabled} onCheckedChange={toggle} />
         </SettingRow>

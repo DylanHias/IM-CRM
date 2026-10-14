@@ -36,6 +36,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useOpportunityListStore } from '@/store/opportunityListStore';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { useShortcutListener } from '@/hooks/useShortcuts';
+import { useUIStore } from '@/store/uiStore';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 import { EMPTY_OPP_EXTRA_FIELDS } from '@/lib/opportunityRules';
@@ -73,6 +74,11 @@ export default function OpportunitiesPage() {
   const loadGenRef = useRef(0);
 
   useShortcutListener('new-item', useCallback(() => setAddOpen(true), []));
+
+  // "New opportunity" from the quick-add menu lands here with a pending request.
+  useEffect(() => {
+    if (useUIStore.getState().consumeNewOpportunityRequest()) setAddOpen(true);
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);

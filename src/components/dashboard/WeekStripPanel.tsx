@@ -121,7 +121,7 @@ export function WeekStripPanel({ followUps, loading }: Props) {
                       key={f.id}
                       type="button"
                       onClick={() =>
-                        router.push(`/customers?id=${f.customerId}&tab=follow-ups`)
+                        router.push(`/customers?id=${f.customerId}&tab=followups`)
                       }
                       className={cn(
                         'w-full text-left rounded px-1 py-0.5',

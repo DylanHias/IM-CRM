@@ -20,6 +20,7 @@ import { useAutoSync } from '@/hooks/useAutoSync';
 import { useLaunchAlerts } from '@/hooks/useLaunchAlerts';
 import { useConnectivityToasts } from '@/hooks/useConnectivityToasts';
 import { useShortcuts } from '@/hooks/useShortcuts';
+import { useSyncShortcut } from '@/hooks/useSyncShortcut';
 import { cn } from '@/lib/utils';
 
 interface AppShellProps {
@@ -36,6 +37,7 @@ export function AppShell({ children }: AppShellProps) {
   useLaunchAlerts();
   useConnectivityToasts();
   useShortcuts();
+  useSyncShortcut();
 
   // Warm up the local Ollama server in the background so the AI Assistant
   // widget is responsive on first open. The model itself is pulled lazily when

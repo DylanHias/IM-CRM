@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCustomerStore } from '@/store/customerStore';
+import { useUIStore } from '@/store/uiStore';
 
 type QuickAddTarget = 'activity' | 'followup';
 
@@ -74,7 +75,12 @@ export function QuickAddMenu({ trigger, align = 'end' }: Props) {
           <DropdownMenuItem onSelect={() => open('followup')}>
             <CalendarClock size={14} className="mr-2" /> New follow-up
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => router.push('/opportunities?new=1')}>
+          <DropdownMenuItem
+            onSelect={() => {
+              useUIStore.getState().requestNewOpportunity();
+              router.push('/opportunities');
+            }}
+          >
             <Crosshair size={14} className="mr-2" /> New opportunity
           </DropdownMenuItem>
         </DropdownMenuContent>
