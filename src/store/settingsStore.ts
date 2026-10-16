@@ -24,13 +24,14 @@ export type SidebarTab = '/dashboard' | '/customers' | '/sync' | '/followups' | 
 export const DEFAULT_SIDEBAR_ORDER: SidebarTab[] = [
   '/dashboard',
   '/customers',
-  '/revenue-overview',
-  '/insights',
-  '/followups',
-  '/analytics',
-  '/timeline',
-  '/sync',
   '/opportunities',
+  '/timeline',
+  '/revenue-overview',
+  // Folded into the entries above, so their position never shows in the sidebar.
+  '/insights',
+  '/analytics',
+  '/followups',
+  '/sync',
 ];
 
 interface SettingsState {

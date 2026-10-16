@@ -21,6 +21,9 @@ function rangeParams(range: DateRange): [string, string] {
   return [range.from, range.to];
 }
 
+// Annual revenue is the opportunity's ARR; older rows only carry estimated_revenue.
+const OPP_ARR = 'COALESCE(annual_revenue, estimated_revenue, 0)';
+
 // Builds a parameterized IN clause: "$1, $2, ..." starting at `offset + 1`
 function inClause(count: number, offset = 0): string {
   return Array.from({ length: count }, (_, i) => `$${i + 1 + offset}`).join(', ');
@@ -80,8 +83,8 @@ export async function queryMyPipeline(userIds: string[]): Promise<{ openCount: n
   const [row] = await db.select<{ openCount: number; openValue: number; weightedForecast: number }[]>(
     `SELECT
        COUNT(*) as openCount,
-       COALESCE(SUM(estimated_revenue), 0) as openValue,
-       COALESCE(SUM(estimated_revenue * probability / 100.0), 0) as weightedForecast
+       COALESCE(SUM(${OPP_ARR}), 0) as openValue,
+       COALESCE(SUM(${OPP_ARR} * probability / 100.0), 0) as weightedForecast
      FROM opportunities
      WHERE created_by_id IN (${inClause(userIds.length)}) AND status = 'Open'`,
     userIds,
@@ -121,11 +124,23 @@ export async function queryMyWinRateSince(userIds: string[], sinceIso: string): 
   return { won: map['Won'] ?? 0, lost: map['Lost'] ?? 0 };
 }
 
+/** Total ARR across every opportunity the user ever owned, whatever its status. */
+export async function queryMyLifetimeArr(userIds: string[]): Promise<{ total: number; count: number }> {
+  const db = await getDb();
+  const [row] = await db.select<{ total: number; count: number }[]>(
+    `SELECT COALESCE(SUM(${OPP_ARR}), 0) as total, COUNT(*) as count
+     FROM opportunities
+     WHERE created_by_id IN (${inClause(userIds.length)})`,
+    userIds,
+  );
+  return { total: row?.total ?? 0, count: row?.count ?? 0 };
+}
+
 /** Open pipeline value and deal count per stage for the given users. */
 export async function queryMyPipelineByStage(userIds: string[]): Promise<{ stage: string; total: number; count: number }[]> {
   const db = await getDb();
   return db.select<{ stage: string; total: number; count: number }[]>(
-    `SELECT stage, COALESCE(SUM(estimated_revenue), 0) as total, COUNT(*) as count
+    `SELECT stage, COALESCE(SUM(${OPP_ARR}), 0) as total, COUNT(*) as count
      FROM opportunities
      WHERE created_by_id IN (${inClause(userIds.length)}) AND status = 'Open'
      GROUP BY stage`,
@@ -506,12 +521,12 @@ export async function queryMyPipelineWeeklyDelta(userIds: string[]): Promise<{ c
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const n = userIds.length;
   const [currentRow] = await db.select<{ value: number }[]>(
-    `SELECT COALESCE(SUM(estimated_revenue), 0) as value FROM opportunities
+    `SELECT COALESCE(SUM(${OPP_ARR}), 0) as value FROM opportunities
      WHERE status = 'Open' AND created_by_id IN (${inClause(n)})`,
     userIds,
   );
   const [previousRow] = await db.select<{ value: number }[]>(
-    `SELECT COALESCE(SUM(estimated_revenue), 0) as value FROM opportunities
+    `SELECT COALESCE(SUM(${OPP_ARR}), 0) as value FROM opportunities
      WHERE status = 'Open' AND created_by_id IN (${inClause(n)}) AND created_at < $${n + 1}`,
     [...userIds, sevenDaysAgo],
   );

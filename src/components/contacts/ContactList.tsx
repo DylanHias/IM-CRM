@@ -32,7 +32,7 @@ export function ContactList({ contacts, customerId, triggerAdd, onContactAdded, 
   const [editingContact, setEditingContact] = useState<Contact | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const { pageSize } = usePaginationPreference('contacts');
+  const { pageSize } = usePaginationPreference('contacts', 20);
 
   const filteredContacts = useMemo(() => {
     if (!searchQuery.trim()) return contacts;

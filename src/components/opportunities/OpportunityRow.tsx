@@ -4,7 +4,7 @@ import { forwardRef } from 'react';
 import { Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ExpiryLabel, OpportunityStatusBadge } from '@/components/opportunities/OpportunityBadges';
-import { compactMoney } from '@/lib/opportunities/display';
+import { compactMoney, oppArr } from '@/lib/opportunities/display';
 import { cn } from '@/lib/utils';
 import type { Opportunity } from '@/types/entities';
 
@@ -24,7 +24,7 @@ export const OpportunityRow = forwardRef<HTMLDivElement, Props>(({ opportunity: 
     aria-selected={selected ?? false}
     data-opportunity-id={o.id}
     className={cn(
-      'relative flex min-w-0 cursor-default items-start gap-2.5 border-t border-border px-3 py-2 transition-colors first:border-t-0',
+      'relative flex min-w-0 cursor-default items-start gap-2.5 border-t border-border px-3 py-3 transition-colors first:border-t-0',
       selected ? 'bg-accent before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r before:bg-primary' : 'hover:bg-surface-2',
       className,
     )}
@@ -42,7 +42,7 @@ export const OpportunityRow = forwardRef<HTMLDivElement, Props>(({ opportunity: 
       </div>
     </div>
     <div className="grid shrink-0 justify-items-end gap-1">
-      <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{compactMoney(o.estimatedRevenue, o.currency)}</span>
+      <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{compactMoney(oppArr(o), o.currency)}</span>
       {o.status !== 'Open' && <OpportunityStatusBadge status={o.status} />}
     </div>
   </div>

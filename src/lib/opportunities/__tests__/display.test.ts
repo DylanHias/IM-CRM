@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { relativeExpiration, weightedValue } from '../display';
+import { relativeExpiration, weightedValue, oppArr } from '../display';
 import { createOpportunity } from '@/__tests__/mocks/factories';
 
 const TODAY = new Date(2026, 9, 14);
@@ -23,5 +23,25 @@ describe('weightedValue', () => {
   it('multiplies revenue by probability', () => {
     expect(weightedValue(createOpportunity({ estimatedRevenue: 100000, probability: 40 }))).toBe(40000);
     expect(weightedValue(createOpportunity({ estimatedRevenue: null, probability: 40 }))).toBe(0);
+  });
+});
+
+describe('oppArr', () => {
+  it('prefers annual revenue as the ARR', () => {
+    expect(oppArr({ annualRevenue: 120000, estimatedRevenue: 9000 })).toBe(120000);
+  });
+
+  it('falls back to estimated revenue when annual revenue is missing', () => {
+    expect(oppArr({ annualRevenue: null, estimatedRevenue: 9000 })).toBe(9000);
+  });
+
+  it('is null only when both are missing', () => {
+    expect(oppArr({ annualRevenue: null, estimatedRevenue: null })).toBeNull();
+  });
+});
+
+describe('weightedValue', () => {
+  it('weights ARR by probability', () => {
+    expect(weightedValue(createOpportunity({ annualRevenue: 200000, estimatedRevenue: 0, probability: 25 }))).toBe(50000);
   });
 });

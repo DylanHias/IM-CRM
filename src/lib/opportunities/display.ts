@@ -17,8 +17,13 @@ export function relativeExpiration(dateStr: string | null, today: Date = new Dat
   return { label: `in ${diffDays}d`, tone: 'neutral' };
 }
 
-export function weightedValue(o: Pick<Opportunity, 'estimatedRevenue' | 'probability'>): number {
-  return ((o.estimatedRevenue ?? 0) * o.probability) / 100;
+/** An opportunity's ARR: annual revenue, falling back to estimated revenue on older rows. */
+export function oppArr(o: Pick<Opportunity, 'annualRevenue' | 'estimatedRevenue'>): number | null {
+  return o.annualRevenue ?? o.estimatedRevenue;
+}
+
+export function weightedValue(o: Pick<Opportunity, 'annualRevenue' | 'estimatedRevenue' | 'probability'>): number {
+  return ((oppArr(o) ?? 0) * o.probability) / 100;
 }
 
 /** Compact money for lists and boards: €1.2M, €84K. */

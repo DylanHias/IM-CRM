@@ -22,7 +22,7 @@ import { OpportunityRow } from '@/components/opportunities/OpportunityRow';
 import { OpportunityContextMenu } from '@/components/opportunities/OpportunityContextMenu';
 import { OpportunityDetail } from '@/components/opportunities/OpportunityDetail';
 import { PipelineBoard } from '@/components/opportunities/PipelineBoard';
-import { compactMoney, weightedValue } from '@/lib/opportunities/display';
+import { compactMoney, oppArr, weightedValue } from '@/lib/opportunities/display';
 import { cn } from '@/lib/utils';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import {
@@ -89,7 +89,7 @@ export default function OpportunitiesPage() {
     setCurrentUserIds(ids);
   }, [d365UserId, account?.localAccountId, setCurrentUserIds]);
 
-  const { pageSize } = usePaginationPreference('opportunities');
+  const { pageSize } = usePaginationPreference('opportunities', 15);
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -385,7 +385,7 @@ export default function OpportunitiesPage() {
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
   const selected = filtered.find((o) => o.id === selectedId) ?? paged[0] ?? null;
   const open = filtered.filter((o) => o.status === 'Open');
-  const openValue = open.reduce((a, o) => a + (o.estimatedRevenue ?? 0), 0);
+  const openValue = open.reduce((a, o) => a + (oppArr(o) ?? 0), 0);
   const weighted = open.reduce((a, o) => a + weightedValue(o), 0);
   const companyName = (o: Opportunity) => customerMap.get(o.customerId) ?? '';
 
@@ -474,8 +474,8 @@ export default function OpportunitiesPage() {
               <div className="min-h-0 overflow-y-auto">
                 {isLoading ? (
                   <div className="grid">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="flex items-start gap-2.5 border-t border-border px-3 py-2.5 first:border-t-0">
+                    {Array.from({ length: 15 }).map((_, i) => (
+                      <div key={i} className="flex items-start gap-2.5 border-t border-border px-3 py-3 first:border-t-0">
                         <Skeleton className="size-7 rounded-[7px]" />
                         <div className="grid flex-1 gap-1.5">
                           <Skeleton className="h-3 w-2/3" />

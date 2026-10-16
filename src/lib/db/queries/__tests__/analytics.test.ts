@@ -6,7 +6,7 @@ vi.mock('@/lib/db/client', () => ({
   getDb: vi.fn(async () => ({ select, execute: vi.fn() })),
 }));
 
-import { queryMyWinRateSince, queryMyPipelineByStage } from '@/lib/db/queries/analytics';
+import { queryMyWinRateSince, queryMyPipelineByStage, queryMyPipeline, queryMyLifetimeArr } from '@/lib/db/queries/analytics';
 
 describe('queryMyWinRateSince', () => {
   beforeEach(() => select.mockReset());
@@ -47,5 +47,34 @@ describe('queryMyPipelineByStage', () => {
       { stage: 'Qualified', total: 120000, count: 2 },
       { stage: 'Prospecting', total: 30000, count: 1 },
     ]);
+  });
+});
+
+describe('opportunity ARR sums', () => {
+  beforeEach(() => select.mockReset());
+
+  it('sums annual revenue (falling back to estimated) for open deals', async () => {
+    select.mockResolvedValueOnce([{ openCount: 3, openValue: 450000, weightedForecast: 180000 }]);
+    const res = await queryMyPipeline(['u1', 'u2']);
+    const [sql, params] = select.mock.calls[0] as [string, unknown[]];
+    expect(sql).toContain('COALESCE(annual_revenue, estimated_revenue, 0)');
+    expect(sql).toContain("status = 'Open'");
+    expect(params).toEqual(['u1', 'u2']);
+    expect(res).toEqual({ openCount: 3, openValue: 450000, weightedForecast: 180000 });
+  });
+
+  it('sums lifetime ARR across every status for the given users', async () => {
+    select.mockResolvedValueOnce([{ total: 980000, count: 12 }]);
+    const res = await queryMyLifetimeArr(['u1']);
+    const [sql, params] = select.mock.calls[0] as [string, unknown[]];
+    expect(sql).toContain('COALESCE(annual_revenue, estimated_revenue, 0)');
+    expect(sql).not.toContain('status');
+    expect(params).toEqual(['u1']);
+    expect(res).toEqual({ total: 980000, count: 12 });
+  });
+
+  it('returns zeros when the user has no opportunities', async () => {
+    select.mockResolvedValueOnce([]);
+    expect(await queryMyLifetimeArr(['u1'])).toEqual({ total: 0, count: 0 });
   });
 });

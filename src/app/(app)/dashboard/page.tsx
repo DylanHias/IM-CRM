@@ -13,16 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CompactPager } from '@/components/ui/compact-pager';
 import { QuickAddButton } from '@/components/dashboard/QuickAddMenu';
 import { ActivityTypeIcon } from '@/components/activities/ActivityTypeIcon';
 import { CobwebOverlay } from '@/components/easterEggs/CobwebOverlay';
 import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
 import { useCustomerStore } from '@/store/customerStore';
-import { useRevenueStore } from '@/store/revenueStore';
 import { useCustomers } from '@/hooks/useCustomers';
+import { usePagedRows } from '@/hooks/usePagedRows';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { getEffectiveArr } from '@/lib/revenue/effectiveArr';
 import { completeFollowUpEverywhere } from '@/lib/followups/completeFollowUp';
 import { onDataEvent } from '@/lib/dataEvents';
 import { STAGES } from '@/lib/opportunityRules';
@@ -57,6 +57,7 @@ interface HomeData {
   followUps: FollowUp[];
   openPipeline: number;
   pipelinePrevious: number;
+  lifetimeArr: { total: number; count: number };
   winRate: { won: number; lost: number };
   stale: StaleOpportunity[];
   byStage: { stage: string; total: number }[];
@@ -69,8 +70,6 @@ export default function DashboardPage() {
   const account = useAuthStore((s) => s.account);
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
   const customers = useCustomerStore((s) => s.customers);
-  const byBcn = useRevenueStore((s) => s.byBcn);
-  const byResellerAccount = useRevenueStore((s) => s.byResellerAccount);
   const userId = callerD365UserId ?? account?.localAccountId ?? null;
   const altUserId = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
 
@@ -97,28 +96,28 @@ export default function DashboardPage() {
       try {
         const userIds = [userId, altUserId].filter((v): v is string => Boolean(v));
         const since = new Date(Date.now() - 90 * DAY_MS).toISOString();
-        const [analytics, followups, activities, opportunities, revenue] = await Promise.all([
+        const [analytics, followups, activities, opportunities] = await Promise.all([
           import('@/lib/db/queries/analytics'),
           import('@/lib/db/queries/followups'),
           import('@/lib/db/queries/activities'),
           import('@/lib/db/queries/opportunities'),
-          import('@/lib/integrations/powerbi/revenueService'),
         ]);
-        const [recentActivities, followUps, pipeline, delta, winRate, stale, byStage] = await Promise.all([
-          activities.queryMyRecentActivitiesLatest(userId, altUserId, 5),
+        const [recentActivities, followUps, pipeline, delta, winRate, stale, byStage, lifetimeArr] = await Promise.all([
+          activities.queryMyRecentActivitiesLatest(userId, altUserId, 50),
           followups.queryFollowUpsByUser(userId, altUserId ?? undefined),
           analytics.queryMyPipeline(userIds),
           analytics.queryMyPipelineWeeklyDelta(userIds),
           analytics.queryMyWinRateSince(userIds, since),
-          opportunities.queryMyStaleOpportunities(userId, altUserId, 30, 6),
+          opportunities.queryMyStaleOpportunities(userId, altUserId, 30, 50),
           analytics.queryMyPipelineByStage(userIds),
-          useRevenueStore.getState().isHydrated ? Promise.resolve() : revenue.loadRevenueFromDb(),
+          analytics.queryMyLifetimeArr(userIds),
         ]);
         cache = {
           recentActivities,
           followUps,
           openPipeline: pipeline.openValue,
           pipelinePrevious: delta.previousValue,
+          lifetimeArr,
           winRate,
           stale,
           byStage,
@@ -141,26 +140,16 @@ export default function DashboardPage() {
   const week = workWeek(followUps, now);
   const customerName = (id: string) => customers.find((c) => c.id === id)?.name ?? '';
 
-  const portfolio = useMemo(() => {
-    let total = 0;
-    let count = 0;
-    for (const c of customers) {
-      const row = (c.bcn ? byBcn.get(c.bcn) : undefined) ?? (c.accountNumber ? byResellerAccount.get(c.accountNumber) : undefined) ?? null;
-      const { value } = getEffectiveArr(c, row);
-      if (value && value > 0) {
-        total += value;
-        count++;
-      }
-    }
-    return { total, count };
-  }, [customers, byBcn, byResellerAccount]);
-
   const pipelineDelta = data ? pctDelta(data.openPipeline, data.pipelinePrevious) : null;
   const winRate = data ? winRatePct(data.winRate) : null;
   const stageRows = STAGES.filter((s) => s !== 'Purchased' && s !== 'Billing Rejection').map((s) => ({
     label: s,
     value: data?.byStage.find((r) => r.stage === s)?.total ?? 0,
   }));
+
+  const due = usePagedRows(dueToday, 44);
+  const recent = usePagedRows(data?.recentActivities ?? [], 52);
+  const quiet = usePagedRows(data?.stale ?? [], 48);
 
   const complete = async (f: FollowUp) => {
     try {
@@ -174,7 +163,7 @@ export default function DashboardPage() {
   const dash = loading ? <Skeleton className="h-6 w-20" /> : null;
 
   return (
-    <div className="grid content-start gap-3">
+    <div className="flex flex-col gap-3 lg:h-full lg:min-h-0">
       <ViewBar
         title="Home"
         meta={`${now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · Week ${isoWeekNumber(now)}`}
@@ -195,12 +184,12 @@ export default function DashboardPage() {
           label="Open pipeline"
           value={dash ?? fmtEur(data?.openPipeline ?? 0)}
           delta={pipelineDelta !== null ? { text: `${pipelineDelta >= 0 ? '+' : '−'}${Math.abs(pipelineDelta).toFixed(1)}%`, positive: pipelineDelta >= 0 } : undefined}
-          sub={pipelineDelta !== null ? 'vs 7 days ago' : 'Your open deals'}
+          sub={pipelineDelta !== null ? 'vs 7 days ago' : 'ARR on your open deals'}
         />
         <Metric
-          label="Portfolio ARR"
-          value={fmtEur(portfolio.total)}
-          sub={`${portfolio.count} ${portfolio.count === 1 ? 'customer' : 'customers'} with ARR`}
+          label="Lifetime ARR"
+          value={dash ?? fmtEur(data?.lifetimeArr.total ?? 0)}
+          sub={data ? `${data.lifetimeArr.count} ${data.lifetimeArr.count === 1 ? 'opportunity' : 'opportunities'} all-time` : undefined}
         />
         <Metric
           label="Win rate · 90 days"
@@ -221,15 +210,15 @@ export default function DashboardPage() {
         />
       </MetricStrip>
 
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="grid min-w-0 content-start gap-3">
-          <Panel>
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-3 lg:min-h-0 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Panel className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <PanelHeader title="Due today" sub={`${dueToday.length} open`} />
             {dueToday.length === 0 ? (
               <EmptyState icon={CheckCircle2} title="Nothing due today" description="Enjoy the quiet." />
             ) : (
-              <motion.ul variants={listContainerVariants} initial="hidden" animate="visible">
-                {dueToday.map((f) => {
+              <motion.ul ref={due.ref} variants={listContainerVariants} initial="hidden" animate="visible" className="min-h-0 overflow-y-auto">
+                {due.visible.map((f) => {
                   const label = overdueLabel(f.dueDate, now);
                   return (
                     <motion.li
@@ -262,17 +251,18 @@ export default function DashboardPage() {
                 })}
               </motion.ul>
             )}
+            <CompactPager page={due.page} pageSize={due.pageSize} total={dueToday.length} onPageChange={due.setPage} />
           </Panel>
 
-          <Panel>
+          <Panel className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <PanelHeader title="Recent activity">
               <PanelLink onClick={() => router.push('/timeline')}>Open timeline</PanelLink>
             </PanelHeader>
             {(data?.recentActivities.length ?? 0) === 0 ? (
               <EmptyState icon={Inbox} title="No activity yet" description="Activities you log on a customer show up here." />
             ) : (
-              <ul>
-                {data?.recentActivities.map((a) => (
+              <ul ref={recent.ref} className="min-h-0 overflow-y-auto">
+                {recent.visible.map((a) => (
                   <li key={a.id} className="border-t border-border first:border-t-0">
                     <button
                       type="button"
@@ -290,10 +280,11 @@ export default function DashboardPage() {
                 ))}
               </ul>
             )}
+            <CompactPager page={recent.page} pageSize={recent.pageSize} total={data?.recentActivities.length ?? 0} onPageChange={recent.setPage} />
           </Panel>
         </div>
 
-        <div className="grid min-w-0 content-start gap-3">
+        <div className="grid min-w-0 gap-3 lg:min-h-0 lg:grid-rows-[auto_minmax(0,1fr)_auto]">
           <Panel>
             <PanelHeader title="This week" sub="Follow-ups per day" />
             <PanelBody>
@@ -322,15 +313,15 @@ export default function DashboardPage() {
             </PanelBody>
           </Panel>
 
-          <Panel>
+          <Panel className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <PanelHeader title="Deals going quiet">
               <Badge variant="warning">30+ days idle</Badge>
             </PanelHeader>
             {(data?.stale.length ?? 0) === 0 ? (
               <EmptyState icon={CalendarClock} title="No deals going quiet" description="Every open deal had an update in the last 30 days." />
             ) : (
-              <ul>
-                {data?.stale.map((o) => (
+              <ul ref={quiet.ref} className="min-h-0 overflow-y-auto">
+                {quiet.visible.map((o) => (
                   <li key={o.id} className="relative border-t border-border first:border-t-0">
                     <CobwebOverlay daysStale={o.daysStale} />
                     <button
@@ -351,6 +342,7 @@ export default function DashboardPage() {
                 ))}
               </ul>
             )}
+            <CompactPager page={quiet.page} pageSize={quiet.pageSize} total={data?.stale.length ?? 0} onPageChange={quiet.setPage} />
           </Panel>
 
           <Panel>

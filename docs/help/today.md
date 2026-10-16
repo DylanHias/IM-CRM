@@ -13,8 +13,8 @@ For a new opportunity, use the **New** button at the top of the sidebar.
 ## Key figures
 
 One strip with four numbers:
-- **Open pipeline** — the total value of your open deals, with the change compared to 7 days ago.
-- **Portfolio ARR** — the yearly recurring revenue of your customers. Live Power BI numbers are used where available, otherwise the value from Dynamics 365.
+- **Open pipeline** — the annual revenue on your open opportunities, with the change compared to 7 days ago.
+- **Lifetime ARR** — the annual revenue on every opportunity you have ever created, no matter how it ended.
 - **Win rate · 90 days** — of the deals you closed in the last 90 days, the share you won.
 - **Follow-ups due today** — how many follow-ups are due today or overdue, with a red label when some are overdue. **Open tasks** takes you to all your follow-ups.
 

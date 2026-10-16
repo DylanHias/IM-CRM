@@ -14,7 +14,7 @@ describe('Home (dashboard) page', () => {
   it('shows the key figures strip', () => {
     render(<DashboardPage />);
     const strip = screen.getByRole('region', { name: 'Key figures' });
-    for (const label of ['Open pipeline', 'Portfolio ARR', 'Win rate · 90 days', 'Follow-ups due today']) {
+    for (const label of ['Open pipeline', 'Lifetime ARR', 'Win rate · 90 days', 'Follow-ups due today']) {
       expect(within(strip).getByText(label)).toBeInTheDocument();
     }
   });

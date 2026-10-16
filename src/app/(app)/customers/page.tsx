@@ -48,7 +48,7 @@ export default function CustomersPage() {
   const toggleFavoritesFilter = useCustomerStore((s) => s.toggleFavoritesFilter);
   const listWidth = useUIStore((s) => s.customerListWidth);
   const setListWidth = useUIStore((s) => s.setCustomerListWidth);
-  const { pageSize } = usePaginationPreference('customers');
+  const { pageSize } = usePaginationPreference('customers', 15);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -165,8 +165,8 @@ export default function CustomersPage() {
           <div className="min-h-0 overflow-y-auto">
             {isLoading ? (
               <div className="grid">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-2.5 border-t border-border px-3 py-2.5 first:border-t-0">
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2.5 border-t border-border px-3 py-3 first:border-t-0">
                     <Skeleton className="size-7 rounded-[7px]" />
                     <div className="grid flex-1 gap-1.5">
                       <Skeleton className="h-3 w-3/4" />

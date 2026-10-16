@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExpiryLabel } from '@/components/opportunities/OpportunityBadges';
 import { OpportunityContextMenu } from '@/components/opportunities/OpportunityContextMenu';
 import { STAGES, STAGE_PROBABILITY } from '@/lib/opportunityRules';
-import { compactMoney } from '@/lib/opportunities/display';
+import { compactMoney, oppArr } from '@/lib/opportunities/display';
 import { cn } from '@/lib/utils';
 import type { Opportunity } from '@/types/entities';
 
@@ -22,7 +22,7 @@ export function PipelineBoard({ opportunities, customerMap, onOpen, onCloseAs, s
   const live = opportunities.filter((o) => o.status !== 'Lost');
   const columns = STAGES.filter((s) => !stage || s === stage).map((s) => {
     const items = live.filter((o) => o.stage === s);
-    return { stage: s, items, sum: items.reduce((a, o) => a + (o.estimatedRevenue ?? 0), 0) };
+    return { stage: s, items, sum: items.reduce((a, o) => a + (oppArr(o) ?? 0), 0) };
   });
   const max = Math.max(...columns.map((c) => c.sum), 1);
 
@@ -54,7 +54,7 @@ export function PipelineBoard({ opportunities, customerMap, onOpen, onCloseAs, s
                   <span className="truncate text-[11px] text-muted-foreground">{customerMap.get(o.customerId) ?? ''}</span>
                   <div className="flex items-center justify-between gap-2">
                     {o.primaryVendor ? <Badge variant="secondary" className="max-w-[60%] truncate">{o.primaryVendor.split(' - ')[0]}</Badge> : <span />}
-                    <span className="whitespace-nowrap font-semibold tabular-nums">{compactMoney(o.estimatedRevenue, o.currency)}</span>
+                    <span className="whitespace-nowrap font-semibold tabular-nums">{compactMoney(oppArr(o), o.currency)}</span>
                   </div>
                   {o.status === 'Open' && <ExpiryLabel date={o.expirationDate} />}
                 </button>

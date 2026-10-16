@@ -65,7 +65,7 @@ export const CustomerList = forwardRef<HTMLDivElement, CustomerListProps>(({ cus
             tabIndex={-1}
             onClick={() => onSelect(c)}
             className={cn(
-              'group/row relative flex min-h-[46px] min-w-0 cursor-default items-center gap-2.5 border-t border-border px-3 py-1.5 transition-colors first:border-t-0',
+              'group/row relative flex min-h-[54px] min-w-0 cursor-default items-center gap-2.5 border-t border-border px-3 py-2.5 transition-colors first:border-t-0',
               selected
                 ? 'bg-accent before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r before:bg-primary'
                 : 'hover:bg-surface-2',

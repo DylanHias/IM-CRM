@@ -9,7 +9,7 @@ You can view opportunities in two places:
 - **Customer view** — Go to a customer's **Opportunities** tab to see deals for that specific customer, with how many are open and their total value.
 - **Pipeline** — Click **Pipeline** in the sidebar to see all opportunities across companies.
 
-The Pipeline toolbar shows how many deals are open, their total value and their **weighted** value (each deal's value multiplied by its probability).
+The Pipeline toolbar shows how many deals are open, their total annual revenue and the **weighted** total (each deal's annual revenue multiplied by its probability). Every amount in the list, on the board and in the toolbar is the deal's annual revenue.
 
 ### List view
 

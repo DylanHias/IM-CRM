@@ -8,7 +8,7 @@ import { OpportunityRow } from './OpportunityRow';
 import { OpportunityContextMenu } from './OpportunityContextMenu';
 import { Panel } from '@/components/ui/panel';
 import { EmptyState } from '@/components/ui/empty-state';
-import { compactMoney } from '@/lib/opportunities/display';
+import { compactMoney, oppArr } from '@/lib/opportunities/display';
 import { OpportunityWizard } from './OpportunityWizard';
 import type { WizardFormData } from './OpportunityWizard';
 import { CloseOpportunityDialog } from './CloseOpportunityDialog';
@@ -165,7 +165,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
 
   const openOpps = opportunities.filter((o) => o.status === 'Open');
   const openCount = openOpps.length;
-  const openValue = openOpps.reduce((a, o) => a + (o.estimatedRevenue ?? 0), 0);
+  const openValue = openOpps.reduce((a, o) => a + (oppArr(o) ?? 0), 0);
 
   return (
     <div className="grid gap-3">

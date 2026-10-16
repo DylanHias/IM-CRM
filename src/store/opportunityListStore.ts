@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { oppArr } from '@/lib/opportunities/display';
 import type { Opportunity, OpportunityStatus } from '@/types/entities';
 
 export type OppSortBy = 'createdAt' | 'subject' | 'estimatedRevenue' | 'expirationDate' | 'stage';
@@ -187,7 +188,7 @@ export const useOpportunityListStore = create<OpportunityListState>()(
           if (sortBy === 'subject') {
             cmp = a.subject.localeCompare(b.subject);
           } else if (sortBy === 'estimatedRevenue') {
-            cmp = (a.estimatedRevenue ?? 0) - (b.estimatedRevenue ?? 0);
+            cmp = (oppArr(a) ?? 0) - (oppArr(b) ?? 0);
           } else if (sortBy === 'expirationDate') {
             const aDate = a.expirationDate ?? '9999';
             const bDate = b.expirationDate ?? '9999';

@@ -32,7 +32,7 @@ import { completeFollowUpEverywhere } from '@/lib/followups/completeFollowUp';
 import { deleteFollowUpEverywhere, saveFollowUpEverywhere } from '@/lib/followups/followUpActions';
 import { deleteActivityEverywhere } from '@/lib/activities/deleteActivity';
 import { overdueLabel, localDateKey } from '@/lib/today/home';
-import { compactMoney } from '@/lib/opportunities/display';
+import { compactMoney, oppArr } from '@/lib/opportunities/display';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { htmlIsEmpty } from '@/lib/utils/htmlUtils';
 import { cn } from '@/lib/utils';
@@ -263,7 +263,7 @@ export function ActivityPage({ mode }: { mode: ActivityMode }) {
         </span>
       );
       title = e.subject;
-      sub = `${e.stage} · ${compactMoney(e.estimatedRevenue, e.currency)}`;
+      sub = `${e.stage} · ${compactMoney(oppArr(e), e.currency)}`;
       right = <OpportunityStatusBadge status={e.status} />;
     }
     return (
@@ -392,7 +392,7 @@ export function ActivityPage({ mode }: { mode: ActivityMode }) {
         <Kv
           rows={[
             ['Customer', <button key="c" type="button" className="font-medium text-accent-foreground hover:underline" onClick={() => openCustomer(o.customerId)}>{customerName(o.customerId) || 'Open customer'}</button>],
-            ['Value', compactMoney(o.estimatedRevenue, o.currency)],
+            ['Value', compactMoney(oppArr(o), o.currency)],
             ['Vendor', o.primaryVendor],
             ['Owner', o.createdByName ? formatDisplayName(o.createdByName) : null],
           ]}

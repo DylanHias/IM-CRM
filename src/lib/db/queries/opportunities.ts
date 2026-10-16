@@ -589,7 +589,7 @@ export async function queryMyStaleOpportunities(
          o.customer_id as customerId,
          c.name as customerName,
          o.stage,
-         o.estimated_revenue as estimatedRevenue,
+         COALESCE(o.annual_revenue, o.estimated_revenue) as estimatedRevenue,
          o.currency,
          COALESCE(
            (SELECT MAX(a.occurred_at) FROM activities a WHERE a.customer_id = o.customer_id),
