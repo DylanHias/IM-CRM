@@ -12,7 +12,7 @@ export function ReportTile({ label, value, caption, empty }: Props) {
   return (
     <Metric
       label={label}
-      value={empty === undefined ? value : <span className="text-[13px] font-medium text-muted-foreground">{empty}</span>}
+      value={empty ? <span className="text-[13px] font-medium text-muted-foreground">{empty}</span> : value}
       sub={caption}
     />
   );
