@@ -65,7 +65,7 @@ export function ReportsShell() {
               aria-selected={tab === t.value}
               aria-controls="report-panel"
               onClick={() => changeTab(t.value)}
-              className='inline-flex h-6 items-center whitespace-nowrap rounded px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground'
+              className="inline-flex h-6 items-center whitespace-nowrap rounded px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground aria-selected:bg-accent aria-selected:text-accent-foreground"
             >
               {t.label}
             </button>
