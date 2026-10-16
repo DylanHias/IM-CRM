@@ -22,7 +22,7 @@ function rangeParams(range: DateRange): [string, string] {
 }
 
 // Annual revenue is the opportunity's ARR; older rows only carry estimated_revenue.
-const OPP_ARR = 'COALESCE(annual_revenue, estimated_revenue, 0)';
+export const OPP_ARR = 'COALESCE(annual_revenue, estimated_revenue, 0)';
 
 // Builds a parameterized IN clause: "$1, $2, ..." starting at `offset + 1`
 function inClause(count: number, offset = 0): string {
