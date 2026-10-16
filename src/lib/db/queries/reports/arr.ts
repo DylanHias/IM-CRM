@@ -1,11 +1,13 @@
 import { getDb } from '@/lib/db/client';
 import { monthKeys, type ReportPeriod } from '@/lib/reports/period';
 import { accountScopeSql, type ReportScope } from '@/lib/reports/scope';
-import type { ArrMover, ArrMovement, ArrToday } from '@/types/reports';
+import type { ArrFlows, ArrMover, ArrMovement, ArrToday } from '@/types/reports';
 
-// One customer per BCN: customer_revenue holds several rows per BCN, and joining them
-// directly would multiply every movement figure.
-const BCN_CUSTOMER = `(SELECT bcn, MIN(customer_id) AS customer_id FROM customer_revenue WHERE customer_id IS NOT NULL GROUP BY bcn)`;
+// A BCN is scopable only when its revenue rows resolve to exactly one customer. customer_revenue
+// holds several rows per BCN, so a plain join would multiply movement; and a BCN spanning several
+// customers cannot be attributed without inventing a split. Both cases stay out of this map and are
+// reported as unmatched instead.
+const BCN_CUSTOMER = `(SELECT bcn, MIN(customer_id) AS customer_id FROM customer_revenue WHERE customer_id IS NOT NULL GROUP BY bcn HAVING COUNT(DISTINCT customer_id) = 1)`;
 
 const MOVEMENT_SUMS = `
   COALESCE(SUM(m.new_sale_lc), 0) AS new_sale,
@@ -20,7 +22,7 @@ interface MovementRow {
   cancellation: number;
 }
 
-function toMovement(r: MovementRow): ArrMovement {
+function toFlows(r: MovementRow): ArrFlows {
   return {
     newSale: r.new_sale,
     upgrade: r.upgrade,
@@ -29,8 +31,6 @@ function toMovement(r: MovementRow): ArrMovement {
     net: r.new_sale + r.upgrade - r.downgrade - r.cancellation,
   };
 }
-
-const EMPTY_MOVEMENT: ArrMovement = { newSale: 0, upgrade: 0, downgrade: 0, cancellation: 0, net: 0 };
 
 function movementFrom(s: ReportScope, p: ReportPeriod) {
   const scope = accountScopeSql(s, 0);
@@ -69,11 +69,28 @@ export async function queryArrToday(s: ReportScope): Promise<ArrToday> {
 }
 
 export async function queryArrMovement(s: ReportScope, p: ReportPeriod): Promise<ArrMovement> {
+  const months = monthKeys(p);
+  const none = { newSale: 0, upgrade: 0, downgrade: 0, cancellation: 0, net: 0, unmatchedBcns: 0, unmatchedNet: 0 };
+  if (months.length === 0) return none;
   const { from, params } = movementFrom(s, p);
   try {
     const db = await getDb();
-    const rows = await db.select<MovementRow[]>(`SELECT ${MOVEMENT_SUMS} ${from}`, params);
-    return rows[0] ? toMovement(rows[0]) : EMPTY_MOVEMENT;
+    const [scoped, unmatched] = await Promise.all([
+      db.select<MovementRow[]>(`SELECT ${MOVEMENT_SUMS} ${from}`, params),
+      db.select<(MovementRow & { bcns: number })[]>(
+        `SELECT COUNT(DISTINCT m.bcn) AS bcns, ${MOVEMENT_SUMS}
+         FROM arr_movement m
+         LEFT JOIN ${BCN_CUSTOMER} map ON map.bcn = m.bcn
+         WHERE map.customer_id IS NULL AND m.month >= $1 AND m.month <= $2`,
+        [months[0], months[months.length - 1]],
+      ),
+    ]);
+    const u = unmatched[0];
+    return {
+      ...(scoped[0] ? toFlows(scoped[0]) : none),
+      unmatchedBcns: u?.bcns ?? 0,
+      unmatchedNet: u ? toFlows(u).net : 0,
+    };
   } catch (err) {
     console.error('[data] queryArrMovement failed:', err);
     throw err;
@@ -82,6 +99,7 @@ export async function queryArrMovement(s: ReportScope, p: ReportPeriod): Promise
 
 /** Customers with the largest absolute net movement in the period. */
 export async function queryArrMovers(s: ReportScope, p: ReportPeriod, limit: number): Promise<ArrMover[]> {
+  if (monthKeys(p).length === 0) return [];
   const { from, params } = movementFrom(s, p);
   try {
     const db = await getDb();
@@ -94,7 +112,7 @@ export async function queryArrMovers(s: ReportScope, p: ReportPeriod, limit: num
        LIMIT $${params.length + 1}`,
       [...params, limit],
     );
-    return rows.map((r) => ({ customerId: r.customer_id, name: r.name, ...toMovement(r) }));
+    return rows.map((r) => ({ customerId: r.customer_id, name: r.name, ...toFlows(r) }));
   } catch (err) {
     console.error('[data] queryArrMovers failed:', err);
     throw err;

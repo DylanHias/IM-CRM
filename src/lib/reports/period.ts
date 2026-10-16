@@ -13,12 +13,13 @@ function lastCompleteMonth(now: Date): Date {
 }
 
 function bounds(p: ReportPeriod, now: Date): { start: Date; end: Date } {
+  const lastEnd = endOfMonth(lastCompleteMonth(now));
   if (p.kind === 'rolling') {
-    const end = lastCompleteMonth(now);
-    return { start: subMonths(end, p.months - 1), end: endOfMonth(end) };
+    return { start: subMonths(startOfMonth(lastEnd), p.months - 1), end: lastEnd };
   }
   const start = new Date(p.year, (p.quarter - 1) * 3, 1);
-  return { start, end: endOfMonth(addMonths(start, 2)) };
+  const end = endOfMonth(addMonths(start, 2));
+  return { start, end: end > lastEnd ? lastEnd : end }; // never include the partial current month
 }
 
 export function periodRange(p: ReportPeriod, now: Date = new Date()): { from: string; to: string } {
@@ -28,6 +29,7 @@ export function periodRange(p: ReportPeriod, now: Date = new Date()): { from: st
 
 export function monthKeys(p: ReportPeriod, now: Date = new Date()): string[] {
   const { start, end } = bounds(p, now);
+  if (start > end) return []; // quarter entirely in the future
   return eachMonthOfInterval({ start, end }).map((m) => format(m, 'yyyy-MM'));
 }
 
@@ -39,7 +41,7 @@ export function availablePeriods(now: Date = new Date()): ReportPeriod[] {
     for (const quarter of [4, 3, 2, 1] as const) {
       const p: ReportPeriod = { kind: 'quarter', year: y, quarter };
       const { from, to } = periodRange(p, now);
-      if (from >= windowStart && to <= windowEnd) quarters.push(p);
+      if (from >= windowStart && to <= windowEnd && monthKeys(p, now).length === 3) quarters.push(p); // 3 = complete
     }
   }
   return [

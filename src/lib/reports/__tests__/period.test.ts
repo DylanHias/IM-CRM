@@ -19,6 +19,17 @@ describe('report period', () => {
       .toEqual({ from: '2026-04-01', to: '2026-06-30' });
   });
 
+  it('clamps a running quarter to the last complete month', () => {
+    const q3 = periodRange({ kind: 'quarter', year: 2026, quarter: 3 }, new Date('2026-08-16T12:00:00Z'));
+    expect(q3).toEqual({ from: '2026-07-01', to: '2026-07-31' });
+    expect(monthKeys({ kind: 'quarter', year: 2026, quarter: 3 }, new Date('2026-08-16T12:00:00Z')))
+      .toEqual(['2026-07']);
+  });
+
+  it('returns no months for a quarter that has not started', () => {
+    expect(monthKeys({ kind: 'quarter', year: 2026, quarter: 4 }, NOW)).toEqual([]);
+  });
+
   it('offers only complete quarters inside the last 12 months', () => {
     const quarters = availablePeriods(NOW).filter((p) => p.kind === 'quarter');
     expect(quarters).toEqual([

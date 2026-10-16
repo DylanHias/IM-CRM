@@ -4,7 +4,7 @@ export interface ArrToday {
   unmatched: number;
 }
 
-export interface ArrMovement {
+export interface ArrFlows {
   newSale: number;
   upgrade: number;
   downgrade: number;
@@ -12,7 +12,13 @@ export interface ArrMovement {
   net: number;
 }
 
-export interface ArrMover extends ArrMovement {
+export interface ArrMovement extends ArrFlows {
+  /** BCNs with movement that cannot be tied to exactly one customer (no revenue row, or several customers). */
+  unmatchedBcns: number;
+  unmatchedNet: number;
+}
+
+export interface ArrMover extends ArrFlows {
   customerId: string;
   name: string;
 }
