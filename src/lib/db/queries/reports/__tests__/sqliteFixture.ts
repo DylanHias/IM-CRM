@@ -9,7 +9,7 @@ let db: DatabaseSync;
 export function resetFixture(): void {
   db = new DatabaseSync(':memory:');
   db.exec(`
-    CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id TEXT, address_country TEXT);
+    CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id TEXT, address_country TEXT, segment TEXT, industry TEXT);
     CREATE TABLE customer_revenue (id INTEGER PRIMARY KEY AUTOINCREMENT, bcn TEXT NOT NULL, customer_id TEXT, arr_lc REAL);
     CREATE TABLE arr_movement (
       bcn TEXT NOT NULL, month TEXT NOT NULL,
@@ -51,8 +51,14 @@ export async function fixtureGetDb() {
   };
 }
 
-export function addCustomer(id: string, owner: string | null, country: string | null): void {
-  db.prepare('INSERT INTO customers (id, name, owner_id, address_country) VALUES (?, ?, ?, ?)').run(id, `Customer ${id}`, owner, country);
+export function addCustomer(
+  id: string,
+  owner: string | null,
+  country: string | null,
+  extra: { segment?: string | null; industry?: string | null } = {},
+): void {
+  db.prepare('INSERT INTO customers (id, name, owner_id, address_country, segment, industry) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, `Customer ${id}`, owner, country, extra.segment ?? null, extra.industry ?? null);
 }
 
 export function addRevenue(bcn: string, customerId: string | null, arrLc: number): void {

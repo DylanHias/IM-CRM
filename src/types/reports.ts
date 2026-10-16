@@ -64,3 +64,31 @@ export interface QuietDeal {
   lastActivityAt: string;
   daysStale: number;
 }
+
+export type CoverageBucket = '0-30' | '31-60' | '61-90' | '90+' | 'never';
+
+export interface AccountSummary {
+  total: number;
+  /** Accounts whose summed Power BI ARR is above zero. */
+  withArr: number;
+  noOpenOpp: number;
+  /** Contacted before, but not within 90 days. Never-contacted accounts are counted apart. */
+  notContacted90d: number;
+  neverContacted: number;
+}
+
+export interface RankedAccount {
+  id: string;
+  name: string;
+  /** null = no matching Power BI row (unmatched), which is not the same as zero ARR. */
+  arr: number | null;
+  /** Latest activity not in the future; null = never contacted. */
+  lastContactAt: string | null;
+  openDeals: number;
+}
+
+export interface DimensionRow {
+  label: string;
+  arr: number;
+  accounts: number;
+}
