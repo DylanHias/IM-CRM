@@ -17,7 +17,8 @@ export function resetFixture(): void {
       upgrade_lc REAL, downgrade_lc REAL, cancellation_lc REAL, new_sale_lc REAL,
       PRIMARY KEY (bcn, month)
     );
-    CREATE TABLE activities (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, occurred_at TEXT NOT NULL, created_by_id TEXT NOT NULL DEFAULT 'u1');
+    CREATE TABLE activities (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, occurred_at TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'call', created_by_id TEXT NOT NULL DEFAULT 'u1');
+    CREATE TABLE follow_ups (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, due_date TEXT NOT NULL, completed INTEGER NOT NULL DEFAULT 0 CHECK(completed IN (0,1)), completed_at TEXT, created_by_id TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')));
     CREATE TABLE opportunities (
       id                       TEXT PRIMARY KEY,
       customer_id              TEXT NOT NULL,
@@ -114,7 +115,20 @@ export function addOpportunity(o: OpportunitySeed = {}): string {
   return id;
 }
 
-export function addActivity(customerId: string, occurredAt: string, createdBy = 'u1'): void {
-  db.prepare('INSERT INTO activities (id, customer_id, occurred_at, created_by_id) VALUES (?, ?, ?, ?)')
-    .run(`act${++seq}`, customerId, occurredAt, createdBy);
+export function addActivity(customerId: string, occurredAt: string, createdBy = 'u1', type = 'call'): void {
+  db.prepare('INSERT INTO activities (id, customer_id, occurred_at, created_by_id, type) VALUES (?, ?, ?, ?, ?)')
+    .run(`act${++seq}`, customerId, occurredAt, createdBy, type);
+}
+
+export interface FollowUpSeed {
+  customerId?: string;
+  owner?: string;
+  due: string;
+  completedAt?: string | null;
+  createdAt?: string;
+}
+
+export function addFollowUp(f: FollowUpSeed): void {
+  db.prepare('INSERT INTO follow_ups (id, customer_id, due_date, completed, completed_at, created_by_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(`fu${++seq}`, f.customerId ?? 'a', f.due, f.completedAt ? 1 : 0, f.completedAt ?? null, f.owner ?? 'u1', f.createdAt ?? '2026-01-01 00:00:00');
 }

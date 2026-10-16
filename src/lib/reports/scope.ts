@@ -30,3 +30,10 @@ export function dealScopeSql(s: ReportScope, offset: number): SqlFragment {
   const { sql, params } = inList('address_country', REGION_COUNTRIES[s.region], offset);
   return { sql: `o.customer_id IN (SELECT id FROM customers WHERE ${sql})`, params };
 }
+
+/** Filters an activity (`a`) or follow-up (`f`) row. created_by_id holds the owner; Team = every row on a regional account, whoever logged it. */
+export function activityScopeSql(s: ReportScope, offset: number, alias: 'a' | 'f' = 'a'): SqlFragment {
+  if (s.kind === 'mine') return inList(`${alias}.created_by_id`, s.userIds, offset);
+  const { sql, params } = inList('address_country', REGION_COUNTRIES[s.region], offset);
+  return { sql: `${alias}.customer_id IN (SELECT id FROM customers WHERE ${sql})`, params };
+}

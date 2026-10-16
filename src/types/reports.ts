@@ -95,3 +95,10 @@ export interface DimensionRow {
   /** Accounts with a Power BI row. Fewer than `accounts` means some are unmatched and add no ARR. */
   matched: number;
 }
+
+export interface ActivityVolume {
+  total: number;
+  /** Same measure over the window of equal length immediately before the period. */
+  previous: number;
+  byMonth: { month: string; type: string; count: number }[];
+}
