@@ -305,13 +305,15 @@ describe('queryQuietDeals', () => {
     expect(r[0]).toMatchObject({ lastActivityAt: null, daysStale: null });
   });
 
-  it('puts never-contacted deals first and honours the limit', async () => {
+  it('ranks a never-contacted deal by age since creation, so fresh ones sit below genuinely stale ones', async () => {
     addCustomer('b', 'u1', 'BE');
+    addCustomer('c', 'u1', 'BE');
     addActivity('b', new Date(Date.now() - 50 * 86400000).toISOString());
-    addOpportunity({ customerId: 'b', annual: 2 });
-    addOpportunity({ customerId: 'a', annual: 1 });
-    expect((await queryQuietDeals(mine, 30, 1)).map((d) => d.value)).toEqual([1]);
-    expect(await queryQuietDeals(mine, 30, 5)).toHaveLength(2);
+    const stale50 = addOpportunity({ customerId: 'b', annual: 1 });
+    const old400 = addOpportunity({ customerId: 'a', annual: 2, createdAt: new Date(Date.now() - 400 * 86400000).toISOString(), updatedAt: '2026-10-15 00:00:00' });
+    const fresh = addOpportunity({ customerId: 'c', annual: 3, createdAt: new Date().toISOString() });
+    expect((await queryQuietDeals(mine, 30, 5)).map((d) => d.id)).toEqual([old400, stale50, fresh]);
+    expect((await queryQuietDeals(mine, 30, 2)).map((d) => d.id)).toEqual([old400, stale50]);
   });
 
   it('does not treat a future-dated activity as recent contact', async () => {

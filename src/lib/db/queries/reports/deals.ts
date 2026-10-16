@@ -197,21 +197,22 @@ export async function queryForecastByMonth(s: ReportScope): Promise<Forecast> {
   }
 }
 
-/** Scoped sibling of queryMyStaleOpportunities (Home): open deals whose account has had no contact for more than idleDays, or never. */
+/** Scoped sibling of queryMyStaleOpportunities (Home): open deals whose account has had no contact for more than idleDays, or never. Never-contacted deals rank by age since the deal was created (record edits are not contact). */
 export async function queryQuietDeals(s: ReportScope, idleDays: number, limit: number): Promise<QuietDeal[]> {
   const scope = dealScopeSql(s, 0);
   const { params, bind } = paramBinder(scope.params);
+  const nowIso = new Date().toISOString();
   try {
     const db = await getDb();
     const sql = `SELECT o.id, o.subject, o.customer_id AS customerId,
            COALESCE((SELECT name FROM customers WHERE id = o.customer_id), 'Unknown') AS customerName,
            o.stage, ${OPP_ARR} AS value, o.currency,
-           lc.last_at AS lastActivityAt, ${daysSinceSql(bind(new Date().toISOString()))} AS daysStale
+           lc.last_at AS lastActivityAt, ${daysSinceSql(bind(nowIso))} AS daysStale
          FROM opportunities o
-         LEFT JOIN ${lastContactSql(bind(new Date().toISOString()))} lc ON lc.customer_id = o.customer_id
+         LEFT JOIN ${lastContactSql(bind(nowIso))} lc ON lc.customer_id = o.customer_id
          WHERE o.status = 'Open' AND ${scope.sql}
-           AND (lc.last_at IS NULL OR ${daysSinceSql(bind(new Date().toISOString()))} > ${bind(idleDays)})
-         ORDER BY lc.last_at ASC
+           AND (lc.last_at IS NULL OR ${daysSinceSql(bind(nowIso))} > ${bind(idleDays)})
+         ORDER BY julianday(${bind(nowIso)}) - julianday(COALESCE(lc.last_at, o.created_at)) DESC
          LIMIT ${bind(limit)}`;
     return await db.select<QuietDeal[]>(sql, params);
   } catch (err) {

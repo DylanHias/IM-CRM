@@ -576,6 +576,7 @@ export async function queryMyStaleOpportunities(
   const userIds = altUserId && altUserId !== userId ? [userId, altUserId] : [userId];
   const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
   const { params, bind } = paramBinder(userIds);
+  const nowIso = new Date().toISOString();
   const sql = `SELECT o.id, o.subject,
          o.customer_id as customerId,
          c.name as customerName,
@@ -583,14 +584,14 @@ export async function queryMyStaleOpportunities(
          COALESCE(o.annual_revenue, o.estimated_revenue) as estimatedRevenue,
          o.currency,
          lc.last_at as lastActivityAt,
-         ${daysSinceSql(bind(new Date().toISOString()))} as daysStale
+         ${daysSinceSql(bind(nowIso))} as daysStale
        FROM opportunities o
        LEFT JOIN customers c ON c.id = o.customer_id
-       LEFT JOIN ${lastContactSql(bind(new Date().toISOString()))} lc ON lc.customer_id = o.customer_id
+       LEFT JOIN ${lastContactSql(bind(nowIso))} lc ON lc.customer_id = o.customer_id
        WHERE o.status = 'Open'
          AND o.created_by_id IN (${placeholders})
-         AND (lc.last_at IS NULL OR ${daysSinceSql(bind(new Date().toISOString()))} > ${bind(withinDays)})
-       ORDER BY lc.last_at ASC
+         AND (lc.last_at IS NULL OR ${daysSinceSql(bind(nowIso))} > ${bind(withinDays)})
+       ORDER BY julianday(${bind(nowIso)}) - julianday(COALESCE(lc.last_at, o.created_at)) DESC
        LIMIT ${bind(limit)}`;
   const rows = await db.select<(Omit<StaleOpportunity, 'customerName'> & { customerName: string | null })[]>(sql, params);
   return rows.map((r) => ({ ...r, customerName: r.customerName ?? 'Unknown' }));

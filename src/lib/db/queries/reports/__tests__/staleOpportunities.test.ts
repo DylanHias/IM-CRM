@@ -35,4 +35,14 @@ describe('queryMyStaleOpportunities', () => {
     addOpportunity({ customerId: 'a' });
     expect(await queryMyStaleOpportunities('u1', null)).toHaveLength(0);
   });
+
+  it('ranks never-contacted deals by age since creation, under the limit', async () => {
+    addCustomer('b', 'u1', 'BE');
+    addActivity('b', daysAgo(50));
+    const stale50 = addOpportunity({ customerId: 'b' });
+    const old400 = addOpportunity({ customerId: 'a', createdAt: daysAgo(400) });
+    addCustomer('c', 'u1', 'BE');
+    addOpportunity({ customerId: 'c', createdAt: daysAgo(0) });
+    expect((await queryMyStaleOpportunities('u1', null, 30, 2)).map((d) => d.id)).toEqual([old400, stale50]);
+  });
 });

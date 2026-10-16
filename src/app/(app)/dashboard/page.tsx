@@ -315,15 +315,15 @@ export default function DashboardPage() {
 
           <Panel className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <PanelHeader title="Deals going quiet">
-              <Badge variant="warning">30+ days idle</Badge>
+              <Badge variant="warning">30+ days without contact</Badge>
             </PanelHeader>
             {(data?.stale.length ?? 0) === 0 ? (
-              <EmptyState icon={CalendarClock} title="No deals going quiet" description="Every open deal had an update in the last 30 days." />
+              <EmptyState icon={CalendarClock} title="No deals going quiet" description="Every open deal's customer was contacted in the last 30 days." />
             ) : (
               <ul ref={quiet.ref} className="min-h-0 overflow-y-auto">
                 {quiet.visible.map((o) => (
                   <li key={o.id} className="relative border-t border-border first:border-t-0">
-                    <CobwebOverlay daysStale={o.daysStale ?? 0} />
+                    <CobwebOverlay daysStale={o.daysStale ?? Infinity} />
                     <button
                       type="button"
                       onClick={() => router.push(`/customers?id=${o.customerId}&tab=opportunities`)}
