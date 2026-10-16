@@ -420,6 +420,10 @@ async fn export_revenue_overview(
 #[serde(rename_all = "camelCase")]
 struct RevenueCacheRow {
     bcn: String,
+    // Added in schema_version 4. A v3 file omits it and serde fills in None, which
+    // is what the column holds until the receiving app runs its own refresh.
+    #[serde(default)]
+    customer_id: Option<String>,
     pbi_customer_id: Option<String>,
     reseller_account: Option<String>,
     arr_usd: Option<f64>,
@@ -525,8 +529,11 @@ async fn export_revenue_cache(
 
         let mut stmt = conn
             .prepare(
+                // customer_id is appended rather than inserted so the existing
+                // column indices below stay put.
                 "SELECT bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc,
-                        currency_code, as_of_month, active_end_customers, refreshed_at
+                        currency_code, as_of_month, active_end_customers, refreshed_at,
+                        customer_id
                  FROM customer_revenue",
             )
             .map_err(|e| e.to_string())?;
@@ -543,6 +550,7 @@ async fn export_revenue_cache(
                     as_of_month: r.get(6)?,
                     active_end_customers: r.get(7)?,
                     refreshed_at: r.get(8)?,
+                    customer_id: r.get(9)?,
                 })
             })
             .map_err(|e| e.to_string())?
@@ -659,7 +667,10 @@ async fn export_revenue_cache(
         let count = rows.len();
         let payload = RevenueCacheFile {
             kind: "im-crm-revenue-cache".to_string(),
-            schema_version: 3,
+            // v4 adds customer_id per row. An app that predates it rejects the file
+            // with "please update the app" rather than importing rows it would
+            // collapse onto its single-row-per-BCN primary key.
+            schema_version: 4,
             exported_at,
             last_refreshed_at,
             row_count: count,
@@ -710,7 +721,9 @@ async fn import_revenue_cache(
                     .to_string(),
             );
         }
-        if parsed.schema_version != 3 {
+        // v4 added customer_id; v3 files still import cleanly, their rows simply
+        // carry no customer id until this app runs its own refresh.
+        if parsed.schema_version != 3 && parsed.schema_version != 4 {
             return Err(format!(
                 "Unsupported schema version {} — please update the app",
                 parsed.schema_version
@@ -726,10 +739,13 @@ async fn import_revenue_cache(
         {
             let mut stmt = tx
                 .prepare(
+                    // customer_id is appended rather than inserted so the existing
+                    // ?1..?9 bindings below stay aligned.
                     "INSERT OR REPLACE INTO customer_revenue
                      (bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc,
-                      currency_code, as_of_month, active_end_customers, refreshed_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                      currency_code, as_of_month, active_end_customers, refreshed_at,
+                      customer_id)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                 )
                 .map_err(|e| e.to_string())?;
             for r in &parsed.rows {
@@ -743,6 +759,7 @@ async fn import_revenue_cache(
                     r.as_of_month,
                     r.active_end_customers,
                     r.refreshed_at,
+                    r.customer_id,
                 ])
                 .map_err(|e| e.to_string())?;
             }

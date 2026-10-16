@@ -23,7 +23,7 @@ interface RevenueRowDb {
 // One source of truth for the cache's columns: the SELECT, the INSERT and the
 // positional params are all generated from it, so a new column cannot land in
 // the list without landing in the params at the same position.
-const REVENUE_COLUMNS: readonly (keyof RevenueRowDb)[] = [
+export const REVENUE_COLUMNS: readonly (keyof RevenueRowDb)[] = [
   'bcn',
   'customer_id',
   'pbi_customer_id',
@@ -69,6 +69,39 @@ function toIntOrNull(v: unknown): number | null {
   const n = toNumOrNull(v);
   if (n === null) return null;
   return Math.round(n);
+}
+
+/**
+ * Groups rows by BCN and packs whole groups into chunks, so every row belonging to
+ * one BCN is written by a single statement. Splitting purely by row count would let
+ * a BCN straddle a boundary, and then a failing chunk could delete the current rows
+ * of a BCN whose remaining rows another chunk had already replaced, leaving it
+ * reporting a partial sum.
+ */
+function chunkByBcn(rows: RevenueRowDb[], maxRows: number): RevenueRowDb[][] {
+  const groups = new Map<string, RevenueRowDb[]>();
+  for (const r of rows) {
+    const group = groups.get(r.bcn);
+    if (group) group.push(r);
+    else groups.set(r.bcn, [r]);
+  }
+
+  const chunks: RevenueRowDb[][] = [];
+  let current: RevenueRowDb[] = [];
+  groups.forEach((group) => {
+    // ponytail: a BCN with more rows than maxRows goes out oversized rather than
+    // split, so all-or-nothing per BCN still holds. That needs ~100 reseller ids on
+    // one BCN; if it ever happens the statement fails as one chunk, gets logged, and
+    // the BCN keeps its previous rows. Raise maxRows (SQLite allows far more than
+    // 999 parameters now) before considering a split.
+    if (current.length > 0 && current.length + group.length > maxRows) {
+      chunks.push(current);
+      current = [];
+    }
+    current.push(...group);
+  });
+  if (current.length > 0) chunks.push(current);
+  return chunks;
 }
 
 async function readSetting(key: string): Promise<string | null> {
@@ -194,8 +227,7 @@ export async function refreshRevenue(
     // from aborting the whole refresh.
     let inserted = 0;
     let errors = 0;
-    for (let i = 0; i < valid.length; i += CHUNK) {
-      const chunk = valid.slice(i, i + CHUNK);
+    for (const chunk of chunkByBcn(valid, CHUNK)) {
       const placeholders = chunk
         .map(
           (_, j) =>
@@ -207,32 +239,34 @@ export async function refreshRevenue(
         .join(',');
       const values = chunk.flatMap((r) => REVENUE_COLUMNS.map((c) => r[c]));
       // A BCN now holds one row per Power BI reseller id, so there is no primary key
-      // left for INSERT OR REPLACE to collapse onto. Insert first, then drop the rows
-      // these supersede: scoped to this chunk's BCNs so a failing chunk keeps its
-      // older data, and to rows older than this refresh so a later chunk never
-      // deletes an earlier chunk's inserts. If the insert lands but the delete does
-      // not, that chunk's BCNs hold both copies until the next refresh replaces them.
+      // left for INSERT OR REPLACE to collapse onto. Clear this chunk's BCNs, then
+      // insert their replacements. Deleting first is what keeps a half-written chunk
+      // honest: the BCNs end up with no rows and fall back to the D365 ARR, instead
+      // of holding the old and the new rows at once and reporting double. Chunks are
+      // packed on BCN boundaries, so clearing a BCN here can never strand rows that
+      // another chunk was responsible for. `refreshed_at < $1` is belt-and-braces.
       const bcns = Array.from(new Set(chunk.map((r) => r.bcn)));
       try {
+        await db.execute(
+          `DELETE FROM customer_revenue
+           WHERE refreshed_at < $1 AND bcn IN (${bcns.map((_, j) => `$${j + 2}`).join(',')})`,
+          [refreshedAt, ...bcns],
+        );
         const result = await db.execute(
           `INSERT INTO customer_revenue (${REVENUE_COLUMNS.join(', ')})
            VALUES ${placeholders}`,
           values,
         );
         inserted += result.rowsAffected;
-        await db.execute(
-          `DELETE FROM customer_revenue
-           WHERE refreshed_at < $1 AND bcn IN (${bcns.map((_, j) => `$${j + 2}`).join(',')})`,
-          [refreshedAt, ...bcns],
-        );
       } catch (err) {
         console.error('[revenue] Bulk write chunk failed:', err instanceof Error ? err.message : err);
         errors++;
       }
     }
 
-    // Only prune stale rows if every chunk landed cleanly — partial failure should
-    // leave older rows intact rather than dropping data we still want.
+    // Each chunk already cleared its own BCNs, so this only removes BCNs that
+    // dropped out of Power BI altogether. Still gated on a clean run: after a
+    // partial failure the picture is incomplete, so leave those rows alone.
     if (errors === 0) {
       try {
         await db.execute(
