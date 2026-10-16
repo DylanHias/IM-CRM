@@ -289,14 +289,16 @@ async fn export_revenue_overview(
             // Mirror the UI's effective-ARR resolution (src/lib/revenue/effectiveArr.ts):
             // prefer the Power BI cache (customer_revenue.arr_lc) matched by BCN first,
             // then by reseller account, and only fall back to the D365-synced c.arr.
+            // A BCN holds one cache row per Power BI reseller id, so SUM them — a bare
+            // column would pick an arbitrary row and understate the ARR.
             let sql = format!(
                 "SELECT
                     c.id, c.name, c.phone, c.email, c.cloud_customer,
                     CASE
                       WHEN EXISTS (SELECT 1 FROM customer_revenue WHERE bcn = c.bcn)
-                        THEN COALESCE((SELECT arr_lc FROM customer_revenue WHERE bcn = c.bcn), c.arr)
+                        THEN COALESCE((SELECT SUM(arr_lc) FROM customer_revenue WHERE bcn = c.bcn), c.arr)
                       WHEN EXISTS (SELECT 1 FROM customer_revenue WHERE reseller_account = c.account_number)
-                        THEN COALESCE((SELECT arr_lc FROM customer_revenue WHERE reseller_account = c.account_number LIMIT 1), c.arr)
+                        THEN COALESCE((SELECT SUM(arr_lc) FROM customer_revenue WHERE reseller_account = c.account_number), c.arr)
                       ELSE c.arr
                     END AS eff_arr,
                     con.first_name, con.last_name, con.phone, con.mobile, con.email

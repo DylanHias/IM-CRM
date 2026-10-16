@@ -2,15 +2,14 @@ import { getDb } from '@/lib/db/client';
 import { useRevenueStore, type CustomerRevenueRow } from '@/store/revenueStore';
 import { executeDaxQuery } from './client';
 import { CURRENT_ARR_BY_BCN_DAX } from './queries';
+import { buildMatchIndex, resolveCustomerId, type CustomerMatchIndex } from './matchCustomers';
 
 const DATASET_ID =
   process.env.NEXT_PUBLIC_POWERBI_DATASET_ID ?? '44da76a4-3c3f-44a8-abe9-48ff17247cc9';
 
-const COLS_PER_ROW = 9;
-const CHUNK = Math.floor(999 / COLS_PER_ROW);
-
 interface RevenueRowDb {
   bcn: string;
+  customer_id: string | null;
   pbi_customer_id: string | null;
   reseller_account: string | null;
   arr_usd: number | null;
@@ -20,6 +19,24 @@ interface RevenueRowDb {
   active_end_customers: number | null;
   refreshed_at: string;
 }
+
+// One source of truth for the cache's columns: the SELECT, the INSERT and the
+// positional params are all generated from it, so a new column cannot land in
+// the list without landing in the params at the same position.
+const REVENUE_COLUMNS: readonly (keyof RevenueRowDb)[] = [
+  'bcn',
+  'customer_id',
+  'pbi_customer_id',
+  'reseller_account',
+  'arr_usd',
+  'arr_lc',
+  'currency_code',
+  'as_of_month',
+  'active_end_customers',
+  'refreshed_at',
+];
+const COLS_PER_ROW = REVENUE_COLUMNS.length;
+const CHUNK = Math.floor(999 / COLS_PER_ROW);
 
 function toNumOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
@@ -36,6 +53,7 @@ function toStrOrNull(v: unknown): string | null {
 function mapDbRow(row: RevenueRowDb): CustomerRevenueRow {
   return {
     bcn: row.bcn,
+    customerId: row.customer_id,
     pbiCustomerId: row.pbi_customer_id,
     resellerAccount: row.reseller_account,
     arrUsd: row.arr_usd,
@@ -62,53 +80,26 @@ async function readSetting(key: string): Promise<string | null> {
   return rows[0]?.value || null;
 }
 
-interface CrmMatchSets {
-  bcns: Set<string>;
-  accountNumbers: Set<string>;
-  cloudResellerIds: Set<string>;
-  armIds: Set<string>;
-  uniqueNormalizedNames: Set<string>;
-}
-
-function normalizeArmId(v: string): string {
-  return v.replace(/^'|'$/g, '').trim();
-}
-
-function normalizeName(v: string): string {
-  return v.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-async function getCrmMatchSets(): Promise<CrmMatchSets> {
+async function loadMatchIndex(): Promise<CustomerMatchIndex> {
   const db = await getDb();
   const rows = await db.select<{
+    id: string;
+    name: string;
     bcn: string | null;
     account_number: string | null;
     reseller_id: string | null;
     arm_id: string | null;
-    name: string | null;
-  }[]>(`SELECT bcn, account_number, reseller_id, arm_id, name FROM customers`);
-  const bcns = new Set<string>();
-  const accountNumbers = new Set<string>();
-  const cloudResellerIds = new Set<string>();
-  const armIds = new Set<string>();
-  // Name fallback: only allow names that are unique inside the CRM to avoid
-  // collapsing multiple distinct customers onto a single PBI row.
-  const nameCounts = new Map<string, number>();
-  for (const r of rows) {
-    if (r.bcn) bcns.add(r.bcn);
-    if (r.account_number) accountNumbers.add(r.account_number);
-    if (r.reseller_id) cloudResellerIds.add(r.reseller_id);
-    if (r.arm_id) armIds.add(normalizeArmId(r.arm_id));
-    if (r.name) {
-      const n = normalizeName(r.name);
-      if (n) nameCounts.set(n, (nameCounts.get(n) ?? 0) + 1);
-    }
-  }
-  const uniqueNormalizedNames = new Set<string>();
-  nameCounts.forEach((c, n) => {
-    if (c === 1) uniqueNormalizedNames.add(n);
-  });
-  return { bcns, accountNumbers, cloudResellerIds, armIds, uniqueNormalizedNames };
+  }[]>(`SELECT id, name, bcn, account_number, reseller_id, arm_id FROM customers`);
+  return buildMatchIndex(
+    rows.map((r) => ({
+      id: r.id,
+      name: r.name ?? '',
+      bcn: r.bcn,
+      accountNumber: r.account_number,
+      resellerId: r.reseller_id,
+      armId: r.arm_id,
+    })),
+  );
 }
 
 export async function getAutoRefreshHours(): Promise<number> {
@@ -120,8 +111,7 @@ export async function getAutoRefreshHours(): Promise<number> {
 export async function loadRevenueFromDb(): Promise<void> {
   const db = await getDb();
   const rows = await db.select<RevenueRowDb[]>(
-    `SELECT bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at
-     FROM customer_revenue`,
+    `SELECT ${REVENUE_COLUMNS.join(', ')} FROM customer_revenue`,
   );
   const lastRefreshed = await readSetting('revenue_last_refresh_at');
   useRevenueStore.getState().setRevenue(rows.map(mapDbRow), lastRefreshed || null);
@@ -159,49 +149,35 @@ export async function refreshRevenue(
     const refreshedAt = new Date().toISOString();
 
     const db = await getDb();
-    const {
-      bcns: crmBcns,
-      accountNumbers: crmAccountNumbers,
-      cloudResellerIds: crmCloudResellerIds,
-      armIds: crmArmIds,
-      uniqueNormalizedNames: crmUniqueNames,
-    } = await getCrmMatchSets();
+    const index = await loadMatchIndex();
 
-    const byBcn = new Map<string, RevenueRowDb>();
+    // Every Power BI row that resolves to a CRM customer is kept and summed on read;
+    // rows that resolve to nobody are counted as unmatched, never stored as zero.
+    const valid: RevenueRowDb[] = [];
     let skippedNotInCrm = 0;
-    let matchedByBcn = 0;
-    let matchedByAccount = 0;
-    let matchedByCloudResellerId = 0;
-    let matchedByMarketplaceId = 0;
-    let matchedByName = 0;
     for (const row of rows) {
       const bcn = toStrOrNull(row['Reseller[bcn]']);
       if (!bcn) continue;
       const resellerAccount = toStrOrNull(row['Reseller[Reseller Account]']);
       const resellerId = toStrOrNull(row['Reseller[reseller_id]']);
-      const marketplaceId = toStrOrNull(row['Reseller[marketplace_id]']);
-      const resellerName = toStrOrNull(row['Reseller[Reseller Name]']);
-      const matchByBcn = crmBcns.has(bcn);
-      const matchByAccount = !matchByBcn
-        && !!resellerAccount && crmAccountNumbers.has(resellerAccount);
-      const matchByCloudResellerId = !matchByBcn && !matchByAccount
-        && !!resellerId && crmCloudResellerIds.has(resellerId);
-      const matchByMarketplaceId = !matchByBcn && !matchByAccount && !matchByCloudResellerId
-        && !!marketplaceId && crmArmIds.has(normalizeArmId(marketplaceId));
-      const matchByName = !matchByBcn && !matchByAccount && !matchByCloudResellerId && !matchByMarketplaceId
-        && !!resellerName && crmUniqueNames.has(normalizeName(resellerName));
-      if (!matchByBcn && !matchByAccount && !matchByCloudResellerId && !matchByMarketplaceId && !matchByName) {
+      const customerId = resolveCustomerId(
+        {
+          bcn,
+          resellerAccount,
+          resellerId,
+          marketplaceId: toStrOrNull(row['Reseller[marketplace_id]']),
+          resellerName: toStrOrNull(row['Reseller[Reseller Name]']),
+        },
+        index,
+      );
+      if (!customerId) {
         skippedNotInCrm++;
         continue;
       }
-      if (matchByBcn) matchedByBcn++;
-      else if (matchByAccount) matchedByAccount++;
-      else if (matchByCloudResellerId) matchedByCloudResellerId++;
-      else if (matchByMarketplaceId) matchedByMarketplaceId++;
-      else matchedByName++;
-      const next: RevenueRowDb = {
+      valid.push({
         bcn,
-        pbi_customer_id: toStrOrNull(row['Reseller[reseller_id]']),
+        customer_id: customerId,
+        pbi_customer_id: resellerId,
         reseller_account: resellerAccount,
         arr_usd: toNumOrNull(row['[ARR_USD]']),
         arr_lc: toNumOrNull(row['[ARR_LC]']),
@@ -209,13 +185,8 @@ export async function refreshRevenue(
         as_of_month: toStrOrNull(row['[AsOfMonth]']),
         active_end_customers: toIntOrNull(row['[ActiveEndCustomers]']),
         refreshed_at: refreshedAt,
-      };
-      const existing = byBcn.get(bcn);
-      if (!existing || (next.arr_usd ?? 0) > (existing.arr_usd ?? 0)) {
-        byBcn.set(bcn, next);
-      }
+      });
     }
-    const valid = Array.from(byBcn.values());
 
     // Same pattern as bulkUpsertCustomers / bulkUpsertOpportunities: each chunk
     // auto-commits so the write lock is released between batches and concurrent
@@ -234,27 +205,28 @@ export async function refreshRevenue(
             ).join(',')})`,
         )
         .join(',');
-      const values = chunk.flatMap((r) => [
-        r.bcn,
-        r.pbi_customer_id,
-        r.reseller_account,
-        r.arr_usd,
-        r.arr_lc,
-        r.currency_code,
-        r.as_of_month,
-        r.active_end_customers,
-        r.refreshed_at,
-      ]);
+      const values = chunk.flatMap((r) => REVENUE_COLUMNS.map((c) => r[c]));
+      // A BCN now holds one row per Power BI reseller id, so there is no primary key
+      // left for INSERT OR REPLACE to collapse onto. Insert first, then drop the rows
+      // these supersede: scoped to this chunk's BCNs so a failing chunk keeps its
+      // older data, and to rows older than this refresh so a later chunk never
+      // deletes an earlier chunk's inserts. If the insert lands but the delete does
+      // not, that chunk's BCNs hold both copies until the next refresh replaces them.
+      const bcns = Array.from(new Set(chunk.map((r) => r.bcn)));
       try {
         const result = await db.execute(
-          `INSERT OR REPLACE INTO customer_revenue
-           (bcn, pbi_customer_id, reseller_account, arr_usd, arr_lc, currency_code, as_of_month, active_end_customers, refreshed_at)
+          `INSERT INTO customer_revenue (${REVENUE_COLUMNS.join(', ')})
            VALUES ${placeholders}`,
           values,
         );
         inserted += result.rowsAffected;
+        await db.execute(
+          `DELETE FROM customer_revenue
+           WHERE refreshed_at < $1 AND bcn IN (${bcns.map((_, j) => `$${j + 2}`).join(',')})`,
+          [refreshedAt, ...bcns],
+        );
       } catch (err) {
-        console.error('[revenue] Bulk insert chunk failed:', err instanceof Error ? err.message : err);
+        console.error('[revenue] Bulk write chunk failed:', err instanceof Error ? err.message : err);
         errors++;
       }
     }
@@ -283,8 +255,11 @@ export async function refreshRevenue(
       console.error('[revenue] last-refresh timestamp write failed:', err instanceof Error ? err.message : err);
     }
 
+    // Callers label this "customers updated", and a customer can own several rows.
+    const matchedCustomers = new Set(valid.map((r) => r.customer_id)).size;
+
     console.log(
-      `[revenue] refresh complete: ${inserted} rows inserted (${matchedByBcn} via BCN, ${matchedByAccount} via Reseller Account, ${matchedByCloudResellerId} via cloud reseller_id, ${matchedByMarketplaceId} via marketplace_id, ${matchedByName} via name), ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
+      `[revenue] refresh complete: ${inserted} rows inserted across ${matchedCustomers} customers, ${skippedNotInCrm} Power BI rows skipped (not in CRM), ${errors} chunk${errors === 1 ? '' : 's'} failed`,
     );
 
     useRevenueStore.getState().setRevenue(valid.map(mapDbRow), refreshedAt);
@@ -299,7 +274,7 @@ export async function refreshRevenue(
       void refreshSnapshotsInBackground(token);
     }
 
-    return { count: valid.length };
+    return { count: matchedCustomers };
   } finally {
     useRevenueStore.getState().setRefreshing(false);
   }

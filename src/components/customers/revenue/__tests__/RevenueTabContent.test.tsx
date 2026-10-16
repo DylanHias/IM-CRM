@@ -11,6 +11,7 @@ vi.mock('@/components/revenue/RefreshButton', () => ({
 
 const row: CustomerRevenueRow = {
   bcn: 'BCN1',
+  customerId: 'cust-1',
   pbiCustomerId: null,
   resellerAccount: null,
   arrUsd: 130000,

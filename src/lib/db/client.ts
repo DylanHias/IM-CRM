@@ -91,7 +91,9 @@ async function ensureTablesExist(db: Database): Promise<void> {
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS customer_revenue (
-      bcn                   TEXT PRIMARY KEY,
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      bcn                   TEXT NOT NULL,
+      customer_id           TEXT,
       pbi_customer_id       TEXT,
       reseller_account      TEXT,
       arr_usd               REAL,
@@ -104,6 +106,8 @@ async function ensureTablesExist(db: Database): Promise<void> {
   `);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_pbi_id ON customer_revenue(pbi_customer_id)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_reseller_account ON customer_revenue(reseller_account)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_customer_id ON customer_revenue(customer_id)`);
+  await db.execute(`CREATE INDEX IF NOT EXISTS idx_customer_revenue_bcn ON customer_revenue(bcn)`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS arr_movement (
@@ -478,13 +482,15 @@ async function rebuildCustomerRevenueIfDrifted(db: Database): Promise<void> {
 
   const info = await db.select<{ name: string }[]>(`PRAGMA table_info(customer_revenue)`);
   const have = new Set(info.map((c) => c.name));
-  const required = ['bcn', 'pbi_customer_id', 'reseller_account', 'arr_usd', 'arr_lc', 'currency_code', 'as_of_month', 'active_end_customers', 'refreshed_at'];
+  const required = ['id', 'bcn', 'customer_id', 'pbi_customer_id', 'reseller_account', 'arr_usd', 'arr_lc', 'currency_code', 'as_of_month', 'active_end_customers', 'refreshed_at'];
   const missing = required.filter((c) => !have.has(c));
   if (missing.length === 0) return;
 
   console.warn('[db] customer_revenue is missing columns, rebuilding cache:', missing);
   await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_pbi_id`);
   await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_reseller_account`);
+  await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_customer_id`);
+  await db.execute(`DROP INDEX IF EXISTS idx_customer_revenue_bcn`);
   await db.execute(`DROP TABLE customer_revenue`);
   await db.execute(`UPDATE app_settings SET value = '' WHERE key = 'revenue_last_refresh_at'`);
 }
