@@ -21,6 +21,17 @@ describe('revenueStore.setRevenue', () => {
     expect(r?.arrUsd).toBe(1650);
   });
 
+  it('sums the active end customer counts, so the count matches the summed ARR', () => {
+    useRevenueStore.getState().setRevenue(
+      [
+        revenueRow({ arrLc: 1000, activeEndCustomers: 7 }),
+        revenueRow({ arrLc: 500, activeEndCustomers: 3 }),
+      ],
+      null,
+    );
+    expect(useRevenueStore.getState().byBcn.get('B1')?.activeEndCustomers).toBe(10);
+  });
+
   it('sums rows sharing a reseller account and keeps null when every value is null', () => {
     useRevenueStore.getState().setRevenue(
       [

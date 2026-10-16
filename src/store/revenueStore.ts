@@ -29,6 +29,10 @@ function addNullable(a: number | null, b: number | null): number | null {
 }
 
 // Several Power BI rows can share a key (one BCN, many reseller ids): sum them.
+// ponytail: activeEndCustomers is a distinct count per reseller id, so summing it
+// double-counts an end customer served through two of them. Summing still beats
+// showing one arbitrary reseller's count next to the BCN's total ARR; switch to a
+// per-BCN DISTINCTCOUNT in the DAX if the overlap turns out to matter.
 function indexByKey(
   rows: CustomerRevenueRow[],
   keyOf: (r: CustomerRevenueRow) => string | null,
@@ -41,7 +45,12 @@ function indexByKey(
     out.set(
       key,
       prev
-        ? { ...prev, arrLc: addNullable(prev.arrLc, r.arrLc), arrUsd: addNullable(prev.arrUsd, r.arrUsd) }
+        ? {
+            ...prev,
+            arrLc: addNullable(prev.arrLc, r.arrLc),
+            arrUsd: addNullable(prev.arrUsd, r.arrUsd),
+            activeEndCustomers: addNullable(prev.activeEndCustomers, r.activeEndCustomers),
+          }
         : r,
     );
   }
