@@ -323,7 +323,7 @@ export default function DashboardPage() {
               <ul ref={quiet.ref} className="min-h-0 overflow-y-auto">
                 {quiet.visible.map((o) => (
                   <li key={o.id} className="relative border-t border-border first:border-t-0">
-                    <CobwebOverlay daysStale={o.daysStale} />
+                    <CobwebOverlay daysStale={o.daysStale ?? 0} />
                     <button
                       type="button"
                       onClick={() => router.push(`/customers?id=${o.customerId}&tab=opportunities`)}
@@ -335,7 +335,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <div className="whitespace-nowrap font-semibold tabular-nums">{o.estimatedRevenue != null ? fmtEur(o.estimatedRevenue) : '—'}</div>
-                        <div className="whitespace-nowrap text-[11.5px] font-semibold tabular-nums text-warning">{o.daysStale} days</div>
+                        <div className="whitespace-nowrap text-[11.5px] font-semibold tabular-nums text-warning">{o.daysStale === null ? 'Never contacted' : `${o.daysStale} days`}</div>
                       </div>
                     </button>
                   </li>

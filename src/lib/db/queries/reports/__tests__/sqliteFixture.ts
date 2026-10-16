@@ -9,14 +9,15 @@ let db: DatabaseSync;
 export function resetFixture(): void {
   db = new DatabaseSync(':memory:');
   db.exec(`
-    CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id TEXT, address_country TEXT, segment TEXT, industry TEXT);
+    -- last_activity_at and health_score are omitted on purpose: reports must never read them, and a missing column makes any such read fail loudly. Do not "complete" this table.
+    CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id TEXT, address_country TEXT, segment TEXT, industry TEXT, status TEXT DEFAULT 'active');
     CREATE TABLE customer_revenue (id INTEGER PRIMARY KEY AUTOINCREMENT, bcn TEXT NOT NULL, customer_id TEXT, arr_lc REAL);
     CREATE TABLE arr_movement (
       bcn TEXT NOT NULL, month TEXT NOT NULL,
       upgrade_lc REAL, downgrade_lc REAL, cancellation_lc REAL, new_sale_lc REAL,
       PRIMARY KEY (bcn, month)
     );
-    CREATE TABLE activities (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, occurred_at TEXT NOT NULL);
+    CREATE TABLE activities (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, occurred_at TEXT NOT NULL, created_by_id TEXT NOT NULL DEFAULT 'u1');
     CREATE TABLE opportunities (
       id                       TEXT PRIMARY KEY,
       customer_id              TEXT NOT NULL,
@@ -55,10 +56,10 @@ export function addCustomer(
   id: string,
   owner: string | null,
   country: string | null,
-  extra: { segment?: string | null; industry?: string | null } = {},
+  extra: { segment?: string | null; industry?: string | null; status?: string } = {},
 ): void {
-  db.prepare('INSERT INTO customers (id, name, owner_id, address_country, segment, industry) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(id, `Customer ${id}`, owner, country, extra.segment ?? null, extra.industry ?? null);
+  db.prepare('INSERT INTO customers (id, name, owner_id, address_country, segment, industry, status) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .run(id, `Customer ${id}`, owner, country, extra.segment ?? null, extra.industry ?? null, extra.status ?? 'active');
 }
 
 export function addRevenue(bcn: string, customerId: string | null, arrLc: number): void {
@@ -113,6 +114,7 @@ export function addOpportunity(o: OpportunitySeed = {}): string {
   return id;
 }
 
-export function addActivity(customerId: string, occurredAt: string): void {
-  db.prepare('INSERT INTO activities (id, customer_id, occurred_at) VALUES (?, ?, ?)').run(`act${++seq}`, customerId, occurredAt);
+export function addActivity(customerId: string, occurredAt: string, createdBy = 'u1'): void {
+  db.prepare('INSERT INTO activities (id, customer_id, occurred_at, created_by_id) VALUES (?, ?, ?, ?)')
+    .run(`act${++seq}`, customerId, occurredAt, createdBy);
 }

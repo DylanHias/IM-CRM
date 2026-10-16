@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import type { Opportunity } from '@/types/entities';
 import type { OpportunityRow } from '@/types/db';
+import { daysSinceSql, lastContactSql, paramBinder } from '@/lib/reports/sql';
 
 
 function rowToOpportunity(row: OpportunityRow): Opportunity {
@@ -560,8 +561,9 @@ export interface StaleOpportunity {
   stage: string;
   estimatedRevenue: number | null;
   currency: string | null;
-  lastActivityAt: string;
-  daysStale: number;
+  /** Latest activity not in the future; null = the account was never contacted. */
+  lastActivityAt: string | null;
+  daysStale: number | null;
 }
 
 export async function queryMyStaleOpportunities(
@@ -571,50 +573,25 @@ export async function queryMyStaleOpportunities(
   limit = 25,
 ): Promise<StaleOpportunity[]> {
   const db = await getDb();
-  const cutoff = new Date(Date.now() - withinDays * 86400000).toISOString();
   const userIds = altUserId && altUserId !== userId ? [userId, altUserId] : [userId];
   const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
-  const rows = await db.select<{
-    id: string;
-    subject: string;
-    customerId: string;
-    customerName: string | null;
-    stage: string;
-    estimatedRevenue: number | null;
-    currency: string | null;
-    lastActivityAt: string;
-  }[]>(
-    `SELECT * FROM (
-       SELECT o.id, o.subject,
+  const { params, bind } = paramBinder(userIds);
+  const sql = `SELECT o.id, o.subject,
          o.customer_id as customerId,
          c.name as customerName,
          o.stage,
          COALESCE(o.annual_revenue, o.estimated_revenue) as estimatedRevenue,
          o.currency,
-         COALESCE(
-           (SELECT MAX(a.occurred_at) FROM activities a WHERE a.customer_id = o.customer_id),
-           o.updated_at
-         ) as lastActivityAt
+         lc.last_at as lastActivityAt,
+         ${daysSinceSql(bind(new Date().toISOString()))} as daysStale
        FROM opportunities o
        LEFT JOIN customers c ON c.id = o.customer_id
+       LEFT JOIN ${lastContactSql(bind(new Date().toISOString()))} lc ON lc.customer_id = o.customer_id
        WHERE o.status = 'Open'
          AND o.created_by_id IN (${placeholders})
-     )
-     WHERE lastActivityAt < $${userIds.length + 1}
-     ORDER BY lastActivityAt ASC
-     LIMIT $${userIds.length + 2}`,
-    [...userIds, cutoff, limit],
-  );
-  const now = Date.now();
-  return rows.map((r) => ({
-    id: r.id,
-    subject: r.subject,
-    customerId: r.customerId,
-    customerName: r.customerName ?? 'Unknown',
-    stage: r.stage,
-    estimatedRevenue: r.estimatedRevenue,
-    currency: r.currency,
-    lastActivityAt: r.lastActivityAt,
-    daysStale: Math.floor((now - new Date(r.lastActivityAt).getTime()) / 86400000),
-  }));
+         AND (lc.last_at IS NULL OR ${daysSinceSql(bind(new Date().toISOString()))} > ${bind(withinDays)})
+       ORDER BY lc.last_at ASC
+       LIMIT ${bind(limit)}`;
+  const rows = await db.select<(Omit<StaleOpportunity, 'customerName'> & { customerName: string | null })[]>(sql, params);
+  return rows.map((r) => ({ ...r, customerName: r.customerName ?? 'Unknown' }));
 }

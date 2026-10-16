@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db/client';
 import { OPP_ARR } from '@/lib/db/queries/analytics';
 import { monthKeys, type ReportPeriod } from '@/lib/reports/period';
 import { dealScopeSql, type ReportScope } from '@/lib/reports/scope';
+import { daysSinceSql, lastContactSql, paramBinder } from '@/lib/reports/sql';
 import type { BreakdownRow, ClosedMonth, Forecast, Money, MonthTotal, QuietDeal } from '@/types/reports';
 
 // Money is summed in EUR only: no FX rate exists, so other currencies are counted, not converted.
@@ -196,29 +197,23 @@ export async function queryForecastByMonth(s: ReportScope): Promise<Forecast> {
   }
 }
 
-/** Scoped sibling of queryMyStaleOpportunities (which Home still calls): open deals with no recent activity. */
+/** Scoped sibling of queryMyStaleOpportunities (Home): open deals whose account has had no contact for more than idleDays, or never. */
 export async function queryQuietDeals(s: ReportScope, idleDays: number, limit: number): Promise<QuietDeal[]> {
   const scope = dealScopeSql(s, 0);
-  const n = scope.params.length;
-  const cutoff = new Date(Date.now() - idleDays * 86400000).toISOString();
+  const { params, bind } = paramBinder(scope.params);
   try {
     const db = await getDb();
-    const rows = await db.select<Omit<QuietDeal, 'daysStale'>[]>(
-      `SELECT * FROM (
-         SELECT o.id, o.subject, o.customer_id AS customerId,
+    const sql = `SELECT o.id, o.subject, o.customer_id AS customerId,
            COALESCE((SELECT name FROM customers WHERE id = o.customer_id), 'Unknown') AS customerName,
            o.stage, ${OPP_ARR} AS value, o.currency,
-           COALESCE((SELECT MAX(a.occurred_at) FROM activities a WHERE a.customer_id = o.customer_id), o.updated_at) AS lastActivityAt
+           lc.last_at AS lastActivityAt, ${daysSinceSql(bind(new Date().toISOString()))} AS daysStale
          FROM opportunities o
+         LEFT JOIN ${lastContactSql(bind(new Date().toISOString()))} lc ON lc.customer_id = o.customer_id
          WHERE o.status = 'Open' AND ${scope.sql}
-       )
-       WHERE lastActivityAt < $${n + 1}
-       ORDER BY lastActivityAt ASC
-       LIMIT $${n + 2}`,
-      [...scope.params, cutoff, limit],
-    );
-    const now = Date.now();
-    return rows.map((r) => ({ ...r, daysStale: Math.floor((now - new Date(r.lastActivityAt).getTime()) / 86400000) }));
+           AND (lc.last_at IS NULL OR ${daysSinceSql(bind(new Date().toISOString()))} > ${bind(idleDays)})
+         ORDER BY lc.last_at ASC
+         LIMIT ${bind(limit)}`;
+    return await db.select<QuietDeal[]>(sql, params);
   } catch (err) {
     console.error('[opportunity] queryQuietDeals failed:', err);
     throw err;

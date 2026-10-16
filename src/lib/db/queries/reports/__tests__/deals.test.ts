@@ -298,11 +298,38 @@ describe('queryQuietDeals', () => {
     expect(r[0]).toMatchObject({ customerName: 'Customer a', daysStale: 107, currency: 'EUR' });
   });
 
-  it('falls back to the deal last update when the customer has no activity, and honours the limit', async () => {
-    addOpportunity({ annual: 1, updatedAt: '2026-01-01 00:00:00' });
-    addOpportunity({ annual: 2, updatedAt: '2026-02-01 00:00:00' });
-    expect(await queryQuietDeals(mine, 30, 1)).toHaveLength(1);
-    expect((await queryQuietDeals(mine, 30, 5))[0]?.value).toBe(1);
+  it('lists a deal on a never-contacted account with a null last contact, ignoring the deal update time', async () => {
+    const id = addOpportunity({ annual: 1, updatedAt: '2026-10-15 00:00:00' });
+    const r = await queryQuietDeals(mine, 30, 5);
+    expect(r.map((d) => d.id)).toEqual([id]);
+    expect(r[0]).toMatchObject({ lastActivityAt: null, daysStale: null });
+  });
+
+  it('puts never-contacted deals first and honours the limit', async () => {
+    addCustomer('b', 'u1', 'BE');
+    addActivity('b', new Date(Date.now() - 50 * 86400000).toISOString());
+    addOpportunity({ customerId: 'b', annual: 2 });
+    addOpportunity({ customerId: 'a', annual: 1 });
+    expect((await queryQuietDeals(mine, 30, 1)).map((d) => d.value)).toEqual([1]);
+    expect(await queryQuietDeals(mine, 30, 5)).toHaveLength(2);
+  });
+
+  it('does not treat a future-dated activity as recent contact', async () => {
+    addActivity('a', new Date(Date.now() - 60 * 86400000).toISOString());
+    addActivity('a', new Date(Date.now() + 5 * 86400000).toISOString());
+    addOpportunity({ customerId: 'a', annual: 1 });
+    expect((await queryQuietDeals(mine, 30, 5))[0]?.daysStale).toBe(60);
+  });
+
+  it('agrees with the coverage buckets on the day boundary', async () => {
+    addCustomer('b', 'u1', 'BE');
+    addCustomer('c', 'u1', 'BE');
+    addActivity('b', new Date(Date.now() - 30 * 86400000 - 3600000).toISOString()); // 30 days: still covered
+    addActivity('c', new Date(Date.now() - 31 * 86400000).toISOString()); // 31 days: quiet
+    addOpportunity({ customerId: 'b', annual: 1 });
+    const quiet = addOpportunity({ customerId: 'c', annual: 2 });
+    addActivity('a', new Date().toISOString());
+    expect((await queryQuietDeals(mine, 30, 5)).map((d) => d.id)).toEqual([quiet]);
   });
 
   it('scopes to the team region', async () => {

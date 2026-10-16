@@ -61,8 +61,9 @@ export interface QuietDeal {
   stage: string;
   value: number;
   currency: string;
-  lastActivityAt: string;
-  daysStale: number;
+  /** Latest activity not in the future; null = the account was never contacted. */
+  lastActivityAt: string | null;
+  daysStale: number | null;
 }
 
 export type CoverageBucket = '0-30' | '31-60' | '61-90' | '90+' | 'never';
@@ -91,4 +92,6 @@ export interface DimensionRow {
   label: string;
   arr: number;
   accounts: number;
+  /** Accounts with a Power BI row. Fewer than `accounts` means some are unmatched and add no ARR. */
+  matched: number;
 }

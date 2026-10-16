@@ -47,7 +47,7 @@ describe('queryAccountSummary', () => {
 
   it('counts an account touched by any activity, whoever logged it', async () => {
     addCustomer('a', 'u1', 'BE');
-    addActivity('a', daysAgo(5));
+    addActivity('a', daysAgo(5), 'u2'); // logged by someone else, still counts for u1's account
     const r = await queryAccountSummary(mine);
     expect(r.notContacted90d).toBe(0);
     expect(r.neverContacted).toBe(0);
@@ -148,18 +148,22 @@ describe('queryArrByDimension', () => {
     addRevenue('r3', 'c', 5);
     const rows = await queryArrByDimension(mine, 'segment');
     expect(rows).toEqual([
-      { label: 'Enterprise', arr: 100, accounts: 1 },
-      { label: 'Not set', arr: 25, accounts: 2 },
+      { label: 'Enterprise', arr: 100, accounts: 1, matched: 1 },
+      { label: 'Not set', arr: 25, accounts: 2, matched: 2 },
     ]);
     expect(rows.reduce((t, r) => t + r.arr, 0)).toBe(125);
   });
 
-  it('sums reseller rows and counts unmatched accounts without adding ARR', async () => {
+  it('sums reseller rows and reports how many accounts matched, so unmatched ones are not read as zero ARR', async () => {
     addCustomer('a', 'u1', 'BE', { industry: 'Retail' });
     addCustomer('b', 'u1', 'BE', { industry: 'Retail' });
+    addCustomer('c', 'u1', 'BE', { industry: 'Fashion' });
     addRevenue('r1', 'a', 10);
     addRevenue('r2', 'a', 15);
-    expect(await queryArrByDimension(mine, 'industry')).toEqual([{ label: 'Retail', arr: 25, accounts: 2 }]);
+    expect(await queryArrByDimension(mine, 'industry')).toEqual([
+      { label: 'Retail', arr: 25, accounts: 2, matched: 1 },
+      { label: 'Fashion', arr: 0, accounts: 1, matched: 0 },
+    ]);
   });
 
   it('groups by country code', async () => {
@@ -201,5 +205,39 @@ describe('queryCoverageBuckets', () => {
 
   it('returns every bucket, with zeros, for an empty scope', async () => {
     expect(await buckets(mine)).toEqual({ '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0, never: 0 });
+  });
+});
+
+describe('coverage edges', () => {
+  it.each([
+    [30, '0-30'], [31, '31-60'], [60, '31-60'], [61, '61-90'], [90, '61-90'], [91, '90+'],
+  ] as const)('puts an account last contacted %i days ago in %s', async (days, bucket) => {
+    addCustomer('a', 'u1', 'BE');
+    addActivity('a', daysAgo(days));
+    expect((await buckets(mine))[bucket]).toBe(1);
+  });
+
+  it('keeps notContacted90d equal to the 90+ bucket', async () => {
+    for (const [id, d] of [['a', 90], ['b', 91], ['c', 200], ['d', 5]] as const) {
+      addCustomer(id, 'u1', 'BE');
+      addActivity(id, daysAgo(d));
+    }
+    addCustomer('never', 'u1', 'BE');
+    expect((await queryAccountSummary(mine)).notContacted90d).toBe((await buckets(mine))['90+']);
+    expect((await buckets(mine))['90+']).toBe(2);
+  });
+});
+
+describe('deactivated accounts', () => {
+  it('are left out of every account metric', async () => {
+    addCustomer('live', 'u1', 'BE', { segment: 'SMB' });
+    addCustomer('dead', 'u1', 'BE', { segment: 'SMB', status: 'inactive' });
+    addRevenue('r1', 'live', 10);
+    addRevenue('r2', 'dead', 990);
+    expect((await queryAccountSummary(mine)).total).toBe(1);
+    expect((await queryAccountsRanked(mine, 10, 0)).map((r) => r.id)).toEqual(['live']);
+    expect(await queryArrByDimension(mine, 'segment')).toEqual([{ label: 'SMB', arr: 10, accounts: 1, matched: 1 }]);
+    expect(await queryTopConcentration(mine, 1)).toBeCloseTo(100);
+    expect(Object.values(await buckets(mine)).reduce((t, n) => t + n, 0)).toBe(1);
   });
 });

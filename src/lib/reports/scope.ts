@@ -15,11 +15,13 @@ function inList(column: string, values: readonly string[], offset: number): SqlF
   return { sql: `${column} IN (${placeholders})`, params: [...values] };
 }
 
-/** Filters a `customers c` row. Team = every account in the region, regardless of owner. */
+/** Filters a `customers c` row to active accounts. Team = every account in the region, regardless of owner. */
 export function accountScopeSql(s: ReportScope, offset: number): SqlFragment {
-  return s.kind === 'mine'
+  const f = s.kind === 'mine'
     ? inList('c.owner_id', s.userIds, offset)
     : inList('c.address_country', REGION_COUNTRIES[s.region], offset);
+  // Deactivated accounts (D365 statecode != 0) are not part of the book; the empty scope already matches nothing.
+  return f.params.length === 0 ? f : { ...f, sql: `${f.sql} AND c.status = 'active'` };
 }
 
 /** Filters an `opportunities o` row. created_by_id holds the deal owner. */

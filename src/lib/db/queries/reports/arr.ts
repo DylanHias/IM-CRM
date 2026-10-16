@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import { monthKeys, type ReportPeriod } from '@/lib/reports/period';
 import { accountScopeSql, type ReportScope } from '@/lib/reports/scope';
+import { ARR_BY_CUSTOMER } from '@/lib/reports/sql';
 import type { ArrFlows, ArrMover, ArrMovement, ArrToday } from '@/types/reports';
 
 // A BCN is scopable only when its revenue rows resolve to exactly one customer. customer_revenue
@@ -52,10 +53,7 @@ export async function queryArrToday(s: ReportScope): Promise<ArrToday> {
     const rows = await db.select<{ total: number; matched: number; accounts: number }[]>(
       `SELECT COALESCE(SUM(r.arr), 0) AS total, COUNT(r.customer_id) AS matched, COUNT(*) AS accounts
        FROM customers c
-       LEFT JOIN (
-         SELECT customer_id, SUM(arr_lc) AS arr FROM customer_revenue
-         WHERE customer_id IS NOT NULL GROUP BY customer_id
-       ) r ON r.customer_id = c.id
+       LEFT JOIN ${ARR_BY_CUSTOMER} r ON r.customer_id = c.id
        WHERE ${scope.sql}`,
       scope.params,
     );

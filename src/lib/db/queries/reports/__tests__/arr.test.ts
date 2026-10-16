@@ -19,6 +19,14 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('queryArrToday', () => {
+  it('ignores deactivated accounts', async () => {
+    addCustomer('a', 'u1', 'BE');
+    addCustomer('dead', 'u1', 'BE', { status: 'inactive' });
+    addRevenue('r1', 'a', 100);
+    addRevenue('r2', 'dead', 900);
+    expect(await queryArrToday(mine)).toEqual({ total: 100, matched: 1, unmatched: 0 });
+  });
+
   it('counts accounts with no Power BI row as unmatched, not as zero ARR', async () => {
     addCustomer('a', 'u1', 'BE');
     addCustomer('b', 'u1', 'NL');
