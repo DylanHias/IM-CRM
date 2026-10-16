@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db/client';
+import { OPP_ARR } from '@/lib/db/queries/analytics';
 import type {
   AnalyticsRange,
   LeaderboardRow,
@@ -116,7 +117,7 @@ export async function queryTeamLeaderboard(range: AnalyticsRange): Promise<Leade
     LEFT JOIN (
       SELECT created_by_id AS uid,
              COUNT(*) AS created,
-             COALESCE(SUM(estimated_revenue), 0) AS createdValue
+             COALESCE(SUM(${OPP_ARR}), 0) AS createdValue
       FROM opportunities
       WHERE created_at >= $1 AND created_at <= $2
       GROUP BY created_by_id
@@ -124,7 +125,7 @@ export async function queryTeamLeaderboard(range: AnalyticsRange): Promise<Leade
     LEFT JOIN (
       SELECT created_by_id AS uid,
              COUNT(CASE WHEN status = 'Won'  THEN 1 END) AS won,
-             COALESCE(SUM(CASE WHEN status = 'Won' THEN estimated_revenue ELSE 0 END), 0) AS wonValue,
+             COALESCE(SUM(CASE WHEN status = 'Won' THEN ${OPP_ARR} ELSE 0 END), 0) AS wonValue,
              COUNT(CASE WHEN status = 'Lost' THEN 1 END) AS lost
       FROM opportunities
       WHERE status IN ('Won','Lost') AND date(close_date) >= date($1) AND date(close_date) <= date($2)
@@ -267,13 +268,13 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
               o.customer_id AS customerId,
               c.name AS customerName,
               o.stage,
-              o.estimated_revenue AS estimatedRevenue,
+              ${OPP_ARR} AS estimatedRevenue,
               o.expiration_date  AS expirationDate,
               o.probability
        FROM opportunities o
        JOIN customers c ON c.id = o.customer_id
        WHERE o.created_by_id = $1 AND o.status = 'Open'
-       ORDER BY o.expiration_date IS NULL, o.expiration_date ASC, o.estimated_revenue DESC NULLS LAST
+       ORDER BY o.expiration_date IS NULL, o.expiration_date ASC, ${OPP_ARR} DESC
        LIMIT 50`,
       [userId]
     ),
@@ -311,7 +312,7 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
       [userId]
     ),
     db.select<{ total: number }[]>(
-      `SELECT COALESCE(SUM(estimated_revenue), 0) AS total
+      `SELECT COALESCE(SUM(${OPP_ARR}), 0) AS total
        FROM opportunities
        WHERE created_by_id = $1 AND status = 'Open'`,
       [userId]

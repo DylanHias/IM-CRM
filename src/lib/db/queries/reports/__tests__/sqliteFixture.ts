@@ -132,3 +132,8 @@ export function addFollowUp(f: FollowUpSeed): void {
   db.prepare('INSERT INTO follow_ups (id, customer_id, due_date, completed, completed_at, created_by_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(`fu${++seq}`, f.customerId ?? 'a', f.due, f.completedAt ? 1 : 0, f.completedAt ?? null, f.owner ?? 'u1', f.createdAt ?? '2026-01-01 00:00:00');
 }
+
+/** Escape hatch for tests outside reports that need extra tables or columns on top of the shared schema. */
+export function execFixture(sql: string): void {
+  db.exec(sql);
+}

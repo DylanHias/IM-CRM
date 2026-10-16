@@ -172,8 +172,8 @@ export async function queryPipelineData(): Promise<PipelineData> {
   const [kpiRow] = await db.select<{ openCount: number; openValue: number; weightedForecast: number; multiCount: number; totalCount: number }[]>(
     `SELECT
        COUNT(*) as openCount,
-       COALESCE(SUM(estimated_revenue), 0) as openValue,
-       COALESCE(SUM(estimated_revenue * probability / 100.0), 0) as weightedForecast,
+       COALESCE(SUM(${OPP_ARR}), 0) as openValue,
+       COALESCE(SUM(${OPP_ARR} * probability / 100.0), 0) as weightedForecast,
        SUM(CASE WHEN multi_vendor_opportunity = 1 THEN 1 ELSE 0 END) as multiCount,
        COUNT(*) as totalCount
      FROM opportunities WHERE status = 'Open'`,
@@ -185,8 +185,8 @@ export async function queryPipelineData(): Promise<PipelineData> {
   const [forecast, expiring, bySellType, byVendor, stageFunnel, winRateRows] = await Promise.all([
     db.select<ForecastPoint[]>(
       `SELECT strftime('%Y-%m', expiration_date) as month,
-         COALESCE(SUM(estimated_revenue * probability / 100.0), 0) as weighted,
-         COALESCE(SUM(estimated_revenue), 0) as total
+         COALESCE(SUM(${OPP_ARR} * probability / 100.0), 0) as weighted,
+         COALESCE(SUM(${OPP_ARR}), 0) as total
        FROM opportunities
        WHERE status = 'Open' AND expiration_date IS NOT NULL
        GROUP BY month ORDER BY month`,
@@ -194,7 +194,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
 
     db.select<{ id: string; subject: string; estimatedRevenue: number | null; expirationDate: string; stage: string; customerName: string }[]>(
       `SELECT o.id, o.subject,
-         o.estimated_revenue as estimatedRevenue,
+         ${OPP_ARR} as estimatedRevenue,
          o.expiration_date as expirationDate,
          o.stage,
          COALESCE(c.name, 'Unknown') as customerName
@@ -210,8 +210,8 @@ export async function queryPipelineData(): Promise<PipelineData> {
       `SELECT
          sell_type as sellType,
          COUNT(*) as count,
-         AVG(COALESCE(estimated_revenue, 0)) as avgRevenue,
-         SUM(COALESCE(estimated_revenue, 0)) as totalRevenue
+         AVG(${OPP_ARR}) as avgRevenue,
+         SUM(${OPP_ARR}) as totalRevenue
        FROM opportunities
        WHERE status = 'Open' AND sell_type IS NOT NULL AND sell_type != ''
        GROUP BY sell_type
@@ -222,7 +222,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
       `SELECT
          primary_vendor as vendor,
          COUNT(*) as count,
-         AVG(COALESCE(estimated_revenue, 0)) as avgRevenue
+         AVG(${OPP_ARR}) as avgRevenue
        FROM opportunities
        WHERE status = 'Open' AND primary_vendor IS NOT NULL AND primary_vendor != ''
        GROUP BY primary_vendor
@@ -231,7 +231,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
     ),
 
     db.select<StageFunnelPoint[]>(
-      `SELECT stage, COUNT(*) as count, COALESCE(SUM(estimated_revenue), 0) as totalRevenue
+      `SELECT stage, COUNT(*) as count, COALESCE(SUM(${OPP_ARR}), 0) as totalRevenue
        FROM opportunities
        WHERE status = 'Open'
        GROUP BY stage`,

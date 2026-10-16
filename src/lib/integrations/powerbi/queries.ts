@@ -9,7 +9,7 @@
  *
  * Scope is Benelux only — filtered in DAX so non-Benelux rows never cross the wire.
  *
- * Design: every query returns a *raw snapshot* at max range (24 months) grouped by
+ * Design: every query returns a *raw snapshot* at max range (12 months) grouped by
  * country_code (or BCN for movement). The CRM stores these snapshots locally and
  * slices them client-side by region + months-back, so flipping a UI filter never
  * needs another DAX call.
@@ -79,7 +79,7 @@ FILTER(
 `.trim();
 
 /**
- * Per-country, per-month ARR snapshot over the last 24 months across Benelux.
+ * Per-country, per-month ARR snapshot over the last 12 months across Benelux.
  * The CRM aggregates client-side to derive region/period totals.
  *
  * Response keys: ARR[calendar_month], Reseller[country_code], [ARR_LC], [CustomerCount]
@@ -109,7 +109,7 @@ ADDCOLUMNS(
 `.trim();
 
 /**
- * Per-country, per-month reseller + seat activity snapshot (last 24 months).
+ * Per-country, per-month reseller + seat activity snapshot (last 12 months).
  * "Active" = a reseller with a Seats row where seats_active_seats > 0 in that month.
  *
  * Response keys: Seats[month], Reseller[country_code], [ActiveResellers], [ActiveSeats]
@@ -140,7 +140,7 @@ CALCULATETABLE(
 `.trim();
 
 /**
- * Per-country, per-month, per-vendor net sales (LC) snapshot (last 24 months).
+ * Per-country, per-month, per-vendor net sales (LC) snapshot (last 12 months).
  * Stores every vendor — UI computes "top N by region" client-side.
  *
  * Response keys: Sales[month], Reseller[country_code], Vendor[vendor_name], [NetSales_LC]
