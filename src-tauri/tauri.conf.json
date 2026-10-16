@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Ingram Micro CRM",
-  "version": "2.33.1",
+  "version": "2.33.2",
   "identifier": "com.ingramcrm.app",
   "build": {
     "frontendDist": "../out",
@@ -39,9 +39,6 @@
     "category": "Business",
     "shortDescription": "A streamlined CRM for Ingram Micro colleagues.",
     "longDescription": "Ingram Micro CRM is a lightweight desktop application built for Ingram Micro account managers. It replaces the cluttered Dynamics 365 interface with a focused tool for managing customers, contacts, activities, follow-ups, and opportunities — all synced with D365 in the background.",
-    "resources": {
-      "binaries/lib/": "lib"
-    },
     "createUpdaterArtifacts": "v1Compatible",
     "icon": [
       "icons/32x32.png",
