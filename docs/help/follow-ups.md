@@ -13,9 +13,9 @@ Follow-ups are action items and reminders — tasks you need to complete for you
    - **Due Date** — When this should be completed (required)
 4. Click **Create**
 
-### From the Follow-Ups Page
-1. Go to **Follow-Ups** in the sidebar
-2. Click **New Follow-Up**
+### From Your Follow-Ups
+1. Go to **Activity** in the sidebar and switch to **Your Follow-Ups**
+2. Click **New follow-up**
 3. Select the customer it relates to
 4. Fill in the title, description, and due date
 5. Click **Create**
@@ -28,32 +28,32 @@ On a customer's Follow-Ups tab, you'll see all follow-ups for that customer, sep
 - **Open** — Tasks still to be done, sorted by due date
 - **Completed** — Tasks you've finished
 
-### Global View
-The **Follow-Ups** page in the sidebar shows all your follow-ups across all customers, organized into:
+### Your Follow-Ups
+Go to **Activity** in the sidebar and switch to **Your Follow-Ups** to see all your follow-ups across all customers, grouped into:
 
-- **Overdue** — Past their due date (highlighted in red)
-- **Upcoming** — Not yet due
-- **Completed** — All follow-ups you have marked as done, paginated
+- **Overdue** — Past their due date (in red, with how many days late)
+- **Upcoming** — Not yet due, soonest first
+- **Completed** — Follow-ups you marked as done
 
-Each section is paginated so you can browse through large lists without everything loading at once.
+Click a follow-up to see its customer, who created it and the full description on the right, with buttons to complete, edit or delete it. Use **Search follow-ups…** to find one by title or customer. The pager under the list moves through long lists.
 
 ## Completing a Follow-Up
 
-Click the **checkbox** next to a follow-up to mark it as complete. It will move to the completed section.
+Tick the **checkbox** next to a follow-up (or click **Mark as complete**) and confirm to mark it as complete. It moves to the completed group.
 
 ## Editing a Follow-Up
 
-Click the **pencil icon** to update the title, description, or due date.
+Click **Edit** to update the title, description, or due date.
 
 ## Deleting a Follow-Up
 
-Click the **trash icon** and confirm to remove a follow-up.
+Click **Delete** and confirm to remove a follow-up.
 
 ## Overdue Alerts
 
 The app helps you stay on top of your tasks:
 
-- A **red badge** on the Follow-Ups sidebar link shows how many follow-ups are overdue
+- A **red badge** on the Activity sidebar link (and next to **Your Follow-Ups**) shows how many follow-ups are overdue
 - On app launch, you can receive alerts about overdue or due-today items (configurable in **Settings > Notifications**)
 - You can set how many days in advance you'd like to be reminded (0–14 days before the due date)
 

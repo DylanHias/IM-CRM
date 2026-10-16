@@ -98,8 +98,7 @@ export function PowerBiDiscovery() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold">Power BI Discovery</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground">
           Probes Power BI REST endpoints to figure out where dataset <code className="text-xs">{DATASET_ID}</code> lives and what permissions you have.
         </p>
       </div>

@@ -37,12 +37,12 @@ interface Kpi {
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const Icon = kpi.icon;
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+    <div className="grid min-w-0 content-start gap-[3px] rounded-[calc(var(--radius)*1.5)] border border-border bg-card px-3.5 py-3">
+      <div className="flex items-center gap-2 text-[11.5px] font-medium text-muted-foreground">
         <Icon size={13} />
         {kpi.label}
       </div>
-      <div className="text-3xl font-semibold tabular-nums text-foreground">{kpi.value}</div>
+      <div className="text-[21px] font-semibold tabular-nums tracking-[-0.02em] text-foreground">{kpi.value}</div>
       {kpi.hint && <div className="text-xs text-muted-foreground">{kpi.hint}</div>}
     </div>
   );
@@ -111,7 +111,7 @@ export function KpiCards({ currency, region, className }: Props) {
   }, [byBcn, byResellerAccount, customers, currency, region]);
 
   return (
-    <div className={cn('grid grid-cols-2 lg:grid-cols-4 gap-4', className)}>
+    <div className={cn('metric-grid grid grid-cols-2 lg:grid-cols-4', className)}>
       {kpis.map((k) => (
         <KpiCard key={k.label} kpi={k} />
       ))}

@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Download, Loader2, CheckCircle2, Copy, Check, PlayCircle } from 'lucide-react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
@@ -148,9 +147,7 @@ export function GeneralSettings() {
   }, [schemaVersion]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-sm font-semibold">General</h2>
-
+    <div className="grid content-start gap-5">
       <div className="space-y-5">
         <SettingRow label="Updates" description={
           updateStatus === 'downloading'
@@ -192,12 +189,10 @@ export function GeneralSettings() {
         )}
       </div>
 
-      <Separator />
-
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="setting-row flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium">App info</p>
+            <p className="text-[13px] font-medium">App info</p>
             <p className="text-xs text-muted-foreground">
               Version {APP_VERSION}{schemaVersion ? ` · Schema v${schemaVersion}` : ''}
             </p>
@@ -216,12 +211,10 @@ export function GeneralSettings() {
         </div>
       </div>
 
-      <Separator />
-
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="setting-row flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium">Reset all settings</p>
+            <p className="text-[13px] font-medium">Reset all settings</p>
             <p className="text-xs text-muted-foreground">Restore every setting to its default value</p>
           </div>
           <ConfirmPopover message="Reset all settings to defaults? This cannot be undone." confirmLabel="Reset all" onConfirm={handleResetAll}>
@@ -235,9 +228,9 @@ export function GeneralSettings() {
           </ConfirmPopover>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="setting-row flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium">Clear local database</p>
+            <p className="text-[13px] font-medium">Clear local database</p>
             <p className="text-xs text-muted-foreground">Delete all synced data (customers, contacts, activities, etc.)</p>
           </div>
           <ConfirmPopover message="Delete all local data? You'll need to re-sync from D365." confirmLabel="Clear" onConfirm={handleClearDatabase}>
@@ -253,11 +246,9 @@ export function GeneralSettings() {
         </div>
       </div>
 
-      <Separator />
-
-      <div className="flex items-center justify-between gap-4">
+      <div className="setting-row flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-medium">Begin walkthrough</p>
+          <p className="text-[13px] font-medium">Begin walkthrough</p>
           <p className="text-xs text-muted-foreground">Restart the onboarding tour</p>
         </div>
         <Button

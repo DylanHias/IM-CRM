@@ -4,7 +4,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { OpportunitiesTable } from './OpportunitiesTable';
+import { OpportunityRow } from './OpportunityRow';
+import { OpportunityContextMenu } from './OpportunityContextMenu';
+import { Panel } from '@/components/ui/panel';
+import { EmptyState } from '@/components/ui/empty-state';
+import { compactMoney } from '@/lib/opportunities/display';
 import { OpportunityWizard } from './OpportunityWizard';
 import type { WizardFormData } from './OpportunityWizard';
 import { CloseOpportunityDialog } from './CloseOpportunityDialog';
@@ -30,6 +34,9 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [closeOutcome, setCloseOutcome] = useState<'Won' | 'Lost' | null>(null);
+  /** Deal being closed straight from the row's right-click menu (no wizard open). */
+  const [closing, setClosing] = useState<Opportunity | null>(null);
+  const closeTarget = closing ?? editing;
 
   const customerMap = useMemo(
     () => new Map(customer ? [[customer.id, customer.name]] : []),
@@ -134,9 +141,9 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
   };
 
   const handleClose = async (data: CloseFormData) => {
-    if (!editing) return;
+    if (!closeTarget) return;
     try {
-      const currentOpp = opportunities.find((o) => o.id === editing.id) ?? editing;
+      const currentOpp = opportunities.find((o) => o.id === closeTarget.id) ?? closeTarget;
       await editOpportunity({
         ...currentOpp,
         status: data.outcome,
@@ -149,36 +156,59 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
         updatedAt: new Date().toISOString(),
       });
       setCloseOutcome(null);
+      setClosing(null);
       setEditing(null);
     } catch (err) {
       console.error('[opportunity] Failed to close:', err);
     }
   };
 
+  const openOpps = opportunities.filter((o) => o.status === 'Open');
+  const openCount = openOpps.length;
+  const openValue = openOpps.reduce((a, o) => a + (o.estimatedRevenue ?? 0), 0);
+
   return (
-    <div>
-      <div className="flex justify-end mb-3">
-        <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
+    <div className="grid gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">
+          {openCount} open · {compactMoney(openValue)}
+        </span>
+        <span className="flex-1" />
+        <Button onClick={() => setAddOpen(true)}>
           <Plus size={13} />
-          Add Opportunity
+          New opportunity
         </Button>
       </div>
 
-      {opportunities.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <Target size={28} className="text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">No opportunities yet</p>
-        </div>
-      ) : (
-        <OpportunitiesTable
-          opportunities={opportunities}
-          customerMap={customerMap}
-          onEdit={setEditing}
-        />
-      )}
+      <Panel>
+        {opportunities.length === 0 ? (
+          <EmptyState icon={Target} title="No opportunities yet" />
+        ) : (
+          <div role="listbox" aria-label="Opportunities" className="stagger-in grid">
+            {opportunities.map((o) => (
+              <OpportunityContextMenu
+                key={o.id}
+                opportunity={o}
+                onOpen={() => setEditing(o)}
+                onCloseAs={(outcome) => {
+                  setClosing(o);
+                  setCloseOutcome(outcome);
+                }}
+              >
+                <OpportunityRow
+                  opportunity={o}
+                  companyName={customerMap.get(o.customerId) ?? ''}
+                  hideCompany
+                  onClick={() => setEditing(o)}
+                />
+              </OpportunityContextMenu>
+            ))}
+          </div>
+        )}
+      </Panel>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
           <DialogTitle className="sr-only">New Opportunity</DialogTitle>
           <OpportunityWizard
             customer={customer}
@@ -190,7 +220,7 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="sm:max-w-4xl p-0 gap-0 max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
           <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
           {editing && (
             <OpportunityWizard
@@ -209,8 +239,11 @@ export function OpportunityList({ customerId, triggerAdd }: OpportunityListProps
       <CloseOpportunityDialog
         open={!!closeOutcome}
         outcome={closeOutcome ?? 'Won'}
-        currency={editing?.currency ?? 'USD'}
-        onClose={() => setCloseOutcome(null)}
+        currency={closeTarget?.currency ?? 'USD'}
+        onClose={() => {
+          setCloseOutcome(null);
+          setClosing(null);
+        }}
         onConfirm={handleClose}
       />
     </div>

@@ -1,70 +1,78 @@
-# Opportunities
+# Pipeline
 
 Opportunities represent sales deals and potential revenue for your customers. They help you track your pipeline from initial prospecting to close.
 
 ## Viewing Opportunities
 
-You can view opportunities in two ways:
+You can view opportunities in two places:
 
-- **Customer view** — Go to a customer's **Opportunities** tab to see deals for that specific customer
-- **Global view** — Click **Opportunities** in the sidebar to see all opportunities across companies in one paginated list
+- **Customer view** — Go to a customer's **Opportunities** tab to see deals for that specific customer, with how many are open and their total value.
+- **Pipeline** — Click **Pipeline** in the sidebar to see all opportunities across companies.
 
-Each opportunity row shows:
+The Pipeline toolbar shows how many deals are open, their total value and their **weighted** value (each deal's value multiplied by its probability).
 
-- **Subject** — The deal name or description
-- **Company** — Which customer the deal belongs to
-- **Stage & Probability** — Where the deal is in the sales process and its likelihood of closing
-- **Primary Vendor** — The main vendor for the deal
-- **Status** — Open (blue), Won (green), or Lost (red)
-- **Estimated Revenue & Expiration** — The expected deal value and when it expires
+### List view
+
+The list shows each deal's company, subject, stage and when it expires ("in 12d", or in red when it's overdue), with its value on the right. Won and Lost deals show their status.
+
+Click a deal to see it on the right:
+
+- The deal name, its status and the company (click the company to open it)
+- A stage bar showing how far the deal has come
+- **Annual revenue**, **Estimated MRR**, **Probability** and **Weighted** value
+- **Deal** details (vendor, type, expiration, country) and **People** (contact, BCN, owners)
+- The **Customer need**, and the latest activity with the company
+
+Use **Edit** to change the deal, or **Won** / **Lost** to close it. Double-click a deal in the list to edit it straight away.
+
+### Board view
+
+Switch to **Board** in the toolbar to see one column per stage, each with the number of deals and their total value. Lost deals are left out. Click a card to edit it. Deals in **Billing Rejection** get a red border.
+
+### Right-click menu
+
+Right-click a deal in the list or on the board to open it, close it as Won or Lost, copy its opportunity ID or open it in Dynamics 365.
 
 ## Searching, Sorting & Filtering
 
-On the global Opportunities page you can:
+On the Pipeline page you can:
 
-- **Search** by subject, company name, or vendor
-- **Sort** by created date, subject, revenue, expiration, or stage (ascending or descending)
-- **Filter by Company** — the dropdown only shows companies that actually have opportunities
-- **Filter by Stage** — narrow the list to a single stage
-- **Filter by Status** — show only Open, Won, or Lost deals
-- **Filter by Expiration** — show only expired or only still-active opportunities
+- **Search** by subject, company name, vendor or opportunity ID, using the box above the list
+- **Sort** with the button next to the search box, by created date, subject, revenue, expiration, or stage (ascending or descending)
+- **Mine** — show only the opportunities you created
+- **Filters** — open the filter panel to filter by **Stage**, **Status** (Open, Won, Lost), **Expiration** (expired or not), **Company**, **Primary owner** and **Secondary owner**. Choosing a stage on the board shows only that stage's column.
 
-Active filters appear as badges you can click to clear individually, or use **Clear all** to reset everything. Your sort and filter choices are remembered between sessions.
+Your sort and filter choices are remembered between sessions.
 
 ### Match all or match any
 
-As soon as two or more filters are active, a button appears next to **Filters** showing how they combine:
+As soon as two or more filters are on, the filter panel shows how they combine:
 
 - **Match all** — an opportunity must meet *every* filter to show up. This is the default.
 - **Match any** — an opportunity shows up if it meets *at least one* filter. Useful for questions like "show me everything at Qualified stage plus everything owned by Sarah".
 
-Click the button to switch between the two. Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
+Your choice is remembered between sessions. The search box always applies on top of your filters, in both modes.
 
-## Pagination
+## Pages
 
-The global Opportunities list is paginated. Use the page controls at the bottom to move between pages, and change the **Rows per page** dropdown to show 10, 25, 50, or 100 opportunities at a time. Your preference is remembered.
+The list shows a page of deals at a time. The pager under the list shows which deals you're looking at, with buttons for the previous and next page.
 
 ## Creating an Opportunity
 
-1. Go to a customer's **Opportunities** tab (or the global Opportunities page)
-2. Click **New Opportunity** or press **N**
-3. Fill in the details:
-   - **Subject** — Deal name (required)
-   - **Status** — Open, Won, or Lost
-   - **Stage** — Select the current sales stage (Prospecting, Qualification, Proposal, Negotiation, etc.)
-   - **Probability** — Auto-filled based on the stage you select
-   - **Sell Type** — Type of sale (New business, Add-on, etc.)
-   - **Primary Vendor** — The main vendor for this deal
-   - **Estimated Revenue** — Expected deal value
-   - **Est. Margin** — Expected margin on the deal (optional)
-   - **Expiration Date** — When the opportunity expires
-   - **Customer Need** — What the customer is looking for
-   - **Related Contact** — Which person at the company is involved
-4. Click **Save**
+1. Go to a customer's **Opportunities** tab, the **Pipeline** page, or use **New** at the top of the sidebar
+2. Click **New opportunity** or press **N**
+3. The form opens with a list of steps on the left. Work through them with **Next** and **Back**, or click any step to jump straight to it:
+   - **Customer** — the customer, the contact at that company, the BCN (filled in from the customer) and an optional secondary owner
+   - **Deal** — the subject, the stage (click a stage; the chance of winning fills in by itself), single or cross sell, type, opportunity type and what the customer needs
+   - **Vendor** — the primary vendor. Picking AWS or Microsoft adds the extra fields that vendor needs; they become required from the Qualified stage
+   - **Financials** — country, currency, monthly and yearly revenue (fill in one and the other is worked out for you), the expected margin and the expiration date
+   - **Review** — everything at a glance, with an **Edit** link per part
+4. Each step shows how many required fields it has. The bottom of the form counts how many required fields are filled in.
+5. Click **Create opportunity**. If something is still missing, the form jumps to **Review**, lists what is needed, and marks the steps that need attention in red.
 
 ## Updating an Opportunity
 
-Click the **pencil icon** to update any details. As a deal progresses, update the stage and status to keep your pipeline accurate.
+Click **Edit** on a deal (or double-click it in the list) to open the same form. It starts on **Review**, so you can check the deal and jump to the part you want to change. Click **Save** when you're done. While a deal is open, **Close as Won** and **Close as Lost** sit at the bottom of the steps list.
 
 ## Stale Opportunities
 

@@ -1,129 +1,59 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMsal } from '@azure/msal-react';
+import { AlertCircle, Loader2, Wifi, WifiOff } from 'lucide-react';
+import type { AccountInfo } from '@azure/msal-browser';
 import { signIn } from '@/lib/auth/authHelpers';
 import { loadProfilePhoto } from '@/hooks/useAuth';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useAuthStore } from '@/store/authStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import styled from 'styled-components';
-import type { AccountInfo } from '@azure/msal-browser';
 import { WindowFrame } from '@/components/layout/WindowFrame';
 
-const PageWrapper = styled.div`
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-`;
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev';
+const SHOW_DEV_BYPASS = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
-const SplitCard = styled.div`
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 90vw;
-  max-width: 1100px;
-  height: 85vh;
-  max-height: 640px;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 25px 60px -12px rgb(0 0 0 / 0.25),
-    0 0 0 1px rgb(255 255 255 / 0.1);
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    height: auto;
-    max-height: none;
-    width: 94vw;
-  }
-`;
-
-const LeftPanel = styled.div`
-  flex: 0 0 45%;
-  background: hsl(var(--card));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 48px 44px;
-
-  @media (max-width: 768px) {
-    flex: none;
-    padding: 36px 28px;
-  }
-`;
-
-const RightPanel = styled.div`
-  flex: 0 0 55%;
-  position: relative;
-  background-image: url('/images/login_screen.jpg');
-  background-size: cover;
-  background-position: center;
-  overflow: hidden;
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-`;
-
-const ImageOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.65) 0%,
-    rgba(0, 0, 0, 0.1) 50%,
-    transparent 100%
+/** Flowing accent lines behind the login copy; purely decorative. */
+function LoginArt() {
+  const lines = Array.from({ length: 14 }, (_, k) => {
+    const y = 80 + k * 46;
+    return (
+      <path
+        key={k}
+        d={`M-40 ${y + 240}C${220 + k * 12} ${y + 120} ${420 - k * 8} ${y - 60} 880 ${y - 180 - k * 6}`}
+        fill="none"
+        stroke="hsl(var(--primary))"
+        strokeOpacity={0.05 + (k % 5) * 0.025}
+        strokeWidth={1 + (k % 3) * 0.6}
+      />
+    );
+  });
+  return (
+    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden>
+      {lines}
+      <circle cx="640" cy="210" r="120" fill="hsl(var(--primary))" fillOpacity={0.06} />
+      <circle cx="640" cy="210" r="64" fill="hsl(var(--primary))" fillOpacity={0.1} />
+      <circle cx="640" cy="210" r="22" fill="hsl(var(--primary))" fillOpacity={0.55} />
+      <circle cx="190" cy="560" r="10" fill="hsl(var(--primary))" fillOpacity={0.35} />
+      <circle cx="420" cy="380" r="6" fill="hsl(var(--primary))" fillOpacity={0.35} />
+    </svg>
   );
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 40px;
-`;
+}
 
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.15,
-    },
-  },
-};
+const MicrosoftMark = () => (
+  <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden>
+    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+  </svg>
+);
 
-const ContentArea = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  background-color: hsl(var(--background));
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/images/login_screen.jpg');
-    background-size: cover;
-    background-position: center;
-    filter: blur(24px) brightness(0.7);
-    transform: scale(1.1);
-    pointer-events: none;
-  }
-`;
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
-  },
-};
+const stagger = (i: number) => ({ animationDelay: `${i * 60}ms`, animationFillMode: 'backwards' as const });
+const rise = 'animate-in fade-in slide-in-from-bottom-2 duration-500';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -133,6 +63,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isOnline = useOnlineStatus();
 
   // Already logged in?
   useEffect(() => {
@@ -249,158 +180,63 @@ export default function LoginPage() {
   };
 
   return (
-    <PageWrapper>
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <WindowFrame />
-      <ContentArea>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <SplitCard>
-          <LeftPanel>
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              style={{ display: 'flex', flexDirection: 'column' }}
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(340px,420px)_minmax(0,1fr)] max-[760px]:grid-cols-1">
+        <div className="flex min-h-0 flex-col overflow-auto border-r border-border bg-card px-10 pb-[18px] pt-7 max-[760px]:border-r-0 max-[760px]:p-6">
+          <div className="flex items-center gap-2.5 text-sm">
+            <Image src="/images/icon.png" alt="" width={28} height={28} className="rounded-md" />
+            <b className="font-semibold">Ingram Micro CRM</b>
+          </div>
+
+          <div className="flex max-w-[320px] flex-1 flex-col justify-center gap-3.5 py-6">
+            <h1 className={`text-2xl font-semibold tracking-[-0.02em] ${rise}`} style={stagger(0)}>Sign in</h1>
+            <p className={`-mt-2 text-[13px] text-muted-foreground ${rise}`} style={stagger(1)}>Use your Ingram Micro work account.</p>
+
+            {error && (
+              <div role="alert" className={`flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive ${rise}`}>
+                <AlertCircle size={15} className="mt-0.5 shrink-0" />
+                <span className="break-words">{error}</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleLogin}
+              disabled={isLoading}
+              className={`flex h-[41px] w-full items-center justify-center gap-3 border border-[#8c8c8c] bg-white text-[15px] font-semibold text-[#5e5e5e] transition-colors [font-family:'Segoe_UI',var(--font-geist-sans)] hover:bg-[#f3f3f3] disabled:text-[#8c8c8c] dark:border-[#2f2f2f] dark:bg-[#2f2f2f] dark:text-white dark:hover:bg-[#3a3a3a] ${rise}`}
+              style={stagger(2)}
             >
-              <motion.h1
-                variants={fadeUp}
-                style={{
-                  fontFamily: "var(--font-sans), 'DM Sans', sans-serif",
-                  fontSize: '36px',
-                  fontWeight: 700,
-                  color: 'hsl(var(--foreground))',
-                  margin: '0 0 8px',
-                  letterSpacing: '-0.02em',
-                  textAlign: 'center',
-                }}
-              >
-                Login
-              </motion.h1>
+              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <MicrosoftMark />}
+              {isLoading ? 'Signing in…' : 'Sign in with Microsoft'}
+            </button>
+            {isLoading && <p className="text-[13px] text-muted-foreground">Finish signing in in the Microsoft window.</p>}
 
-              <motion.p
-                variants={fadeUp}
-                style={{
-                  fontSize: '15px',
-                  color: 'hsl(var(--muted-foreground))',
-                  margin: '0 0 32px',
-                  lineHeight: 1.5,
-                  textAlign: 'center',
-                }}
-              >
-                Welcome back! Sign in to continue.
-              </motion.p>
+            {SHOW_DEV_BYPASS && (
+              <button type="button" onClick={handleDevBypass} className="self-start text-xs text-faint underline-offset-2 hover:text-foreground hover:underline">
+                Skip login (dev only)
+              </button>
+            )}
+          </div>
 
-              {error && (
-                <motion.div
-                  variants={fadeUp}
-                  className="mb-4 flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive"
-                >
-                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  {error}
-                </motion.div>
-              )}
+          <div className="flex items-center gap-2 text-[11.5px] text-faint">
+            <span>v{APP_VERSION}</span>
+            <span className="flex-1" />
+            <span className="inline-flex items-center gap-1">
+              {isOnline ? <Wifi size={11} /> : <WifiOff size={11} />}
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
+          </div>
+        </div>
 
-              <motion.div variants={fadeUp}>
-                <motion.div whileTap={{ scale: 0.98 }}>
-                  <Button
-                    className="w-full h-12 gap-3 text-base"
-                    style={{
-                      backgroundColor: 'hsl(var(--primary))',
-                      color: 'hsl(var(--primary-foreground))',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      fontWeight: 500,
-                    }}
-                    onClick={handleLogin}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={18} className="animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 21 21"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                          <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                          <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                          <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-                        </svg>
-                        Sign in with Microsoft
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              </motion.div>
-
-              {(process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') && (
-                <motion.div variants={fadeUp}>
-                  <button
-                    onClick={handleDevBypass}
-                    className="mt-3 w-full text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
-                  >
-                    Skip login (dev only)
-                  </button>
-                </motion.div>
-              )}
-
-              <motion.p
-                variants={fadeUp}
-                style={{
-                  marginTop: '24px',
-                  textAlign: 'center',
-                  fontSize: '12px',
-                  color: 'hsl(var(--muted-foreground))',
-                  lineHeight: 1.5,
-                }}
-              >
-                Your data is stored locally on your device.
-              </motion.p>
-            </motion.div>
-          </LeftPanel>
-
-          <RightPanel
-            as={motion.div}
-            initial={{ scale: 1.05, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <ImageOverlay>
-              <h2
-                style={{
-                  fontFamily: "var(--font-sans), 'DM Sans', sans-serif",
-                  fontSize: '28px',
-                  fontWeight: 700,
-                  color: 'white',
-                  margin: '0 0 6px',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Field Sales CRM
-              </h2>
-              <p
-                style={{
-                  fontSize: '14px',
-                  color: 'rgba(255, 255, 255, 0.75)',
-                  margin: 0,
-                }}
-              >
-                Empowering Ingram Micro field teams worldwide
-              </p>
-            </ImageOverlay>
-          </RightPanel>
-        </SplitCard>
-      </motion.div>
-      </ContentArea>
-    </PageWrapper>
+        <div className="relative grid content-end overflow-hidden p-10 animate-in fade-in duration-700 max-[760px]:hidden" aria-hidden>
+          <LoginArt />
+          <div className="relative grid max-w-[380px] gap-1">
+            <b className="text-[22px] font-semibold tracking-[-0.02em]">Field Sales CRM</b>
+            <span className="text-[13.5px] text-muted-foreground">Customers, pipeline and follow-ups for the Benelux cloud team.</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

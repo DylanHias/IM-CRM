@@ -59,4 +59,17 @@ describe('uiStore', () => {
     store().setShortcutsGuideOpen(true);
     expect(store().shortcutsGuideOpen).toBe(true);
   });
+
+  it('requestNewOpportunity is consumed exactly once', () => {
+    store().requestNewOpportunity();
+    expect(store().consumeNewOpportunityRequest()).toBe(true);
+    expect(store().consumeNewOpportunityRequest()).toBe(false);
+  });
+
+  it('does not persist a pending new-opportunity request', () => {
+    store().requestNewOpportunity();
+    const persisted = JSON.parse(localStorage.getItem('crm-ui-store') ?? '{}').state ?? {};
+    expect(persisted.newOpportunityRequested).toBeUndefined();
+    store().consumeNewOpportunityRequest();
+  });
 });

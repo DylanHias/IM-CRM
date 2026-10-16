@@ -56,20 +56,20 @@ export function ActivityDateFilter({ onChange }: Props) {
   }, [preset, onChange]);
 
   return (
-    <div className="flex items-center gap-2">
-      <Calendar size={14} className="text-muted-foreground" />
-      <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
-        <SelectTrigger className="h-7 w-[160px] text-xs">
+    <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
+      <SelectTrigger className="h-[26px] w-[170px] gap-1.5 text-xs" aria-label="Date range">
+        <Calendar size={13} className="shrink-0 text-muted-foreground" />
+        <span className="min-w-0 flex-1 text-left">
           <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {PRESETS.map((p) => (
-            <SelectItem key={p.value} value={p.value}>
-              {p.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {PRESETS.map((p) => (
+          <SelectItem key={p.value} value={p.value}>
+            {p.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

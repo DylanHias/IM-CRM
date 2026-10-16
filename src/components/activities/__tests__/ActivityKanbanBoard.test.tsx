@@ -68,4 +68,49 @@ describe('ActivityKanbanBoard', () => {
     const expandedColumn = getColumnByStatus(container, 'completed');
     expect(expandedColumn.className).not.toContain('w-10');
   });
+
+  it('shows the card count in the column header pill', () => {
+    const activities = [
+      makeActivity({ activityStatus: 'open' }),
+      makeActivity({ activityStatus: 'open' }),
+    ];
+    const { container } = render(<ActivityKanbanBoard activities={activities} {...defaultProps} />);
+    const title = container.querySelector('#column-open-title');
+    expect(title).toHaveTextContent('Open (2)');
+  });
+
+  it('shows count and label in a collapsed column strip', () => {
+    const activities = [makeActivity({ activityStatus: 'open' })];
+    const { container } = render(<ActivityKanbanBoard activities={activities} {...defaultProps} />);
+    const completedColumn = getColumnByStatus(container, 'completed');
+    expect(completedColumn).toHaveTextContent('0');
+    expect(completedColumn).toHaveTextContent('Completed');
+    expect(completedColumn).toHaveAttribute('title', 'Expand Completed');
+  });
+
+  it('collapses an expanded column via its chevron button', () => {
+    const activities = [makeActivity({ activityStatus: 'open' })];
+    const { container } = render(<ActivityKanbanBoard activities={activities} {...defaultProps} />);
+    fireEvent.click(screen.getByLabelText('Collapse Open column'));
+    expect(getColumnByStatus(container, 'open').className).toContain('w-10');
+  });
+
+  it('animates the card list in', () => {
+    const activities = [makeActivity({ activityStatus: 'open', subject: 'Animated' })];
+    render(<ActivityKanbanBoard activities={activities} {...defaultProps} />);
+    const list = screen.getByText('Animated').closest('ul');
+    expect(list?.className).toContain('stagger-in');
+  });
+
+  it('moves a dropped card to the new status', () => {
+    const onStatusChange = vi.fn();
+    const activity = makeActivity({ activityStatus: 'open' });
+    const { container } = render(
+      <ActivityKanbanBoard activities={[activity, makeActivity({ activityStatus: 'completed' })]} {...defaultProps} onStatusChange={onStatusChange} />,
+    );
+    const completedColumn = getColumnByStatus(container, 'completed');
+    const payload = JSON.stringify({ id: activity.id });
+    fireEvent.drop(completedColumn, { dataTransfer: { getData: () => payload, types: [] } });
+    expect(onStatusChange).toHaveBeenCalledWith(activity, 'completed');
+  });
 });

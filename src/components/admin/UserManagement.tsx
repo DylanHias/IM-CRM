@@ -121,8 +121,7 @@ export function UserManagement() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold">Users</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground">
             {filtered.length} user{filtered.length !== 1 ? 's' : ''}
             <span className="mx-1.5 text-border">·</span>
             <span className="inline-flex items-center gap-1">
@@ -226,7 +225,7 @@ export function UserManagement() {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+      <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

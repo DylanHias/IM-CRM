@@ -13,9 +13,11 @@ import {
   KanbanBoardCardButton,
 } from '@/components/kanban';
 import { ACTIVITY_ICONS } from './ActivityItem';
+import { ActivityTypeIcon } from './ActivityTypeIcon';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { stripHtml } from '@/lib/utils/htmlUtils';
+import { cn } from '@/lib/utils';
 import type { Activity } from '@/types/entities';
 
 interface ActivityKanbanCardProps {
@@ -29,20 +31,26 @@ interface ActivityKanbanCardProps {
 export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete, onPreview }: ActivityKanbanCardProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const config = ACTIVITY_ICONS[activity.type];
-  const Icon = config.icon;
   const isTerminal = activity.activityStatus === 'completed' || activity.activityStatus === 'rejected' || activity.activityStatus === 'expired';
 
   return (
     <KanbanBoardCard
       data={{ id: activity.id }}
       draggable={!isTerminal}
-      className={isTerminal ? 'cursor-pointer' : undefined}
+      className={cn(
+        'gap-1 rounded-[calc(var(--radius)*1.5)] border-border bg-card p-2.5 shadow-none transition-colors hover:border-border-strong',
+        isTerminal && 'cursor-pointer',
+      )}
       onClick={onPreview}
     >
-      <KanbanBoardCardButtonGroup style={confirmOpen ? { display: 'flex' } : undefined}>
+      <KanbanBoardCardButtonGroup
+        className="right-2 top-2 rounded-md bg-card"
+        style={confirmOpen ? { display: 'flex' } : undefined}
+      >
         <KanbanBoardCardButton
           tooltip="Edit"
-          className="h-6 w-6 bg-muted/50 text-muted-foreground border-0 hover:bg-primary/10 hover:text-primary hover:cursor-pointer transition-all duration-150 active:scale-95"
+          aria-label="Edit"
+          className="size-6 border-0 text-muted-foreground transition-colors hover:cursor-pointer hover:bg-sunken hover:text-foreground active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
@@ -55,7 +63,8 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete, on
             <div
               role="button"
               tabIndex={-1}
-              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95 cursor-pointer"
+              aria-label="Delete"
+              className="inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -87,43 +96,41 @@ export function ActivityKanbanCard({ activity, contactName, onEdit, onDelete, on
         </Popover>
       </KanbanBoardCardButtonGroup>
 
-      <div className="flex flex-col flex-1">
-        <div className="flex items-center gap-2 flex-wrap" data-testid="activity-card-header">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${config.bgClass}`}>
-            <Icon size={11} className={config.colorClass} />
-          </div>
-          <Badge variant="outline" className="text-xs capitalize">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-1.5 pr-14" data-testid="activity-card-header">
+          <ActivityTypeIcon type={activity.type} size="sm" />
+          <Badge variant="secondary" className="capitalize">
             {activity.type === 'call' && activity.direction ? `${activity.direction} ${config.label}` : config.label}
           </Badge>
           {contactName && (
             <>
-              <span className="text-xs text-muted-foreground">·</span>
-              <span className={`text-xs ${config.colorClass}`}>{contactName}</span>
+              <span className="text-[11.5px] text-faint">·</span>
+              <span className={cn('truncate text-[11.5px]', config.colorClass)}>{contactName}</span>
             </>
           )}
           {activity.syncStatus === 'pending' && (
-            <Badge variant="warning" className="text-xs gap-1">
+            <Badge variant="warning" title="Pending sync">
               <Clock size={10} />
             </Badge>
           )}
           {activity.syncStatus === 'error' && (
-            <Badge variant="destructive" className="text-xs gap-1">
+            <Badge variant="destructive" title="Sync error">
               <AlertCircle size={10} />
             </Badge>
           )}
         </div>
 
-        <KanbanBoardCardTitle className="mt-1">{activity.subject}</KanbanBoardCardTitle>
+        <KanbanBoardCardTitle className="text-[13px] font-[550] leading-snug">{activity.subject}</KanbanBoardCardTitle>
 
         {activity.description && (
-          <KanbanBoardCardDescription className="line-clamp-2 text-muted-foreground">
+          <KanbanBoardCardDescription className="line-clamp-2 whitespace-normal text-[12.5px] leading-[1.45] text-muted-foreground">
             {stripHtml(activity.description)}
           </KanbanBoardCardDescription>
         )}
 
-        <div className="flex items-center justify-between mt-auto pt-1.5 text-xs text-muted-foreground">
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1 text-[11.5px] text-muted-foreground">
           <span className="truncate">{formatDisplayName(activity.createdByName)}</span>
-          <span className="flex-shrink-0">{formatDate(activity.occurredAt)}</span>
+          <span className="flex-shrink-0 tabular-nums">{formatDate(activity.occurredAt)}</span>
         </div>
       </div>
     </KanbanBoardCard>

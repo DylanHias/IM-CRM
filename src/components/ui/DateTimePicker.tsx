@@ -173,7 +173,7 @@ export function DateTimePicker({
               type="button"
               disabled={disabled}
               aria-label="Open time picker"
-              className="absolute right-0 top-0 h-10 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="absolute right-0 top-0 h-[30px] w-8 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Clock className="h-4 w-4" />
             </button>

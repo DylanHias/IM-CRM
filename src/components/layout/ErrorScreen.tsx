@@ -23,14 +23,14 @@ export function ErrorScreen({
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <WindowFrame />
       <div className="flex flex-1 items-center justify-center px-6">
-        <div className="flex max-w-md flex-col items-center text-center space-y-4">
+        <div className="flex max-w-md flex-col items-center gap-3 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertCircle className="h-6 w-6 text-destructive" />
           </div>
           <div className="space-y-1.5">
-            <p className="text-base font-semibold text-foreground">{title}</p>
+            <p className="text-[15px] font-semibold text-foreground">{title}</p>
             {description && (
-              <p className="text-sm text-muted-foreground break-words">{description}</p>
+              <p className="max-w-[46ch] break-words text-[13px] text-muted-foreground">{description}</p>
             )}
           </div>
           {onRetry && (

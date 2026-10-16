@@ -53,8 +53,7 @@ export function RevenueAdmin() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold">Power BI Revenue Sync</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground">
           Aggregates the latest-month ARR per customer (joined on BCN) from the Global Dashboard by CSM dataset.
           Server-side aggregation keeps the response small regardless of the 27M-row underlying fact table.
         </p>
@@ -70,7 +69,7 @@ export function RevenueAdmin() {
           {isRefreshing ? 'Refreshing…' : 'Refresh now'}
         </Button>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Database size={14} className="shrink-0" />
           <span>
             <span className="text-foreground font-medium tabular-nums">{cachedCount.toLocaleString()}</span>

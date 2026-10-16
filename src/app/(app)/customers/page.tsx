@@ -1,69 +1,208 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { CustomerFilters } from '@/components/customers/CustomerFilters';
-import { CustomerList } from '@/components/customers/CustomerList';
+import { useCallback, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Bookmark, Building2, Search, X } from 'lucide-react';
 import CustomerDetailClient from './CustomerDetailClient';
+import { CustomerList } from '@/components/customers/CustomerList';
+import { CustomerFilterPopover } from '@/components/customers/CustomerFilterPopover';
+import { CustomerFilterChips } from '@/components/customers/CustomerFilterChips';
+import { CustomerSortMenu } from '@/components/customers/CustomerSortMenu';
+import { ViewBar, ViewBarSeparator } from '@/components/ui/view-bar';
+import { FullBleed } from '@/components/ui/full-bleed';
+import { CompactPager } from '@/components/ui/compact-pager';
+import { Segmented } from '@/components/ui/segmented';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useCustomerStore } from '@/store/customerStore';
+import { useCustomerFilterOptions } from '@/hooks/useCustomerFilterOptions';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
-import { TablePagination } from '@/components/ui/TablePagination';
-import { ListRowsSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { useShortcutListener } from '@/hooks/useShortcuts';
+import { useCustomerStore, type CloudScope } from '@/store/customerStore';
+import { useUIStore } from '@/store/uiStore';
+import { cn } from '@/lib/utils';
+import type { Customer } from '@/types/entities';
+
+const CLOUD_OPTIONS: { value: CloudScope; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'cloud', label: 'Cloud' },
+  { value: 'noncloud', label: 'Non-cloud' },
+];
 
 export default function CustomersPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const customerId = searchParams.get('id');
 
-  if (customerId) {
-    return <CustomerDetailClient customerId={customerId} />;
-  }
-
-  return <CustomerListView />;
-}
-
-function CustomerListView() {
   const { customers, allCustomers, isLoading } = useCustomers();
-  const { page, setPage } = useCustomerStore();
-  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('customers');
+  const options = useCustomerFilterOptions();
+  const page = useCustomerStore((s) => s.page);
+  const setPage = useCustomerStore((s) => s.setPage);
+  const searchQuery = useCustomerStore((s) => s.searchQuery);
+  const setSearchQuery = useCustomerStore((s) => s.setSearchQuery);
+  const filterCloud = useCustomerStore((s) => s.filterCloud);
+  const setFilterCloud = useCustomerStore((s) => s.setFilterCloud);
+  const filterFavorites = useCustomerStore((s) => s.filterFavorites);
+  const toggleFavoritesFilter = useCustomerStore((s) => s.toggleFavoritesFilter);
+  const listWidth = useUIStore((s) => s.customerListWidth);
+  const setListWidth = useUIStore((s) => s.setCustomerListWidth);
+  const { pageSize } = usePaginationPreference('customers');
+
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.max(1, Math.ceil(customers.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pagedCustomers = customers.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paged = customers.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const selectedId = customerId ?? paged[0]?.id ?? null;
+
+  const select = useCallback(
+    (c: Customer) => {
+      useCustomerStore.getState().setSelectedCustomerId(c.id);
+      router.push(`/customers?id=${c.id}`);
+    },
+    [router],
+  );
+
+  // Keep the selected row visible after keyboard moves and page changes.
+  useEffect(() => {
+    if (!selectedId) return;
+    listRef.current?.querySelector(`[data-customer-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [selectedId, safePage]);
+
+  const move = useCallback(
+    (delta: 1 | -1) => {
+      const idx = customers.findIndex((c) => c.id === selectedId);
+      const next = customers[Math.min(Math.max(idx + delta, 0), customers.length - 1)];
+      if (!next || next.id === selectedId) return;
+      const nextPage = Math.floor(customers.indexOf(next) / pageSize) + 1;
+      if (nextPage !== safePage) setPage(nextPage);
+      select(next);
+    },
+    [customers, selectedId, pageSize, safePage, setPage, select],
+  );
+
+  useShortcutListener('list-down', useCallback(() => move(1), [move]));
+  useShortcutListener('list-up', useCallback(() => move(-1), [move]));
+  useShortcutListener(
+    'list-open',
+    useCallback(() => document.querySelector<HTMLElement>('[role="tablist"] [aria-selected="true"]')?.focus(), []),
+  );
+  useShortcutListener('focus-search', useCallback(() => searchRef.current?.focus(), []));
+
+  const startResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    const startX = e.clientX;
+    const startWidth = listWidth;
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => setListWidth(startWidth + ev.clientX - startX);
+    const onUp = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+    };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
-          <div data-tour="page-customers" className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Customer Overview</h2>
-              {isLoading ? (
-                <Skeleton className="h-3.5 w-28 mt-1.5" />
-              ) : (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {customers.length === allCustomers.length
-                    ? `${customers.length} customer${customers.length !== 1 ? 's' : ''}`
-                    : `${customers.length} of ${allCustomers.length} customers`}
-                </p>
-              )}
+    <>
+      <ViewBar
+        title="Customers"
+        meta={
+          isLoading
+            ? undefined
+            : customers.length === allCustomers.length
+              ? `${allCustomers.length} customers`
+              : `${customers.length} of ${allCustomers.length}`
+        }
+      >
+        <ViewBarSeparator />
+        <Segmented aria-label="Cloud scope" value={filterCloud} onChange={setFilterCloud} options={CLOUD_OPTIONS} />
+        <Button
+          variant="outline"
+          aria-pressed={filterFavorites}
+          onClick={toggleFavoritesFilter}
+          className={cn(filterFavorites && 'border-primary/40 bg-accent text-accent-foreground hover:bg-accent')}
+        >
+          <Bookmark size={14} className={cn(filterFavorites && 'fill-current')} />
+          Favorites
+        </Button>
+        <CustomerFilterPopover options={options} />
+      </ViewBar>
+
+      <FullBleed className="grid" style={{ gridTemplateColumns: `${listWidth}px 0 minmax(0, 1fr)` }}>
+        <div data-tour="page-customers" className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border bg-card">
+          <div className="grid gap-2 border-b border-border p-2">
+            <div className="flex items-center gap-1">
+              <div className="relative min-w-0 flex-1">
+                <Search size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-faint" />
+                <Input
+                  ref={searchRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search customers…"
+                  aria-label="Search customers"
+                  className="pl-7 pr-7"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <CustomerSortMenu />
             </div>
+            <CustomerFilterChips options={options} />
           </div>
 
-          <CustomerFilters />
+          <div className="min-h-0 overflow-y-auto">
+            {isLoading ? (
+              <div className="grid">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2.5 border-t border-border px-3 py-2.5 first:border-t-0">
+                    <Skeleton className="size-7 rounded-[7px]" />
+                    <div className="grid flex-1 gap-1.5">
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-2.5 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <CustomerList ref={listRef} customers={paged} selectedId={selectedId} onSelect={select} />
+            )}
+          </div>
 
-          {isLoading ? (
-            <ListRowsSkeleton rows={pageSize} />
+          <CompactPager page={safePage} pageSize={pageSize} total={customers.length} onPageChange={setPage} />
+        </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize customer list"
+          onPointerDown={startResize}
+          className="relative z-10 cursor-col-resize after:absolute after:inset-y-0 after:-left-[3px] after:w-1.5 hover:before:absolute hover:before:inset-y-0 hover:before:-left-px hover:before:w-0.5 hover:before:bg-primary"
+        />
+
+        <div className="min-h-0 min-w-0">
+          {selectedId ? (
+            <CustomerDetailClient key={selectedId} customerId={selectedId} trackRecent={customerId !== null} />
           ) : (
-            <>
-              <CustomerList customers={pagedCustomers} />
-              <TablePagination
-                totalItems={customers.length}
-                page={safePage}
-                pageSize={pageSize}
-                pageSizeOptions={pageSizeOptions}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-              />
-            </>
+            !isLoading && (
+              <div className="grid h-full place-content-center">
+                <EmptyState icon={Building2} title="No customer selected" description="Pick a customer from the list." />
+              </div>
+            )
           )}
-    </div>
+        </div>
+      </FullBleed>
+    </>
   );
 }

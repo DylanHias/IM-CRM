@@ -38,44 +38,42 @@ Sync history is automatically cleaned up on app start. Choose how long to keep e
 
 ## Manual Sync
 
-To trigger a sync manually:
+Open the **Sync** page from your account menu (click your name at the bottom of the sidebar), or click the **pending** label in the title bar. At the top right:
 
-1. Go to the **Sync** page from the sidebar
-2. Click **Run Full Sync**
+- **Run full sync** — pulls everything from Dynamics 365 and Power BI and sends your changes. It shows a spinner while it runs.
+- **Push pending** — only sends the changes that are waiting, without pulling anything. It's greyed out when nothing is waiting.
 
-The button shows a loading spinner while syncing. It's disabled when you're offline.
+Both buttons are disabled while you're offline, and a notice at the top says so.
 
 ## Sync Status
 
-The Sync page shows:
+A row of figures at the top of the Sync page shows:
 
-- **Last sync time** — When the most recent successful sync happened
-- **Pending activities** — How many activities are waiting to be pushed to D365
-- **Pending follow-ups** — How many follow-ups are waiting to be pushed
-- **Pending opportunities** — How many opportunity changes are waiting to be pushed
-- **Online/Offline status** — Whether the app can reach D365
+- **Last sync** — how long ago Dynamics 365 last synced, with the exact time
+- **Auto-sync** — how often the background sync runs, or **Paused** if you paused it in Settings
+- **Pending changes** — how many changes are waiting, and what kind they are
+- **Last 24 hours** — the share of sync runs that went fully well, with the number of errors and partial runs
 
-## Pending Queue
+## Waiting to Sync
 
-The Sync page includes a **Pending Queue** table showing each item waiting to be synced — its type, name, and the action (create, update, or delete). The table is paginated so you can browse through a large backlog. Once an item syncs successfully, it's removed from the queue.
+On the left, **Waiting to sync** lists every change that hasn't reached Dynamics 365 yet, grouped into activities, follow-ups and opportunities. Click one to open its customer. Once an item syncs, it disappears from the list. When the list is empty it says **Nothing waiting**.
 
 ## Sync History
 
-A table at the bottom of the Sync page shows your recent sync runs, including:
+On the right, **History** shows your recent sync runs in a table, 20 per page:
 
-- **Type** — What was synced (D365 pull, push activities, push follow-ups)
 - **Status** — Running, Success, Partial, or Error
-- **Start time** — When the sync started
-- **Records pulled/pushed** — How many records were transferred
-- **Error details** — If something went wrong, what happened
+- **Type** — What was synced (Dynamics 365, Power BI, or a push of activities, follow-ups or opportunities), with the error underneath if something went wrong
+- **When** — When the sync started
+- **Pulled / Pushed** — How many records were transferred
 
 ## Pending Items
 
 Items waiting to sync show a small **"Pending sync"** badge in their respective lists (Activities, Follow-Ups). If a previous sync failed, you'll see an **error badge** instead. These items will retry on the next sync.
 
-## Sidebar Badge
+## Pending Label
 
-The **Sync** link in the sidebar shows an orange badge with the number of pending items, so you always know if data is waiting to be synced.
+When changes are waiting to sync, an orange **pending** label appears in the title bar next to **Online**, with the number of waiting changes. Hover over it to see what kind of changes they are, and click it to open the Sync page. While a sync runs it shows **Syncing…**, and it disappears once everything has been sent.
 
 ## Working Offline
 

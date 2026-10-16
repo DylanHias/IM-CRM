@@ -1,8 +1,8 @@
-# Analytics
+# Report tabs
 
-The Analytics page gives you a visual overview of your work and your portfolio's health — all based on data that's already synced to your device.
+Next to **Revenue**, the **Reports** page has three more tabs. They give you a visual overview of your work and your portfolio's health — all based on data that's already synced to your device. Use **Refresh** in the toolbar to reload the numbers.
 
-## Personal
+## My activity
 
 Shows your own performance for a selected time period (last 7 days, 30 days, 3 months, 6 months, or 1 year).
 
@@ -12,7 +12,7 @@ Shows your own performance for a selected time period (last 7 days, 30 days, 3 m
 - **Win Rate** — percentage of your closed opportunities that were won.
 - **Activity Timeline** — a day-by-day chart of your activity volume.
 
-Use the period picker in the top-right to change the time window.
+Use the period picker in the toolbar to change the time window. It also applies to the activity patterns below.
 
 ## Pipeline
 
@@ -34,9 +34,9 @@ A health overview of your customer portfolio.
 - **ARR by Dimension** — total ARR grouped by industry, segment, or country. Use the dropdown to switch.
 - **Top 10 by ARR** — your ten highest-ARR active customers.
 
-## Activity
+### Activity patterns
 
-Patterns across all logged activities for the selected period.
+Further down the My activity tab you'll see patterns across all logged activities for the selected period.
 
 - **Activity Type Mix** — a comparison of your own activities vs the rest of the team (no individual names, just totals).
 - **Call Direction** — breakdown of logged calls into Outgoing, Incoming, and Unknown.

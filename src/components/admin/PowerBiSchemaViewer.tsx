@@ -69,8 +69,7 @@ export function PowerBiSchemaViewer() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold">PowerBI Semantic Model</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground">
             Scan dataset schema to discover available tables, columns, and measures for dashboarding.
           </p>
         </div>

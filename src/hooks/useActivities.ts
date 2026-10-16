@@ -2,15 +2,14 @@
 
 import { useEffect, useCallback } from 'react';
 import { useActivityStore } from '@/store/activityStore';
-import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, deleteActivity as dbDeleteActivity, countPendingActivities } from '@/lib/db/queries/activities';
-import { insertPendingDelete } from '@/lib/db/queries/pendingDeletes';
+import { queryActivitiesByCustomer, insertActivity, updateActivity as dbUpdateActivity, countPendingActivities } from '@/lib/db/queries/activities';
+import { deleteActivityEverywhere } from '@/lib/activities/deleteActivity';
 import { updateCustomerLastActivity } from '@/lib/db/queries/customers';
 import { refreshCustomerHealth } from '@/lib/customers/refreshHealth';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { emitDataEvent } from '@/lib/dataEvents';
-import { directPushActivity, directDeleteActivity } from '@/lib/sync/directPushService';
+import { directPushActivity } from '@/lib/sync/directPushService';
 import { notifyPush } from '@/lib/sync/pushToast';
-import { toast } from 'sonner';
 import type { Activity } from '@/types/entities';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuthStore } from '@/store/authStore';
@@ -109,27 +108,7 @@ export function useActivities(customerId: string) {
   const removeAct = useCallback(
     async (id: string) => {
       removeActivity(id);
-      emitDataEvent('activity', 'deleted', customerId);
-      if (isTauriApp()) {
-        const deleted = await dbDeleteActivity(id);
-        refreshCustomerHealth(customerId);
-        if (deleted?.remoteId) {
-          const entityType = deleted.type === 'call' ? 'phonecall' : deleted.type === 'note' ? 'annotation' : 'appointment';
-          const d365Type = deleted.type === 'call' ? 'call' : deleted.type === 'note' ? 'note' : 'meeting';
-          const noun = deleted.type === 'note' ? 'note' : deleted.type;
-          const toastId = toast.loading(`Removing ${noun} from Dynamics 365…`);
-          const directDeleted = await directDeleteActivity(deleted.remoteId, d365Type);
-          if (!directDeleted) {
-            await insertPendingDelete(entityType, deleted.remoteId);
-            toast.error(`Could not remove ${noun} from Dynamics 365`, {
-              id: toastId,
-              description: 'Queued for retry on next sync',
-            });
-          } else {
-            toast.success(`${noun.charAt(0).toUpperCase() + noun.slice(1)} removed from Dynamics 365`, { id: toastId });
-          }
-        }
-      }
+      await deleteActivityEverywhere(id, customerId);
     },
     [customerId, removeActivity]
   );

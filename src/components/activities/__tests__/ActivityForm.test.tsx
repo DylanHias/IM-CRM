@@ -152,15 +152,13 @@ describe('ActivityForm', () => {
   it('activity type defaults to meeting', () => {
     useSettingsStore.getState().resetAll();
     render(<ActivityForm {...defaultProps} />);
-    const triggers = screen.getAllByRole('combobox');
-    expect(triggers[0]).toHaveTextContent('Meeting');
+    expect(screen.getByRole('button', { name: 'Meeting' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('activity type respects defaultActivityType setting', () => {
     useSettingsStore.getState().updateSetting('defaultActivityType', 'call');
     render(<ActivityForm {...defaultProps} />);
-    const triggers = screen.getAllByRole('combobox');
-    expect(triggers[0]).toHaveTextContent('Call');
+    expect(screen.getByRole('button', { name: 'Call' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('submit uses the configured default activity type', async () => {

@@ -3,12 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
+  Users, BarChart2, Target, LineChart, Gauge, Activity as ActivityIcon,
   ChevronsLeft, ChevronsRight, Download, Loader2, AlertTriangle,
-  Building2, X, MoreVertical,
-  ChevronRight, LayoutDashboard, Clock, User, Bell, Bookmark, CalendarClock, Crosshair, TrendingUp,
+  X, MoreVertical, Plus,
+  House, Clock, Bookmark,
 } from 'lucide-react';
-import * as Collapsible from '@radix-ui/react-collapsible';
 import { useState, useEffect, useCallback } from 'react';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
@@ -16,13 +15,16 @@ import { useSyncStore } from '@/store/syncStore';
 import { useFollowUpStore } from '@/store/followUpStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import type { SidebarTab } from '@/store/settingsStore';
+import { useNavOrder } from '@/hooks/useNavOrder';
+import { isNavActive } from '@/lib/navigation';
 import { useCustomerStore } from '@/store/customerStore';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 import { useD365UserId } from '@/hooks/useD365UserId';
 import { onDataEvent } from '@/lib/dataEvents';
 import { cn } from '@/lib/utils';
 import { ProfileModal } from './ProfileModal';
+import { QuickAddMenu } from '@/components/dashboard/QuickAddMenu';
 import {
   Sidebar,
   SidebarContent,
@@ -30,13 +32,11 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuBadge,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -52,12 +52,22 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
+// Accent bar on the left edge of the active item.
+const NAV_ITEM_ACTIVE =
+  'relative before:absolute before:left-0 before:top-1/2 before:-mt-2 before:h-4 before:w-[3px] before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100';
+
+function tileColor(name: string): React.CSSProperties {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const hue = h % 360;
+  return { backgroundColor: `hsl(${hue} 55% 50% / 0.14)`, color: `hsl(${hue} 45% 42%)` };
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
-  const { pendingActivityCount, pendingFollowUpCount, pendingOpportunityCount } = useSyncStore();
   const { overdueCount, setOverdueCount } = useFollowUpStore();
   const { account, profilePhoto } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -96,42 +106,29 @@ export function AppSidebar() {
     });
   }, [refreshCounts]);
 
-  const totalPending = pendingActivityCount + pendingFollowUpCount + pendingOpportunityCount;
   const { updateAvailable, downloading, install } = useAppUpdater();
   const [updatePopoverOpen, setUpdatePopoverOpen] = useState(false);
 
-  const sidebarOrder = useSettingsStore((s) => s.sidebarOrder);
-  const sidebarHiddenTabs = useSettingsStore((s) => s.sidebarHiddenTabs);
+  const navOrder = useNavOrder();
 
   const navItemMap: Record<string, { href: string; label: string; icon: typeof Users; badge?: number; badgeVariant?: 'destructive' | 'warning'; badgeStyle?: 'count'; disabled?: boolean; disabledTooltip?: string }> = {
-    '/dashboard': { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    '/dashboard': { href: '/dashboard', label: 'Home', icon: House },
     '/customers': { href: '/customers', label: 'Customers', icon: Users },
-    '/sync': {
-      href: '/sync',
-      label: 'Sync',
-      icon: RefreshCw,
-      badge: totalPending > 0 ? totalPending : undefined,
-      badgeVariant: 'warning',
-    },
-    '/followups': {
-      href: '/followups',
-      label: 'Follow-Ups',
-      icon: CheckSquare,
+    '/opportunities': { href: '/opportunities', label: 'Pipeline', icon: Target },
+    '/revenue-overview': { href: '/revenue-overview', label: 'Reports', icon: BarChart2 },
+    '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
+    '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
+    '/timeline': {
+      href: '/timeline',
+      label: 'Activity',
+      icon: ActivityIcon,
       badge: overdueCount > 0 ? overdueCount : undefined,
       badgeVariant: 'destructive',
       badgeStyle: 'count',
     },
-    '/opportunities': { href: '/opportunities', label: 'Opportunities', icon: Target },
-    '/revenue-overview': { href: '/revenue-overview', label: 'Revenue Overview', icon: BarChart2 },
-    '/insights': { href: '/insights', label: 'Insights', icon: Gauge },
-    '/analytics': { href: '/analytics', label: 'Analytics', icon: LineChart },
-    '/timeline': { href: '/timeline', label: 'Timeline', icon: CalendarClock },
   };
 
-  const navItems = sidebarOrder
-    .filter((key) => !sidebarHiddenTabs.includes(key))
-    .map((key) => navItemMap[key])
-    .filter(Boolean);
+  const navItems = navOrder.map((key) => navItemMap[key]).filter(Boolean);
 
   const recentCustomers = recentCustomerIds
     .map((id) => {
@@ -146,13 +143,30 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader className="px-2 pb-0 pt-1">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <QuickAddMenu
+              align="start"
+              trigger={
+                <SidebarMenuButton
+                  title="New"
+                  className="h-8 border border-border-strong bg-card font-medium shadow-sm hover:bg-surface-2 data-[state=open]:bg-surface-2 [&>svg]:text-primary"
+                >
+                  <Plus />
+                  <span>New</span>
+                </SidebarMenuButton>
+              }
+            />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map(({ href, label, icon: Icon, badge, badgeVariant = 'warning', badgeStyle, disabled, disabledTooltip }) => {
-                const isActive = !disabled && pathname.startsWith(href);
+                const isActive = !disabled && isNavActive(href as SidebarTab, pathname);
                 if (disabled) {
                   return (
                     <SidebarMenuItem key={href}>
@@ -169,7 +183,7 @@ export function AppSidebar() {
                 }
                 return (
                   <SidebarMenuItem key={href}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={label} className={NAV_ITEM_ACTIVE}>
                       <Link href={href}>
                         <Icon />
                         <span>{label}</span>
@@ -204,14 +218,14 @@ export function AppSidebar() {
 
         {favoriteCustomers.length > 0 && (
           <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>
-              <Bookmark className="size-3 mr-1" />
+            <SidebarGroupLabel className="gap-1.5 text-faint">
+              <Bookmark className="!size-3" />
               Favorites
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {favoriteCustomers.map((c) => (
-                  <RecentCustomerItem key={c.id} customer={c} />
+                  <CustomerLink key={c.id} customer={c} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -220,7 +234,10 @@ export function AppSidebar() {
 
         {recentCustomers.length > 0 && (
           <SidebarGroup className="group/recent group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Recent</SidebarGroupLabel>
+            <SidebarGroupLabel className="gap-1.5 text-faint">
+              <Clock className="!size-3" />
+              Recent
+            </SidebarGroupLabel>
             <button
               onClick={clearRecentCustomers}
               className="absolute right-3 top-3 flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground opacity-0 group-hover/recent:opacity-100 transition-opacity"
@@ -231,7 +248,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {recentCustomers.map((c) => (
-                  <RecentCustomerItem key={c.id} customer={c} />
+                  <CustomerLink key={c.id} customer={c} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -321,46 +338,21 @@ export function AppSidebar() {
   );
 }
 
-const customerSubNavBase = [
-  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { key: 'activities', label: 'Activities', icon: Clock },
-  { key: 'contacts', label: 'Contacts', icon: User },
-  { key: 'followups', label: 'Follow-Ups', icon: Bell },
-] as const;
-
-const customerSubNavOpportunities = { key: 'opportunities', label: 'Opportunities', icon: Crosshair } as const;
-const customerSubNavRevenue = { key: 'revenue', label: 'Revenue', icon: TrendingUp } as const;
-
-function RecentCustomerItem({ customer }: { customer: { id: string; name: string } }) {
-  const [open, setOpen] = useState(false);
-  const subNav = [...customerSubNavBase, customerSubNavOpportunities, customerSubNavRevenue];
-
+function CustomerLink({ customer }: { customer: { id: string; name: string } }) {
   return (
-    <Collapsible.Root asChild open={open} onOpenChange={setOpen}>
-      <SidebarMenuItem>
-        <Collapsible.Trigger asChild>
-          <SidebarMenuButton tooltip={customer.name}>
-            <Building2 />
-            <span className="truncate">{customer.name}</span>
-            <ChevronRight className={cn('ml-auto size-3.5 transition-transform', open && 'rotate-90')} />
-          </SidebarMenuButton>
-        </Collapsible.Trigger>
-        <Collapsible.Content>
-          <SidebarMenuSub>
-            {subNav.map(({ key, label, icon: Icon }) => (
-              <SidebarMenuSubItem key={key}>
-                <SidebarMenuSubButton asChild size="sm">
-                  <Link href={`/customers?id=${customer.id}&tab=${key}`}>
-                    <Icon className="size-3.5" />
-                    <span>{label}</span>
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            ))}
-          </SidebarMenuSub>
-        </Collapsible.Content>
-      </SidebarMenuItem>
-    </Collapsible.Root>
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild tooltip={customer.name}>
+        <Link href={`/customers?id=${customer.id}`}>
+          <span
+            className="grid size-[18px] shrink-0 place-items-center rounded-[5px] text-[9px] font-semibold"
+            style={tileColor(customer.name)}
+          >
+            {getInitials(customer.name)}
+          </span>
+          <span className="truncate">{customer.name}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 

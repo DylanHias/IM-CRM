@@ -1,218 +1,115 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Bookmark, Building2, ChevronRight, MapPin, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { HealthBadge } from '@/components/customers/HealthBadge';
+import { forwardRef } from 'react';
+import { Bookmark, Building2 } from 'lucide-react';
 import { useCustomerStore } from '@/store/customerStore';
+import { useRevenueStore } from '@/store/revenueStore';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CustomerContextMenu } from '@/components/customers/CustomerContextMenu';
 import { formatRelative } from '@/lib/utils/dateUtils';
-import { formatDisplayName } from '@/lib/utils/nameUtils';
+import { healthTier, healthTierLabel } from '@/lib/customers/healthScore';
+import { getEffectiveArr } from '@/lib/revenue/effectiveArr';
+import { cn } from '@/lib/utils';
 import type { Customer } from '@/types/entities';
-import { motion } from 'framer-motion';
-import { listContainerVariants as containerVariants, listItemVariants as itemVariants } from '@/lib/motion';
-import styled from 'styled-components';
 
-const ICON_COLORS = [
-  { bg: 'hsl(215 80% 95%)', fg: 'hsl(215 70% 45%)' },
-  { bg: 'hsl(150 60% 92%)', fg: 'hsl(150 55% 35%)' },
-  { bg: 'hsl(340 70% 94%)', fg: 'hsl(340 60% 45%)' },
-  { bg: 'hsl(30 80% 93%)',  fg: 'hsl(30 70% 40%)' },
-  { bg: 'hsl(270 60% 94%)', fg: 'hsl(270 50% 45%)' },
-  { bg: 'hsl(180 55% 92%)', fg: 'hsl(180 50% 35%)' },
-  { bg: 'hsl(0 65% 94%)',   fg: 'hsl(0 55% 45%)' },
-  { bg: 'hsl(50 70% 92%)',  fg: 'hsl(50 60% 35%)' },
-  { bg: 'hsl(200 65% 93%)', fg: 'hsl(200 55% 40%)' },
-  { bg: 'hsl(120 50% 92%)', fg: 'hsl(120 45% 35%)' },
-];
+const TIER_DOT = { healthy: 'bg-success', atRisk: 'bg-warning', critical: 'bg-destructive' } as const;
 
-function getIconColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return ICON_COLORS[Math.abs(hash) % ICON_COLORS.length];
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter((w) => /[A-Za-zÀ-ÿ0-9]/.test(w[0] ?? ''))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 }
 
-const List = styled.div`
-  display: flex;
-  flex-direction: column;
-  border-radius: 12px;
-  overflow: hidden;
-  background: hsl(var(--card));
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-`;
-
-const Row = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 13px 18px;
-  cursor: pointer;
-  border-bottom: 1px solid hsl(var(--border) / 0.7);
-  transition: background-color 0.1s ease;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: hsl(var(--muted) / 0.6);
-  }
-
-  &:hover .bookmark-btn {
-    opacity: 1;
-  }
-`;
-
-const Icon = styled.div<{ $bg: string; $fg: string }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background-color: ${(p) => p.$bg};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${(p) => p.$fg};
-  margin-right: 14px;
-  flex-shrink: 0;
-`;
-
-const Info = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-const Name = styled.div`
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const Meta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 3px;
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-`;
-
-const Right = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  margin-left: 12px;
-`;
-
-const LastActivity = styled.div`
-  font-size: 11px;
-  color: hsl(var(--muted-foreground));
-`;
-
+function compactEur(value: number | null): string {
+  if (value === null || value <= 0) return '';
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `€${Math.round(value / 1_000)}K`;
+  return `€${Math.round(value)}`;
+}
 
 interface CustomerListProps {
   customers: Customer[];
-  showFavoriteButton?: boolean;
+  selectedId: string | null;
+  onSelect: (customer: Customer) => void;
 }
 
-export function CustomerList({ customers, showFavoriteButton = true }: CustomerListProps) {
-  const router = useRouter();
-  const { setSelectedCustomerId, favoriteIds, toggleFavorite } = useCustomerStore();
-
-  const handleClick = (customer: Customer) => {
-    setSelectedCustomerId(customer.id);
-    router.push(`/customers?id=${customer.id}`);
-  };
+/** Compact, selectable customer rows for the list pane. */
+export const CustomerList = forwardRef<HTMLDivElement, CustomerListProps>(({ customers, selectedId, onSelect }, ref) => {
+  const favoriteIds = useCustomerStore((s) => s.favoriteIds);
+  const toggleFavorite = useCustomerStore((s) => s.toggleFavorite);
+  const byBcn = useRevenueStore((s) => s.byBcn);
+  const byResellerAccount = useRevenueStore((s) => s.byResellerAccount);
 
   if (customers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Building2 size={40} className="text-muted-foreground mb-3" />
-        <p className="text-sm text-muted-foreground">No customers found</p>
-        <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
-      </div>
-    );
+    return <EmptyState icon={Building2} title="No customers found" description="Try adjusting your search or filters" />;
   }
 
   return (
-    <List>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {customers.map((customer) => {
-          const iconColor = getIconColor(customer.name);
-          const isFavorite = favoriteIds.has(customer.id);
-          return (
-          <motion.div key={customer.id} variants={itemVariants}>
-            <Row onClick={() => handleClick(customer)}>
-              <Icon $bg={iconColor.bg} $fg={iconColor.fg}>
-                <Building2 size={16} />
-              </Icon>
-
-              <Info>
-                <Name>{customer.name}</Name>
-                <Meta>
-                  {customer.industry && <span>{customer.industry}</span>}
-                  {customer.industry && customer.addressCity && <span>·</span>}
-                  {customer.addressCity && (
-                    <span className="flex items-center gap-1">
-                      <MapPin size={10} />
-                      {customer.addressCity}
-                    </span>
-                  )}
-                  {customer.ownerName && (
-                    <>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <User size={10} />
-                        {formatDisplayName(customer.ownerName)}
-                      </span>
-                    </>
-                  )}
-                </Meta>
-              </Info>
-
-              {showFavoriteButton && (
-                <button
-                  className={`bookmark-btn ml-2 flex-shrink-0 text-muted-foreground hover:text-primary transition-all ${isFavorite ? 'opacity-100' : 'opacity-0'}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(customer.id);
-                  }}
-                  title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                  <Bookmark size={16} className={isFavorite ? 'fill-primary text-primary' : ''} />
-                </button>
+    <div ref={ref} role="listbox" aria-label="Customers" className="stagger-in grid">
+      {customers.map((c) => {
+        const selected = c.id === selectedId;
+        const fav = favoriteIds.has(c.id);
+        const tier = healthTier(c.healthScore);
+        const revenue = (c.bcn ? byBcn.get(c.bcn) : undefined) ?? (c.accountNumber ? byResellerAccount.get(c.accountNumber) : undefined) ?? null;
+        const arr = compactEur(getEffectiveArr(c, revenue).value);
+        return (
+          <CustomerContextMenu key={c.id} customer={c}>
+          <div
+            role="option"
+            aria-selected={selected}
+            data-customer-id={c.id}
+            tabIndex={-1}
+            onClick={() => onSelect(c)}
+            className={cn(
+              'group/row relative flex min-h-[46px] min-w-0 cursor-default items-center gap-2.5 border-t border-border px-3 py-1.5 transition-colors first:border-t-0',
+              selected
+                ? 'bg-accent before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r before:bg-primary'
+                : 'hover:bg-surface-2',
+            )}
+          >
+            <span
+              className={cn(
+                'grid size-7 shrink-0 place-items-center rounded-[7px] border text-[10px] font-semibold',
+                selected ? 'border-primary/30 bg-card text-accent-foreground' : 'border-border bg-sunken text-foreground-2',
               )}
-
-              <Right>
-                <div className="flex items-center gap-1.5">
-                  <HealthBadge score={customer.healthScore} />
-                  <Badge
-                    variant={customer.status === 'active' ? 'success' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {customer.status}
-                  </Badge>
-                </div>
-                <LastActivity>
-                  {customer.lastActivityAt
-                    ? formatRelative(customer.lastActivityAt)
-                    : 'No activity'}
-                </LastActivity>
-              </Right>
-
-              <ChevronRight size={14} className="text-muted-foreground ml-2" />
-            </Row>
-          </motion.div>
-          );
-        })}
-      </motion.div>
-    </List>
+            >
+              {initials(c.name)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-medium">{c.name}</div>
+              <div className="truncate text-xs text-muted-foreground">
+                {c.healthScore !== null && (
+                  <>
+                    <span className={cn('mr-1.5 inline-block size-[7px] rounded-full', TIER_DOT[tier])} title={`Health ${c.healthScore} · ${healthTierLabel(tier)}`} />
+                    {c.healthScore} ·{' '}
+                  </>
+                )}
+                {c.addressCity && <>{c.addressCity} · </>}
+                {c.lastActivityAt ? formatRelative(c.lastActivityAt) : 'No activity'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(c.id);
+              }}
+              title={fav ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={fav ? `Remove ${c.name} from favorites` : `Add ${c.name} to favorites`}
+              className={cn('bookmark-btn shrink-0 p-0.5 transition-opacity', fav ? 'text-primary' : 'text-faint opacity-0 hover:text-foreground group-hover/row:opacity-100')}
+            >
+              <Bookmark size={14} className={cn(fav && 'fill-current')} />
+            </button>
+            {arr && <span className="shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums">{arr}</span>}
+          </div>
+          </CustomerContextMenu>
+        );
+      })}
+    </div>
   );
-}
+});
+CustomerList.displayName = 'CustomerList';

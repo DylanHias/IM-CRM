@@ -44,7 +44,7 @@ describe('shortcuts', () => {
       const custom = ['/opportunities', '/customers'] as typeof DEFAULT_SIDEBAR_ORDER;
       const all = getAllShortcuts(custom);
       const nav1 = all.find((s) => s.id === 'nav-1');
-      expect(nav1!.label).toBe('Go to Opportunities');
+      expect(nav1!.label).toBe('Go to Pipeline');
     });
   });
 

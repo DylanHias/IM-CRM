@@ -2,8 +2,16 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Next loads docs/help/*.md as plain strings (asset/source); mirror that in tests.
+const markdownAsText = {
+  name: 'markdown-as-text',
+  transform(code: string, id: string) {
+    return id.endsWith('.md') ? { code: `export default ${JSON.stringify(code)};`, map: null } : null;
+  },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), markdownAsText],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

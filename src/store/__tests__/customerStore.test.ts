@@ -407,4 +407,42 @@ describe('customerStore filter mode', () => {
 
     expect(useCustomerStore.getState().filterMode).toBe('and');
   });
+
+  describe('cloud scope', () => {
+    const store = () => useCustomerStore.getState();
+    const cloud = createCustomer({ id: 'cl', name: 'Cloud Co', cloudCustomer: true });
+    const onprem = createCustomer({ id: 'on', name: 'Onprem Co', cloudCustomer: false });
+    const unknown = createCustomer({ id: 'un', name: 'Unknown Co', cloudCustomer: null });
+
+    beforeEach(() => {
+      useCustomerStore.setState({ customers: [cloud, onprem, unknown], filterCloud: 'all' });
+    });
+
+    it('shows everyone by default', () => {
+      expect(store().getFilteredCustomers()).toHaveLength(3);
+    });
+
+    it('keeps only cloud customers', () => {
+      store().setFilterCloud('cloud');
+      expect(store().getFilteredCustomers().map((c) => c.id)).toEqual(['cl']);
+    });
+
+    it('treats unknown as non-cloud', () => {
+      store().setFilterCloud('noncloud');
+      expect(store().getFilteredCustomers().map((c) => c.id).sort()).toEqual(['on', 'un']);
+    });
+
+    it('is not counted as a filter and survives Clear all', () => {
+      store().setFilterCloud('cloud');
+      expect(store().getActiveFilterCount()).toBe(0);
+      store().clearFilters();
+      expect(store().filterCloud).toBe('cloud');
+    });
+
+    it('resets to page 1', () => {
+      useCustomerStore.setState({ page: 3 });
+      store().setFilterCloud('cloud');
+      expect(store().page).toBe(1);
+    });
+  });
 });

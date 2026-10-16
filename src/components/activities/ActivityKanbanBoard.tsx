@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Ban, CheckCircle2, ChevronLeft, Clock, type LucideIcon } from 'lucide-react';
 import {
   KanbanBoardProvider,
   KanbanBoard,
@@ -11,7 +11,8 @@ import {
   KanbanBoardColumnList,
   KanbanBoardColumnListItem,
 } from '@/components/kanban';
-import { STATUS_CONFIG } from './ActivityItem';
+import { badgeVariants, type BadgeProps } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { ActivityKanbanCard } from './ActivityKanbanCard';
 import type { Activity, ActivityStatus, Contact } from '@/types/entities';
 
@@ -28,11 +29,19 @@ type KanbanColumn = 'open' | 'completed' | 'cancelled';
 
 const COLUMNS: KanbanColumn[] = ['open', 'completed', 'cancelled'];
 
-const COLUMN_CONFIG: Record<KanbanColumn, (typeof STATUS_CONFIG)[ActivityStatus]> = {
-  open: STATUS_CONFIG.open,
-  completed: STATUS_CONFIG.completed,
-  cancelled: STATUS_CONFIG.rejected,
+interface ColumnConfig {
+  label: string;
+  icon: LucideIcon;
+  variant: NonNullable<BadgeProps['variant']>;
+}
+
+const COLUMN_CONFIG: Record<KanbanColumn, ColumnConfig> = {
+  open: { label: 'Open', icon: Clock, variant: 'info' },
+  completed: { label: 'Completed', icon: CheckCircle2, variant: 'success' },
+  cancelled: { label: 'Cancelled', icon: Ban, variant: 'destructive' },
 };
+
+const COLUMN_BASE = 'rounded-[calc(var(--radius)*1.5)] border-border bg-surface-2 py-1.5';
 
 export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, onStatusChange, onPreview }: ActivityKanbanBoardProps) {
   const [manualCollapsed, setManualCollapsed] = useState<Set<KanbanColumn>>(new Set());
@@ -106,14 +115,18 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
                 key={status}
                 columnId={status}
                 onDropOverColumn={handleDrop(status)}
-                className="w-10 min-w-[40px] flex-shrink-0 flex-grow-0 cursor-pointer"
+                className={cn(COLUMN_BASE, 'w-10 min-w-[40px] flex-shrink-0 flex-grow-0 cursor-pointer transition-colors hover:border-border-strong')}
                 onClick={() => toggleCollapse(status)}
+                title={`Expand ${config.label}`}
               >
-                <div className="flex flex-col items-center gap-2 py-2">
-                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold ${config.className}`}>
+                <div className="flex flex-col items-center gap-2 py-1">
+                  <span className={cn(badgeVariants({ variant: config.variant }), 'size-6 justify-center px-0 tabular-nums')}>
                     {items.length}
                   </span>
-                  <span className="text-[11px] text-muted-foreground [writing-mode:vertical-rl] [text-orientation:mixed]">
+                  <span
+                    id={`column-${status}-title`}
+                    className="text-[11.5px] font-medium text-muted-foreground [text-orientation:mixed] [writing-mode:vertical-rl]"
+                  >
                     {config.label}
                   </span>
                 </div>
@@ -126,29 +139,29 @@ export function ActivityKanbanBoard({ activities, contacts, onEdit, onDelete, on
               key={status}
               columnId={status}
               onDropOverColumn={handleDrop(status)}
-              className="min-w-[180px] flex-1"
+              className={cn(COLUMN_BASE, 'min-w-[200px] flex-1')}
             >
-              <KanbanBoardColumnHeader>
+              <KanbanBoardColumnHeader className="gap-2 px-2 pb-1.5 pt-0.5">
                 <KanbanBoardColumnTitle columnId={status}>
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${config.className} px-2 py-0.5 rounded-full border`}>
-                    <StatusIcon size={12} />
-                    {config.label}
-                    <span className="text-[10px] opacity-70">({items.length})</span>
+                  <span className={badgeVariants({ variant: config.variant })}>
+                    <StatusIcon size={11} />
+                    {config.label} <span className="tabular-nums opacity-75">({items.length})</span>
                   </span>
                 </KanbanBoardColumnTitle>
                 <button
                   type="button"
                   onClick={() => toggleCollapse(status)}
-                  className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className="ml-auto grid size-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sunken hover:text-foreground"
                   aria-label={`Collapse ${config.label} column`}
+                  title={`Collapse ${config.label}`}
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft size={13} />
                 </button>
               </KanbanBoardColumnHeader>
 
-              <KanbanBoardColumnList className="px-1">
+              <KanbanBoardColumnList className="stagger-in px-0.5">
                 {items.map((activity) => (
-                  <KanbanBoardColumnListItem key={activity.id} cardId={activity.id}>
+                  <KanbanBoardColumnListItem key={activity.id} cardId={activity.id} className="px-1.5 py-[3px]">
                     <ActivityKanbanCard
                       activity={activity}
                       contactName={activity.contactId ? contactMap.get(activity.contactId) : undefined}

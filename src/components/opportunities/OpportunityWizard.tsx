@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Trophy, XOctagon, ChevronRight, Check, Save, Copy, Lock } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, Copy, Loader2, Lock, Save, Trophy, XOctagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { queryAllCloudBeluxUsers, type CloudBeluxUser } from '@/lib/db/queries/cloudBeluxUsers';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
+import { cn } from '@/lib/utils';
+import { WIZARD_SECTIONS, countBySection, type FieldSection, type WizardSection } from '@/lib/opportunities/wizardSections';
 import type { Opportunity, Contact, Customer } from '@/types/entities';
 
 const SECONDARY_OWNER_NONE = '__none__';
@@ -262,6 +264,7 @@ export function OpportunityWizard({
   const filledRequiredCount = requiredFields.length - missingFields.length;
   const allRequiredFilled = missingFields.length === 0;
   const [showErrors, setShowErrors] = useState(false);
+  const [section, setSection] = useState<WizardSection>(isEditing ? 'review' : 'customer');
   const hasError = (f: FieldKey) => showErrors && !isFieldFilled(f);
 
   // Notify parent so it can load contacts for the picked customer
@@ -282,6 +285,7 @@ export function OpportunityWizard({
   const handleSave = async () => {
     if (!allRequiredFilled) {
       setShowErrors(true);
+      setSection('review');
       return;
     }
     setSaving(true);
@@ -334,175 +338,123 @@ export function OpportunityWizard({
   const contactOptions = contacts.map((c) => ({ value: c.id, label: `${c.firstName} ${c.lastName}` }));
   const opportunityTypeOptions = isMs ? OPP_TYPES_AZURE : (isAws ? ['Trad', 'Services', 'SPA', 'CMP'] : OPP_TYPES_AZURE);
 
-  return (
-    <div className="flex flex-col w-full min-w-0 max-h-[85vh] overflow-hidden">
-      {/* Header — title + status pills */}
-      <div className="px-6 py-4 border-b">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="text-xs text-muted-foreground mb-1">
-              {isEditing ? 'Edit opportunity' : 'New opportunity'}
-            </div>
-            <div className="text-lg font-semibold truncate">
-              {subject || 'Untitled opportunity'}
-            </div>
-            {isEditing && (
-              <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant={opportunity?.status === 'Open' ? 'default' : opportunity?.status === 'Won' ? 'success' : 'destructive'}>
-                  {opportunity?.status}
-                </Badge>
-                {opportunity?.remoteId && (
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-                    onClick={() => navigator.clipboard.writeText(opportunity.opportunityNumber ?? opportunity.remoteId!)}
-                    title={opportunity.opportunityNumber ? 'Copy opportunity ID' : 'Copy D365 ID'}
-                  >
-                    <Copy size={11} /> {opportunity.opportunityNumber ?? `${opportunity.remoteId.slice(0, 8)}…`}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          {isEditing && opportunity?.status === 'Open' && (
-            <div className="flex gap-2 flex-shrink-0 mr-8">
-              <Button type="button" size="sm" variant="outline" onClick={onCloseWon} className="text-emerald-600 hover:text-emerald-700">
-                <Trophy size={14} className="mr-1.5" />Close as Won
-              </Button>
-              <Button type="button" size="sm" variant="outline" onClick={onCloseLost} className="text-rose-600 hover:text-rose-700">
-                <XOctagon size={14} className="mr-1.5" />Close as Lost
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+  const sectionIndex = WIZARD_SECTIONS.findIndex((x) => x.id === section);
+  const missingBySection = countBySection(missingFields);
+  const requiredBySection = countBySection(requiredFields);
+  const customerName = customer?.name ?? (customers ?? []).find((c) => c.id === customerId)?.name ?? '—';
+  const contact = contacts.find((c) => c.id === contactId);
+  const ownerName = secondaryOwnerId === SECONDARY_OWNER_NONE ? '—' : formatDisplayName(cloudUsers.find((u) => u.id === secondaryOwnerId)?.name ?? '—');
+  const money = (v: string) => (v ? `${currency} ${Number(v).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—');
 
-      {/* Stage stepper */}
-      <div className="px-6 py-4 border-b bg-muted/30">
-        <StageStepper currentStage={stage} onSelect={setStage} />
-      </div>
+  const reviewRows: Record<FieldSection, [string, string][]> = {
+    customer: [['Customer', customerName], ['Contact', contact ? `${contact.firstName} ${contact.lastName}` : '—'], ['BCN', bcn || '—'], ['Secondary owner', ownerName]],
+    deal: [['Subject', subject || '—'], ['Stage', `${stage} (${probability}%)`], ['Sell / type', `${singleOrCrossSell || '—'} · ${sellType || '—'}`], ['Opp type', opportunityType || '—'], ['Customer need', customerNeed || '—']],
+    vendor: [['Primary vendor', primaryVendor || '—'], ...((isAws || isMs) ? [['End user type', endUserType || '—'] as [string, string]] : [])],
+    money: [['Annual revenue', money(annualRevenue)], ['Estimated MRR', money(estimatedMRR)], ['Expiration', expirationDate || '—'], ['Country · currency', `${country} · ${currency}`]],
+  };
 
-      {/* Body — scrollable */}
-      <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-6 py-5 space-y-6">
-        {/* Section: Basics */}
-        <Section title="Basics" subtitle="Core details about this opportunity">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Subject" wide required error={hasError('subject')}>
-              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="BE - #Service Name - Reseller - Vendor - End Customer - ARR" />
-            </Field>
-
-            {customers ? (
-              <Field label="Customer" wide required error={hasError('accountId')}>
+  const body: Record<WizardSection, React.ReactNode> = {
+    customer: (
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {customers ? (
+                <Field label="Customer" wide required error={hasError('accountId')}>
+                  <Combobox
+                    options={customerOptions}
+                    value={customerId}
+                    onValueChange={handleCustomerChange}
+                    placeholder="Select customer"
+                    emptyText="No customer found"
+                  />
+                </Field>
+              ) : customer && (
+                <Field label="Customer">
+                  <div className="px-3 py-2 text-sm bg-muted rounded-md flex items-center gap-2">
+                    <Lock size={12} className="text-muted-foreground" />{customer.name}
+                  </div>
+                </Field>
+              )}
+              <Field label="Contact" required error={hasError('contactId')}>
                 <Combobox
-                  options={customerOptions}
-                  value={customerId}
-                  onValueChange={handleCustomerChange}
-                  placeholder="Select customer"
-                  emptyText="No customer found"
+                  options={contactOptions}
+                  value={contactId === '__none' ? '' : contactId}
+                  onValueChange={(v) => setContactId(v || '__none')}
+                  placeholder={customerId ? 'Select contact' : 'Pick a customer first'}
+                  emptyText={customerId ? 'No contacts for this customer' : 'Pick a customer first'}
                 />
               </Field>
-            ) : customer && (
-              <Field label="Customer">
-                <div className="px-3 py-2 text-sm bg-muted rounded-md flex items-center gap-2">
-                  <Lock size={12} className="text-muted-foreground" />{customer.name}
-                </div>
+              <Field label="BCN" required error={hasError('bcn')}>
+                <Input value={bcn} onChange={(e) => setBcn(e.target.value)} placeholder="Auto-filled from customer" />
               </Field>
-            )}
-
-            <Field label="Contact" required error={hasError('contactId')}>
-              <Combobox
-                options={contactOptions}
-                value={contactId === '__none' ? '' : contactId}
-                onValueChange={(v) => setContactId(v || '__none')}
-                placeholder={customerId ? 'Select contact' : 'Pick a customer first'}
-                emptyText={customerId ? 'No contacts for this customer' : 'Pick a customer first'}
-              />
-            </Field>
-
-            <Field label="BCN" required error={hasError('bcn')}>
-              <Input value={bcn} onChange={(e) => setBcn(e.target.value)} placeholder="Auto-filled from customer" />
-            </Field>
-
-            <Field label="Single or Cross Sell" required error={hasError('singleOrCrossSell')}>
-              <Select value={singleOrCrossSell} onValueChange={setSingleOrCrossSell}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SINGLE_OR_CROSS_SELL.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Type" required error={hasError('type')}>
-              <Select value={sellType} onValueChange={setSellType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SELL_TYPES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Primary Vendor" wide required error={hasError('primaryVendor')}>
-              <Combobox
-                options={vendorOptions}
-                value={primaryVendor}
-                onValueChange={setPrimaryVendor}
-                placeholder="Select vendor"
-                emptyText="No vendor found — sync to load D365 vendors"
-              />
-            </Field>
-
-            <Field label="Opp Type" required error={hasError('opportunityType')}>
-              <Select value={opportunityType} onValueChange={setOpportunityType}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  {opportunityTypeOptions.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Country" required error={hasError('country')}>
-              <Select value={country} onValueChange={setCountry}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {countryList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Currency" required error={hasError('currency')}>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {currencyList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Customer Need" wide colSpan={2} required error={hasError('customerNeed')}>
-              <Textarea
-                value={customerNeed}
-                onChange={(e) => setCustomerNeed(e.target.value)}
-                rows={2}
-                placeholder="What does the customer need?"
-              />
-            </Field>
-
-            <Field label="Secondary Owner" wide colSpan={2}>
-              <Combobox
-                options={[
-                  { value: SECONDARY_OWNER_NONE, label: '—' },
-                  ...cloudUsers.map((u) => ({ value: u.id, label: formatDisplayName(u.name) })),
-                ]}
-                value={secondaryOwnerId}
-                onValueChange={setSecondaryOwnerId}
-                placeholder="Select secondary owner"
-                searchPlaceholder="Search Cloud Belux Sales..."
-                emptyText="No users found"
-              />
-            </Field>
-          </div>
-        </Section>
-
+              <Field label="Secondary Owner" wide colSpan={2}>
+                <Combobox
+                  options={[
+                    { value: SECONDARY_OWNER_NONE, label: '—' },
+                    ...cloudUsers.map((u) => ({ value: u.id, label: formatDisplayName(u.name) })),
+                  ]}
+                  value={secondaryOwnerId}
+                  onValueChange={setSecondaryOwnerId}
+                  placeholder="Select secondary owner"
+                  searchPlaceholder="Search Cloud Belux Sales..."
+                  emptyText="No users found"
+                />
+              </Field>
+      </div>
+    ),
+    deal: (
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <Field label="Subject" wide required error={hasError('subject')}>
+                <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="BE - #Service Name - Reseller - Vendor - End Customer - ARR" />
+              </Field>
+        <Field label="Stage" colSpan={2}>
+          <StagePicker currentStage={stage} onSelect={setStage} />
+        </Field>
+              <Field label="Single or Cross Sell" required error={hasError('singleOrCrossSell')}>
+                <Select value={singleOrCrossSell} onValueChange={setSingleOrCrossSell}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SINGLE_OR_CROSS_SELL.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Type" required error={hasError('type')}>
+                <Select value={sellType} onValueChange={setSellType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SELL_TYPES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Opp Type" required error={hasError('opportunityType')}>
+                <Select value={opportunityType} onValueChange={setOpportunityType}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {opportunityTypeOptions.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Customer Need" wide colSpan={2} required error={hasError('customerNeed')}>
+                <Textarea
+                  value={customerNeed}
+                  onChange={(e) => setCustomerNeed(e.target.value)}
+                  rows={2}
+                  placeholder="What does the customer need?"
+                />
+              </Field>
+      </div>
+    ),
+    vendor: (
+      <div className="grid gap-5">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <Field label="Primary Vendor" wide required error={hasError('primaryVendor')}>
+                  <Combobox
+                    options={vendorOptions}
+                    value={primaryVendor}
+                    onValueChange={setPrimaryVendor}
+                    placeholder="Select vendor"
+                    emptyText="No vendor found — sync to load D365 vendors"
+                  />
+                </Field>
+        </div>
         {/* Section: Vendor-specific */}
         <AnimatePresence initial={false}>
           {isAws && (
@@ -513,7 +465,7 @@ export function OpportunityWizard({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.18 }}
             >
-              <Section title="AWS configuration" subtitle="Required when selling AWS">
+              <Section title="AWS configuration" subtitle={isReq('apnId') ? 'Required at this stage' : 'Optional until Qualified'}>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="APN ID" required={isReq('apnId')} error={hasError('apnId')}>
                     <Input value={apnId} onChange={(e) => setApnId(e.target.value)} />
@@ -594,7 +546,7 @@ export function OpportunityWizard({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.18 }}
             >
-              <Section title="Microsoft configuration" subtitle="Required when selling Microsoft Azure or Cloud">
+              <Section title="Microsoft configuration" subtitle={isReq('msCspTenant') ? 'Required at this stage' : 'Optional until Qualified'}>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="MS CSP Tenant" required={isReq('msCspTenant')} error={hasError('msCspTenant')}>
                     <Input value={msCspTenant} onChange={(e) => setMsCspTenant(e.target.value)} />
@@ -661,45 +613,172 @@ export function OpportunityWizard({
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Section: Financials */}
-        <Section title="Financials" subtitle="Revenue projections and timing">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label={`Estimated MRR (${currency})`} required error={hasError('estimatedMRR')}>
+      </div>
+    ),
+    money: (
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <Field label="Country" required error={hasError('country')}>
+                <Select value={country} onValueChange={setCountry}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {countryList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Currency" required error={hasError('currency')}>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {currencyList.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+          <Field label={`Estimated MRR (${currency})`} required error={hasError('estimatedMRR')}>
               <MoneyInput value={estimatedMRR} onValueChange={updateEstimatedMRR} currency={currency} />
-            </Field>
-            <Field label={`Annual Revenue (${currency})`} required error={hasError('annualRevenue')}>
+          </Field>
+          <Field label={`Annual Revenue (${currency})`} required error={hasError('annualRevenue')}>
               <MoneyInput value={annualRevenue} onValueChange={updateAnnualRevenue} currency={currency} />
-            </Field>
-            <Field label={`Est. Margin ()`}>
+          </Field>
+          <Field label={`Est. Margin (${currency})`}>
               <MoneyInput value={estimatedMargin} onValueChange={setEstimatedMargin} currency={currency} />
-            </Field>
-            <Field label="Expiration Date">
+          </Field>
+          <Field label="Expiration Date">
               <DatePicker value={expirationDate} onChange={setExpirationDate} />
-            </Field>
+          </Field>
+      </div>
+    ),
+    review: (
+      <div className="grid gap-2.5">
+        {missingFields.length > 0 ? (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[13px] text-destructive">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            <span>Still needed: {missingFields.map(fieldLabel).join(', ')}</span>
           </div>
-        </Section>
+        ) : (
+          <div className="flex items-start gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-[13px] text-success">
+            <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+            <span>Everything required for <b>{stage}</b> is filled in.</span>
+          </div>
+        )}
+        {(Object.keys(reviewRows) as FieldSection[]).map((sec) => (
+          <section key={sec} className="overflow-hidden rounded-[calc(var(--radius)*1.5)] border border-border bg-card">
+            <div className="flex min-h-[38px] items-center gap-2 border-b border-border px-3">
+              <h4 className="flex-1 text-[12.5px] font-semibold">{WIZARD_SECTIONS.find((x) => x.id === sec)?.label}</h4>
+              {missingBySection[sec] > 0 && <Badge variant="destructive">{missingBySection[sec]} missing</Badge>}
+              <button type="button" onClick={() => setSection(sec)} className="text-xs font-medium text-accent-foreground hover:underline">Edit</button>
+            </div>
+            <dl className="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1.5 px-3 py-2.5 text-[13px]">
+              {reviewRows[sec].map(([k, v]) => (
+                <div key={k} className="contents">
+                  <dt className="text-muted-foreground">{k}</dt>
+                  <dd className="min-w-0 break-words">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+    ),
+  };
+
+  return (
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
+      <div className="flex items-start gap-3 border-b border-border py-3.5 pl-5 pr-12">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {isEditing ? 'Edit opportunity' : 'New opportunity'}
+            {isEditing && opportunity?.remoteId && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 hover:text-foreground"
+                onClick={() => navigator.clipboard.writeText(opportunity.opportunityNumber ?? opportunity.remoteId!)}
+                title={opportunity.opportunityNumber ? 'Copy opportunity ID' : 'Copy D365 ID'}
+              >
+                · <Copy size={11} /> {opportunity.opportunityNumber ?? `${opportunity.remoteId.slice(0, 8)}…`}
+              </button>
+            )}
+          </div>
+          <h2 className="truncate text-[17px] font-semibold tracking-[-0.01em]">{subject || 'Untitled opportunity'}</h2>
+        </div>
+        {isEditing && (
+          <Badge variant={opportunity?.status === 'Open' ? 'secondary' : opportunity?.status === 'Won' ? 'success' : 'destructive'}>
+            {opportunity?.status}
+          </Badge>
+        )}
+        <Badge variant="purple" data-testid="stage-chip">{stage} · {probability}%</Badge>
       </div>
 
-      {/* Footer — sticky save bar */}
-      <div className="px-6 py-3 border-t bg-card flex items-center justify-between gap-4">
-        <div className="text-xs">
-          <span className={`font-medium ${allRequiredFilled ? 'text-foreground' : 'text-rose-600'}`}>{filledRequiredCount}</span>
-          <span className="text-muted-foreground"> / {requiredFields.length} required filled</span>
-          <span className="mx-2 text-muted-foreground">·</span>
-          <span className="text-muted-foreground">Stage: <span className="font-medium text-foreground">{stage}</span> ({probability}%)</span>
-          {showErrors && !allRequiredFilled && (
-            <div className="mt-1 text-rose-600">
-              Missing: {missingFields.map(fieldLabel).join(', ')}
+      <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)] max-md:grid-cols-1 max-md:grid-rows-[auto_minmax(0,1fr)]">
+        <nav aria-label="Opportunity sections" className="flex min-h-0 flex-col gap-0.5 overflow-y-auto border-r border-border bg-surface-2 px-2 py-3 max-md:flex-row max-md:border-b max-md:border-r-0">
+          {WIZARD_SECTIONS.map((sec, idx) => {
+            const missing = sec.id === 'review' ? 0 : missingBySection[sec.id];
+            const showMissing = showErrors && missing > 0;
+            const done = sec.id !== 'review' && missing === 0 && (isEditing || idx < sectionIndex);
+            const current = sec.id === section;
+            return (
+              <button
+                key={sec.id}
+                type="button"
+                aria-current={current ? 'step' : undefined}
+                onClick={() => setSection(sec.id)}
+                className={cn('flex shrink-0 items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-sunken', current && 'bg-accent hover:bg-accent')}
+              >
+                <span
+                  className={cn(
+                    'grid size-[22px] shrink-0 place-items-center rounded-full border border-border-strong bg-sunken text-[11px] font-semibold text-muted-foreground',
+                    current && 'border-primary bg-primary text-primary-foreground',
+                    done && !current && 'border-transparent bg-success/15 text-success',
+                    showMissing && 'border-destructive bg-destructive text-white',
+                  )}
+                >
+                  {showMissing ? '!' : done ? <Check size={11} /> : idx + 1}
+                </span>
+                <span className="min-w-0 flex-1 max-md:hidden">
+                  <b className="block text-[13px] font-medium">{sec.label}</b>
+                  <span className="block text-[11.5px] text-muted-foreground">
+                    {sec.id === 'review' ? 'Check and save' : showMissing ? `${missing} missing` : `${requiredBySection[sec.id]} required`}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+          {isEditing && opportunity?.status === 'Open' && (
+            <div className="mt-auto grid gap-1.5 border-t border-border px-1.5 pb-1 pt-2.5 max-md:hidden">
+              <span className="text-[11.5px] text-muted-foreground">Close this deal</span>
+              <Button type="button" size="sm" variant="outline" onClick={onCloseWon} className="justify-start text-success hover:text-success">
+                <Trophy size={13} />Close as Won
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={onCloseLost} className="justify-start text-destructive hover:text-destructive">
+                <XOctagon size={13} />Close as Lost
+              </Button>
             </div>
           )}
+        </nav>
+
+        <div className="min-w-0 overflow-y-auto px-[22px] pb-6 pt-4">
+          <h3 className="mb-3 text-[15px] font-semibold">{WIZARD_SECTIONS[sectionIndex].label}</h3>
+          <motion.div key={section} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.16 }}>
+            {body[section]}
+          </motion.div>
         </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
-          <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? <><Loader2 size={14} className="animate-spin mr-2" />Saving…</> : <><Save size={14} className="mr-2" />Save</>}
-          </Button>
-        </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-border bg-card px-5 py-3">
+        <span className={cn('text-xs tabular-nums', showErrors && !allRequiredFilled ? 'text-destructive' : 'text-muted-foreground')}>
+          {filledRequiredCount} / {requiredFields.length} required filled
+        </span>
+        <span className="flex-1" />
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
+        {sectionIndex > 0 && (
+          <Button type="button" variant="outline" onClick={() => setSection(WIZARD_SECTIONS[sectionIndex - 1].id)}>Back</Button>
+        )}
+        {sectionIndex < WIZARD_SECTIONS.length - 1 && (
+          <Button type="button" variant="outline" onClick={() => setSection(WIZARD_SECTIONS[sectionIndex + 1].id)}>Next</Button>
+        )}
+        <Button type="button" onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          {saving ? 'Saving…' : isEditing ? 'Save' : 'Create opportunity'}
+        </Button>
       </div>
     </div>
   );
@@ -743,70 +822,52 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 function Field({ label, children, wide, colSpan, required, error }: { label: string; children: React.ReactNode; wide?: boolean; colSpan?: number; required?: boolean; error?: boolean }) {
   void wide;
   const errorClasses = error
-    ? '[&_input]:!border-rose-500 [&_textarea]:!border-rose-500 [&_button[role=combobox]]:!border-rose-500 [&_input]:focus-visible:!ring-rose-500 [&_textarea]:focus-visible:!ring-rose-500 [&_button[role=combobox]]:focus:!ring-rose-500'
+    ? '[&_input]:!border-destructive [&_textarea]:!border-destructive [&_button[role=combobox]]:!border-destructive [&_input]:focus-visible:!ring-destructive [&_textarea]:focus-visible:!ring-destructive [&_button[role=combobox]]:focus:!ring-destructive'
     : '';
   return (
     <div className={`space-y-1 ${colSpan === 2 ? 'col-span-2' : ''} ${errorClasses}`}>
-      <Label className={`text-xs ${error ? 'text-rose-600' : ''}`}>
+      <Label className={`text-xs font-medium text-foreground-2 ${error ? '!text-destructive' : ''}`}>
         {label}
-        {required && <span className="ml-1 text-[10px] font-normal text-muted-foreground">(required)</span>}
+        {required && <span className="text-destructive"> *</span>}
       </Label>
       {children}
     </div>
   );
 }
 
-interface StageStepperProps {
+interface StagePickerProps {
   currentStage: Stage;
   onSelect: (s: Stage) => void;
 }
 
-function StageStepper({ currentStage, onSelect }: StageStepperProps) {
+/** Stage pills: earlier stages ticked, the current one filled; Billing Rejection is a dashed side branch. */
+function StagePicker({ currentStage, onSelect }: StagePickerProps) {
   const currentIdx = STAGES.indexOf(currentStage);
   const isBillingRejection = currentStage === 'Billing Rejection';
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (e.deltaY === 0) return;
-    const canScroll = el.scrollWidth > el.clientWidth;
-    if (!canScroll) return;
-    e.preventDefault();
-    el.scrollLeft += e.deltaY;
-  };
-
   return (
-    <div
-      ref={scrollRef}
-      onWheel={handleWheel}
-      className="flex items-center gap-1 overflow-x-auto pb-1"
-    >
+    <div className="flex flex-wrap gap-1">
       {STAGES.map((s, i) => {
         const isActive = s === currentStage;
-        const isPast = !isBillingRejection && i < currentIdx;
         const isBranch = s === 'Billing Rejection';
+        const isPast = !isBillingRejection && !isBranch && i < currentIdx;
         return (
-          <div key={s} className="flex items-center flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => onSelect(s)}
-              className={`group flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                isActive ? 'bg-primary text-primary-foreground'
-                : isPast ? 'text-foreground hover:bg-accent'
-                : isBranch ? 'text-muted-foreground hover:bg-accent border border-dashed'
-                : 'text-muted-foreground hover:bg-accent'
-              }`}
-              title={`${s} (${STAGE_PROBABILITY[s]}%)`}
-            >
-              {isPast && <Check size={11} className="flex-shrink-0" />}
-              <span className="whitespace-nowrap">{s}</span>
-              <span className="text-[10px] opacity-70">{STAGE_PROBABILITY[s]}%</span>
-            </button>
-            {i < STAGES.length - 1 && !isBranch && (
-              <ChevronRight size={12} className="text-muted-foreground/40 mx-0.5 flex-shrink-0" />
+          <button
+            key={s}
+            type="button"
+            onClick={() => onSelect(s)}
+            aria-pressed={isActive}
+            title={`${s} (${STAGE_PROBABILITY[s]}%)`}
+            className={cn(
+              'inline-flex h-7 items-center gap-1.5 rounded-full border border-border-strong bg-card px-2.5 text-xs font-medium transition-colors hover:bg-surface-2',
+              isPast && 'border-primary/40 text-accent-foreground',
+              isBranch && 'border-dashed',
+              isActive && 'border-primary bg-primary text-primary-foreground hover:bg-primary',
             )}
-          </div>
+          >
+            {isPast && <Check size={11} />}
+            {s}
+            <small className={cn('text-[10.5px]', isActive ? 'opacity-80' : 'text-faint')}>{STAGE_PROBABILITY[s]}%</small>
+          </button>
         );
       })}
     </div>

@@ -6,34 +6,36 @@ Welcome to the Ingram Micro CRM! This guide will help you get up and running qui
 
 When you open the app for the first time, you'll be asked to sign in with your Microsoft account. After signing in, the app will run an initial sync to pull your customer data from Dynamics 365. This may take a few minutes depending on the amount of data.
 
-Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Opportunities, Revenue Overview, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
+Once the sync completes, click **Get Started** to begin a guided walkthrough of the app. The tour covers all the main areas — Customers, Follow-Ups, Pipeline, Reports, and more — and takes about a minute to complete. You can skip it at any time by clicking "Skip tour".
 
-## The Dashboard
+## Home
 
-After signing in, you land on the **Dashboard** — your personal home screen. It shows:
+After signing in, you land on **Home** — your personal overview. It shows:
 
-- **Belgium customer map** — A map of Belgium with a dot for each city where you have customers. Dot size reflects customer count; hover any dot to see the exact number.
-- **Key counters** — Your all-time total activities logged, total opportunities created, follow-ups due today, and total value of your open pipeline.
-- **Recent activity list** — Your 15 most recently logged activities on the right, sorted newest first. Click any row to jump straight to that customer's activity tab.
+- **Key figures** — Your open pipeline, portfolio ARR, win rate over the last 90 days, and how many follow-ups are due today.
+- **Due today** — Follow-ups due today or overdue, which you can tick off right there.
+- **Recent activity**, **This week**, **Deals going quiet** and **Open pipeline by stage**.
 
-The greeting and **Search everything** bar at the top let you search across customers, contacts, opportunities, activities, and follow-ups by typing any keyword.
+See the Home help page for details.
 
 ## Navigating the App
 
-The **sidebar** on the left is your main navigation. It gives you quick access to:
+The **sidebar** on the left is your main navigation. At the top, the **New** button lets you log an activity, add a follow-up or start an opportunity from anywhere. Below it you'll find:
 
 - **Customers** — Your full customer list
-- **Sync** — Manage data synchronization with Dynamics 365
-- **Follow-Ups** — All your pending tasks and reminders
-- **Opportunities** — Sales pipeline and deals
-- **Revenue Overview** — Annual Recurring Revenue dashboard
-- **Timeline** — A chronological feed of all activities, follow-ups, and opportunities across every customer
+- **Pipeline** — All your opportunities, as a list or a board
+- **Reports** — Revenue, pipeline, customer and personal numbers in one place
+- **Activity** — A timeline of all activities, follow-ups and opportunities across every customer, plus Your Follow-Ups
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.
 
-## Recent Customers
+## Favorites and Recent Customers
 
-Below the main navigation, you'll find your **Recent Customers** section. This shows the last few customers you visited, letting you quickly jump back to where you left off. Click a customer name to expand quick-access links to their Overview, Activities, Contacts, Follow-Ups, and Opportunities.
+Below the main navigation, the **Favorites** section lists the customers you bookmarked and the **Recent** section shows the last few customers you visited. Click a name to open that customer. Hover over Recent and click **Clear** to empty the list.
+
+## Title Bar
+
+The bar at the very top holds a **Search** box (or press **Ctrl+K**) and shows whether you're **Online**. When changes are waiting to go to Dynamics 365, an orange **pending** label appears next to it with the number of changes; click it to open the Sync page. While a sync runs it shows **Syncing…**.
 
 ## Quick Actions
 
@@ -44,16 +46,19 @@ Below the main navigation, you'll find your **Recent Customers** section. This s
 
 ## User Menu
 
-Your **profile photo** from Microsoft 365 is shown in the sidebar avatar. Click it to access:
+Your **profile photo** from Microsoft 365 is shown in the sidebar avatar. Click it to open your account menu in the middle of the screen; click anywhere outside it to close it. From there you can open:
 
-- **Account settings** — Customize the app to your preferences
+- **Sync** — Manage data synchronization with Dynamics 365
+- **Settings** — Customize the app to your preferences
 - **Help** — This documentation
-- **Keyboard shortcuts** — View and customize shortcuts
+- **Admin** — The admin panel (admins only)
+- **Debug** — Logs and troubleshooting tools
+- **Shortcuts** — View all keyboard shortcuts
 - **Log out** — Sign out of your account
 
 ## Working Offline
 
-Ingram Micro CRM works even when you're not connected to the internet. Any changes you make while offline are saved locally and will sync automatically when you're back online. You'll see badges in the sidebar indicating how many items are waiting to sync.
+Ingram Micro CRM works even when you're not connected to the internet. Any changes you make while offline are saved locally and will sync automatically when you're back online. The **pending** label in the title bar shows how many changes are waiting to sync.
 
 ## Next Steps
 

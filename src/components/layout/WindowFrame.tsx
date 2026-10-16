@@ -7,9 +7,8 @@ import { isTauriApp } from '@/lib/utils/offlineUtils';
 import styled from 'styled-components';
 
 const Bar = styled.div`
-  height: 36px;
+  height: 38px;
   background-color: hsl(var(--titlebar-bg));
-  border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -20,10 +19,12 @@ const Bar = styled.div`
 
 const LeftSection = styled.div`
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 8px;
-  padding-left: 12px;
+  padding-left: 14px;
   height: 100%;
+  min-width: 0;
 `;
 
 const AppTitle = styled.span`
@@ -34,14 +35,22 @@ const AppTitle = styled.span`
   letter-spacing: 0.01em;
 `;
 
-const Spacer = styled.div`
-  flex: 1;
+const CenterSection = styled.div`
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 `;
 
 const RightSection = styled.div`
   display: flex;
+  flex: 1;
   align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
   height: 100%;
+  min-width: 0;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 `;
@@ -50,6 +59,7 @@ const WindowControls = styled.div`
   display: flex;
   align-items: center;
   height: 100%;
+  margin-left: 8px;
 `;
 
 const WindowButton = styled.button<{ $variant?: 'close' }>`
@@ -62,13 +72,13 @@ const WindowButton = styled.button<{ $variant?: 'close' }>`
   background: transparent;
   color: hsl(var(--titlebar-fg));
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
 
   &:hover {
     background-color: ${(p) =>
       p.$variant === 'close'
-        ? 'hsl(0 84% 60%)'
-        : 'hsl(var(--titlebar-fg) / 0.08)'};
+        ? 'hsl(6 75% 44%)'
+        : 'hsl(var(--chrome-hover))'};
     color: ${(p) =>
       p.$variant === 'close' ? 'white' : 'hsl(var(--titlebar-fg))'};
   }
@@ -76,8 +86,8 @@ const WindowButton = styled.button<{ $variant?: 'close' }>`
   &:active {
     background-color: ${(p) =>
       p.$variant === 'close'
-        ? 'hsl(0 84% 50%)'
-        : 'hsl(var(--titlebar-fg) / 0.12)'};
+        ? 'hsl(6 75% 38%)'
+        : 'hsl(var(--chrome-selected))'};
   }
 `;
 
@@ -135,10 +145,11 @@ function useWindowControls() {
 
 interface WindowFrameProps {
   leftContent?: React.ReactNode;
+  centerContent?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function WindowFrame({ leftContent, children }: WindowFrameProps) {
+export function WindowFrame({ leftContent, centerContent, children }: WindowFrameProps) {
   const { isMaximized, minimize, toggleMaximize, close } = useWindowControls();
 
   return (
@@ -155,15 +166,10 @@ export function WindowFrame({ leftContent, children }: WindowFrameProps) {
         {leftContent}
       </LeftSection>
 
-      <Spacer />
-
-      {children && (
-        <RightSection>
-          {children}
-        </RightSection>
-      )}
+      {centerContent && <CenterSection>{centerContent}</CenterSection>}
 
       <RightSection>
+        {children}
         <WindowControls>
           <WindowButton onClick={minimize} title="Minimize">
             <Minus size={14} strokeWidth={1.5} />

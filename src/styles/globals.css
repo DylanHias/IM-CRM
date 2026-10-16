@@ -4,42 +4,52 @@
 
 @layer base {
   :root {
-    --background: 220 22% 95%;
-    --foreground: 222 39% 11%;
+    /* Surfaces: chrome = title bar + sidebar, background = content sheet, card = panels */
+    --chrome: 220 19% 94%;
+    --chrome-hover: 225 15% 90%;
+    --chrome-selected: 222 19% 89%;
+    --background: 240 14% 97%;
+    --foreground: 240 10% 10%;
+    --foreground-2: 240 7% 25%;
+    --faint: 240 6% 64%;
     --card: 0 0% 100%;
-    --card-foreground: 222 39% 11%;
+    --card-foreground: 240 10% 10%;
+    --surface-2: 240 11% 98%;
+    --sunken: 240 12% 95%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 39% 11%;
-    --primary: 217 87% 51%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 224 65% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 218 22% 92%;
-    --secondary-foreground: 222 39% 25%;
-    --muted: 218 20% 93%;
-    --muted-foreground: 218 14% 52%;
-    --accent: 217 87% 96%;
-    --accent-foreground: 217 87% 38%;
-    --destructive: 0 84% 60%;
+    --secondary: 240 12% 95%;
+    --secondary-foreground: 240 7% 25%;
+    --muted: 240 12% 95%;
+    --muted-foreground: 240 5% 44%;
+    --accent: 222 68% 95%;
+    --accent-foreground: 224 61% 43%;
+    --destructive: 2 64% 47%;
     --destructive-foreground: 0 0% 100%;
-    --border: 218 22% 88%;
-    --input: 218 22% 88%;
-    --ring: 217 87% 51%;
-    --radius: 0.5rem;
-    --success: 142 72% 37%;
+    --border: 240 12% 90%;
+    --border-strong: 240 9% 83%;
+    --input: 240 9% 83%;
+    --ring: 224 65% 51%;
+    --radius: 0.375rem;
+    --success: 142 71% 29%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 30 90% 37%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 217 69% 47%;
     --info-foreground: 0 0% 100%;
-    --sidebar-bg: 0 0% 100%;
-    --sidebar-fg: 222 20% 40%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-active-bg: var(--primary);
-    --sidebar-active-fg: var(--primary-foreground);
-    --sidebar-hover-bg: 218 22% 95%;
+    --overlay: 240 14% 7% / 0.4;
+    --sidebar-bg: var(--chrome);
+    --sidebar-fg: var(--foreground-2);
+    --sidebar-border: var(--border);
+    --sidebar-active-bg: var(--chrome-selected);
+    --sidebar-active-fg: var(--foreground);
+    --sidebar-hover-bg: var(--chrome-hover);
     --topbar-bg: 0 0% 100%;
-    --topbar-border: 218 22% 91%;
-    --titlebar-bg: 0 0% 100%;
-    --titlebar-fg: 222 39% 25%;
+    --topbar-border: var(--border);
+    --titlebar-bg: var(--chrome);
+    --titlebar-fg: var(--foreground-2);
 
     /* Activity type colors */
     --activity-meeting: 263 70% 50%;
@@ -81,41 +91,50 @@
   }
 
   .dark {
-    --background: 220 10% 15%;
-    --foreground: 0 0% 95%;
-    --card: 220 10% 18%;
-    --card-foreground: 0 0% 95%;
-    --popover: 220 10% 18%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 217 87% 56%;
+    --chrome: 228 8% 12%;
+    --chrome-hover: 230 7% 16%;
+    --chrome-selected: 231 7% 19%;
+    --background: 230 8% 14%;
+    --foreground: 240 11% 95%;
+    --foreground-2: 240 9% 82%;
+    --faint: 235 5% 46%;
+    --card: 231 8% 17%;
+    --card-foreground: 240 11% 95%;
+    --surface-2: 232 8% 19%;
+    --sunken: 230 9% 13%;
+    --popover: 231 8% 17%;
+    --popover-foreground: 240 11% 95%;
+    --primary: 224 65% 61%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 8% 22%;
-    --secondary-foreground: 0 0% 85%;
-    --muted: 220 8% 22%;
-    --muted-foreground: 220 8% 60%;
-    --accent: 217 40% 25%;
-    --accent-foreground: 217 87% 75%;
-    --destructive: 0 63% 55%;
+    --secondary: 232 8% 19%;
+    --secondary-foreground: 240 9% 82%;
+    --muted: 232 8% 19%;
+    --muted-foreground: 235 6% 64%;
+    --accent: 227 22% 24%;
+    --accent-foreground: 224 65% 68%;
+    --destructive: 2 81% 67%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 8% 24%;
-    --input: 220 8% 24%;
-    --ring: 217 87% 56%;
-    --success: 142 60% 45%;
+    --border: 233 8% 23%;
+    --border-strong: 234 7% 29%;
+    --input: 234 7% 29%;
+    --ring: 224 65% 61%;
+    --success: 142 46% 49%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 80% 55%;
+    --warning: 37 72% 56%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 80% 55%;
+    --info: 215 82% 68%;
     --info-foreground: 0 0% 100%;
-    --sidebar-bg: 220 10% 17%;
-    --sidebar-fg: 220 8% 65%;
-    --sidebar-border: 220 6% 24%;
-    --sidebar-active-bg: var(--primary);
-    --sidebar-active-fg: var(--primary-foreground);
-    --sidebar-hover-bg: 220 8% 22%;
-    --topbar-bg: 220 10% 17%;
-    --topbar-border: 220 8% 22%;
-    --titlebar-bg: 220 10% 16%;
-    --titlebar-fg: 0 0% 88%;
+    --overlay: 0 0% 0% / 0.55;
+    --sidebar-bg: var(--chrome);
+    --sidebar-fg: var(--foreground-2);
+    --sidebar-border: var(--border);
+    --sidebar-active-bg: var(--chrome-selected);
+    --sidebar-active-fg: var(--foreground);
+    --sidebar-hover-bg: var(--chrome-hover);
+    --topbar-bg: 231 8% 17%;
+    --topbar-border: var(--border);
+    --titlebar-bg: var(--chrome);
+    --titlebar-fg: var(--foreground-2);
     --activity-meeting: 263 70% 60%;
     --activity-meeting-bg: 263 30% 21%;
     --activity-visit: 189 70% 50%;
@@ -155,7 +174,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sans), 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-family: var(--font-geist-sans), var(--font-sans), 'Segoe UI Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -339,5 +358,76 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
+  }
+}
+
+/* A grid of MetricCards renders as one joined strip, like the redesign's key-figure rows. */
+@layer components {
+  /* Loading placeholder: sunken block with a light sweep across it. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    background: hsl(var(--sunken));
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, hsl(var(--card) / 0.7), transparent);
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-sweep {
+    to { transform: translateX(100%); }
+  }
+
+  /* Rows rise into place one after another when a list first shows (or a new page of it). */
+  .stagger-in > * {
+    animation: stagger-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  .stagger-in > :nth-child(2) { animation-delay: 20ms; }
+  .stagger-in > :nth-child(3) { animation-delay: 40ms; }
+  .stagger-in > :nth-child(4) { animation-delay: 60ms; }
+  .stagger-in > :nth-child(5) { animation-delay: 80ms; }
+  .stagger-in > :nth-child(6) { animation-delay: 100ms; }
+  .stagger-in > :nth-child(7) { animation-delay: 120ms; }
+  .stagger-in > :nth-child(n + 8) { animation-delay: 140ms; }
+  @keyframes stagger-rise {
+    from { opacity: 0; transform: translateY(4px); }
+  }
+
+  .metric-grid {
+    gap: 0 !important;
+    overflow: hidden;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) * 1.5);
+    background: hsl(var(--card));
+  }
+  .metric-grid > * {
+    border-width: 0 0 0 1px !important;
+    border-radius: 0 !important;
+  }
+  .metric-grid > *:first-child {
+    border-left-width: 0 !important;
+  }
+
+  /* Settings: consecutive rows join into one card with dividers between them. */
+  .setting-row {
+    padding: 10px 14px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+  }
+  .setting-row + .setting-row {
+    margin-top: 0 !important;
+    border-top-width: 0;
+  }
+  .setting-row:not(.setting-row + .setting-row) {
+    border-top-left-radius: calc(var(--radius) * 1.5);
+    border-top-right-radius: calc(var(--radius) * 1.5);
+  }
+  .setting-row:not(:has(+ .setting-row)) {
+    border-bottom-left-radius: calc(var(--radius) * 1.5);
+    border-bottom-right-radius: calc(var(--radius) * 1.5);
   }
 }

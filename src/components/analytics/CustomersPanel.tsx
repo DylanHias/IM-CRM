@@ -7,8 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { PanelSkeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, CloudLightning, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, CloudLightning, AlertTriangle } from 'lucide-react';
 import type { ArrByDimensionPoint } from '@/types/analytics';
 
 type ArrDim = 'industry' | 'segment' | 'country';
@@ -68,10 +67,9 @@ function ArrByDimChart({ data }: { data: ArrByDimensionPoint[] }) {
 
 interface Props {
   refreshKey?: number;
-  onRefresh?: () => void;
 }
 
-export function CustomersPanel({ refreshKey, onRefresh }: Props) {
+export function CustomersPanel({ refreshKey }: Props) {
   const [arrDim, setArrDim] = useState<ArrDim>('industry');
   const { customers, isLoadingCustomers, loadCustomers } = useAnalyticsStore();
 
@@ -117,14 +115,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
     : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Customer Health</h2>
-        <Button variant="outline" size="sm" onClick={onRefresh}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-          Refresh
-        </Button>
-      </div>
+    <div className="grid content-start gap-3">
 
       {/* Stale customers */}
       <div className="flex items-center gap-3">
@@ -133,7 +124,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         <div className="h-px flex-1 bg-border/60" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="metric-grid grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MetricCard
           label="30+ Days Inactive"
           value={c ? c.stale.count30 : '—'}
@@ -159,7 +150,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         <div className="h-px flex-1 bg-border/60" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="metric-grid grid grid-cols-1 sm:grid-cols-3 gap-3">
         <MetricCard
           label="With Contacts"
           value={c ? c.contactCoverage.withContacts : '—'}
@@ -192,7 +183,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         />
 
         {c && c.cloudBySegment.length > 0 && (
-          <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">By Segment</p>
             <div className="space-y-2">
               {c.cloudBySegment.map((s, i) => {
@@ -226,7 +217,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* ARR histogram */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Customers by ARR Bucket</p>
           <p className="text-xs text-muted-foreground mb-3">
             {customersWithArr > 0
@@ -249,7 +240,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
         </div>
 
         {/* ARR by dimension */}
-        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">ARR by Dimension</p>
@@ -279,7 +270,7 @@ export function CustomersPanel({ refreshKey, onRefresh }: Props) {
             <div className="h-px flex-1 bg-border/60" />
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+          <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60 bg-muted/30">

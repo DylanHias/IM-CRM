@@ -138,8 +138,6 @@ export function DatabaseExplorer() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold">Database</h2>
-
       {/* Saved queries bar */}
       <div className="flex items-center gap-2 flex-wrap">
         <select
@@ -253,14 +251,14 @@ export function DatabaseExplorer() {
 
       {/* Mutation result */}
       {mutationResult && !error && (
-        <div className="rounded-xl border border-border/60 bg-card p-4 text-sm text-muted-foreground">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 text-sm text-muted-foreground">
           Query executed successfully. {mutationResult.rowsAffected} row{mutationResult.rowsAffected !== 1 ? 's' : ''} affected.
         </div>
       )}
 
       {/* Results table */}
       {results && columns.length > 0 && (
-        <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card overflow-hidden">
           {totalRows > MAX_DISPLAY_ROWS && (
             <div className="px-3 py-1.5 text-xs text-muted-foreground bg-muted/30 border-b border-border/40">
               Showing {MAX_DISPLAY_ROWS} of {totalRows} rows
@@ -303,7 +301,7 @@ export function DatabaseExplorer() {
 
       {/* Empty result set */}
       {results && columns.length === 0 && (
-        <div className="rounded-xl border border-border/60 bg-card p-4 text-sm text-muted-foreground">
+        <div className="rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 text-sm text-muted-foreground">
           Query returned 0 rows.
         </div>
       )}

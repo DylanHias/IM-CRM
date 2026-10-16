@@ -1,9 +1,13 @@
 'use client';
 
-import { useCustomers } from '@/hooks/useCustomers';
-import { InsightsPageContent } from '@/components/insights/InsightsPageContent';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
+/** Insights is now the Revenue tab of Reports. */
 export default function InsightsPage() {
-  useCustomers();
-  return <InsightsPageContent />;
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/revenue-overview');
+  }, [router]);
+  return null;
 }

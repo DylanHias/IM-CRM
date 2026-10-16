@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { FileText, Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Clock, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
-import { TablePagination } from '@/components/ui/TablePagination';
+import { CompactPager } from '@/components/ui/compact-pager';
+import { Panel, PanelHeader } from '@/components/ui/panel';
+import { ActivityTypeIcon } from './ActivityTypeIcon';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { formatDate } from '@/lib/utils/dateUtils';
 import { stripHtml } from '@/lib/utils/htmlUtils';
+import { cn } from '@/lib/utils';
 import type { Activity, Contact } from '@/types/entities';
 
 interface NotesTableProps {
@@ -19,9 +22,12 @@ interface NotesTableProps {
   onPreview?: (activity: Activity) => void;
 }
 
+const TH = 'h-8 border-b border-border bg-surface-2 px-3 text-left text-[11px] font-semibold text-muted-foreground';
+const ICON_BTN = 'size-7 text-muted-foreground hover:bg-sunken hover:text-foreground';
+
 export function NotesTable({ notes, contacts, onEdit, onDelete, onPreview }: NotesTableProps) {
   const [page, setPage] = useState(1);
-  const { pageSize, setPageSize, pageSizeOptions } = usePaginationPreference('customer-notes', 5);
+  const { pageSize } = usePaginationPreference('customer-notes', 5);
 
   const sorted = useMemo(
     () => [...notes].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)),
@@ -41,63 +47,71 @@ export function NotesTable({ notes, contacts, onEdit, onDelete, onPreview }: Not
   if (notes.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="bg-card border border-border/70 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-sm">
+    <Panel>
+      <PanelHeader title="Notes" sub={<span className="tabular-nums">{notes.length}</span>} />
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">
           <thead>
-            <tr className="border-b border-border/50 text-left text-xs text-muted-foreground">
-              <th className="px-4 py-2.5 font-medium">Subject</th>
-              <th className="px-4 py-2.5 font-medium">Description</th>
-              <th className="px-4 py-2.5 font-medium w-28">Date</th>
-              <th className="px-4 py-2.5 font-medium w-32">Contact</th>
-              <th className="px-4 py-2.5 font-medium w-16" />
+            <tr>
+              <th className={TH}>Subject</th>
+              <th className={TH}>Description</th>
+              <th className={cn(TH, 'w-28')}>Date</th>
+              <th className={cn(TH, 'w-36')}>Contact</th>
+              <th className={cn(TH, 'w-[72px]')} />
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40">
+          <tbody className="stagger-in">
             {visible.map((note) => {
               const contactName = getContactName(note.contactId);
               return (
                 <tr
-                key={note.id}
-                className={`group hover:bg-muted/30 transition-colors ${onPreview ? 'cursor-pointer' : ''}`}
-                onClick={onPreview ? () => onPreview(note) : undefined}
-              >
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-activity-note-bg">
-                        <FileText size={12} className="text-activity-note" />
-                      </div>
-                      <span className="font-medium text-foreground truncate">{note.subject}</span>
+                  key={note.id}
+                  className={cn(
+                    'group border-t border-border transition-colors first:border-t-0 hover:bg-surface-2',
+                    onPreview && 'cursor-pointer',
+                  )}
+                  onClick={onPreview ? () => onPreview(note) : undefined}
+                >
+                  <td className="px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <ActivityTypeIcon type="note" size="sm" />
+                      <span className="truncate font-[550] text-foreground">{note.subject}</span>
                       {note.syncStatus === 'pending' && (
-                        <Badge variant="warning" className="text-xs gap-1 flex-shrink-0">
+                        <Badge variant="warning">
                           <Clock size={10} />
                           Pending
                         </Badge>
                       )}
                       {note.syncStatus === 'error' && (
-                        <Badge variant="destructive" className="text-xs gap-1 flex-shrink-0">
+                        <Badge variant="destructive">
                           <AlertCircle size={10} />
                           Error
                         </Badge>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    <span className="line-clamp-1">{note.description ? stripHtml(note.description) : '—'}</span>
+                  <td className="max-w-[280px] px-3 py-2 text-muted-foreground">
+                    <span className="block truncate">{note.description ? stripHtml(note.description) : '—'}</span>
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">
+                  <td className="whitespace-nowrap px-3 py-2 tabular-nums text-muted-foreground">
                     {formatDate(note.occurredAt)}
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground truncate">
+                  <td className="max-w-[160px] truncate px-3 py-2 text-foreground-2">
                     {contactName ?? '—'}
                   </td>
-                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(note)} title="Edit">
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                      <Button variant="ghost" size="icon" className={ICON_BTN} onClick={() => onEdit(note)} title="Edit" aria-label="Edit">
                         <Pencil size={13} />
                       </Button>
                       <ConfirmPopover message={`Delete "${note.subject}"?`} confirmLabel="Delete" onConfirm={() => onDelete(note)}>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(ICON_BTN, 'hover:bg-destructive/10 hover:text-destructive')}
+                          title="Delete"
+                          aria-label="Delete"
+                        >
                           <Trash2 size={13} />
                         </Button>
                       </ConfirmPopover>
@@ -109,15 +123,7 @@ export function NotesTable({ notes, contacts, onEdit, onDelete, onPreview }: Not
           </tbody>
         </table>
       </div>
-
-      <TablePagination
-        totalItems={sorted.length}
-        page={safePage}
-        pageSize={pageSize}
-        pageSizeOptions={pageSizeOptions}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
-      />
-    </div>
+      <CompactPager page={safePage} pageSize={pageSize} total={sorted.length} onPageChange={setPage} />
+    </Panel>
   );
 }

@@ -33,13 +33,6 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-    "shell:allow-open",
-    "shell:allow-kill",
-    {
-      "identifier": "shell:allow-spawn",
-      "allow": [
-        { "name": "binaries/ollama", "sidecar": true, "args": true }
-      ]
-    }
+    "shell:allow-open"
   ]
 }

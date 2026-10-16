@@ -1,10 +1,12 @@
 'use client';
 
-import { CheckSquare, Square, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Check, Calendar, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ConfirmPopover } from '@/components/ui/ConfirmPopover';
 import { formatDueDate } from '@/lib/utils/dateUtils';
 import { stripHtml } from '@/lib/utils/htmlUtils';
+import { cn } from '@/lib/utils';
 import type { FollowUp } from '@/types/entities';
 
 interface FollowUpItemProps {
@@ -15,20 +17,35 @@ interface FollowUpItemProps {
   onPreview?: () => void;
 }
 
+const CHECK_BASE = 'grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] p-0 transition-colors';
+
 export function FollowUpItem({ followUp, onComplete, onEdit, onDelete, onPreview }: FollowUpItemProps) {
   const { label: dueDateLabel, isOverdue } = formatDueDate(followUp.dueDate);
+  const done = followUp.completed;
+  const late = isOverdue && !done;
+  const description = followUp.description ? stripHtml(followUp.description) : '';
 
   return (
     <div
-      className={`flex items-start gap-3.5 px-4 py-3.5 group ${followUp.completed ? 'opacity-50' : ''} ${onPreview ? 'cursor-pointer hover:bg-muted/30 transition-colors' : ''}`}
+      className={cn(
+        'group relative flex min-w-0 items-center gap-2.5 border-t border-border px-3 py-2 transition-colors first:border-t-0 hover:bg-surface-2',
+        done && 'opacity-60',
+        onPreview && 'cursor-pointer',
+      )}
       onClick={onPreview}
     >
-      {followUp.completed ? (
-        <span className="mt-0.5 flex-shrink-0">
-          <CheckSquare size={18} className="text-success" />
+      {done ? (
+        <span
+          role="checkbox"
+          aria-checked="true"
+          aria-label="Completed"
+          className={cn(CHECK_BASE, 'border-success bg-success text-success-foreground')}
+        >
+          <Check size={11} />
         </span>
       ) : (
-        <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+        // Wrapper stops clicks (including ones inside the portalled confirm popover) from opening the preview
+        <span className="contents" onClick={(e) => e.stopPropagation()}>
           <ConfirmPopover
             message={`Mark "${followUp.title}" as complete?`}
             confirmLabel="Complete"
@@ -38,65 +55,68 @@ export function FollowUpItem({ followUp, onComplete, onEdit, onDelete, onPreview
             align="start"
           >
             <button
-              className="mt-0.5 text-primary hover:text-primary/80 disabled:cursor-not-allowed"
-              disabled={!onComplete}
+              type="button"
+              role="checkbox"
+              aria-checked="false"
+              aria-label="Mark as complete"
               title="Mark as complete"
+              disabled={!onComplete}
+              className={cn(
+                CHECK_BASE,
+                'group/check border-border-strong bg-card hover:border-success disabled:cursor-not-allowed disabled:opacity-50',
+              )}
             >
-              <Square size={18} />
+              <Check size={11} className="text-transparent group-hover/check:text-success" />
             </button>
           </ConfirmPopover>
-        </div>
+        </span>
       )}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className={`text-sm font-medium ${followUp.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-              {followUp.title}
-            </p>
-            {followUp.description && (
-              <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2">{stripHtml(followUp.description)}</p>
-            )}
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className={`flex items-center gap-1 text-xs ${isOverdue && !followUp.completed ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                {isOverdue && !followUp.completed && <AlertCircle size={11} />}
-                <Calendar size={10} />
-                {dueDateLabel}
-              </span>
-              {followUp.syncStatus === 'pending' && !followUp.completed && (
-                <Badge variant="warning" className="text-[10px]">Pending sync</Badge>
-              )}
-            </div>
-          </div>
-
+      <div className="min-w-0 flex-1">
+        <div className={cn('truncate text-[13px] font-medium', done ? 'text-muted-foreground line-through' : 'text-foreground')}>
+          {followUp.title}
         </div>
+        {description && <div className="truncate text-xs text-muted-foreground">{description}</div>}
       </div>
 
-      {!followUp.completed && (
-        <div
-          className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      {followUp.syncStatus === 'pending' && !done && <Badge variant="warning">Pending sync</Badge>}
+
+      <span
+        data-testid="followup-due"
+        className={cn(
+          'inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11.5px] tabular-nums',
+          late ? 'font-semibold text-destructive' : 'text-muted-foreground',
+        )}
+      >
+        {late ? <AlertCircle size={11} data-testid="followup-overdue-icon" /> : <Calendar size={11} />}
+        {dueDateLabel}
+      </span>
+
+      {!done && (onEdit || onDelete) && (
+        <span
+          className="flex shrink-0 gap-0.5 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           {onEdit && (
-            <button
-              className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-primary/10 hover:text-primary transition-all duration-150 active:scale-95"
-              onClick={onEdit}
-              title="Edit"
-            >
-              <Pencil size={11} />
-            </button>
+            <Button type="button" variant="ghost" size="icon" className="size-6 text-muted-foreground" onClick={onEdit} title="Edit" aria-label="Edit">
+              <Pencil size={12} />
+            </Button>
           )}
           {onDelete && (
             <ConfirmPopover message={`Delete "${followUp.title}"?`} confirmLabel="Delete" onConfirm={onDelete}>
-              <button
-                className="h-6 w-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-muted/50 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95"
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-6 text-muted-foreground hover:text-destructive"
                 title="Delete"
+                aria-label="Delete follow-up"
               >
-                <Trash2 size={11} />
-              </button>
+                <Trash2 size={12} />
+              </Button>
             </ConfirmPopover>
           )}
-        </div>
+        </span>
       )}
     </div>
   );

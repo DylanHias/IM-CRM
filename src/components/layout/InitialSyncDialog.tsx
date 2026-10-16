@@ -65,7 +65,7 @@ export function InitialSyncDialog() {
   return (
     <DialogPrimitive.Root open>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-overlay animate-in fade-in-0" />
         <DialogPrimitive.Content
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
@@ -79,7 +79,7 @@ export function InitialSyncDialog() {
           <div className="flex flex-col items-center text-center">
             {syncComplete ? (
               <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success mb-6">
+                <div className="flex size-14 items-center justify-center rounded-full bg-success mb-5 animate-in zoom-in-50 duration-300">
                   <Check className="h-6 w-6 text-success-foreground" />
                 </div>
                 <h2 className="text-lg font-semibold text-foreground mb-1">
@@ -99,7 +99,7 @@ export function InitialSyncDialog() {
               </>
             ) : (
               <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary mb-6">
+                <div className="flex size-14 items-center justify-center rounded-full bg-primary mb-5">
                   <Loader2 className="h-6 w-6 text-primary-foreground animate-spin" />
                 </div>
                 <h2 className="text-lg font-semibold text-foreground mb-2">

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { SettingRow } from './SettingRow';
 import {
   isEasterEggsEnabled,
@@ -28,7 +27,6 @@ export function EasterEggsSettings() {
 
   return (
     <>
-      <Separator />
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-muted-foreground" />
@@ -37,7 +35,7 @@ export function EasterEggsSettings() {
 
         <SettingRow
           label="Celebrate wins"
-          description="Confetti on your first won opp of the day, fireworks for >€1M ARR, and a birthday surprise."
+          description="Confetti on your first won opp of the day, fireworks for deals of €500k or more, and a birthday surprise."
         >
           <Switch checked={enabled} onCheckedChange={toggle} />
         </SettingRow>

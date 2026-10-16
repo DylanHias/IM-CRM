@@ -5,8 +5,6 @@ import { Cake, Save, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/DatePicker';
-import { Separator } from '@/components/ui/separator';
-import { SettingRow } from './SettingRow';
 import { useAuthStore } from '@/store/authStore';
 import { formatDisplayName } from '@/lib/utils/nameUtils';
 import { saveUserBirthday, resolveUserDbId } from '@/lib/db/queries/users';
@@ -33,7 +31,6 @@ export function ProfileSettings() {
   const { account, profilePhoto, userProfile, setUserProfile } = useAuthStore();
   const name = account?.name ? formatDisplayName(account.name) : 'User';
   const email = account?.username ?? '';
-  const jobTitle = userProfile?.jobTitle ?? null;
 
   const [birthday, setBirthday] = useState<string>(toInputDate(userProfile?.birthday ?? null));
   const [saving, setSaving] = useState(false);
@@ -71,72 +68,40 @@ export function ProfileSettings() {
   const handleClear = useCallback(() => setBirthday(''), []);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-sm font-semibold">Profile</h2>
-
-      <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-4">
-        <Avatar className="h-16 w-16 shrink-0">
-          {profilePhoto && <AvatarImage src={profilePhoto} alt={name} />}
-          <AvatarFallback className="text-base bg-primary/10 text-primary font-semibold">
-            {getInitials(name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{name}</p>
-          {jobTitle && <p className="text-xs text-muted-foreground truncate">{jobTitle}</p>}
-          {email && <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>}
-        </div>
+    <section className="flex flex-wrap items-center gap-4 rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4">
+      <Avatar className="h-[60px] w-[60px] shrink-0 border border-primary/30">
+        {profilePhoto && <AvatarImage src={profilePhoto} alt={name} />}
+        <AvatarFallback className="bg-accent text-[19px] font-semibold text-accent-foreground">{getInitials(name)}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-[200px] flex-1">
+        <p className="truncate text-base font-semibold">{name}</p>
+        {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
       </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Cake size={14} className="text-muted-foreground" />
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Personal</p>
-        </div>
-
-        <SettingRow
-          label="Birthday"
-          description="Used for the birthday surprise. Stored locally — not synced to D365."
-        >
-          <div className="flex items-center gap-1.5">
-            <DatePicker
-              value={birthday}
-              onChange={setBirthday}
-              placeholder="Select birthday"
-              maxDate={new Date()}
-              startMonth={new Date(new Date().getFullYear() - 100, 0)}
-              endMonth={new Date(new Date().getFullYear(), 11)}
-              className="h-8 w-[170px] text-xs"
-            />
-            {birthday && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={handleClear}
-                title="Clear birthday"
-              >
-                <X size={13} />
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              disabled={!dirty || saving}
-              onClick={handleSave}
-            >
-              {saving ? (
-                <><Loader2 size={13} className="mr-1.5 animate-spin" />Saving</>
-              ) : (
-                <><Save size={13} className="mr-1.5" />Save</>
-              )}
+      <div className="grid justify-items-end gap-1">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Cake size={11} /> Birthday
+        </span>
+        <div className="flex items-center gap-1.5">
+          <DatePicker
+            value={birthday}
+            onChange={setBirthday}
+            placeholder="Select birthday"
+            maxDate={new Date()}
+            startMonth={new Date(new Date().getFullYear() - 100, 0)}
+            endMonth={new Date(new Date().getFullYear(), 11)}
+            className="h-[26px] w-[150px] text-xs"
+          />
+          {birthday && (
+            <Button variant="ghost" size="icon" className="size-[26px]" onClick={handleClear} title="Clear birthday">
+              <X size={13} />
             </Button>
-          </div>
-        </SettingRow>
+          )}
+          <Button variant="outline" size="sm" disabled={!dirty || saving} onClick={handleSave}>
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+            {saving ? 'Saving' : 'Save'}
+          </Button>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -80,7 +80,7 @@ export function NetSalesByVendorChart({
   const vendorOrder = entry?.vendors ?? [];
 
   return (
-    <div className={cn('rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3', className)}>
+    <div className={cn('rounded-[calc(var(--radius)*1.5)] border border-border bg-card p-4 space-y-3', className)}>
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         <BarChart3 size={13} />
         Monthly net sales (LC) by vendor · {scopeLabel} · top {topVendors} · last {monthsBack} months
