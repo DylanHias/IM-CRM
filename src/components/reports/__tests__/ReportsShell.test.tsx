@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { availablePeriods, periodLabel } from '@/lib/reports/period';
 import { ReportsShell } from '../ReportsShell';
 
+vi.mock('@/components/reports/tabs/GrowthTab', () => ({ GrowthTab: () => <div>Growth tab</div> }));
+
 let search = '';
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: replaceMock }),
@@ -56,7 +58,7 @@ describe('ReportsShell', () => {
 
   it('switches tabs, shows the named placeholder and writes the tab to the address', () => {
     render(<ReportsShell />);
-    expect(screen.getByText('Growth lands next')).toBeInTheDocument();
+    expect(screen.getByText('Growth tab')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Activity' }));
     expect(screen.getByText('Activity lands next')).toBeInTheDocument();
     expect(useRouter().replace).toHaveBeenCalledWith('/revenue-overview?tab=activity');
@@ -72,6 +74,6 @@ describe('ReportsShell', () => {
   it('falls back to Growth for an unknown tab', () => {
     search = 'tab=bogus';
     render(<ReportsShell />);
-    expect(screen.getByText('Growth lands next')).toBeInTheDocument();
+    expect(screen.getByText('Growth tab')).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import { ViewBar, ViewBarSeparator, ViewBarSpacer } from '@/components/ui/view-b
 import { EmptyState } from '@/components/ui/empty-state';
 import { Panel } from '@/components/ui/panel';
 import { ReportControls, type ReportFilters } from '@/components/reports/ReportControls';
+import { GrowthTab } from '@/components/reports/tabs/GrowthTab';
 
 type ReportTab = 'growth' | 'pipeline' | 'accounts' | 'activity';
 
@@ -20,7 +21,7 @@ interface TabProps {
   filters: ReportFilters;
 }
 
-// ponytail: placeholders; Tasks 9-12 each replace one with its real tab taking the same props.
+// ponytail: placeholders; Tasks 10-12 each replace one with its real tab taking the same props.
 function Placeholder({ label }: TabProps & { label: string }) {
   return (
     <Panel className="grid lg:min-h-0 lg:flex-1 place-items-center">
@@ -30,7 +31,7 @@ function Placeholder({ label }: TabProps & { label: string }) {
 }
 
 const TAB_PANELS: Record<ReportTab, (p: TabProps) => ReactNode> = {
-  growth: (p) => <Placeholder label="Growth" {...p} />,
+  growth: (p) => <GrowthTab {...p} />,
   pipeline: (p) => <Placeholder label="Pipeline" {...p} />,
   accounts: (p) => <Placeholder label="Accounts" {...p} />,
   activity: (p) => <Placeholder label="Activity" {...p} />,

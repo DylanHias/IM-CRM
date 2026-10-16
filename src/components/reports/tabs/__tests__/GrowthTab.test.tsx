@@ -1,0 +1,151 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReportFilters } from '@/components/reports/ReportControls';
+import type { ArrMovement, ArrMover, ArrToday, ClosedMonth, MonthTotal, Money } from '@/types/reports';
+import { GrowthTab } from '../GrowthTab';
+
+const q = vi.hoisted(() => ({
+  queryArrToday: vi.fn(),
+  queryArrMovement: vi.fn(),
+  queryArrMovers: vi.fn(),
+  queryNewOpportunities: vi.fn(),
+  queryClosedDeals: vi.fn(),
+}));
+vi.mock('@/lib/db/queries/reports/arr', () => ({ queryArrToday: q.queryArrToday, queryArrMovement: q.queryArrMovement, queryArrMovers: q.queryArrMovers }));
+vi.mock('@/lib/db/queries/reports/deals', () => ({ queryNewOpportunities: q.queryNewOpportunities, queryClosedDeals: q.queryClosedDeals }));
+vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
+vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: 'd1' }) }));
+
+class RO { observe() {} unobserve() {} disconnect() {} }
+vi.stubGlobal('ResizeObserver', RO);
+
+const team: ReportFilters = { scope: 'team', region: 'BENELUX', period: { kind: 'rolling', months: 12 } };
+const money = (count: number, value: number, excludedNonEur = 0): Money => ({ count, value, excludedNonEur });
+
+interface Data {
+  today: ArrToday;
+  movement: ArrMovement;
+  movers: ArrMover[];
+  newOpps: { total: Money; byMonth: MonthTotal[] };
+  closed: { won: Money; lost: Money; winRatePct: number | null; byMonth: ClosedMonth[] };
+}
+
+const flat: ArrMovement = { newSale: 0, upgrade: 0, downgrade: 0, cancellation: 0, net: 0, unmatchedBcns: 0, unmatchedNet: 0 };
+const base = (): Data => ({
+  today: { total: 1_200_000, matched: 9, unmatched: 1 },
+  movement: { newSale: 50_000, upgrade: 20_000, downgrade: 10_000, cancellation: 5_000, net: 55_000, unmatchedBcns: 3, unmatchedNet: 7_000 },
+  movers: [{ customerId: 'c1', name: 'Acme NV', newSale: 50_000, upgrade: 0, downgrade: 0, cancellation: 0, net: 50_000 }],
+  newOpps: { total: money(4, 80_000), byMonth: [{ month: '2026-09', count: 4, value: 80_000 }] },
+  closed: {
+    won: money(2, 30_000),
+    lost: money(1, 10_000),
+    winRatePct: 75,
+    byMonth: [{ month: '2026-09', won: { count: 2, value: 30_000 }, lost: { count: 1, value: 10_000 } }],
+  },
+});
+
+function load(d: Data) {
+  q.queryArrToday.mockResolvedValue(d.today);
+  q.queryArrMovement.mockResolvedValue(d.movement);
+  q.queryArrMovers.mockResolvedValue(d.movers);
+  q.queryNewOpportunities.mockResolvedValue(d.newOpps);
+  q.queryClosedDeals.mockResolvedValue(d.closed);
+}
+async function show(d: Data, filters = team) {
+  load(d);
+  render(<GrowthTab filters={filters} />);
+  await screen.findByText('Net ARR movement');
+}
+
+beforeEach(() => vi.clearAllMocks());
+
+describe('GrowthTab', () => {
+  it('shows ARR today, net movement, new opportunities and won', async () => {
+    await show(base());
+    for (const l of ['ARR today', 'Net ARR movement', 'New opportunities', 'Won']) expect(screen.getByText(l)).toBeInTheDocument();
+    expect(screen.getByText('€1.20M')).toBeInTheDocument();
+    expect(screen.getByText('+€55K')).toBeInTheDocument();
+  });
+
+  it('captions ARR tiles with the account population and deal tiles with the team', async () => {
+    await show(base());
+    expect(screen.getAllByText(/all Benelux accounts/i).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/Cloud Belux team/i).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('names the account population for Mine and for a single country', async () => {
+    await show(base(), { ...team, scope: 'mine' });
+    expect(screen.getAllByText(/your accounts/i).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('captions a country filter with that country', async () => {
+    await show(base(), { ...team, region: 'BE' });
+    expect(screen.getAllByText(/Belgian accounts/i).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('surfaces how many in-scope accounts have no Power BI match', async () => {
+    await show(base());
+    expect(screen.getByText(/1 account not matched/i)).toBeInTheDocument();
+  });
+
+  it('says the unmatched movement is across all Power BI data, never scoped', async () => {
+    await show(base(), { ...team, scope: 'mine' });
+    const note = screen.getByText(/across all Power BI data/i);
+    expect(note).toHaveTextContent(/3 BCNs/);
+    expect(note).not.toHaveTextContent(/your/i);
+  });
+
+  it('renders an empty state rather than a flat zero chart when the period has no movement', async () => {
+    const d = base();
+    d.movement = flat;
+    d.movers = [];
+    await show(d);
+    expect(screen.getByText(/No ARR movement in this period/i)).toBeInTheDocument();
+    expect(screen.getByText('No movement')).toBeInTheDocument();
+    expect(screen.queryByText('+€0')).not.toBeInTheDocument();
+  });
+
+  it('labels snapshot tiles as point-in-time', async () => {
+    await show(base());
+    expect(screen.getByText('ARR today')).toBeInTheDocument();
+    expect(screen.getAllByText(/point in time/i).length).toBe(1);
+  });
+
+  it('shows a dash, not 0%, when nothing closed', async () => {
+    const d = base();
+    d.closed = { won: money(0, 0), lost: money(0, 0), winRatePct: null, byMonth: [] };
+    await show(d);
+    expect(screen.getByText(/Win rate —/)).toBeInTheDocument();
+    expect(screen.queryByText(/0%/)).not.toBeInTheDocument();
+  });
+
+  it('reports excluded non-EUR deals only when there are some', async () => {
+    const d = base();
+    d.newOpps.total = money(4, 80_000, 2);
+    await show(d);
+    expect(screen.getByText(/2 non-EUR deals excluded/i)).toBeInTheDocument();
+  });
+
+  it('hides the non-EUR note when none were excluded', async () => {
+    await show(base());
+    expect(screen.queryByText(/non-EUR/i)).not.toBeInTheDocument();
+  });
+
+  it('shows no ARR figure when no account matched Power BI', async () => {
+    const d = base();
+    d.today = { total: 0, matched: 0, unmatched: 2 };
+    await show(d);
+    expect(screen.getByText('No Power BI match')).toBeInTheDocument();
+  });
+
+  it('reports a failed load instead of zeros', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    q.queryArrToday.mockRejectedValue(new Error('db'));
+    q.queryArrMovement.mockResolvedValue(flat);
+    q.queryArrMovers.mockResolvedValue([]);
+    q.queryNewOpportunities.mockResolvedValue(base().newOpps);
+    q.queryClosedDeals.mockResolvedValue(base().closed);
+    render(<GrowthTab filters={team} />);
+    await waitFor(() => expect(screen.getByText(/Couldn.t load/i)).toBeInTheDocument());
+  });
+});
