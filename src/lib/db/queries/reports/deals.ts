@@ -3,56 +3,16 @@ import { getDb } from '@/lib/db/client';
 import { OPP_ARR } from '@/lib/db/queries/analytics';
 import { monthKeys, type ReportPeriod } from '@/lib/reports/period';
 import { dealScopeSql, type ReportScope } from '@/lib/reports/scope';
+import type { BreakdownRow, ClosedMonth, Forecast, Money, MonthTotal, QuietDeal } from '@/types/reports';
 
 // Money is summed in EUR only: no FX rate exists, so other currencies are counted, not converted.
-const EUR = "currency = 'EUR'";
+const EUR = "o.currency = 'EUR'";
 // The close dialog defaults actual_revenue to 0, so zero means "not entered", not "worth nothing".
 const WON_VALUE = `CASE WHEN actual_revenue IS NOT NULL AND actual_revenue != 0 THEN actual_revenue ELSE ${OPP_ARR} END`;
 
 const eurSum = (value: string) => `COALESCE(SUM(CASE WHEN ${EUR} THEN ${value} ELSE 0 END), 0)`;
 const eurCount = `COUNT(CASE WHEN ${EUR} THEN 1 END)`;
 const nonEurCount = `COUNT(CASE WHEN ${EUR} THEN NULL ELSE 1 END)`;
-
-export interface Money {
-  value: number;
-  count: number;
-  excludedNonEur: number;
-}
-
-export interface MonthTotal {
-  month: string;
-  count: number;
-  value: number;
-}
-
-export interface ClosedMonth {
-  month: string;
-  won: { count: number; value: number };
-  lost: { count: number; value: number };
-}
-
-export interface BreakdownRow extends Money {
-  label: string;
-}
-
-export interface Forecast {
-  buckets: { month: string; value: number }[];
-  noCloseDateCount: number;
-  noCloseDateValue: number;
-  excludedNonEur: number;
-}
-
-export interface QuietDeal {
-  id: string;
-  subject: string;
-  customerId: string;
-  customerName: string;
-  stage: string;
-  value: number;
-  currency: string;
-  lastActivityAt: string;
-  daysStale: number;
-}
 
 export async function queryOpenPipeline(s: ReportScope): Promise<Money & { weighted: number }> {
   const scope = dealScopeSql(s, 0);
@@ -159,13 +119,13 @@ export async function queryClosedDeals(
   }
 }
 
-/** Mean value over deals that carry one; blanks and zeros are not deals of size zero. */
+/** Mean value of open EUR deals that carry a value, matching the open pipeline population; blanks and zeros are not deals of size zero. */
 export async function queryAvgDealSize(s: ReportScope): Promise<number | null> {
   const scope = dealScopeSql(s, 0);
   try {
     const db = await getDb();
     const [r] = await db.select<{ avg: number | null }[]>(
-      `SELECT AVG(NULLIF(${OPP_ARR}, 0)) AS avg FROM opportunities o WHERE ${EUR} AND ${scope.sql}`,
+      `SELECT AVG(NULLIF(${OPP_ARR}, 0)) AS avg FROM opportunities o WHERE o.status = 'Open' AND ${EUR} AND ${scope.sql}`,
       scope.params,
     );
     return r?.avg ?? null;

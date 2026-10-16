@@ -30,6 +30,11 @@ afterEach(() => vi.useRealTimers());
 
 describe('queryOpenPipeline', () => {
   it('values deals by annual revenue, never raw estimated revenue', async () => {
+    addOpportunity({ annual: 50000, estimated: 999999 });
+    expect((await queryOpenPipeline(mine)).value).toBe(50000);
+  });
+
+  it('values a deal with no estimated revenue by its annual revenue instead of zero', async () => {
     addOpportunity({ annual: 50000, estimated: null });
     expect((await queryOpenPipeline(mine)).value).toBe(50000);
   });
@@ -70,7 +75,7 @@ describe('queryOpenPipeline', () => {
 
 describe('queryNewOpportunities', () => {
   it('buckets by created_at month, fills empty months with zeros, and totals the period', async () => {
-    addOpportunity({ annual: 100, createdAt: '2026-07-15 10:00:00' });
+    addOpportunity({ annual: 100, createdAt: '2026-07-15T10:00:00Z' }); // D365 sync format
     addOpportunity({ annual: 50, createdAt: '2026-07-20 10:00:00' });
     addOpportunity({ annual: 300, createdAt: '2026-09-01 00:00:00', status: 'Won' });
     addOpportunity({ annual: 999, createdAt: '2026-06-30 23:00:00' }); // before the period
@@ -177,6 +182,14 @@ describe('queryAvgDealSize', () => {
   it('returns null average when no deal carries a value', async () => {
     addOpportunity({ annual: null, estimated: null });
     expect(await queryAvgDealSize(mine)).toBeNull();
+  });
+
+  it('averages open deals only, ignoring won and lost deals', async () => {
+    addOpportunity({ annual: 100 });
+    addOpportunity({ annual: 300 });
+    addOpportunity({ annual: 9000, status: 'Won', actual: 9000 });
+    addOpportunity({ annual: 5000, status: 'Lost' });
+    expect(await queryAvgDealSize(mine)).toBe(200);
   });
 
   it('ignores non-euro deals', async () => {
