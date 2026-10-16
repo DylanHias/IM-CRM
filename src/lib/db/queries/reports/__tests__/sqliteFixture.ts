@@ -11,7 +11,7 @@ export function resetFixture(): void {
   db.exec(`
     -- last_activity_at and health_score are omitted on purpose: reports must never read them, and a missing column makes any such read fail loudly. Do not "complete" this table.
     CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner_id TEXT, address_country TEXT, segment TEXT, industry TEXT, status TEXT DEFAULT 'active');
-    CREATE TABLE customer_revenue (id INTEGER PRIMARY KEY AUTOINCREMENT, bcn TEXT NOT NULL, customer_id TEXT, arr_lc REAL);
+    CREATE TABLE customer_revenue (id INTEGER PRIMARY KEY AUTOINCREMENT, bcn TEXT NOT NULL, customer_id TEXT, arr_lc REAL, active_end_customers INTEGER, as_of_month TEXT);
     CREATE TABLE arr_movement (
       bcn TEXT NOT NULL, month TEXT NOT NULL,
       upgrade_lc REAL, downgrade_lc REAL, cancellation_lc REAL, new_sale_lc REAL,

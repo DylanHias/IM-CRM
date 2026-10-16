@@ -23,6 +23,8 @@ function rangeParams(range: DateRange): [string, string] {
 
 // Annual revenue is the opportunity's ARR; older rows only carry estimated_revenue.
 export const OPP_ARR = 'COALESCE(annual_revenue, estimated_revenue, 0)';
+// For columns shown on a row: a deal with no recorded value stays null instead of reading as 0.
+export const OPP_ARR_OR_NULL = 'COALESCE(annual_revenue, estimated_revenue)';
 
 // Builds a parameterized IN clause: "$1, $2, ..." starting at `offset + 1`
 function inClause(count: number, offset = 0): string {
@@ -194,7 +196,7 @@ export async function queryPipelineData(): Promise<PipelineData> {
 
     db.select<{ id: string; subject: string; estimatedRevenue: number | null; expirationDate: string; stage: string; customerName: string }[]>(
       `SELECT o.id, o.subject,
-         ${OPP_ARR} as estimatedRevenue,
+         ${OPP_ARR_OR_NULL} as estimatedRevenue,
          o.expiration_date as expirationDate,
          o.stage,
          COALESCE(c.name, 'Unknown') as customerName

@@ -28,6 +28,13 @@ describe('queryPipelineData', () => {
     expect(p.stageFunnel[0].totalRevenue).toBe(4000);
   });
 
+  it('leaves expiring deals with no recorded value null', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 16));
+    addOpportunity({ annual: null, estimated: null, expiration: '2026-10-20' });
+    expect((await queryPipelineData()).expiring[0].estimatedRevenue).toBeNull();
+  });
+
   it('reports the annual value on expiring deals', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 9, 16));
@@ -50,8 +57,7 @@ describe('queryTeamLeaderboard', () => {
 
 describe('aiSearch', () => {
   beforeEach(() => {
-    execFixture(`ALTER TABLE customers ADD COLUMN bcn TEXT; ALTER TABLE customers ADD COLUMN arr REAL; ALTER TABLE customers ADD COLUMN cloud_customer INTEGER;
-      ALTER TABLE customer_revenue ADD COLUMN active_end_customers INTEGER; ALTER TABLE customer_revenue ADD COLUMN as_of_month TEXT;
+    execFixture(`ALTER TABLE customers ADD COLUMN bcn TEXT; ALTER TABLE customers ADD COLUMN arr REAL; ALTER TABLE customers ADD COLUMN cloud_customer INTEGER;
       CREATE TABLE contacts (id TEXT PRIMARY KEY, customer_id TEXT); ALTER TABLE follow_ups ADD COLUMN title TEXT;`);
   });
 
@@ -60,6 +66,12 @@ describe('aiSearch', () => {
     addOpportunity({ annual: null, estimated: 3000 });
     const rows = await searchOpportunities('Customer');
     expect(rows.map((r) => r.estimated_revenue)).toEqual([3000, 1000]);
+  });
+
+  it('leaves the value null on a deal with no recorded value', async () => {
+    addOpportunity({ annual: null, estimated: null });
+    expect((await searchOpportunities('Customer'))[0].estimated_revenue).toBeNull();
+    expect((await getAccountSummary('a')).topOpps[0].estimated_revenue).toBeNull();
   });
 
   it('getAccountSummary totals open value and ranks top deals by annual revenue', async () => {

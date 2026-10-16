@@ -1,10 +1,6 @@
 import { getDb } from '@/lib/db/client';
-import { OPP_ARR } from '@/lib/db/queries/analytics';
-
-// One row per customer: customer_revenue holds several reseller rows per BCN, so a plain join multiplies matches.
-// ARR_BY_CUSTOMER (reports/sql.ts) only carries arr; this also needs end-customer count and as-of month.
-const REVENUE_BY_CUSTOMER = `(SELECT customer_id, SUM(active_end_customers) AS active_end_customers, MAX(as_of_month) AS as_of_month
-  FROM customer_revenue WHERE customer_id IS NOT NULL GROUP BY customer_id)`;
+import { OPP_ARR, OPP_ARR_OR_NULL } from '@/lib/db/queries/analytics';
+import { ARR_BY_CUSTOMER } from '@/lib/reports/sql';
 
 interface CustomerSearchRow {
   id: string;
@@ -121,7 +117,7 @@ export async function searchOpportunities(term: string): Promise<OpportunitySear
   const db = await getDb();
   return db.select<OpportunitySearchRow[]>(
     `SELECT o.subject, o.status, o.stage, o.probability, o.primary_vendor,
-            ${OPP_ARR} AS estimated_revenue, o.expiration_date, cust.name AS customer_name
+            ${OPP_ARR_OR_NULL} AS estimated_revenue, o.expiration_date, cust.name AS customer_name
      FROM opportunities o
      LEFT JOIN customers cust ON o.customer_id = cust.id
      WHERE o.subject LIKE '%' || $1 || '%' COLLATE NOCASE
@@ -140,7 +136,7 @@ export async function searchRevenue(term: string): Promise<RevenueSearchRow[]> {
     `SELECT c.name, c.arr, c.cloud_customer,
             r.active_end_customers, r.as_of_month
      FROM customers c
-     LEFT JOIN ${REVENUE_BY_CUSTOMER} r ON r.customer_id = c.id
+     LEFT JOIN ${ARR_BY_CUSTOMER} r ON r.customer_id = c.id
      WHERE c.name LIKE '%' || $1 || '%' COLLATE NOCASE
      ORDER BY c.arr DESC
      LIMIT 3`,
@@ -283,7 +279,7 @@ export async function getAccountSummary(customerId: string): Promise<AccountSumm
       [customerId]
     ),
     db.select<AccountSummaryStats['topOpps']>(
-      `SELECT subject, ${OPP_ARR} AS estimated_revenue, status, stage
+      `SELECT subject, ${OPP_ARR_OR_NULL} AS estimated_revenue, status, stage
        FROM opportunities WHERE customer_id = $1
        ORDER BY ${OPP_ARR} DESC LIMIT 3`,
       [customerId]

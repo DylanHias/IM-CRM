@@ -1,7 +1,7 @@
 // SQL fragments shared by every report and by Home, so one account reads the same everywhere.
 
-/** Summed Power BI ARR per customer (several reseller rows each). A customer absent here is unmatched, not zero. */
-export const ARR_BY_CUSTOMER = `(SELECT customer_id, SUM(arr_lc) AS arr FROM customer_revenue WHERE customer_id IS NOT NULL GROUP BY customer_id)`;
+/** Summed Power BI ARR per customer (several reseller rows each), with end-customer count and latest month. A customer absent here is unmatched, not zero. */
+export const ARR_BY_CUSTOMER = `(SELECT customer_id, SUM(arr_lc) AS arr, SUM(active_end_customers) AS active_end_customers, MAX(as_of_month) AS as_of_month FROM customer_revenue WHERE customer_id IS NOT NULL GROUP BY customer_id)`;
 
 /**
  * Last contact per customer: latest activity of any owner, clipped to now so a scheduled meeting does not count.

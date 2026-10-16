@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db/client';
-import { OPP_ARR } from '@/lib/db/queries/analytics';
+import { OPP_ARR, OPP_ARR_OR_NULL } from '@/lib/db/queries/analytics';
 import type {
   AnalyticsRange,
   LeaderboardRow,
@@ -268,7 +268,7 @@ export async function queryUserDrilldown(userId: string, range: AnalyticsRange):
               o.customer_id AS customerId,
               c.name AS customerName,
               o.stage,
-              ${OPP_ARR} AS estimatedRevenue,
+              ${OPP_ARR_OR_NULL} AS estimatedRevenue,
               o.expiration_date  AS expirationDate,
               o.probability
        FROM opportunities o
