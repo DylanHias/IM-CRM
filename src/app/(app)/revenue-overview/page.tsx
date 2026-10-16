@@ -1,12 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
-import { ReportsPage } from '@/components/reports/ReportsPage';
+import { ReportsShell } from '@/components/reports/ReportsShell';
 
 export default function RevenueOverviewPage() {
-  return (
-    <Suspense>
-      <ReportsPage />
-    </Suspense>
-  );
+  return <ReportsShell />;
 }
