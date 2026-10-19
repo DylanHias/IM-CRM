@@ -55,3 +55,6 @@ export function availablePeriods(now: Date = new Date()): ReportPeriod[] {
 export function periodLabel(p: ReportPeriod): string {
   return p.kind === 'rolling' ? `Last ${p.months} months` : `Q${p.quarter} ${p.year}`;
 }
+
+/** Stable string identity for a period, for effect dependencies and <option> values. */
+export const periodKey = (p: ReportPeriod) => (p.kind === 'rolling' ? `r${p.months}` : `q${p.year}-${p.quarter}`);

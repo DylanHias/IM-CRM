@@ -1,7 +1,7 @@
 'use client';
 
 import { Segmented } from '@/components/ui/segmented';
-import { availablePeriods, periodLabel, type ReportPeriod } from '@/lib/reports/period';
+import { availablePeriods, periodKey, periodLabel, type ReportPeriod } from '@/lib/reports/period';
 import { REGION_LABELS, type Region } from '@/lib/revenue/region';
 
 export type ReportScopeKind = 'mine' | 'team';
@@ -18,8 +18,6 @@ const SCOPES: { value: ReportScopeKind; label: string }[] = [
 ];
 
 const REGIONS = (Object.keys(REGION_LABELS) as Region[]).map((r) => ({ value: r, label: r === 'BENELUX' ? REGION_LABELS[r] : r }));
-
-const periodKey = (p: ReportPeriod) => (p.kind === 'rolling' ? `r${p.months}` : `q${p.year}-${p.quarter}`);
 
 interface Props {
   filters: ReportFilters;

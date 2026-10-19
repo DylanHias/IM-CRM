@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import type { ArrMovement, ArrMover, ArrToday, ClosedMonth, MonthTotal, Money } from '@/types/reports';
@@ -51,6 +51,8 @@ function load(d: Data) {
   q.queryNewOpportunities.mockResolvedValue(d.newOpps);
   q.queryClosedDeals.mockResolvedValue(d.closed);
 }
+const tile = (label: string) => screen.getByText(label).parentElement as HTMLElement;
+
 async function show(d: Data, filters = team) {
   load(d);
   render(<GrowthTab filters={filters} />);
@@ -67,20 +69,26 @@ describe('GrowthTab', () => {
     expect(screen.getByText('+€55K')).toBeInTheDocument();
   });
 
-  it('captions ARR tiles with the account population and deal tiles with the team', async () => {
+  it('captions each tile with its own population', async () => {
     await show(base());
-    expect(screen.getAllByText(/all Benelux accounts/i).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText(/Cloud Belux team/i).length).toBeGreaterThanOrEqual(2);
+    expect(within(tile('ARR today')).getByText(/all Benelux accounts · point in time/i)).toBeInTheDocument();
+    expect(within(tile('Net ARR movement')).getByText(/all Benelux accounts/i)).toBeInTheDocument();
+    expect(within(tile('New opportunities')).getByText('Cloud Belux team')).toBeInTheDocument();
+    expect(within(tile('Won')).getByText('Cloud Belux team')).toBeInTheDocument();
   });
 
-  it('names the account population for Mine and for a single country', async () => {
+  it('names the user as the population under Mine, never the team', async () => {
     await show(base(), { ...team, scope: 'mine' });
-    expect(screen.getAllByText(/your accounts/i).length).toBeGreaterThanOrEqual(2);
+    expect(within(tile('ARR today')).getByText(/your accounts/i)).toBeInTheDocument();
+    expect(within(tile('New opportunities')).getByText('your deals')).toBeInTheDocument();
+    expect(within(tile('Won')).getByText('your deals')).toBeInTheDocument();
+    expect(screen.queryByText(/Cloud Belux team/i)).not.toBeInTheDocument();
   });
 
   it('captions a country filter with that country', async () => {
     await show(base(), { ...team, region: 'BE' });
-    expect(screen.getAllByText(/Belgian accounts/i).length).toBeGreaterThanOrEqual(2);
+    expect(within(tile('ARR today')).getByText(/Belgian accounts/i)).toBeInTheDocument();
+    expect(within(tile('Net ARR movement')).getByText(/Belgian accounts/i)).toBeInTheDocument();
   });
 
   it('surfaces how many in-scope accounts have no Power BI match', async () => {
@@ -102,7 +110,7 @@ describe('GrowthTab', () => {
     await show(d);
     expect(screen.getByText(/No ARR movement in this period/i)).toBeInTheDocument();
     expect(screen.getByText('No movement')).toBeInTheDocument();
-    expect(screen.queryByText('+€0')).not.toBeInTheDocument();
+    expect(screen.queryByText('€0')).not.toBeInTheDocument();
   });
 
   it('labels snapshot tiles as point-in-time', async () => {
@@ -126,9 +134,37 @@ describe('GrowthTab', () => {
     expect(screen.getByText(/2 non-EUR deals excluded/i)).toBeInTheDocument();
   });
 
+  it('reports excluded non-EUR won/lost deals in the won and lost panel', async () => {
+    const d = base();
+    d.closed = { ...d.closed, lost: money(1, 10_000, 3) };
+    await show(d);
+    const panel = screen.getByText('Won vs lost per month').closest('section') as HTMLElement;
+    expect(within(panel).getByText(/3 non-EUR deals excluded/i)).toBeInTheDocument();
+  });
+
   it('hides the non-EUR note when none were excluded', async () => {
     await show(base());
     expect(screen.queryByText(/non-EUR/i)).not.toBeInTheDocument();
+  });
+
+  it('says there are no accounts in scope instead of blaming Power BI', async () => {
+    const d = base();
+    d.today = { total: 0, matched: 0, unmatched: 0 };
+    await show(d);
+    expect(screen.getByText('No accounts in scope')).toBeInTheDocument();
+  });
+
+  it('does not show the previous scope figures under the new captions', async () => {
+    load(base());
+    const { rerender } = render(<GrowthTab filters={team} />);
+    await screen.findByText('Net ARR movement');
+    let resolve: (v: ArrToday) => void = () => {};
+    q.queryArrToday.mockReturnValue(new Promise<ArrToday>((r) => { resolve = r; }));
+    rerender(<GrowthTab filters={{ ...team, region: 'BE' }} />);
+    expect(screen.queryByText('€1.20M')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Belgian accounts/i)).not.toBeInTheDocument();
+    resolve({ total: 5_000, matched: 1, unmatched: 0 });
+    expect(await screen.findByText('€5K')).toBeInTheDocument();
   });
 
   it('shows no ARR figure when no account matched Power BI', async () => {

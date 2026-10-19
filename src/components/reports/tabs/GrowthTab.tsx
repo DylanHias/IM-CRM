@@ -14,7 +14,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useSyncStore } from '@/store/syncStore';
 import { queryArrMovement, queryArrMovers, queryArrToday } from '@/lib/db/queries/reports/arr';
 import { queryClosedDeals, queryNewOpportunities } from '@/lib/db/queries/reports/deals';
+import { periodKey } from '@/lib/reports/period';
 import type { ReportScope } from '@/lib/reports/scope';
+import { formatEurCompact } from '@/lib/utils/currencyUtils';
 import type { Region } from '@/lib/revenue/region';
 import type { ArrMovement, ArrMover, ArrToday } from '@/types/reports';
 
@@ -22,6 +24,7 @@ type NewOpps = Awaited<ReturnType<typeof queryNewOpportunities>>;
 type Closed = Awaited<ReturnType<typeof queryClosedDeals>>;
 
 interface Data {
+  key: string;
   today: ArrToday;
   movement: ArrMovement;
   movers: ArrMover[];
@@ -43,9 +46,8 @@ const ACCOUNTS: Record<Region, string> = {
   LU: 'Luxembourg accounts',
 };
 
-const fmtEur = (n: number) =>
-  n >= 1_000_000 ? `€${(n / 1_000_000).toFixed(2)}M` : n >= 1_000 ? `€${Math.round(n / 1_000)}K` : `€${Math.round(n)}`;
-const signed = (n: number) => (n === 0 ? fmtEur(0) : `${n > 0 ? '+' : '−'}${fmtEur(Math.abs(n))}`);
+const fmtEur = formatEurCompact;
+const signed = (n: number) => (n > 0 ? `+${fmtEur(n)}` : fmtEur(n));
 const monthLabel = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleString('en-GB', { month: 'short', year: '2-digit' });
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const hasMovement = (m: ArrMovement) => m.newSale !== 0 || m.upgrade !== 0 || m.downgrade !== 0 || m.cancellation !== 0;
@@ -82,7 +84,7 @@ function useGrowthData({ scope, region, period }: ReportFilters) {
   const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
-  const periodKey = JSON.stringify(period);
+  const key = `${scope}|${region}|${periodKey(period)}`;
 
   useEffect(() => {
     const userId = callerD365UserId ?? account?.localAccountId ?? null;
@@ -100,7 +102,7 @@ function useGrowthData({ scope, region, period }: ReportFilters) {
           queryNewOpportunities(reportScope, period),
           queryClosedDeals(reportScope, period),
         ]);
-        if (!stale) setData({ today, movement, movers, newOpps, closed });
+        if (!stale) setData({ key, today, movement, movers, newOpps, closed });
       } catch (err) {
         console.error('[data] Growth tab failed to load:', err);
         if (!stale) setFailed(true);
@@ -110,11 +112,11 @@ function useGrowthData({ scope, region, period }: ReportFilters) {
     return () => {
       stale = true;
     };
-    // period is tracked through periodKey so a re-created but equal period does not reload.
+    // key stands in for scope, region and period so a re-created but equal period does not reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, region, periodKey, account?.localAccountId, callerD365UserId]);
+  }, [key, account?.localAccountId, callerD365UserId]);
 
-  return { data, failed };
+  return { data: data?.key === key ? data : null, failed };
 }
 
 function Note({ children }: { children: string }) {
@@ -143,6 +145,7 @@ export function GrowthTab({ filters }: Props) {
   }
 
   const { today, movement, newOpps, closed } = data;
+  const dealPopulation = filters.scope === 'mine' ? 'your deals' : TEAM_CAPTION;
   const accounts = filters.scope === 'mine' ? 'your accounts' : ACCOUNTS[filters.region];
   const moved = hasMovement(movement);
   const closedAny = closed.won.count + closed.lost.count > 0;
@@ -161,7 +164,7 @@ export function GrowthTab({ filters }: Props) {
     <>
       <MetricStrip>
         {today.matched === 0 ? (
-          <ReportTile label="ARR today" empty="No Power BI match" caption={`${accounts} · point in time`} />
+          <ReportTile label="ARR today" empty={today.unmatched === 0 ? 'No accounts in scope' : 'No Power BI match'} caption={`${accounts} · point in time`} />
         ) : (
           <ReportTile label="ARR today" value={fmtEur(today.total)} caption={`${accounts} · point in time`} />
         )}
@@ -171,14 +174,14 @@ export function GrowthTab({ filters }: Props) {
           <ReportTile label="Net ARR movement" empty="No movement" caption={accounts} />
         )}
         {newOpps.total.count === 0 ? (
-          <ReportTile label="New opportunities" empty="None created" caption={TEAM_CAPTION} />
+          <ReportTile label="New opportunities" empty="None created" caption={dealPopulation} />
         ) : (
-          <ReportTile label="New opportunities" value={`${newOpps.total.count} · ${fmtEur(newOpps.total.value)}`} caption={TEAM_CAPTION} />
+          <ReportTile label="New opportunities" value={`${newOpps.total.count} · ${fmtEur(newOpps.total.value)}`} caption={dealPopulation} />
         )}
         {closed.won.count === 0 ? (
-          <ReportTile label="Won" empty="None won" caption={TEAM_CAPTION} />
+          <ReportTile label="Won" empty="None won" caption={dealPopulation} />
         ) : (
-          <ReportTile label="Won" value={`${closed.won.count} · ${fmtEur(closed.won.value)}`} caption={TEAM_CAPTION} />
+          <ReportTile label="Won" value={`${closed.won.count} · ${fmtEur(closed.won.value)}`} caption={dealPopulation} />
         )}
       </MetricStrip>
 
@@ -237,7 +240,7 @@ export function GrowthTab({ filters }: Props) {
         </Panel>
 
         <Panel className={panel}>
-          <PanelHeader title="New opportunities per month" sub={TEAM_CAPTION} />
+          <PanelHeader title="New opportunities per month" sub={dealPopulation} />
           {newOpps.total.count === 0 ? (
             <EmptyState title="No opportunities created in this period" className="self-center" />
           ) : (
@@ -272,7 +275,7 @@ export function GrowthTab({ filters }: Props) {
                   <XAxis dataKey="month" tickLine={false} axisLine={false} />
                   <YAxis yAxisId="eur" tickLine={false} axisLine={false} width={52} tickFormatter={eurTick} />
                   <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tickLine={false} axisLine={false} width={36} tickFormatter={(v) => `${v}%`} />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(v, n) => (n === 'winRate' ? `Win rate ${v}%` : `${n === 'won' ? 'Won' : 'Lost'} ${fmtEur(Number(v))}`)} />} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(v, n) => (n === 'winRate' ? (v == null ? 'Win rate —' : `Win rate ${v}%`) : v === 0 ? null : `${n === 'won' ? 'Won' : 'Lost'} ${fmtEur(Number(v))}`)} />} />
                   <Bar yAxisId="eur" dataKey="won" fill="var(--color-won)" radius={[3, 3, 0, 0]} />
                   <Bar yAxisId="eur" dataKey="lost" fill="var(--color-lost)" radius={[3, 3, 0, 0]} />
                   <Line yAxisId="pct" dataKey="winRate" stroke="var(--color-winRate)" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
