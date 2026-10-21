@@ -28,17 +28,18 @@ describe('queryPipelineData', () => {
     expect(p.stageFunnel[0].totalRevenue).toBe(4000);
   });
 
+  // The expiring window is SQLite's own date('now'), which vi.setSystemTime cannot
+  // move — so these dates are derived from the real clock, not written as literals.
+  const inExpiryWindow = () =>
+    new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
+
   it('leaves expiring deals with no recorded value null', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 9, 16));
-    addOpportunity({ annual: null, estimated: null, expiration: '2026-10-20' });
+    addOpportunity({ annual: null, estimated: null, expiration: inExpiryWindow() });
     expect((await queryPipelineData()).expiring[0].estimatedRevenue).toBeNull();
   });
 
   it('reports the annual value on expiring deals', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 9, 16));
-    addOpportunity({ annual: 1000, estimated: 5, expiration: '2026-10-20' });
+    addOpportunity({ annual: 1000, estimated: 5, expiration: inExpiryWindow() });
     expect((await queryPipelineData()).expiring[0].estimatedRevenue).toBe(1000);
   });
 });
@@ -57,7 +58,8 @@ describe('queryTeamLeaderboard', () => {
 
 describe('aiSearch', () => {
   beforeEach(() => {
-    execFixture(`ALTER TABLE customers ADD COLUMN bcn TEXT; ALTER TABLE customers ADD COLUMN arr REAL; ALTER TABLE customers ADD COLUMN cloud_customer INTEGER;
+    execFixture(`ALTER TABLE customers ADD COLUMN bcn TEXT; ALTER TABLE customers ADD COLUMN arr REAL; ALTER TABLE customers ADD COLUMN cloud_customer INTEGER;
+
       CREATE TABLE contacts (id TEXT PRIMARY KEY, customer_id TEXT); ALTER TABLE follow_ups ADD COLUMN title TEXT;`);
   });
 

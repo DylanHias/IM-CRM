@@ -26,14 +26,15 @@ beforeEach(() => {
 });
 
 describe('Customers page', () => {
-  it('shows the toolbar, the list and the first customer as the record', () => {
+  it('shows the toolbar and the full-width list, with no customer opened', () => {
     render(<CustomersPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Customers' })).toBeInTheDocument();
     expect(screen.getByText('2 customers')).toBeInTheDocument();
     const list = screen.getByRole('listbox', { name: 'Customers' });
     expect(within(list).getAllByRole('option')).toHaveLength(2);
-    expect(within(list).getAllByRole('option')[0]).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('heading', { level: 2, name: /Antwerp Freight BV/ })).toBeInTheDocument();
+    expect(within(list).queryAllByRole('option', { selected: true })).toHaveLength(0);
+    expect(screen.queryByRole('heading', { level: 2, name: /Antwerp Freight BV/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Back to customers/i })).not.toBeInTheDocument();
   });
 
   it('opens a customer when its row is clicked', () => {
@@ -42,10 +43,10 @@ describe('Customers page', () => {
     expect(useRouter().push).toHaveBeenCalledWith('/customers?id=b');
   });
 
-  it('moves the selection with the list shortcuts', () => {
+  it('opens the first customer when the list shortcut moves down from nothing', () => {
     render(<CustomersPage />);
     window.dispatchEvent(new CustomEvent('shortcut:list-down'));
-    expect(useRouter().push).toHaveBeenCalledWith('/customers?id=b');
+    expect(useRouter().push).toHaveBeenCalledWith('/customers?id=a');
   });
 
   it('scopes the list to cloud customers', () => {

@@ -48,11 +48,21 @@ describe('Pipeline page', () => {
     expect(screen.getByRole('button', { name: /New opportunity/ })).toBeInTheDocument();
   });
 
-  it('lists deals and shows the first one in the detail pane', async () => {
+  it('lists deals full width, with none opened', async () => {
     await renderSeeded();
     const list = await screen.findByRole('listbox', { name: 'Opportunities' });
     expect(within(list).getAllByRole('option')).toHaveLength(2);
+    expect(screen.queryByRole('heading', { level: 2, name: 'Cloud consolidation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Back to pipeline/i })).not.toBeInTheDocument();
+  });
+
+  it('opens a deal full width with a way back to the list', async () => {
+    await renderSeeded();
+    fireEvent.click(await screen.findByRole('option', { name: /Cloud consolidation/ }));
     expect(screen.getByRole('heading', { level: 2, name: 'Cloud consolidation' })).toBeInTheDocument();
+    expect(screen.queryByRole('listbox', { name: 'Opportunities' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Back to pipeline/i }));
+    expect(await screen.findByRole('listbox', { name: 'Opportunities' })).toBeInTheDocument();
   });
 
   it('selects another deal on click', async () => {
