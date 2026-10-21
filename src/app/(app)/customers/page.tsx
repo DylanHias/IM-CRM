@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Bookmark, Building2, Search, X } from 'lucide-react';
+import { ArrowLeft, Bookmark, Search, X } from 'lucide-react';
 import CustomerDetailClient from './CustomerDetailClient';
 import { CustomerList } from '@/components/customers/CustomerList';
 import { CustomerFilterPopover } from '@/components/customers/CustomerFilterPopover';
@@ -14,14 +14,12 @@ import { CompactPager } from '@/components/ui/compact-pager';
 import { Segmented } from '@/components/ui/segmented';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useCustomerFilterOptions } from '@/hooks/useCustomerFilterOptions';
 import { usePaginationPreference } from '@/hooks/usePaginationPreference';
 import { useShortcutListener } from '@/hooks/useShortcuts';
 import { useCustomerStore, type CloudScope } from '@/store/customerStore';
-import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import type { Customer } from '@/types/entities';
 
@@ -46,8 +44,6 @@ export default function CustomersPage() {
   const setFilterCloud = useCustomerStore((s) => s.setFilterCloud);
   const filterFavorites = useCustomerStore((s) => s.filterFavorites);
   const toggleFavoritesFilter = useCustomerStore((s) => s.toggleFavoritesFilter);
-  const listWidth = useUIStore((s) => s.customerListWidth);
-  const setListWidth = useUIStore((s) => s.setCustomerListWidth);
   const { pageSize } = usePaginationPreference('customers', 15);
 
   const searchRef = useRef<HTMLInputElement>(null);
@@ -56,7 +52,7 @@ export default function CustomersPage() {
   const totalPages = Math.max(1, Math.ceil(customers.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paged = customers.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const selectedId = customerId ?? paged[0]?.id ?? null;
+  const selectedId = customerId;
 
   const select = useCallback(
     (c: Customer) => {
@@ -65,6 +61,11 @@ export default function CustomersPage() {
     },
     [router],
   );
+
+  const goBack = useCallback(() => {
+    useCustomerStore.getState().setSelectedCustomerId(null);
+    router.push('/customers');
+  }, [router]);
 
   // Keep the selected row visible after keyboard moves and page changes.
   useEffect(() => {
@@ -92,19 +93,24 @@ export default function CustomersPage() {
   );
   useShortcutListener('focus-search', useCallback(() => searchRef.current?.focus(), []));
 
-  const startResize = (e: React.PointerEvent<HTMLDivElement>) => {
-    const startX = e.clientX;
-    const startWidth = listWidth;
-    const el = e.currentTarget;
-    el.setPointerCapture(e.pointerId);
-    const onMove = (ev: PointerEvent) => setListWidth(startWidth + ev.clientX - startX);
-    const onUp = () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
-  };
+
+  if (selectedId) {
+    return (
+      <>
+        <ViewBar title="Customers">
+          <ViewBarSeparator />
+          <Button variant="outline" onClick={goBack}>
+            <ArrowLeft size={14} />
+            Back to customers
+          </Button>
+        </ViewBar>
+
+        <FullBleed className="min-h-0">
+          <CustomerDetailClient key={selectedId} customerId={selectedId} trackRecent />
+        </FullBleed>
+      </>
+    );
+  }
 
   return (
     <>
@@ -132,8 +138,8 @@ export default function CustomersPage() {
         <CustomerFilterPopover options={options} />
       </ViewBar>
 
-      <FullBleed className="grid" style={{ gridTemplateColumns: `${listWidth}px 0 minmax(0, 1fr)` }}>
-        <div data-tour="page-customers" className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border bg-card">
+      <FullBleed className="grid min-h-0">
+        <div data-tour="page-customers" className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-card">
           <div className="grid gap-2 border-b border-border p-2">
             <div className="flex items-center gap-1">
               <div className="relative min-w-0 flex-1">
@@ -181,26 +187,6 @@ export default function CustomersPage() {
           </div>
 
           <CompactPager page={safePage} pageSize={pageSize} total={customers.length} onPageChange={setPage} />
-        </div>
-
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize customer list"
-          onPointerDown={startResize}
-          className="relative z-10 cursor-col-resize after:absolute after:inset-y-0 after:-left-[3px] after:w-1.5 hover:before:absolute hover:before:inset-y-0 hover:before:-left-px hover:before:w-0.5 hover:before:bg-primary"
-        />
-
-        <div className="min-h-0 min-w-0">
-          {selectedId ? (
-            <CustomerDetailClient key={selectedId} customerId={selectedId} trackRecent={customerId !== null} />
-          ) : (
-            !isLoading && (
-              <div className="grid h-full place-content-center">
-                <EmptyState icon={Building2} title="No customer selected" description="Pick a customer from the list." />
-              </div>
-            )
-          )}
         </div>
       </FullBleed>
     </>

@@ -35,12 +35,17 @@ const AppTitle = styled.span`
   letter-spacing: 0.01em;
 `;
 
+/* The section itself drags, so its empty space moves the window; the
+   controls inside opt out. */
 const CenterSection = styled.div`
   display: flex;
   align-items: center;
   height: 100%;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
+
+  > * {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
 `;
 
 const RightSection = styled.div`
@@ -51,8 +56,11 @@ const RightSection = styled.div`
   gap: 4px;
   height: 100%;
   min-width: 0;
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
+
+  > * {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
 `;
 
 const WindowControls = styled.div`
@@ -154,21 +162,22 @@ export function WindowFrame({ leftContent, centerContent, children }: WindowFram
 
   return (
     <Bar data-tauri-drag-region>
-      <LeftSection>
+      <LeftSection data-tauri-drag-region>
         <Image
           src="/images/icon.png"
           alt="Ingram Micro CRM"
           width={18}
           height={18}
           className="rounded-sm"
+          data-tauri-drag-region
         />
-        <AppTitle>Ingram Micro CRM</AppTitle>
+        <AppTitle data-tauri-drag-region>Ingram Micro CRM</AppTitle>
         {leftContent}
       </LeftSection>
 
-      {centerContent && <CenterSection>{centerContent}</CenterSection>}
+      {centerContent && <CenterSection data-tauri-drag-region>{centerContent}</CenterSection>}
 
-      <RightSection>
+      <RightSection data-tauri-drag-region>
         {children}
         <WindowControls>
           <WindowButton onClick={minimize} title="Minimize">

@@ -9,3 +9,12 @@ export function formatDisplayName(name: string): string {
   }
   return name;
 }
+
+/**
+ * The given name, handling Azure AD's "Last, First" format.
+ * Returns `fallback` when the name is missing or blank.
+ */
+export function firstNameOf(name: string | null | undefined, fallback: string): string {
+  if (!name?.trim()) return fallback;
+  return formatDisplayName(name).split(' ')[0] || fallback;
+}

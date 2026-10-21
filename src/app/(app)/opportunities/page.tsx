@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { LayoutList, Columns3, Plus, Search, Target, User, X } from 'lucide-react';
+import { ArrowLeft, LayoutList, Columns3, Plus, Search, Target, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -383,7 +383,7 @@ export default function OpportunitiesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const selected = filtered.find((o) => o.id === selectedId) ?? paged[0] ?? null;
+  const selected = selectedId ? (filtered.find((o) => o.id === selectedId) ?? null) : null;
   const open = filtered.filter((o) => o.status === 'Open');
   const openValue = open.reduce((a, o) => a + (oppArr(o) ?? 0), 0);
   const weighted = open.reduce((a, o) => a + weightedValue(o), 0);
@@ -407,6 +407,30 @@ export default function OpportunitiesPage() {
       )}
     </div>
   );
+
+  if (selected) {
+    return (
+      <>
+        <ViewBar title="Pipeline">
+          <ViewBarSeparator />
+          <Button variant="outline" onClick={() => setSelectedId(null)}>
+            <ArrowLeft size={14} />
+            Back to pipeline
+          </Button>
+        </ViewBar>
+
+        <FullBleed className="min-h-0 overflow-y-auto">
+          <OpportunityDetail
+            key={selected.id}
+            opportunity={selected}
+            companyName={companyName(selected)}
+            onEdit={() => openEdit(selected)}
+            onCloseAs={(out) => closeAs(selected, out)}
+          />
+        </FullBleed>
+      </>
+    );
+  }
 
   return (
     <>
@@ -452,8 +476,8 @@ export default function OpportunitiesPage() {
             <PipelineBoard opportunities={filtered} customerMap={customerMap} onOpen={openEdit} onCloseAs={closeAs} stage={filterStage} />
           </div>
         ) : (
-          <div className="grid h-full grid-cols-[320px_minmax(0,1fr)]">
-            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-r border-border bg-card">
+          <div className="grid h-full min-h-0">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-card">
               <div className="flex items-center gap-1 border-b border-border p-2">
                 {searchBox}
                 <SortMenu<OppSortBy>
@@ -494,7 +518,7 @@ export default function OpportunitiesPage() {
                         <OpportunityRow
                           opportunity={o}
                           companyName={companyName(o)}
-                          selected={selected?.id === o.id}
+                          selected={selectedId === o.id}
                           onClick={() => setSelectedId(o.id)}
                           onDoubleClick={() => openEdit(o)}
                         />
@@ -504,17 +528,6 @@ export default function OpportunitiesPage() {
                 )}
               </div>
               <CompactPager page={safePage} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
-            </div>
-            <div className="min-h-0 min-w-0 overflow-y-auto">
-              {selected && (
-                <OpportunityDetail
-                  key={selected.id}
-                  opportunity={selected}
-                  companyName={companyName(selected)}
-                  onEdit={() => openEdit(selected)}
-                  onCloseAs={(out) => closeAs(selected, out)}
-                />
-              )}
             </div>
           </div>
         )}

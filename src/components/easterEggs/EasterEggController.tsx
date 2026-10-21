@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { armSalesMode, isSalesModeArmed, shouldShowBirthdayToday, isEasterEggsEnabled } from '@/lib/easterEggs';
+import { firstNameOf } from '@/lib/utils/nameUtils';
 import { BirthdayModal } from './BirthdayModal';
 
 const KONAMI = [
@@ -50,7 +51,7 @@ export function EasterEggController() {
     if (shouldShowBirthdayToday(userProfile.birthday)) setBirthdayOpen(true);
   }, [account, userProfile]);
 
-  const firstName = account?.name?.split(' ')[0] ?? 'friend';
+  const firstName = firstNameOf(account?.name, 'friend');
 
   return <BirthdayModal open={birthdayOpen} firstName={firstName} onClose={() => setBirthdayOpen(false)} />;
 }
