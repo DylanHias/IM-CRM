@@ -100,7 +100,7 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !contactTypeId || !countryId || !phone.trim() || !email.trim()) {
       setShowErrors(true);
       return;
     }
@@ -195,9 +195,9 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="cf-country">Country</Label>
+                <Label htmlFor="cf-country" className={showErrors && !countryId ? 'text-rose-600' : ''}>Country *</Label>
                 <Select value={countryId} onValueChange={setCountryId}>
-                  <SelectTrigger id="cf-country">
+                  <SelectTrigger id="cf-country" className={showErrors && !countryId ? '!border-rose-500 focus-visible:!ring-rose-500' : ''}>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,9 +208,9 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="cf-contactType">Contact Type</Label>
+                <Label htmlFor="cf-contactType" className={showErrors && !contactTypeId ? 'text-rose-600' : ''}>Contact Type *</Label>
                 <Select value={contactTypeId} onValueChange={setContactTypeId}>
-                  <SelectTrigger id="cf-contactType">
+                  <SelectTrigger id="cf-contactType" className={showErrors && !contactTypeId ? '!border-rose-500 focus-visible:!ring-rose-500' : ''}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -236,14 +236,14 @@ export function ContactForm({ open, onOpenChange, customerId, onContactSaved, in
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="cf-email">Email</Label>
-              <Input id="cf-email" type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="cf-email" className={showErrors && !email.trim() ? 'text-rose-600' : ''}>Email *</Label>
+              <Input id="cf-email" type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={showErrors && !email.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="cf-phone">Phone</Label>
-                <Input id="cf-phone" type="tel" placeholder="+32 ..." value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Label htmlFor="cf-phone" className={showErrors && !phone.trim() ? 'text-rose-600' : ''}>Phone *</Label>
+                <Input id="cf-phone" type="tel" placeholder="+32 ..." value={phone} onChange={(e) => setPhone(e.target.value)} className={showErrors && !phone.trim() ? '!border-rose-500 focus-visible:!ring-rose-500' : ''} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="cf-mobile">Mobile</Label>

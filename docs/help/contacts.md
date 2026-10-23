@@ -20,11 +20,11 @@ Use the search bar to filter contacts by name if the customer has many.
    - **First Name** (required)
    - **Last Name** (required)
    - **Job Title** — Syncs to the Job Functions field in Dynamics 365
-   - **Country** — Belgium, Netherlands, or Luxembourg
-   - **Contact Type** — Pulled from Dynamics 365
+   - **Country** (required) — Belgium, Netherlands, or Luxembourg
+   - **Contact Type** (required) — Pulled from Dynamics 365
    - **Cloud Contact** — Yes/No flag for cloud-focused contacts
-   - **Email**
-   - **Phone** (office number)
+   - **Email** (required)
+   - **Phone** (required, office number)
    - **Mobile** (cell number)
    - **Notes** — Internal notes about this contact
 4. Click **Save**
