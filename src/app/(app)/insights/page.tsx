@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Insights is now the Revenue tab of Reports. */
+/** Insights is now the Growth tab of Reports. */
 export default function InsightsPage() {
   const router = useRouter();
   useEffect(() => {

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Analytics is now the Pipeline, Customers and My activity tabs of Reports. */
+/** Analytics is now the Pipeline, Accounts and Activity tabs of Reports. */
 export default function AnalyticsPage() {
   const router = useRouter();
   useEffect(() => {

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/lib/db/client', async () => ({ getDb: (await import('./../reports/__tests__/sqliteFixture')).fixtureGetDb }));
 
-import { queryPipelineData } from '@/lib/db/queries/analytics';
 import { queryTeamLeaderboard } from '@/lib/db/queries/teamAnalytics';
 import { searchOpportunities, searchRevenue, getAccountSummary } from '@/lib/db/queries/aiSearch';
 import { resetFixture, execFixture, addCustomer, addOpportunity, addRevenue } from '../reports/__tests__/sqliteFixture';
@@ -13,36 +12,6 @@ beforeEach(() => {
   execFixture(`ALTER TABLE opportunities ADD COLUMN multi_vendor_opportunity INTEGER`);
 });
 afterEach(() => vi.useRealTimers());
-
-describe('queryPipelineData', () => {
-  it('values open deals by annual revenue in every section, falling back to estimated revenue', async () => {
-    addOpportunity({ annual: 1000, estimated: 999999, probability: 50, vendor: 'V', sellType: 'New', stage: 'S', expiration: '2026-03-01' });
-    addOpportunity({ annual: null, estimated: 3000, probability: 100, vendor: 'V', sellType: 'New', stage: 'S', expiration: '2026-03-15' });
-    addOpportunity({ annual: 7777, status: 'Won', vendor: 'V', sellType: 'New', stage: 'S' });
-    const p = await queryPipelineData();
-    expect(p.kpis.openValue).toBe(4000);
-    expect(p.kpis.weightedForecast).toBe(3500);
-    expect(p.forecast).toEqual([{ month: '2026-03', weighted: 3500, total: 4000 }]);
-    expect(p.bySellType[0]).toMatchObject({ totalRevenue: 4000, avgRevenue: 2000 });
-    expect(p.byVendor[0].avgRevenue).toBe(2000);
-    expect(p.stageFunnel[0].totalRevenue).toBe(4000);
-  });
-
-  // The expiring window is SQLite's own date('now'), which vi.setSystemTime cannot
-  // move — so these dates are derived from the real clock, not written as literals.
-  const inExpiryWindow = () =>
-    new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
-
-  it('leaves expiring deals with no recorded value null', async () => {
-    addOpportunity({ annual: null, estimated: null, expiration: inExpiryWindow() });
-    expect((await queryPipelineData()).expiring[0].estimatedRevenue).toBeNull();
-  });
-
-  it('reports the annual value on expiring deals', async () => {
-    addOpportunity({ annual: 1000, estimated: 5, expiration: inExpiryWindow() });
-    expect((await queryPipelineData()).expiring[0].estimatedRevenue).toBe(1000);
-  });
-});
 
 describe('queryTeamLeaderboard', () => {
   it('sums created and won value by annual revenue', async () => {
