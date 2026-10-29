@@ -5,6 +5,7 @@ import { availablePeriods, periodLabel } from '@/lib/reports/period';
 import { ReportsShell } from '../ReportsShell';
 
 vi.mock('@/components/reports/tabs/GrowthTab', () => ({ GrowthTab: () => <div>Growth tab</div> }));
+vi.mock('@/components/reports/tabs/PipelineTab', () => ({ PipelineTab: () => <div>Pipeline tab</div> }));
 
 let search = '';
 vi.mock('next/navigation', () => ({
@@ -67,7 +68,7 @@ describe('ReportsShell', () => {
   it('opens on the tab named in the address', () => {
     search = 'tab=pipeline';
     render(<ReportsShell />);
-    expect(screen.getByText('Pipeline lands next')).toBeInTheDocument();
+    expect(screen.getByText('Pipeline tab')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Pipeline' })).toHaveAttribute('aria-selected', 'true');
   });
 

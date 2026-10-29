@@ -67,6 +67,7 @@ export function formatCurrency(
 /** Compact euros for tiles and axes: €1.20M, €125K, €999. Negatives get a true minus sign: −€125K. */
 export function formatEurCompact(n: number): string {
   const abs = Math.abs(n);
-  const body = abs >= 1_000_000 ? `€${(abs / 1_000_000).toFixed(2)}M` : abs >= 1_000 ? `€${Math.round(abs / 1_000)}K` : `€${Math.round(abs)}`;
+  // 999_500 rounds to 1000K, so the million tier starts there.
+  const body = abs >= 999_500 ? `€${(abs / 1_000_000).toFixed(2)}M` : abs >= 1_000 ? `€${Math.round(abs / 1_000)}K` : `€${Math.round(abs)}`;
   return n < 0 && body !== '€0' ? `−${body}` : body;
 }

@@ -334,6 +334,11 @@ describe('queryQuietDeals', () => {
     expect((await queryQuietDeals(mine, 30, 5)).map((d) => d.id)).toEqual([quiet]);
   });
 
+  it('returns a null value, not zero, for a deal with no value recorded', async () => {
+    addOpportunity({ customerId: 'a', annual: null, estimated: null });
+    expect((await queryQuietDeals(mine, 30, 5))[0]?.value).toBeNull();
+  });
+
   it('scopes to the team region', async () => {
     addCustomer('us', 'u1', 'US');
     addOpportunity({ customerId: 'a', annual: 1 });

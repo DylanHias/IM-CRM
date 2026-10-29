@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { getDb } from '@/lib/db/client';
-import { OPP_ARR } from '@/lib/db/queries/analytics';
+import { OPP_ARR, OPP_ARR_OR_NULL } from '@/lib/db/queries/analytics';
 import { monthKeys, type ReportPeriod } from '@/lib/reports/period';
 import { dealScopeSql, type ReportScope } from '@/lib/reports/scope';
 import { daysSinceSql, lastContactSql, paramBinder } from '@/lib/reports/sql';
@@ -206,7 +206,7 @@ export async function queryQuietDeals(s: ReportScope, idleDays: number, limit: n
     const db = await getDb();
     const sql = `SELECT o.id, o.subject, o.customer_id AS customerId,
            COALESCE((SELECT name FROM customers WHERE id = o.customer_id), 'Unknown') AS customerName,
-           o.stage, ${OPP_ARR} AS value, o.currency,
+           o.stage, ${OPP_ARR_OR_NULL} AS value, o.currency,
            lc.last_at AS lastActivityAt, ${daysSinceSql(bind(nowIso))} AS daysStale
          FROM opportunities o
          LEFT JOIN ${lastContactSql(bind(nowIso))} lc ON lc.customer_id = o.customer_id

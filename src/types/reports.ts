@@ -59,7 +59,8 @@ export interface QuietDeal {
   customerId: string;
   customerName: string;
   stage: string;
-  value: number;
+  /** null = no value recorded; render "—", not €0. */
+  value: number | null;
   currency: string;
   /** Latest activity not in the future; null = the account was never contacted. */
   lastActivityAt: string | null;
