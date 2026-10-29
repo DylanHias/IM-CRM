@@ -7,6 +7,7 @@ import { ReportsShell } from '../ReportsShell';
 vi.mock('@/components/reports/tabs/GrowthTab', () => ({ GrowthTab: () => <div>Growth tab</div> }));
 vi.mock('@/components/reports/tabs/PipelineTab', () => ({ PipelineTab: () => <div>Pipeline tab</div> }));
 vi.mock('@/components/reports/tabs/AccountsTab', () => ({ AccountsTab: () => <div>Accounts tab</div> }));
+vi.mock('@/components/reports/tabs/ActivityTab', () => ({ ActivityTab: () => <div>Activity tab</div> }));
 
 let search = '';
 vi.mock('next/navigation', () => ({
@@ -58,11 +59,11 @@ describe('ReportsShell', () => {
     expect(options.slice(0, 3)).toEqual(['Last 3 months', 'Last 6 months', 'Last 12 months']);
   });
 
-  it('switches tabs, shows the named placeholder and writes the tab to the address', () => {
+  it('switches tabs, shows that tab and writes it to the address', () => {
     render(<ReportsShell />);
     expect(screen.getByText('Growth tab')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Activity' }));
-    expect(screen.getByText('Activity lands next')).toBeInTheDocument();
+    expect(screen.getByText('Activity tab')).toBeInTheDocument();
     expect(useRouter().replace).toHaveBeenCalledWith('/revenue-overview?tab=activity');
   });
 

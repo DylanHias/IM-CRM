@@ -16,14 +16,13 @@ import {
   queryAccountSummary,
   queryAccountsRanked,
   queryArrByDimension,
-  queryCoverageBuckets,
   queryTopConcentration,
 } from '@/lib/db/queries/reports/accounts';
 import { periodKey } from '@/lib/reports/period';
 import type { ReportScope } from '@/lib/reports/scope';
 import { formatEurCompact } from '@/lib/utils/currencyUtils';
 import type { Region } from '@/lib/revenue/region';
-import type { AccountSummary, CoverageBucket, DimensionRow, RankedAccount } from '@/types/reports';
+import type { AccountSummary, DimensionRow, RankedAccount } from '@/types/reports';
 
 type Dimension = 'segment' | 'industry' | 'country';
 
@@ -33,7 +32,6 @@ interface Data {
   concentration: number | null;
   ranked: RankedAccount[];
   dimension: DimensionRow[];
-  coverage: { bucket: CoverageBucket; count: number }[];
 }
 
 interface Props {
@@ -49,13 +47,6 @@ const ACCOUNTS: Record<Region, string> = {
   BE: 'Belgian accounts',
   NL: 'Dutch accounts',
   LU: 'Luxembourg accounts',
-};
-const COVERAGE_LABEL: Record<CoverageBucket, string> = {
-  '0-30': '0–30',
-  '31-60': '31–60',
-  '61-90': '61–90',
-  '90+': '90+',
-  never: 'Never',
 };
 
 const fmtEur = formatEurCompact;
@@ -95,14 +86,13 @@ function useAccountsData({ scope, region, period }: ReportFilters, dimension: Di
     const load = async () => {
       setFailed(false);
       try {
-        const [summary, concentration, ranked, dim, coverage] = await Promise.all([
+        const [summary, concentration, ranked, dim] = await Promise.all([
           queryAccountSummary(reportScope),
           queryTopConcentration(reportScope, TOP_N),
           queryAccountsRanked(reportScope, RANKED_LIMIT, 0),
           queryArrByDimension(reportScope, dimension),
-          queryCoverageBuckets(reportScope),
         ]);
-        if (!stale) setData({ key, summary, concentration, ranked, dimension: dim, coverage });
+        if (!stale) setData({ key, summary, concentration, ranked, dimension: dim });
       } catch (err) {
         console.error('[customer] Accounts tab failed to load:', err);
         if (!stale) setFailed(true);
@@ -141,13 +131,12 @@ export function AccountsTab({ filters }: Props) {
     );
   }
 
-  const { summary, concentration, coverage } = data;
+  const { summary, concentration } = data;
   const accounts = filters.scope === 'mine' ? 'your accounts' : ACCOUNTS[filters.region];
   const caption = `${accounts} · point in time`;
   const empty = 'No accounts in this scope';
   const anyAccounts = summary.total > 0;
   const unmatchedInDimension = dimensionRows.reduce((t, r) => t + (r.accounts - r.matched), 0);
-  const coverageBars = coverage.map((b) => ({ label: COVERAGE_LABEL[b.bucket], count: b.count }));
   const panel = 'grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]';
 
   return (
@@ -175,8 +164,8 @@ export function AccountsTab({ filters }: Props) {
         )}
       </MetricStrip>
 
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-        <Panel className={`${panel} lg:row-span-2`}>
+      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <Panel className={panel}>
           <PanelHeader title="Accounts ranked by ARR" sub={anyAccounts ? `${plural(summary.total, 'account', 'accounts')} in scope` : undefined} />
           {data.ranked.length === 0 ? (
             <EmptyState title={empty} className="self-center" />
@@ -229,15 +218,6 @@ export function AccountsTab({ filters }: Props) {
           )}
         </Panel>
 
-        <Panel className={panel}>
-          <PanelHeader title="Coverage" sub="Accounts by days since last contact" />
-          {coverageBars.length === 0 ? (
-            <EmptyState title={empty} className="self-center" />
-          ) : (
-            <BarRows label="Coverage" format={String} rows={coverageBars.map((b) => ({ label: b.label, value: b.count, sub: 'days since last contact' }))} />
-          )}
-          <span />
-        </Panel>
       </div>
     </>
   );

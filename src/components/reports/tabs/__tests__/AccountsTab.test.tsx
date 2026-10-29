@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReportFilters } from '@/components/reports/ReportControls';
-import type { AccountSummary, CoverageBucket, DimensionRow, RankedAccount } from '@/types/reports';
+import type { AccountSummary, DimensionRow, RankedAccount } from '@/types/reports';
 import { AccountsTab } from '../AccountsTab';
 
 const q = vi.hoisted(() => ({
@@ -9,7 +9,6 @@ const q = vi.hoisted(() => ({
   queryTopConcentration: vi.fn(),
   queryAccountsRanked: vi.fn(),
   queryArrByDimension: vi.fn(),
-  queryCoverageBuckets: vi.fn(),
 }));
 vi.mock('@/lib/db/queries/reports/accounts', () => q);
 vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
@@ -25,7 +24,6 @@ interface Data {
   concentration: number | null;
   ranked: RankedAccount[];
   dimension: DimensionRow[];
-  coverage: { bucket: CoverageBucket; count: number }[];
 }
 
 const account = (id: string, arr: number | null = 100_000): RankedAccount => ({
@@ -42,13 +40,6 @@ const base = (): Data => ({
   concentration: 62.5,
   ranked: Array.from({ length: 30 }, (_, i) => account(`a${i}`, 100_000 - i * 1_000)),
   dimension: Array.from({ length: 9 }, (_, i) => dim(`Segment ${i}`, 90_000 - i * 1_000)),
-  coverage: [
-    { bucket: '0-30', count: 10 },
-    { bucket: '31-60', count: 8 },
-    { bucket: '61-90', count: 6 },
-    { bucket: '90+', count: 7 },
-    { bucket: 'never', count: 3 },
-  ],
 });
 
 function load(d: Data) {
@@ -56,7 +47,6 @@ function load(d: Data) {
   q.queryTopConcentration.mockResolvedValue(d.concentration);
   q.queryAccountsRanked.mockResolvedValue(d.ranked);
   q.queryArrByDimension.mockResolvedValue(d.dimension);
-  q.queryCoverageBuckets.mockResolvedValue(d.coverage);
 }
 
 const tile = (label: string) => screen.getByText(label).parentElement as HTMLElement;
@@ -119,11 +109,6 @@ describe('AccountsTab', () => {
     expect(within(tile('Top-10 concentration')).queryByText('0%')).not.toBeInTheDocument();
   });
 
-  it('buckets accounts by last contact with never-contacted separate', async () => {
-    await show(base());
-    for (const b of ['0–30', '31–60', '61–90', '90+', 'Never']) expect(screen.getByText(b)).toBeInTheDocument();
-  });
-
   it('names the user as the population under Mine, never the team', async () => {
     await show(base(), { ...team, scope: 'mine' });
     expect(within(tile('Accounts with ARR')).getByText(/your accounts/i)).toBeInTheDocument();
@@ -135,7 +120,6 @@ describe('AccountsTab', () => {
     d.concentration = null;
     d.ranked = [];
     d.dimension = [];
-    d.coverage = [];
     await show(d);
     expect(screen.getAllByText(/no accounts in this scope/i).length).toBeGreaterThan(0);
   });

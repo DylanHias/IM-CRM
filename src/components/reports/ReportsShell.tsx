@@ -3,12 +3,11 @@
 import { useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ViewBar, ViewBarSeparator, ViewBarSpacer } from '@/components/ui/view-bar';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Panel } from '@/components/ui/panel';
 import { ReportControls, type ReportFilters } from '@/components/reports/ReportControls';
 import { GrowthTab } from '@/components/reports/tabs/GrowthTab';
 import { PipelineTab } from '@/components/reports/tabs/PipelineTab';
 import { AccountsTab } from '@/components/reports/tabs/AccountsTab';
+import { ActivityTab } from '@/components/reports/tabs/ActivityTab';
 
 type ReportTab = 'growth' | 'pipeline' | 'accounts' | 'activity';
 
@@ -23,20 +22,11 @@ interface TabProps {
   filters: ReportFilters;
 }
 
-// ponytail: placeholder; Task 12 replaces it with the real Activity tab taking the same props.
-function Placeholder({ label }: TabProps & { label: string }) {
-  return (
-    <Panel className="grid lg:min-h-0 lg:flex-1 place-items-center">
-      <EmptyState title={`${label} lands next`} />
-    </Panel>
-  );
-}
-
 const TAB_PANELS: Record<ReportTab, (p: TabProps) => ReactNode> = {
   growth: (p) => <GrowthTab {...p} />,
   pipeline: (p) => <PipelineTab {...p} />,
   accounts: (p) => <AccountsTab {...p} />,
-  activity: (p) => <Placeholder label="Activity" {...p} />,
+  activity: (p) => <ActivityTab {...p} />,
 };
 
 const isTab = (v: string | null): v is ReportTab => TABS.some((t) => t.value === v);
