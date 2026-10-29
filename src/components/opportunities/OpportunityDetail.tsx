@@ -46,7 +46,7 @@ export function OpportunityDetail({ opportunity: o, companyName, onEdit, onClose
   const steps = STAGES.filter((s) => s !== 'Billing Rejection' || o.stage === s);
 
   return (
-    <div className="grid max-w-[900px] content-start gap-3 px-5 pb-7 pt-4">
+    <div className="grid content-start gap-3 px-5 pb-7 pt-4">
       <div className="flex items-start gap-2">
         <div className="grid min-w-0 flex-1 gap-1">
           <span className="text-[11px] text-faint">

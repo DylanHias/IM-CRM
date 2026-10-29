@@ -408,6 +408,53 @@ export default function OpportunitiesPage() {
     </div>
   );
 
+  // Rendered beside both the list and the detail view, so detail-pane actions can open them.
+  const dialogs = (
+    <>
+      <Dialog open={addOpen} onOpenChange={(isOpen) => { setAddOpen(isOpen); }}>
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
+          <DialogTitle className="sr-only">New Opportunity</DialogTitle>
+          <OpportunityWizard
+            customers={customers}
+            contacts={contacts}
+            onSave={handleCreate}
+            onCustomerChange={setWizardCustomerId}
+            onCancel={() => setAddOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editing} onOpenChange={(isOpen) => { if (!isOpen) setEditing(null); }}>
+        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
+          <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
+          {editing && (
+            <OpportunityWizard
+              opportunity={editing}
+              customers={customers}
+              contacts={contacts}
+              onSave={handleEdit}
+              onCustomerChange={setWizardCustomerId}
+              onCloseWon={() => setCloseOutcome('Won')}
+              onCloseLost={() => setCloseOutcome('Lost')}
+              onCancel={() => setEditing(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <CloseOpportunityDialog
+        open={!!closeOutcome}
+        outcome={closeOutcome ?? 'Won'}
+        currency={(closing ?? editing)?.currency ?? 'USD'}
+        onClose={() => {
+          setCloseOutcome(null);
+          setClosing(null);
+        }}
+        onConfirm={handleClose}
+      />
+    </>
+  );
+
   if (selected) {
     return (
       <>
@@ -428,6 +475,8 @@ export default function OpportunitiesPage() {
             onCloseAs={(out) => closeAs(selected, out)}
           />
         </FullBleed>
+
+        {dialogs}
       </>
     );
   }
@@ -533,47 +582,7 @@ export default function OpportunitiesPage() {
         )}
       </FullBleed>
 
-      <Dialog open={addOpen} onOpenChange={(isOpen) => { setAddOpen(isOpen); }}>
-        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
-          <DialogTitle className="sr-only">New Opportunity</DialogTitle>
-          <OpportunityWizard
-            customers={customers}
-            contacts={contacts}
-            onSave={handleCreate}
-            onCustomerChange={setWizardCustomerId}
-            onCancel={() => setAddOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!editing} onOpenChange={(isOpen) => { if (!isOpen) setEditing(null); }}>
-        <DialogContent className="sm:max-w-[1000px] h-[min(760px,90vh)] p-0 gap-0 overflow-hidden">
-          <DialogTitle className="sr-only">Edit Opportunity</DialogTitle>
-          {editing && (
-            <OpportunityWizard
-              opportunity={editing}
-              customers={customers}
-              contacts={contacts}
-              onSave={handleEdit}
-              onCustomerChange={setWizardCustomerId}
-              onCloseWon={() => setCloseOutcome('Won')}
-              onCloseLost={() => setCloseOutcome('Lost')}
-              onCancel={() => setEditing(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <CloseOpportunityDialog
-        open={!!closeOutcome}
-        outcome={closeOutcome ?? 'Won'}
-        currency={(closing ?? editing)?.currency ?? 'USD'}
-        onClose={() => {
-          setCloseOutcome(null);
-          setClosing(null);
-        }}
-        onConfirm={handleClose}
-      />
+      {dialogs}
     </>
   );
 }

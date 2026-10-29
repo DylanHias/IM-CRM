@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, RefreshCw, CheckSquare, BarChart2, Target, LineChart, Gauge,
@@ -14,6 +14,9 @@ import { KbdGroup } from '@/components/ui/kbd';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomerStore } from '@/store/customerStore';
+import { useOpportunityListStore } from '@/store/opportunityListStore';
+import { queryAllOpportunities } from '@/lib/db/queries/opportunities';
+import { isTauriApp } from '@/lib/utils/offlineUtils';
 import { getAllShortcuts, getDisplayKey, SHORTCUT_SECTIONS } from '@/lib/shortcuts/shortcuts';
 import type { ShortcutDefinition } from '@/lib/shortcuts/shortcuts';
 import type { LucideIcon } from 'lucide-react';
@@ -60,9 +63,19 @@ export function CommandPalette() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const customers = useCustomerStore((s) => s.customers);
   const allContacts = useCustomerStore((s) => s.allContacts);
+  const opportunities = useOpportunityListStore((s) => s.opportunities);
+  const setSelectedOpportunity = useOpportunityListStore((s) => s.setSelectedId);
   const router = useRouter();
 
   const [query, setQuery] = useState('');
+
+  // The pipeline page fills this store; load once so deals are searchable before visiting it.
+  useEffect(() => {
+    if (!open || opportunities.length > 0 || !isTauriApp()) return;
+    queryAllOpportunities()
+      .then((opps) => useOpportunityListStore.getState().setOpportunities(opps))
+      .catch((err) => console.error('[opportunity] Failed to load deals for search:', err));
+  }, [open, opportunities.length]);
 
   const shortcuts = getAllShortcuts(sidebarOrder, customKeybindings);
 
@@ -124,6 +137,17 @@ export function CommandPalette() {
       .slice(0, 5);
   }, [allContacts, q]);
 
+  const matchedOpportunities = useMemo(() => {
+    if (!q) return [];
+    return opportunities
+      .filter((o) =>
+        o.subject.toLowerCase().includes(q) ||
+        o.bcn?.toLowerCase().includes(q) ||
+        o.opportunityNumber?.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+  }, [opportunities, q]);
+
   const paletteShortcuts = shortcuts.filter(
     (s) => s.id !== 'command-palette' && s.id !== 'close' && s.section !== 'List Navigation'
   );
@@ -135,7 +159,7 @@ export function CommandPalette() {
     }))
     .filter((g) => g.items.length > 0);
 
-  const hasSearchResults = matchedCustomers.length > 0 || matchedContacts.length > 0;
+  const hasSearchResults = matchedCustomers.length > 0 || matchedContacts.length > 0 || matchedOpportunities.length > 0;
 
   return (
     <CommandDialog
@@ -146,7 +170,7 @@ export function CommandPalette() {
       }}
     >
       <CommandInput
-        placeholder="Search customers, contacts, or type a command…"
+        placeholder="Search customers, contacts, deals, or type a command…"
         value={query}
         onValueChange={setQuery}
       />
@@ -158,7 +182,7 @@ export function CommandPalette() {
             {matchedCustomers.map((c) => (
               <CommandItem
                 key={`customer-${c.id}`}
-                value={`customer-${c.id}-${c.name}`}
+                value={[`customer-${c.id}`, c.name, c.bcn, c.accountNumber, c.addressCity].filter(Boolean).join(' ')}
                 onSelect={() => {
                   setOpen(false);
                   setQuery('');
@@ -182,7 +206,7 @@ export function CommandPalette() {
               return (
                 <CommandItem
                   key={`contact-${c.id}`}
-                  value={`contact-${c.id}-${c.firstName}-${c.lastName}`}
+                  value={[`contact-${c.id}`, c.firstName, c.lastName, c.email, c.jobTitle].filter(Boolean).join(' ')}
                   onSelect={() => {
                     setOpen(false);
                     setQuery('');
@@ -197,6 +221,27 @@ export function CommandPalette() {
                 </CommandItem>
               );
             })}
+          </CommandGroup>
+        )}
+
+        {matchedOpportunities.length > 0 && (
+          <CommandGroup heading="Opportunities">
+            {matchedOpportunities.map((o) => (
+              <CommandItem
+                key={`opportunity-${o.id}`}
+                value={[`opportunity-${o.id}`, o.subject, o.bcn, o.opportunityNumber].filter(Boolean).join(' ')}
+                onSelect={() => {
+                  setOpen(false);
+                  setQuery('');
+                  setSelectedOpportunity(o.id);
+                  router.push('/opportunities');
+                }}
+              >
+                <Target className="mr-2 h-4 w-4 opacity-60" />
+                <span className="flex-1">{o.subject}</span>
+                {o.bcn && <span className="text-xs text-muted-foreground ml-2">BCN {o.bcn}</span>}
+              </CommandItem>
+            ))}
           </CommandGroup>
         )}
 

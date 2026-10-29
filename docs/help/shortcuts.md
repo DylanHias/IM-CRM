@@ -6,6 +6,8 @@ Ingram Micro CRM has keyboard shortcuts for common actions so you can work faste
 
 Press **Ctrl+K** (or **Cmd+K** on Mac) to open the Command Palette. This is a quick search bar where you can type any action or page name to jump to it instantly. Use the arrow keys to navigate results and Enter to select.
 
+You can also search your data from here: type a customer name, BCN, account number, city, a contact name or email, or a deal name, BCN or opportunity number, and jump straight to the record.
+
 ## Customizing Shortcuts
 
 You can remap any shortcut in **Settings > Keybindings**:

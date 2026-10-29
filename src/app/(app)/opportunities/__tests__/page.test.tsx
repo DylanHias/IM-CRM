@@ -65,6 +65,20 @@ describe('Pipeline page', () => {
     expect(await screen.findByRole('listbox', { name: 'Opportunities' })).toBeInTheDocument();
   });
 
+  it('opens the edit wizard from the detail view', async () => {
+    await renderSeeded();
+    fireEvent.click(await screen.findByRole('option', { name: /Cloud consolidation/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Edit$/ }));
+    expect(await screen.findByRole('dialog', { name: 'Edit Opportunity' })).toBeInTheDocument();
+  });
+
+  it('opens the close dialog from the detail view', async () => {
+    await renderSeeded();
+    fireEvent.click(await screen.findByRole('option', { name: /Cloud consolidation/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Won$/ }));
+    expect(await screen.findByRole('dialog', { name: /Won/ })).toBeInTheDocument();
+  });
+
   it('selects another deal on click', async () => {
     await renderSeeded();
     fireEvent.click(await screen.findByRole('option', { name: /Azure migration/ }));
