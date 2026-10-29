@@ -1,56 +1,68 @@
 # Reports
 
-**Reports** in the sidebar brings revenue, pipeline, customer and personal numbers together on one page. Switch between four tabs at the top: **Revenue**, **Pipeline**, **Customers** and **My activity**. The Pipeline, Customers and My activity tabs are explained on the **Report tabs** help page.
+**Reports** in the sidebar answers four questions about your business, one per tab: how revenue is moving, what is in the pipeline, how your accounts are doing, and how much work you have put in.
 
-## Revenue tab
+Two controls at the top apply to every tab.
 
-The toolbar on this tab has:
+- **Mine / Team** — whose figures you are looking at. **Mine** is your own accounts and your own deals; **Team** is the whole Cloud Belux team, which you can narrow to Belgium, the Netherlands or Luxembourg.
+- **Period** — the last 3, 6 or 12 months, or a complete calendar quarter inside the last 12 months.
 
-- **Region** — All Benelux, Belgium, Netherlands or Luxembourg
-- **Period** — 6M, 12M, 18M or 24M for the charts
-- **Updated …** — when revenue was last refreshed from Power BI, with a **Refresh** button
+Every figure comes from data already on your device, so Reports works offline. Refresh it with a sync.
 
-The tab shows:
+## Growth
 
-- **Key figures** — Total ARR, active customers, average ARR and how many customers have live Power BI numbers
-- **Resellers and seats** — active resellers and seats, and how they grew
-- **ARR trend** — month-end ARR over the selected period
-- **Net sales by vendor** — monthly net sales per vendor
-- **All customers** — the ARR table described below
+Where revenue went this period.
 
-## All customers
+- **ARR today** — what your accounts bring in right now, with how many accounts have no matching revenue record
+- **Net ARR movement** — new sales and upgrades less downgrades and cancellations
+- **New opportunities** and **Won** — what you created and what you closed in the period
+- Charts for where the revenue moved, which accounts grew or shrank, opportunities created per month, and won against lost with the win rate on top
 
-The table shows, per customer:
+## Pipeline
 
-- **Customer name**
-- **Contact** — The most recent contact person
-- **Phone** and **Email** — Quick contact details
-- **Cloud Customer** — Whether the customer is a cloud customer (Yes/No)
-- **ARR** — The Annual Recurring Revenue amount. Live Power BI numbers are used where available, otherwise the value from Dynamics 365.
+What is open right now.
 
-### Searching and Filtering
+- **Open pipeline** — the value and number of open deals
+- **Weighted forecast** — the same deals with each one's stage probability applied
+- **Average deal size** and **Win rate**
+- Charts for the pipeline by stage, by vendor and by sell type, what is expected to close per month, and the deals whose account has heard nothing from you for 30 days or more
 
-Use **Search by name…** in the table header to find customers by name. Click **Filters** to filter by:
+Deals whose expected close date has already passed get their own **Overdue** bar instead of being buried in a past month, and deals with no close date at all are counted underneath the chart rather than dropped.
 
-- **Country** and **City**
-- **Cloud customer** — Yes, No, or All
-- **ARR source** — Live (Power BI) or Synced (D365)
-- **ARR min / max** — a revenue range
+## Accounts
 
-Active filters appear as small labels above the table. Click one to remove it, or **Clear all** to reset.
+Who you look after.
 
-### Sorting
+- **Accounts with ARR** out of the accounts in scope
+- **Top-10 concentration** — how much of the revenue sits with the ten biggest
+- **No open opportunity** — accounts with nothing in the pipeline, which is where there is room to work
+- **Not contacted in 90 days**, counting accounts you have never contacted separately
+- Accounts ranked by revenue, with open deals and last contact on the same line, and revenue split by segment, industry or country
 
-Use the sort button next to the search box, or click a column header, to sort by **ARR** (highest first by default), **Name** or **Cloud**.
+## Activity
 
-### Choosing Columns
+How much work went in.
 
-Click the **column picker** button to choose which columns are visible. Your selection is saved for future sessions.
+- **Activities logged**, compared with the window of the same length just before
+- **Accounts touched** out of the accounts in scope
+- **Follow-ups completed** out of those due or completed in the period
+- **Activities per won deal**
+- Activity over time split by type, and accounts grouped by how long ago you last spoke to them
 
-### Exporting to Excel
+## What the numbers mean
 
-Click **Export to Excel** to download the current view as an Excel file (.xlsx). The export respects your active filters and column selection, so what you see is what you get in the export.
+**Revenue and pipeline are not subsets of one another.** Revenue figures cover every account in the region, whether or not anyone on the team owns them. Pipeline, won and lost, and activity cover only deals and activities belonging to team members whose records are synced. An account can carry revenue with no deal behind it, and a deal can sit on an account with no revenue yet.
 
-### Pages
+**Under Mine, ownership is read differently per figure.** Revenue and account figures follow who owns the account. Deal figures follow who owns the opportunity. Activity figures follow who logged the activity. An account counts as contacted when *anyone* has logged something against it — coverage asks whether the account has been looked after, not by whom.
 
-Use the controls under the table to move between pages and choose how many rows to show: 10, 25, 50, or 100.
+**Nothing goes back further than 12 months.** That is as far as the revenue data reaches, so no longer period is offered.
+
+**The current month is left out** of every trend and every period total. It is not finished yet, and including it makes the last point on every chart look like a collapse.
+
+**Money is counted in euros only.** Deals in another currency are counted and reported as excluded rather than converted, because no exchange rate is available in the app.
+
+**Snapshot figures ignore the period.** Open pipeline, account counts, coverage and revenue today are all point-in-time and say so on the tile. Filtering them by a period would change what they mean.
+
+**Stage conversion and deal velocity are not shown.** Opportunities carry no stage history, so there is no record of when a deal entered or left a stage. Any conversion rate or average days-in-stage figure would have to be guessed, and a guessed figure on a report is worse than no figure.
+
+**A missing figure never reads as zero.** Where something cannot be computed — no deals closed, no revenue match, no value entered on a deal — the tile says so in words instead of showing 0.

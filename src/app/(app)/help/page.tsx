@@ -13,7 +13,6 @@ import {
   RefreshCw,
   Settings2,
   Keyboard,
-  LineChart,
   CalendarClock,
   LayoutDashboard,
 } from 'lucide-react';
@@ -30,7 +29,6 @@ import followUps from '../../../../docs/help/follow-ups.md';
 import contacts from '../../../../docs/help/contacts.md';
 import opportunities from '../../../../docs/help/opportunities.md';
 import revenueOverview from '../../../../docs/help/revenue-overview.md';
-import analytics from '../../../../docs/help/analytics.md';
 import sync from '../../../../docs/help/sync.md';
 import settings from '../../../../docs/help/settings.md';
 import timeline from '../../../../docs/help/timeline.md';
@@ -46,7 +44,6 @@ const TABS = [
   { id: 'activities', label: 'Activities', icon: Calendar },
   { id: 'follow-ups', label: 'Follow-Ups', icon: CheckSquare },
   { id: 'contacts', label: 'Contacts', icon: Contact },
-  { id: 'analytics', label: 'Report tabs', icon: LineChart },
   { id: 'sync', label: 'Sync', icon: RefreshCw },
   { id: 'settings', label: 'Settings', icon: Settings2 },
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
@@ -63,7 +60,6 @@ const CONTENT: Record<TabId, string> = {
   contacts,
   opportunities,
   'revenue-overview': revenueOverview,
-  analytics,
   sync,
   settings,
   timeline,

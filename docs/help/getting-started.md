@@ -24,7 +24,7 @@ The **sidebar** on the left is your main navigation. At the top, the **New** but
 
 - **Customers** — Your full customer list
 - **Pipeline** — All your opportunities, as a list or a board
-- **Reports** — Revenue, pipeline, customer and personal numbers in one place
+- **Reports** — Four tabs answering how revenue moved, what is in the pipeline, how your accounts are doing and how much work went in. Switch between your own figures and the team's, and pick a period of up to 12 months.
 - **Activity** — A timeline of all activities, follow-ups and opportunities across every customer, plus Your Follow-Ups
 
 You can collapse the sidebar by clicking the collapse button at the bottom to save screen space. The sidebar will show only icons in collapsed mode.
