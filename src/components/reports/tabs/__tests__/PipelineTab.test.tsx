@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import type { BreakdownRow, Forecast, Money, QuietDeal } from '@/types/reports';
@@ -108,6 +108,21 @@ describe('PipelineTab', () => {
     await show(base());
     expect(screen.queryByText(/conversion/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/velocity|days in stage/i)).not.toBeInTheDocument();
+  });
+
+  it('names each stage and its value as readable text, not only as a chart axis', async () => {
+    await show(base());
+    const stages = within(screen.getByRole('list', { name: 'Pipeline by stage' }));
+    expect(stages.getByText('Qualified')).toBeInTheDocument();
+    expect(stages.getByText('€500K')).toBeInTheDocument();
+  });
+
+  it('switches the breakdown between vendor and sell type', async () => {
+    await show(base());
+    const breakdown = () => within(screen.getByRole('list', { name: 'Pipeline by vendor' }));
+    expect(breakdown().getByText('AWS')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sell type' }));
+    expect(within(screen.getByRole('list', { name: 'Pipeline by sell type' })).getByText('Renewal')).toBeInTheDocument();
   });
 
   it('shows the four pipeline tiles', async () => {

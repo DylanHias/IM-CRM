@@ -6,6 +6,7 @@ import { ReportsShell } from '../ReportsShell';
 
 vi.mock('@/components/reports/tabs/GrowthTab', () => ({ GrowthTab: () => <div>Growth tab</div> }));
 vi.mock('@/components/reports/tabs/PipelineTab', () => ({ PipelineTab: () => <div>Pipeline tab</div> }));
+vi.mock('@/components/reports/tabs/AccountsTab', () => ({ AccountsTab: () => <div>Accounts tab</div> }));
 
 let search = '';
 vi.mock('next/navigation', () => ({

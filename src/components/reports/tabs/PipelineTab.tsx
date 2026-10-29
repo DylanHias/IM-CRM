@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { CompactPager } from '@/components/ui/compact-pager';
 import { Segmented } from '@/components/ui/segmented';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { BarRows } from '@/components/reports/BarRows';
 import { ReportTile } from '@/components/reports/ReportTile';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import { usePagedRows } from '@/hooks/usePagedRows';
@@ -115,22 +116,14 @@ function ChartBox({ children }: { children: ReactNode }) {
   return <div className="min-h-[170px] min-w-0 p-2 lg:min-h-0">{children}</div>;
 }
 
-/** Horizontal bars, so long vendor and stage names stay readable. */
-function BreakdownChart({ rows }: { rows: BreakdownRow[] }) {
+/** Horizontal bars as plain rows, so long vendor and stage names stay readable at any panel height. */
+function Breakdown({ rows, label }: { rows: BreakdownRow[]; label: string }) {
   return (
-    <ChartBox>
-      <ChartContainer config={valueConfig} className="aspect-auto h-full w-full">
-        <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid horizontal={false} />
-          <XAxis type="number" tickLine={false} axisLine={false} tickFormatter={(v) => fmtEur(Number(v))} />
-          <YAxis type="category" dataKey="label" tickLine={false} axisLine={false} width={96} />
-          <ChartTooltip
-            content={<ChartTooltipContent hideLabel formatter={(_v, _n, item) => `${item.payload.label}: ${fmtEur(item.payload.value)} · ${plural(item.payload.count, 'deal', 'deals')}`} />}
-          />
-          <Bar dataKey="value" fill="var(--color-value)" radius={[0, 3, 3, 0]} />
-        </BarChart>
-      </ChartContainer>
-    </ChartBox>
+    <BarRows
+      label={label}
+      format={fmtEur}
+      rows={rows.map((r) => ({ label: r.label, value: r.value, sub: plural(r.count, 'deal', 'deals') }))}
+    />
   );
 }
 
@@ -202,7 +195,7 @@ export function PipelineTab({ filters }: Props) {
       <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
         <Panel className={panel}>
           <PanelHeader title="Pipeline by stage" sub={anyOpen ? `${plural(open.count, 'deal', 'deals')} · ${fmtEur(open.value)}` : undefined} />
-          {stageRows.length === 0 ? <EmptyState title={empty} className="self-center" /> : <BreakdownChart rows={stageRows} />}
+          {stageRows.length === 0 ? <EmptyState title={empty} className="self-center" /> : <Breakdown rows={stageRows} label="Pipeline by stage" />}
           <span />
         </Panel>
 
@@ -246,7 +239,7 @@ export function PipelineTab({ filters }: Props) {
               ]}
             />
           </PanelHeader>
-          {dimensionRows.length === 0 ? <EmptyState title={empty} className="self-center" /> : <BreakdownChart rows={dimensionRows} />}
+          {dimensionRows.length === 0 ? <EmptyState title={empty} className="self-center" /> : <Breakdown rows={dimensionRows} label={dimension === 'vendor' ? 'Pipeline by vendor' : 'Pipeline by sell type'} />}
           <span />
         </Panel>
 

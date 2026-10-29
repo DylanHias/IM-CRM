@@ -8,6 +8,7 @@ import { Panel } from '@/components/ui/panel';
 import { ReportControls, type ReportFilters } from '@/components/reports/ReportControls';
 import { GrowthTab } from '@/components/reports/tabs/GrowthTab';
 import { PipelineTab } from '@/components/reports/tabs/PipelineTab';
+import { AccountsTab } from '@/components/reports/tabs/AccountsTab';
 
 type ReportTab = 'growth' | 'pipeline' | 'accounts' | 'activity';
 
@@ -22,7 +23,7 @@ interface TabProps {
   filters: ReportFilters;
 }
 
-// ponytail: placeholders; Tasks 11-12 each replace one with its real tab taking the same props.
+// ponytail: placeholder; Task 12 replaces it with the real Activity tab taking the same props.
 function Placeholder({ label }: TabProps & { label: string }) {
   return (
     <Panel className="grid lg:min-h-0 lg:flex-1 place-items-center">
@@ -34,7 +35,7 @@ function Placeholder({ label }: TabProps & { label: string }) {
 const TAB_PANELS: Record<ReportTab, (p: TabProps) => ReactNode> = {
   growth: (p) => <GrowthTab {...p} />,
   pipeline: (p) => <PipelineTab {...p} />,
-  accounts: (p) => <Placeholder label="Accounts" {...p} />,
+  accounts: (p) => <AccountsTab {...p} />,
   activity: (p) => <Placeholder label="Activity" {...p} />,
 };
 
