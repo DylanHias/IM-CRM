@@ -25,5 +25,7 @@ describe('Help page', () => {
     expect(screen.getByText(/whose figures you are looking at/i)).toBeInTheDocument();
     expect(screen.getByText(/Nothing goes back further than 12 months/i)).toBeInTheDocument();
     expect(screen.getByText(/Stage conversion and deal velocity are not shown/i)).toBeInTheDocument();
+    expect(screen.getByText(/every account in Benelux, not only the ones your team owns/i)).toBeInTheDocument();
+    expect(screen.getByText(/Win rate is by value/i)).toBeInTheDocument();
   });
 });

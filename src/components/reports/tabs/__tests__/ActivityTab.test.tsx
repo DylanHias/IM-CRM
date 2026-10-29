@@ -18,8 +18,11 @@ vi.mock('@/lib/db/queries/reports/activity', () => ({
   queryActivitiesPerWonDeal: q.queryActivitiesPerWonDeal,
 }));
 vi.mock('@/lib/db/queries/reports/accounts', () => ({ queryCoverageBuckets: q.queryCoverageBuckets }));
-vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
-vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: 'd1' }) }));
+const scopeIds = vi.hoisted(() => ({ d365: 'd1' as string | null, msal: 'u1' as string | null }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: scopeIds.msal ? { localAccountId: scopeIds.msal } : null }),
+}));
+vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: scopeIds.d365 }) }));
 
 class RO { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', RO);
@@ -100,7 +103,7 @@ describe('ActivityTab', () => {
 
   it('buckets accounts by last contact with never-contacted separate', async () => {
     await show(base());
-    for (const b of ['0–30', '30–60', '60–90', '90+', 'Never']) expect(screen.getByText(b)).toBeInTheDocument();
+    for (const b of ['0–30', '31–60', '61–90', '90+', 'Never']) expect(screen.getByText(b)).toBeInTheDocument();
   });
 
   it('names the user as the population under Mine, never the team', async () => {
@@ -115,6 +118,30 @@ describe('ActivityTab', () => {
     await show(d);
     expect(screen.getByText(/nothing logged in this period/i)).toBeInTheDocument();
     expect(within(tile('Activities logged')).getByText(/nothing logged/i)).toBeInTheDocument();
+  });
+
+  it('says the coverage breakdown is point-in-time, since the period does not reach it', async () => {
+    await show(base());
+    expect(screen.getByText(/days since last contact · point in time/i)).toBeInTheDocument();
+  });
+
+  it('says there are no accounts rather than drawing five zero bars', async () => {
+    const d = base();
+    d.coverage = d.coverage.map((b) => ({ ...b, count: 0 }));
+    await show(d);
+    expect(screen.getByText(/no accounts in this scope/i)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Coverage' })).not.toBeInTheDocument();
+  });
+
+  it('waits rather than reporting no activity before the user id resolves', async () => {
+    load(base());
+    scopeIds.d365 = null;
+    scopeIds.msal = null;
+    render(<ActivityTab filters={{ ...team, scope: 'mine' }} />);
+    expect(await screen.findByText(/Loading activity figures/i)).toBeInTheDocument();
+    expect(screen.queryByText('Nothing logged')).not.toBeInTheDocument();
+    scopeIds.d365 = 'd1';
+    scopeIds.msal = 'u1';
   });
 
   it('shows a dash rather than 0 of 0 when no follow-up was due', async () => {

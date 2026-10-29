@@ -10,16 +10,14 @@ import { BarRows } from '@/components/reports/BarRows';
 import { ReportTile } from '@/components/reports/ReportTile';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import { usePagedRows } from '@/hooks/usePagedRows';
-import { useAuthStore } from '@/store/authStore';
-import { useSyncStore } from '@/store/syncStore';
+import { useReportScope } from '@/hooks/useReportScope';
 import {
   queryAccountSummary,
   queryAccountsRanked,
   queryArrByDimension,
   queryTopConcentration,
 } from '@/lib/db/queries/reports/accounts';
-import { periodKey } from '@/lib/reports/period';
-import type { ReportScope } from '@/lib/reports/scope';
+import { topDimensionsWithOther } from '@/lib/reports/pipelineShape';
 import { formatEurCompact } from '@/lib/utils/currencyUtils';
 import type { Region } from '@/lib/revenue/region';
 import type { AccountSummary, DimensionRow, RankedAccount } from '@/types/reports';
@@ -31,7 +29,7 @@ interface Data {
   summary: AccountSummary;
   concentration: number | null;
   ranked: RankedAccount[];
-  dimension: DimensionRow[];
+  byDimension: Record<Dimension, DimensionRow[]>;
 }
 
 interface Props {
@@ -42,6 +40,7 @@ const RANKED_LIMIT = 200;
 const RANKED_ROW_HEIGHT = 44;
 const DIMENSION_ROWS = 8;
 const TOP_N = 10;
+const SNAPSHOT = 'point in time';
 const ACCOUNTS: Record<Region, string> = {
   BENELUX: 'all Benelux accounts',
   BE: 'Belgian accounts',
@@ -54,45 +53,27 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const contactLabel = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : 'never contacted';
 
-/** Largest `max` groups; everything below folds into one "Other" row so the bars still add up to scope ARR. */
-function topDimensionsWithOther(rows: DimensionRow[], max: number): DimensionRow[] {
-  if (rows.length <= max) return rows;
-  const sorted = [...rows].sort((a, b) => b.arr - a.arr);
-  const tail = sorted.slice(max - 1);
-  return [
-    ...sorted.slice(0, max - 1),
-    {
-      label: 'Other',
-      arr: tail.reduce((t, r) => t + r.arr, 0),
-      accounts: tail.reduce((t, r) => t + r.accounts, 0),
-      matched: tail.reduce((t, r) => t + r.matched, 0),
-    },
-  ];
-}
-
-function useAccountsData({ scope, region, period }: ReportFilters, dimension: Dimension) {
-  const account = useAuthStore((s) => s.account);
-  const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+function useAccountsData(filters: ReportFilters) {
+  const { scope, key } = useReportScope(filters);
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
-  const key = `${scope}|${region}|${periodKey(period)}|${dimension}`;
 
   useEffect(() => {
-    const userId = callerD365UserId ?? account?.localAccountId ?? null;
-    const alt = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
-    const reportScope: ReportScope =
-      scope === 'mine' ? { kind: 'mine', userIds: [userId, alt].filter((v): v is string => Boolean(v)) } : { kind: 'team', region };
+    if (!scope) return;
     let stale = false;
     const load = async () => {
       setFailed(false);
       try {
-        const [summary, concentration, ranked, dim] = await Promise.all([
-          queryAccountSummary(reportScope),
-          queryTopConcentration(reportScope, TOP_N),
-          queryAccountsRanked(reportScope, RANKED_LIMIT, 0),
-          queryArrByDimension(reportScope, dimension),
+        // All three dimensions up front: the switch is a view of data already in hand, not a reload.
+        const [summary, concentration, ranked, segment, industry, country] = await Promise.all([
+          queryAccountSummary(scope),
+          queryTopConcentration(scope, TOP_N),
+          queryAccountsRanked(scope, RANKED_LIMIT, 0),
+          queryArrByDimension(scope, 'segment'),
+          queryArrByDimension(scope, 'industry'),
+          queryArrByDimension(scope, 'country'),
         ]);
-        if (!stale) setData({ key, summary, concentration, ranked, dimension: dim });
+        if (!stale) setData({ key, summary, concentration, ranked, byDimension: { segment, industry, country } });
       } catch (err) {
         console.error('[customer] Accounts tab failed to load:', err);
         if (!stale) setFailed(true);
@@ -102,9 +83,9 @@ function useAccountsData({ scope, region, period }: ReportFilters, dimension: Di
     return () => {
       stale = true;
     };
-    // key stands in for scope, region, period and dimension so a re-created but equal period does not reload.
+    // key stands in for the scope; none of these queries takes a period.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, account?.localAccountId, callerD365UserId]);
+  }, [key]);
 
   return { data: data?.key === key ? data : null, failed };
 }
@@ -115,9 +96,9 @@ function Note({ children }: { children: string }) {
 
 export function AccountsTab({ filters }: Props) {
   const [dimension, setDimension] = useState<Dimension>('segment');
-  const { data, failed } = useAccountsData(filters, dimension);
+  const { data, failed } = useAccountsData(filters);
   const ranked = usePagedRows(data?.ranked ?? [], RANKED_ROW_HEIGHT);
-  const dimensionRows = useMemo(() => topDimensionsWithOther(data?.dimension ?? [], DIMENSION_ROWS), [data?.dimension]);
+  const dimensionRows = useMemo(() => topDimensionsWithOther(data?.byDimension[dimension] ?? [], DIMENSION_ROWS), [data?.byDimension, dimension]);
 
   if (failed || !data) {
     return (
@@ -133,7 +114,7 @@ export function AccountsTab({ filters }: Props) {
 
   const { summary, concentration } = data;
   const accounts = filters.scope === 'mine' ? 'your accounts' : ACCOUNTS[filters.region];
-  const caption = `${accounts} · point in time`;
+  const caption = `${accounts} · ${SNAPSHOT}`;
   const empty = 'No accounts in this scope';
   const anyAccounts = summary.total > 0;
   const unmatchedInDimension = dimensionRows.reduce((t, r) => t + (r.accounts - r.matched), 0);
@@ -150,15 +131,15 @@ export function AccountsTab({ filters }: Props) {
         {concentration === null ? (
           <ReportTile label="Top-10 concentration" empty="No ARR in scope" caption={caption} />
         ) : (
-          <ReportTile label="Top-10 concentration" value={`${Math.round(concentration)}%`} caption={`${accounts} · share held by the 10 largest`} />
+          <ReportTile label="Top-10 concentration" value={`${Math.round(concentration)}%`} caption={`share held by the 10 largest · ${SNAPSHOT}`} />
         )}
         {anyAccounts ? (
-          <ReportTile label="No open opportunity" value={`${summary.noOpenOpp}`} caption={caption} />
+          <ReportTile label="No open opportunity" value={`${summary.noOpenOpp}`} caption={`${caption} · open deals are the synced team’s only`} />
         ) : (
           <ReportTile label="No open opportunity" empty="No accounts in scope" caption={caption} />
         )}
         {anyAccounts ? (
-          <ReportTile label="Not contacted in 90 days" value={`${summary.notContacted90d}`} caption={`${accounts} · ${plural(summary.neverContacted, 'never contacted', 'never contacted')}`} />
+          <ReportTile label="Not contacted in 90 days" value={`${summary.notContacted90d}`} caption={`${caption} · ${summary.neverContacted} never contacted`} />
         ) : (
           <ReportTile label="Not contacted in 90 days" empty="No accounts in scope" caption={caption} />
         )}
@@ -186,7 +167,12 @@ export function AccountsTab({ filters }: Props) {
               ))}
             </ul>
           )}
-          <CompactPager page={ranked.page} pageSize={ranked.pageSize} total={data.ranked.length} onPageChange={ranked.setPage} />
+          <div>
+            {data.ranked.length < summary.total && (
+              <Note>{`Showing the top ${data.ranked.length} of ${summary.total} accounts by revenue.`}</Note>
+            )}
+            <CompactPager page={ranked.page} pageSize={ranked.pageSize} total={data.ranked.length} onPageChange={ranked.setPage} />
+          </div>
         </Panel>
 
         <Panel className={panel}>
@@ -206,7 +192,7 @@ export function AccountsTab({ filters }: Props) {
             <EmptyState title={empty} className="self-center" />
           ) : (
             <BarRows
-              label="ARR by dimension"
+              label={`ARR by ${dimension}`}
               format={fmtEur}
               rows={dimensionRows.map((r) => ({ label: r.label, value: r.arr, sub: plural(r.accounts, 'account', 'accounts') }))}
             />

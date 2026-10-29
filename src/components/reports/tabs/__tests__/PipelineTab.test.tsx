@@ -14,8 +14,11 @@ const q = vi.hoisted(() => ({
   queryQuietDeals: vi.fn(),
 }));
 vi.mock('@/lib/db/queries/reports/deals', () => q);
-vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
-vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: 'd1' }) }));
+const scopeIds = vi.hoisted(() => ({ d365: 'd1' as string | null, msal: 'u1' as string | null }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: scopeIds.msal ? { localAccountId: scopeIds.msal } : null }),
+}));
+vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: scopeIds.d365 }) }));
 
 class RO { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', RO);
@@ -184,6 +187,43 @@ describe('PipelineTab', () => {
     await show(d);
     expect(within(tile('Open pipeline')).getByText(/no open deals/i)).toBeInTheDocument();
     expect(screen.getAllByText(/no open deals in this scope/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders a non-euro quiet deal in its own currency, never behind a euro sign', async () => {
+    const d = base();
+    d.quiet = [quietDeal({ value: 250_000, currency: 'USD' })];
+    await show(d);
+    const deal = screen.getByText('AWS resell lead').closest('li') as HTMLElement;
+    expect(within(deal).getByText(/\$250,000|USD 250,000/)).toBeInTheDocument();
+    expect(within(deal).queryByText(/€/)).not.toBeInTheDocument();
+  });
+
+  it('counts closed non-euro deals in the currency note, not only open ones', async () => {
+    const d = base();
+    d.closed = { won: money(3, 90_000), lost: money(1, 10_000, 2), winRatePct: 90 };
+    await show(d);
+    expect(screen.getByText(/2 deals in other currencies excluded/i)).toBeInTheDocument();
+  });
+
+  it('says the win rate is by value, so it cannot be mistaken for a count', async () => {
+    await show(base());
+    expect(within(tile('Win rate')).getByText(/by value/i)).toBeInTheDocument();
+  });
+
+  it('says the average covers open deals only', async () => {
+    await show(base());
+    expect(within(tile('Average deal size')).getByText(/open deals/i)).toBeInTheDocument();
+  });
+
+  it('waits rather than reporting an empty pipeline before the user id resolves', async () => {
+    load(base());
+    scopeIds.d365 = null;
+    scopeIds.msal = null;
+    render(<PipelineTab filters={{ ...team, scope: 'mine' }} />);
+    expect(await screen.findByText(/Loading pipeline figures/i)).toBeInTheDocument();
+    expect(screen.queryByText('No open deals')).not.toBeInTheDocument();
+    scopeIds.d365 = 'd1';
+    scopeIds.msal = 'u1';
   });
 
   it('labels the snapshot tiles as point-in-time', async () => {

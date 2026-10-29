@@ -4,7 +4,7 @@
 
 Two controls at the top apply to every tab.
 
-- **Mine / Team** — whose figures you are looking at. **Mine** is your own accounts and your own deals; **Team** is the whole Cloud Belux team, which you can narrow to Belgium, the Netherlands or Luxembourg.
+- **Mine / Team** — whose figures you are looking at. **Mine** is your own accounts and your own deals. **Team** is every account in Benelux, not only the ones your team owns, which you can narrow to Belgium, the Netherlands or Luxembourg — while deals and activity under Team can only ever be the synced Cloud Belux team's.
 - **Period** — the last 3, 6 or 12 months, or a complete calendar quarter inside the last 12 months.
 
 Every figure comes from data already on your device, so Reports works offline. Refresh it with a sync.
@@ -24,8 +24,9 @@ What is open right now.
 
 - **Open pipeline** — the value and number of open deals
 - **Weighted forecast** — the same deals with each one's stage probability applied
-- **Average deal size** and **Win rate**
-- Charts for the pipeline by stage, by vendor and by sell type, what is expected to close per month, and the deals whose account has heard nothing from you for 30 days or more
+- **Average deal size** — the open deals that carry a value, so it does not reconcile with the Won tile on Growth
+- **Win rate** — Win rate is by value, not by number of deals: euros won divided by euros won plus lost
+- Charts for the pipeline by stage, by vendor and by sell type, what is expected to close per month, and the deals whose account has heard nothing for more than 30 days, from anyone
 
 Deals whose expected close date has already passed get their own **Overdue** bar instead of being buried in a past month, and deals with no close date at all are counted underneath the chart rather than dropped.
 

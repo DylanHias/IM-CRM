@@ -9,8 +9,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { BarRows } from '@/components/reports/BarRows';
 import { ReportTile } from '@/components/reports/ReportTile';
 import type { ReportFilters } from '@/components/reports/ReportControls';
-import { useAuthStore } from '@/store/authStore';
-import { useSyncStore } from '@/store/syncStore';
+import { useReportScope } from '@/hooks/useReportScope';
 import {
   queryAccountsTouched,
   queryActivitiesPerWonDeal,
@@ -18,8 +17,6 @@ import {
   queryFollowUpCompletion,
 } from '@/lib/db/queries/reports/activity';
 import { queryCoverageBuckets } from '@/lib/db/queries/reports/accounts';
-import { periodKey } from '@/lib/reports/period';
-import type { ReportScope } from '@/lib/reports/scope';
 import type { Region } from '@/lib/revenue/region';
 import type { ActivityVolume, CoverageBucket } from '@/types/reports';
 
@@ -43,11 +40,11 @@ const ACCOUNTS: Record<Region, string> = {
   NL: 'Dutch accounts',
   LU: 'Luxembourg accounts',
 };
-// Bucket boundaries come from queryCoverageBuckets; these are the ranges the spec names.
+// These are queryCoverageBuckets' own boundaries: no day falls in two of them.
 const COVERAGE_LABEL: Record<CoverageBucket, string> = {
   '0-30': '0–30',
-  '31-60': '30–60',
-  '61-90': '60–90',
+  '31-60': '31–60',
+  '61-90': '61–90',
   '90+': '90+',
   never: 'Never',
 };
@@ -59,28 +56,24 @@ const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 // Enough hues for the activity types in use; anything beyond falls back to the last one.
 const TYPE_COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))'];
 
-function useActivityData({ scope, region, period }: ReportFilters) {
-  const account = useAuthStore((s) => s.account);
-  const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+function useActivityData(filters: ReportFilters) {
+  const { scope, key } = useReportScope(filters);
+  const { period } = filters;
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
-  const key = `${scope}|${region}|${periodKey(period)}`;
 
   useEffect(() => {
-    const userId = callerD365UserId ?? account?.localAccountId ?? null;
-    const alt = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
-    const reportScope: ReportScope =
-      scope === 'mine' ? { kind: 'mine', userIds: [userId, alt].filter((v): v is string => Boolean(v)) } : { kind: 'team', region };
+    if (!scope) return;
     let stale = false;
     const load = async () => {
       setFailed(false);
       try {
         const [volume, touched, followUps, perWon, coverage] = await Promise.all([
-          queryActivityVolume(reportScope, period),
-          queryAccountsTouched(reportScope, period),
-          queryFollowUpCompletion(reportScope, period),
-          queryActivitiesPerWonDeal(reportScope, period),
-          queryCoverageBuckets(reportScope),
+          queryActivityVolume(scope, period),
+          queryAccountsTouched(scope, period),
+          queryFollowUpCompletion(scope, period),
+          queryActivitiesPerWonDeal(scope, period),
+          queryCoverageBuckets(scope),
         ]);
         if (!stale) setData({ key, volume, touched, followUps, perWon, coverage });
       } catch (err) {
@@ -92,9 +85,9 @@ function useActivityData({ scope, region, period }: ReportFilters) {
     return () => {
       stale = true;
     };
-    // key stands in for scope, region and period so a re-created but equal period does not reload.
+    // key stands in for the scope and period so a re-created but equal period does not reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, account?.localAccountId, callerD365UserId]);
+  }, [key]);
 
   return { data: data?.key === key ? data : null, failed };
 }
@@ -194,8 +187,8 @@ export function ActivityTab({ filters }: Props) {
         </Panel>
 
         <Panel className={panel}>
-          <PanelHeader title="Coverage" sub="Accounts by days since last contact" />
-          {coverage.length === 0 ? (
+          <PanelHeader title="Coverage" sub="Accounts by days since last contact · point in time" />
+          {coverage.every((b) => b.count === 0) ? (
             <EmptyState title="No accounts in this scope" className="self-center" />
           ) : (
             <BarRows

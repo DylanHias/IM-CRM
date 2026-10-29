@@ -1,4 +1,6 @@
-import type { BreakdownRow, Forecast } from '@/types/reports';
+import type { BreakdownRow, DimensionRow, Forecast } from '@/types/reports';
+
+const OTHER = 'Other';
 
 const nextMonth = (m: string) => {
   const [y, mo] = m.split('-').map(Number);
@@ -21,16 +23,38 @@ export function forecastSeries(buckets: Forecast['buckets']) {
   return { overdue, months };
 }
 
-/** Largest `max` rows by value; the tail folds into one "Other" row so the bars still add up to the total. */
+/**
+ * Largest `max` rows by value; the tail folds into one "Other" row so the bars still add up to the
+ * total. A group genuinely labelled "Other" folds in with the tail — it is the same bucket, and two
+ * rows with one label would reconcile to nothing.
+ */
 export function topWithOther(rows: BreakdownRow[], max: number): BreakdownRow[] {
-  if (rows.length <= max) return rows;
-  const sorted = [...rows].sort((a, b) => b.value - a.value);
-  const tail = sorted.slice(max - 1);
+  const named = rows.filter((r) => r.label !== OTHER);
+  if (named.length === rows.length && rows.length <= max) return rows;
+  const sorted = [...named].sort((a, b) => b.value - a.value);
+  const tail = [...sorted.slice(max - 1), ...rows.filter((r) => r.label === OTHER)];
+  if (tail.length === 0) return sorted;
   const other: BreakdownRow = {
-    label: 'Other',
+    label: OTHER,
     value: tail.reduce((t, r) => t + r.value, 0),
     count: tail.reduce((t, r) => t + r.count, 0),
     excludedNonEur: tail.reduce((t, r) => t + r.excludedNonEur, 0),
+  };
+  return [...sorted.slice(0, max - 1), other];
+}
+
+/** The same roll-up for ARR-by-dimension rows, which carry account counts rather than deal money. */
+export function topDimensionsWithOther(rows: DimensionRow[], max: number): DimensionRow[] {
+  const named = rows.filter((r) => r.label !== OTHER);
+  if (named.length === rows.length && rows.length <= max) return rows;
+  const sorted = [...named].sort((a, b) => b.arr - a.arr);
+  const tail = [...sorted.slice(max - 1), ...rows.filter((r) => r.label === OTHER)];
+  if (tail.length === 0) return sorted;
+  const other: DimensionRow = {
+    label: OTHER,
+    arr: tail.reduce((t, r) => t + r.arr, 0),
+    accounts: tail.reduce((t, r) => t + r.accounts, 0),
+    matched: tail.reduce((t, r) => t + r.matched, 0),
   };
   return [...sorted.slice(0, max - 1), other];
 }

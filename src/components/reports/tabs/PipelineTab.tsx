@@ -12,8 +12,7 @@ import { BarRows } from '@/components/reports/BarRows';
 import { ReportTile } from '@/components/reports/ReportTile';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import { usePagedRows } from '@/hooks/usePagedRows';
-import { useAuthStore } from '@/store/authStore';
-import { useSyncStore } from '@/store/syncStore';
+import { useReportScope } from '@/hooks/useReportScope';
 import {
   queryAvgDealSize,
   queryClosedDeals,
@@ -24,9 +23,7 @@ import {
   queryQuietDeals,
 } from '@/lib/db/queries/reports/deals';
 import { forecastSeries, topWithOther } from '@/lib/reports/pipelineShape';
-import { periodKey } from '@/lib/reports/period';
-import type { ReportScope } from '@/lib/reports/scope';
-import { formatEurCompact } from '@/lib/utils/currencyUtils';
+import { formatCurrency, formatEurCompact } from '@/lib/utils/currencyUtils';
 import type { BreakdownRow, Forecast, Money, QuietDeal } from '@/types/reports';
 
 type Closed = Awaited<ReturnType<typeof queryClosedDeals>>;
@@ -65,31 +62,27 @@ const WARNING = 'hsl(var(--warning))';
 
 const valueConfig = { value: { label: 'Open pipeline', color: PRIMARY } } satisfies ChartConfig;
 
-function usePipelineData({ scope, region, period }: ReportFilters) {
-  const account = useAuthStore((s) => s.account);
-  const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+function usePipelineData(filters: ReportFilters) {
+  const { scope, key } = useReportScope(filters);
+  const { period } = filters;
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
-  const key = `${scope}|${region}|${periodKey(period)}`;
 
   useEffect(() => {
-    const userId = callerD365UserId ?? account?.localAccountId ?? null;
-    const alt = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
-    const reportScope: ReportScope =
-      scope === 'mine' ? { kind: 'mine', userIds: [userId, alt].filter((v): v is string => Boolean(v)) } : { kind: 'team', region };
+    if (!scope) return;
     let stale = false;
     const load = async () => {
       setFailed(false);
       try {
         const [open, avg, closed, byStage, byVendor, bySellType, forecast, quiet] = await Promise.all([
-          queryOpenPipeline(reportScope),
-          queryAvgDealSize(reportScope),
-          queryClosedDeals(reportScope, period),
-          queryPipelineByStage(reportScope),
-          queryPipelineByDimension(reportScope, 'vendor'),
-          queryPipelineByDimension(reportScope, 'sellType'),
-          queryForecastByMonth(reportScope),
-          queryQuietDeals(reportScope, QUIET_DAYS, QUIET_LIMIT),
+          queryOpenPipeline(scope),
+          queryAvgDealSize(scope),
+          queryClosedDeals(scope, period),
+          queryPipelineByStage(scope),
+          queryPipelineByDimension(scope, 'vendor'),
+          queryPipelineByDimension(scope, 'sellType'),
+          queryForecastByMonth(scope),
+          queryQuietDeals(scope, QUIET_DAYS, QUIET_LIMIT),
         ]);
         if (!stale) setData({ key, open, avg, closed, byStage, byVendor, bySellType, forecast, quiet });
       } catch (err) {
@@ -101,9 +94,9 @@ function usePipelineData({ scope, region, period }: ReportFilters) {
     return () => {
       stale = true;
     };
-    // key stands in for scope, region and period so a re-created but equal period does not reload.
+    // key stands in for the scope and period so a re-created but equal period does not reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, account?.localAccountId, callerD365UserId]);
+  }, [key]);
 
   return { data: data?.key === key ? data : null, failed };
 }
@@ -155,6 +148,7 @@ export function PipelineTab({ filters }: Props) {
   const deals = filters.scope === 'mine' ? 'your deals' : TEAM_CAPTION;
   const anyOpen = open.count > 0;
   const empty = 'No open deals in this scope';
+  const excludedNonEur = open.excludedNonEur + closed.won.excludedNonEur + closed.lost.excludedNonEur;
   const panel = 'grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]';
   const forecastBars = [
     ...(forecast.overdue === null ? [] : [{ label: 'Overdue', value: forecast.overdue, overdue: true }]),
@@ -175,20 +169,20 @@ export function PipelineTab({ filters }: Props) {
           <ReportTile label="Weighted forecast" empty="No open deals" caption={`stage-weighted · ${SNAPSHOT}`} />
         )}
         {avg === null ? (
-          <ReportTile label="Average deal size" empty="No deal value recorded" caption={`${deals} · ${SNAPSHOT}`} />
+          <ReportTile label="Average deal size" empty="No deal value recorded" caption={`open deals · ${SNAPSHOT}`} />
         ) : (
-          <ReportTile label="Average deal size" value={fmtEur(avg)} caption={`${deals} · ${SNAPSHOT}`} />
+          <ReportTile label="Average deal size" value={fmtEur(avg)} caption={`open deals · ${SNAPSHOT}`} />
         )}
         {closed.winRatePct === null ? (
-          <ReportTile label="Win rate" empty="None closed" caption={`${deals} · this period`} />
+          <ReportTile label="Win rate" empty="None closed" caption={`${deals} · by value · this period`} />
         ) : (
-          <ReportTile label="Win rate" value={`${Math.round(closed.winRatePct)}%`} caption={`${deals} · this period`} />
+          <ReportTile label="Win rate" value={`${Math.round(closed.winRatePct)}%`} caption={`${deals} · by value · this period`} />
         )}
       </MetricStrip>
 
-      {open.excludedNonEur > 0 && (
+      {excludedNonEur > 0 && (
         <p className="text-xs text-muted-foreground">
-          {plural(open.excludedNonEur, 'deal', 'deals')} in other currencies excluded from every figure on this tab (no exchange rate available).
+          {plural(excludedNonEur, 'deal', 'deals')} in other currencies excluded from the money figures above (no exchange rate available). Deals going quiet lists every open deal, whatever its currency.
         </p>
       )}
 
@@ -255,7 +249,7 @@ export function PipelineTab({ filters }: Props) {
                     <div className="truncate text-[12.5px] font-medium">{d.subject}</div>
                     <div className="truncate text-[11.5px] text-muted-foreground">{`${d.customerName} · ${d.stage}`}</div>
                   </div>
-                  <span className="whitespace-nowrap text-[12.5px] font-semibold tabular-nums">{d.value === null ? '—' : fmtEur(d.value)}</span>
+                  <span className="whitespace-nowrap text-[12.5px] font-semibold tabular-nums">{d.value === null ? '—' : d.currency === 'EUR' ? fmtEur(d.value) : formatCurrency(d.value, d.currency)}</span>
                   <span className="w-24 whitespace-nowrap text-right text-[11.5px] text-muted-foreground">{dayLabel(d.daysStale)}</span>
                 </li>
               ))}

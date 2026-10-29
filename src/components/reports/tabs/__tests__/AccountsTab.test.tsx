@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import type { AccountSummary, DimensionRow, RankedAccount } from '@/types/reports';
@@ -11,8 +11,11 @@ const q = vi.hoisted(() => ({
   queryArrByDimension: vi.fn(),
 }));
 vi.mock('@/lib/db/queries/reports/accounts', () => q);
-vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
-vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: 'd1' }) }));
+const scopeIds = vi.hoisted(() => ({ d365: 'd1' as string | null, msal: 'u1' as string | null }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: scopeIds.msal ? { localAccountId: scopeIds.msal } : null }),
+}));
+vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: scopeIds.d365 }) }));
 
 class RO { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', RO);
@@ -107,6 +110,42 @@ describe('AccountsTab', () => {
     await show(d);
     expect(within(tile('Top-10 concentration')).getByText(/no ARR in scope/i)).toBeInTheDocument();
     expect(within(tile('Top-10 concentration')).queryByText('0%')).not.toBeInTheDocument();
+  });
+
+  it('says open deals are the synced team’s only, so whitespace is not read against every Benelux account', async () => {
+    await show(base());
+    expect(within(tile('No open opportunity')).getByText(/open deals are the synced team’s only/i)).toBeInTheDocument();
+  });
+
+  it('labels every snapshot tile as point-in-time', async () => {
+    await show(base());
+    for (const l of ['Accounts with ARR', 'Top-10 concentration', 'No open opportunity', 'Not contacted in 90 days']) {
+      expect(within(tile(l)).getByText(/point in time/i)).toBeInTheDocument();
+    }
+  });
+
+  it('says when the ranked list stops short of every account in scope', async () => {
+    await show(base());
+    expect(screen.getByText(/showing the top 30 of 40/i)).toBeInTheDocument();
+  });
+
+  it('switches dimension without blanking the rest of the tab', async () => {
+    await show(base());
+    fireEvent.click(screen.getByRole('button', { name: 'Industry' }));
+    expect(screen.getByText('Accounts with ARR')).toBeInTheDocument();
+    expect(screen.queryByText(/Loading account figures/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'ARR by industry' })).toBeInTheDocument();
+  });
+
+  it('waits rather than reporting an empty book before the user id resolves', async () => {
+    load(base());
+    scopeIds.d365 = null;
+    scopeIds.msal = null;
+    render(<AccountsTab filters={{ ...team, scope: 'mine' }} />);
+    expect(await screen.findByText(/Loading account figures/i)).toBeInTheDocument();
+    expect(screen.queryByText('No accounts in scope')).not.toBeInTheDocument();
+    scopeIds.d365 = 'd1';
+    scopeIds.msal = 'u1';
   });
 
   it('names the user as the population under Mine, never the team', async () => {

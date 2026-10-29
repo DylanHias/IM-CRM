@@ -10,12 +10,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { ReportTile } from '@/components/reports/ReportTile';
 import type { ReportFilters } from '@/components/reports/ReportControls';
 import { usePagedRows } from '@/hooks/usePagedRows';
-import { useAuthStore } from '@/store/authStore';
-import { useSyncStore } from '@/store/syncStore';
+import { useReportScope } from '@/hooks/useReportScope';
 import { queryArrMovement, queryArrMovers, queryArrToday } from '@/lib/db/queries/reports/arr';
 import { queryClosedDeals, queryNewOpportunities } from '@/lib/db/queries/reports/deals';
-import { periodKey } from '@/lib/reports/period';
-import type { ReportScope } from '@/lib/reports/scope';
 import { formatEurCompact } from '@/lib/utils/currencyUtils';
 import type { Region } from '@/lib/revenue/region';
 import type { ArrMovement, ArrMover, ArrToday } from '@/types/reports';
@@ -79,28 +76,24 @@ function waterfallSteps(m: ArrMovement) {
   ];
 }
 
-function useGrowthData({ scope, region, period }: ReportFilters) {
-  const account = useAuthStore((s) => s.account);
-  const callerD365UserId = useSyncStore((s) => s.callerD365UserId);
+function useGrowthData(filters: ReportFilters) {
+  const { scope, key } = useReportScope(filters);
+  const { period } = filters;
   const [data, setData] = useState<Data | null>(null);
   const [failed, setFailed] = useState(false);
-  const key = `${scope}|${region}|${periodKey(period)}`;
 
   useEffect(() => {
-    const userId = callerD365UserId ?? account?.localAccountId ?? null;
-    const alt = account?.localAccountId && account.localAccountId !== userId ? account.localAccountId : null;
-    const reportScope: ReportScope =
-      scope === 'mine' ? { kind: 'mine', userIds: [userId, alt].filter((v): v is string => Boolean(v)) } : { kind: 'team', region };
+    if (!scope) return;
     let stale = false;
     const load = async () => {
       setFailed(false);
       try {
         const [today, movement, movers, newOpps, closed] = await Promise.all([
-          queryArrToday(reportScope),
-          queryArrMovement(reportScope, period),
-          queryArrMovers(reportScope, period, MOVER_LIMIT),
-          queryNewOpportunities(reportScope, period),
-          queryClosedDeals(reportScope, period),
+          queryArrToday(scope),
+          queryArrMovement(scope, period),
+          queryArrMovers(scope, period, MOVER_LIMIT),
+          queryNewOpportunities(scope, period),
+          queryClosedDeals(scope, period),
         ]);
         if (!stale) setData({ key, today, movement, movers, newOpps, closed });
       } catch (err) {
@@ -112,9 +105,9 @@ function useGrowthData({ scope, region, period }: ReportFilters) {
     return () => {
       stale = true;
     };
-    // key stands in for scope, region and period so a re-created but equal period does not reload.
+    // key stands in for the scope and period so a re-created but equal period does not reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, account?.localAccountId, callerD365UserId]);
+  }, [key]);
 
   return { data: data?.key === key ? data : null, failed };
 }

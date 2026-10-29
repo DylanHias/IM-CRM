@@ -13,8 +13,11 @@ const q = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/db/queries/reports/arr', () => ({ queryArrToday: q.queryArrToday, queryArrMovement: q.queryArrMovement, queryArrMovers: q.queryArrMovers }));
 vi.mock('@/lib/db/queries/reports/deals', () => ({ queryNewOpportunities: q.queryNewOpportunities, queryClosedDeals: q.queryClosedDeals }));
-vi.mock('@/store/authStore', () => ({ useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: { localAccountId: 'u1' } }) }));
-vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: 'd1' }) }));
+const scopeIds = vi.hoisted(() => ({ d365: 'd1' as string | null, msal: 'u1' as string | null }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ account: scopeIds.msal ? { localAccountId: scopeIds.msal } : null }),
+}));
+vi.mock('@/store/syncStore', () => ({ useSyncStore: (sel: (s: unknown) => unknown) => sel({ callerD365UserId: scopeIds.d365 }) }));
 
 class RO { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', RO);
@@ -62,6 +65,17 @@ async function show(d: Data, filters = team) {
 beforeEach(() => vi.clearAllMocks());
 
 describe('GrowthTab', () => {
+  it('waits rather than reporting no growth before the user id resolves', async () => {
+    load(base());
+    scopeIds.d365 = null;
+    scopeIds.msal = null;
+    render(<GrowthTab filters={{ ...team, scope: 'mine' }} />);
+    expect(await screen.findByText(/Loading growth figures/i)).toBeInTheDocument();
+    expect(screen.queryByText('No movement')).not.toBeInTheDocument();
+    scopeIds.d365 = 'd1';
+    scopeIds.msal = 'u1';
+  });
+
   it('shows ARR today, net movement, new opportunities and won', async () => {
     await show(base());
     for (const l of ['ARR today', 'Net ARR movement', 'New opportunities', 'Won']) expect(screen.getByText(l)).toBeInTheDocument();
